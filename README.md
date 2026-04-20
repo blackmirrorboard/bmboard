@@ -4,7 +4,7 @@
  ██╔══██╗████╗ ████║     BLACK MIRROR BOARD
  ██████╔╝██╔████╔██║     ─────────────────────────────
  ██╔══██╗██║╚██╔╝██║     draw · speak · cast
- ██████╔╝██║ ╚═╝ ██║     v1.2 · 99letters studio · 2026
+ ██████╔╝██║ ╚═╝ ██║     v1.2 · kinoshita studio · 2026
  ╚═════╝ ╚═╝     ╚═╝     updated: 2026-04-19
 </pre>
 
@@ -46,6 +46,12 @@ FETCH-IMG (refresh) keyword-based image summoning via Lorem Flickr
 MONOCLO (new)       `monoclo` → grayscale the selected image(s)
                     undo-safe · dataURL persisted · bundle-safe
                     shape/stroke objects ignored
+
+SVG EXPORT (new)    `$ svg` → selection (or all) as editable vector SVG
+                    standalone .svg file with explicit viewBox
+                    opens in Illustrator / Figma / Inkscape as layered shapes
+                    ellipse · rect · polygon · path · text · image · arrow
+                    theme colors resolved on write · rotation → <g rotate(...)>
 
 EXPORT UX           export              → selection as transparent PNG
                     export magic        → picker modal (per-spell checkboxes)
@@ -101,6 +107,7 @@ $ grid-3x3       place a 3×3 grid at view center
 $ biwako-blue    retint every stroke to #0044CC
 $ fetch-img      summon images from Lorem Flickr by keyword
 $ monoclo        grayscale the selected image(s)
+$ svg            export selection as editable SVG (Illustrator / Figma)
 ```
 
 Full BM API and authoring guide → see `usage.html`.
@@ -204,6 +211,7 @@ T          text            Cmd+⇧Z     redo
 > export data          bundle export modal
 > export-all           non-interactive full bundle
 > export-spells [...]  non-interactive spell package
+> svg                  selection → editable vector SVG
 > fetch-img <kw> <n>   summon n images by keyword
 > monoclo              grayscale selected image(s)
 > scatter              scatter selected objects
@@ -329,6 +337,6 @@ dev log    →  /md.html  — retrospective from v0.1 → v1.2
 
 <div align="center">
 
-*Draw · Speak · Cast. — 99letters / 2026-04-19*
+*Draw · Speak · Cast. — kinoshita studio / 2026-04-19*
 
 </div>

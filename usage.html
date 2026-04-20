@@ -404,6 +404,7 @@ $ grid-3x3              <span class="c">→  place a 3×3 grid at view center</s
 $ biwako-blue           <span class="c">→  retint all strokes to #0044CC</span>
 $ fetch-img &lt;kw&gt; &lt;n&gt;    <span class="c">→  summon n images (Lorem Flickr, no key)</span>
 $ monoclo               <span class="c">→  grayscale the selected image(s)</span>
+$ svg                   <span class="c">→  selection → editable vector SVG</span>
 
 <span class="c">── export ──</span>
 export                  <span class="c">→  selection as transparent PNG</span>
@@ -773,6 +774,7 @@ Esc       Dismiss / deselect</pre>
         <thead><tr><th>Command</th><th>Output</th><th>Flow</th></tr></thead>
         <tbody>
             <tr><td><code>export</code></td><td>transparent PNG</td><td>Selection (or all) · Save-As dialog</td></tr>
+            <tr><td><code>$ svg</code></td><td><code>BM_CANVAS_*.svg</code></td><td>Selection (or all) · editable vector · Illustrator / Figma / Inkscape</td></tr>
             <tr><td><code>export magic</code></td><td><code>*_SPELLS.json</code></td><td>Modal · checkbox picker · pick any combination</td></tr>
             <tr><td><code>export data</code></td><td><code>*_BUNDLE.json</code> or <code>*_SPELLS.json</code></td><td>Modal · toggle canvas / user / preset</td></tr>
             <tr><td><code>share &lt;name&gt;</code></td><td>clipboard JSON</td><td>One spell · post to SNS directly</td></tr>
@@ -780,6 +782,28 @@ Esc       Dismiss / deselect</pre>
             <tr><td><code>export-spells [names]</code></td><td><code>*_SPELLS.json</code></td><td>Non-interactive · named or all user</td></tr>
         </tbody>
     </table>
+
+    <h3>8.1b SVG export — ベクター書き出しの詳細</h3>
+    <div class="bil">
+        <div class="jp"><span class="flag">JP</span>鉛筆ストローク・テキスト・シェイプ・画像を選択して <code>svg</code> と打つと、選択範囲だけを標準 SVG として保存します。選択が空ならキャンバス全体を出力。書き出した .svg は Illustrator / Figma / Inkscape で直接開いて、各オブジェクトをレイヤーとして編集できます。</div>
+        <div class="en"><span class="flag">EN</span>Select pen strokes, text, shapes, or images, type <code>svg</code>. The selection (or all objects, if selection is empty) is serialized as standard SVG. The resulting file opens in Illustrator / Figma / Inkscape as editable layered vectors.</div>
+    </div>
+    <pre class="code"><span class="c">// Mapping</span>
+circle    → &lt;ellipse&gt;                rotation → &lt;g transform="rotate(...)"&gt;
+square    → &lt;rect&gt;                   color    → obj.data.stroke / resolveFill(theme)
+triangle  → &lt;polygon&gt;                fill     → fill attribute (or none)
+arrow     → &lt;line&gt; + &lt;polygon head&gt;  stroke   → stroke attribute + stroke-width
+text      → &lt;text dominant-baseline="hanging"&gt;
+pen       → &lt;path d="M ... Q ..."&gt;   (closed strokes carry a final Z + fill)
+image     → &lt;image href="dataURL"&gt;   (URL-only images: linked, may not load offline)
+
+<span class="c">// Filename</span>
+BM_CANVAS_YYYYMMDD_HHMM.svg
+
+<span class="c">// Background note</span>
+· Colors come from the current theme. Exporting from DARK mode
+  produces light strokes — view on a dark background, or switch
+  to LIGHT / GRAY mode first for print-friendly output.</pre>
 
     <h3>8.2 Import — 取り込み</h3>
     <div class="bil">

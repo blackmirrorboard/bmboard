@@ -1243,7 +1243,8 @@ Set before drawing, or apply to selected object.</pre>
 <b>$grid-3x3</b>               place a 3×3 square grid
 <b>$biwako-blue</b>            retint every stroke to <code>#0044CC</code>
 <b>$fetch-img &lt;kw&gt; &lt;n&gt;</b>     summon n images (Lorem Flickr, no key)
-<b>$monoclo</b>                grayscale the selected image(s)</pre>
+<b>$monoclo</b>                grayscale the selected image(s)
+<b>$svg</b>                    export selection as editable vector SVG</pre>
         <h3>IMAGES (v1.2)</h3>
         <pre><b>I</b> key              upload an image from disk (dataURL)
 <b>fetch-img sea 6</b>    6 photos · auto 3×2 grid · color by default
@@ -1269,6 +1270,7 @@ spells live in <b>IndexedDB</b> (<code>blackmirror / commands</code>),
 mirrored to <code>localStorage</code> for portability.</pre>
         <h3>EXPORT (v1.2)</h3>
         <pre><b>export</b>                 selection → transparent PNG (or X key)
+<b>$svg</b>                   selection → editable SVG (Illustrator / Figma)
 <b>export magic</b>           spell picker modal (checkbox-per-spell)
 <b>export data</b>            bundle dialog (canvas / user / preset)
 <b>export-all</b>             non-interactive · project + all spells
@@ -3705,7 +3707,7 @@ const CMDS = {
                 "→ writing index.html", "→ writing src/main.js",
                 "Done. Run:  npm install && npm run dev"] },
         { cmd: 'python3 -m http.server 8080',
-          out: ["Serving HTTP on 0.0.0.0 port 8080...", "→ directory: /Users/99letters/project/",
+          out: ["Serving HTTP on 0.0.0.0 port 8080...", "→ directory: /Users/kinoshita/project/",
                 "192.168.0.10 - [GET /] 200 -", "192.168.0.10 - [GET /style.css] 200 -",
                 "192.168.0.10 - [GET /app.js] 200 -"] },
     ],
@@ -3881,7 +3883,7 @@ function triggerYouTube() {
         const pre = mk('pre','t-ascii'); pre.textContent = YT_ASCII; tb.appendChild(pre); scroll();
     }, 1100);
     setTimeout(() => {
-        enqueue('', ['▶  Stream initialized.', '▶  Playing: 99letters / Black Mirror Board',
+        enqueue('', ['▶  Stream initialized.', '▶  Playing: kinoshita studio / Black Mirror Board',
             '', '   [ ████████████████████ 100% ] 0:00 / 3:24', '   [ press any key to continue ]']);
     }, 2000);
 }
@@ -3956,6 +3958,12 @@ window.BM = {
     rand(min, max) { return min + Math.random() * (max - min); },
     setMode(m) { setMode(m); },
     getMode()  { return MODE; },
+
+    // ── exportSvg: vector export of selection/all → .svg ──────────────
+    // Usage: BM.exportSvg()              → selection, or all if empty
+    //        BM.exportSvg(BM.all())      → explicit object list
+    // Output opens in Illustrator / Figma as editable vector layers.
+    exportSvg(objs) { exportSvgNow(Array.isArray(objs) ? objs : null); },
 };
 
 // ── Custom command registry (IndexedDB + localStorage shadow) ─────────────
@@ -3989,6 +3997,13 @@ const BM_PRESETS = {
     'scatter': { action: "const sel = BM.getSelected();\nif (!sel.length) { BM.log('select objects first.', 't-err'); return; }\nfor (const o of sel) {\n  BM.translate(o, BM.rand(-400, 400), BM.rand(-300, 300));\n}\nBM.log('scattered ' + sel.length + ' object(s).');", source: 'preset' },
     'grid-3x3': { action: "const vc = BM.viewCenter();\nconst size = 80, gap = 28, step = size + gap;\nfor (let r = 0; r < 3; r++) {\n  for (let c = 0; c < 3; c++) {\n    BM.create('square', { x: vc.x - step + c*step - size/2, y: vc.y - step + r*step - size/2, w: size, h: size });\n  }\n}\nBM.log('grid 3x3 placed.');", source: 'preset' },
     'biwako-blue': { action: "const BLUE = '#0044CC';\nlet count = 0;\nfor (const o of BM.all()) {\n  o.data.stroke = BLUE;\n  if (o.data.fill && o.data.fill !== 'none') o.data.fill = BLUE;\n  count++;\n}\nBM.log('BIWAKO SILENCE — ' + count + ' object(s) retinted to #0044CC.');", source: 'preset' },
+    'svg': { action: `
+const sel = BM.getSelected();
+const targets = sel.length ? sel : BM.all();
+if (!targets.length) { BM.log('nothing to export — draw or select first.', 't-err'); return; }
+BM.exportSvg(targets);
+BM.log('SVG → ' + targets.length + ' object(s) packaged.');
+`, source: 'preset' },
     'monoclo': { action: `
 const sel = BM.getSelected();
 const images = sel.filter(o => o.type === 'image');
@@ -4202,7 +4217,9 @@ function runCommand(val) {
             '  ╰─────────────────────────────────────────────────────────╯',
             '',
             '  ╭── COMMAND ECOSYSTEM ────────────────────────────────────╮',
-            '  │  $scatter / $grid-3x3 / $biwako-blue                   │',
+            '  │  $scatter / $grid-3x3 / $biwako-blue / $svg             │',
+            '  │  $fetch-img <kw> <n>   summon images by keyword         │',
+            '  │  $monoclo              grayscale the selected image(s) │',
             '  │  register <n> <js>     save a new spell                 │',
             '  │  alias <new>=<old>     duplicate a spell                │',
             '  │  share <name>          copy JSON to clipboard           │',
@@ -5295,7 +5312,7 @@ function clearCanvas() {
 
 function boot() {
     enqueue('blackmirror --init --version 1.2.0 --build 2026-04-16', [
-        '99letters studio — all rights reserved',
+        'kinoshita studio — all rights reserved',
         'BLACK MIRROR BOARD v1.2  ( release: 2026-04-16 )',
         '',
         'loading kernel...',
@@ -5513,6 +5530,181 @@ function renderObjectToCtx(c2, obj) {
             break;
         }
     }
+}
+
+// ── Export SVG (v1.2) ──────────────────────────────────────────────────────
+// Vector export of the current selection (or all objects if nothing is selected).
+// The output is a standalone .svg file with an explicit viewBox, editable as
+// layered vector shapes in Illustrator / Figma / Inkscape. Colors are resolved
+// through the current theme, so what you see on canvas is what you get in the file.
+function exportSvgNow(explicitObjs) {
+    let targets;
+    if (Array.isArray(explicitObjs) && explicitObjs.length) {
+        targets = explicitObjs;
+    } else {
+        const selected = S.objects.filter(o => o.selected || S.multiSelected.includes(o.id));
+        targets = selected.length > 0 ? selected : S.objects;
+    }
+    if (!targets.length) {
+        printRaw('[svg] canvas is empty — nothing to export', 't-err');
+        return;
+    }
+
+    const PAD = 20;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const obj of targets) {
+        const b = getObjBounds(obj);
+        if (!b) continue;
+        minX = Math.min(minX, b.x - PAD);
+        minY = Math.min(minY, b.y - PAD);
+        maxX = Math.max(maxX, b.x + b.w + PAD);
+        maxY = Math.max(maxY, b.y + b.h + PAD);
+    }
+    const W = Math.max(1, Math.ceil(maxX - minX));
+    const H = Math.max(1, Math.ceil(maxY - minY));
+
+    const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const selectionMode = targets.length < S.objects.length ? 'selection' : 'all';
+    enqueue(`[SYSTEM] ${ts}`, [
+        '→ generating vector SVG asset...',
+        `→ objects: ${targets.length}  mode: ${selectionMode}`,
+        `→ viewBox: ${W} × ${H}`,
+        '→ serializing XML...',
+        '[IO] vector asset prepared.',
+    ]);
+
+    const parts = targets.map(o => svgElementFor(o)).filter(Boolean);
+    const bgNote = MODE === 'dark'
+        ? ' · strokes are light (exported from DARK mode — use a dark viewer background)'
+        : '';
+    const header = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<!-- generated by Black Mirror Board v1.2 — ${ts}${bgNote} -->\n`;
+    const svg = header
+        + `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"\n`
+        + `     width="${W}" height="${H}" viewBox="${minX} ${minY} ${W} ${H}">\n`
+        + `  <title>Black Mirror Board — ${targets.length} object(s)</title>\n`
+        + `  ${parts.join('\n  ')}\n`
+        + `</svg>\n`;
+
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    const fname = `BM_CANVAS_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.svg`;
+
+    const deliver = async () => {
+        if (bmIsIOS() && navigator.share) {
+            try {
+                const file = new File([svg], fname, { type: 'image/svg+xml' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Black Mirror SVG' });
+                    return 'share';
+                }
+                await navigator.share({ title: fname, text: svg });
+                return 'share';
+            } catch (err) {
+                if (err && err.name === 'AbortError') return 'cancelled';
+            }
+        }
+        const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return 'download';
+    };
+    deliver().then(r => {
+        if (r === 'share')       printRaw(`[svg] ${fname} shared ✓`, 't-ok');
+        else if (r !== 'cancelled') printRaw(`[svg] ${fname} — ${(svg.length/1024).toFixed(1)} KB ✓`, 't-ok');
+    }).catch(err => printRaw(`[svg] delivery failed: ${err.message}`, 't-err'));
+}
+
+// Serialize a single canvas object into an SVG fragment.
+// Rotation is applied via a wrapping <g transform="rotate(deg cx cy)">.
+// Colors come from the current theme via resolveFill() / getStrokeColor(),
+// so exported files look like what the user sees on screen.
+function svgElementFor(obj) {
+    const d = obj.data;
+    const rot = d.rotation || 0;
+    const lw = d.lineWidth || d.lw || 2.2;
+    const themeStroke = getStrokeColor();
+    const strokeCol = d.stroke || themeStroke;
+    const fillCol = resolveFill(d.fill);
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const fillAttr = fillCol ? `fill="${fillCol}"` : 'fill="none"';
+    const strokeOpen = d.strokeOff;
+    const strokeAttr = strokeOpen
+        ? 'stroke="none"'
+        : `stroke="${strokeCol}" stroke-width="${lw}" stroke-linecap="round" stroke-linejoin="round"`;
+
+    let inner = '';
+    switch (obj.type) {
+        case 'circle':
+            inner = `<ellipse cx="${d.cx}" cy="${d.cy}" rx="${Math.abs(d.rx)}" ry="${Math.abs(d.ry)}" ${fillAttr} ${strokeAttr}/>`;
+            break;
+        case 'square':
+            inner = `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" ${fillAttr} ${strokeAttr}/>`;
+            break;
+        case 'triangle': {
+            const p = d.pts || [
+                { x: d.x + d.w / 2, y: d.y },
+                { x: d.x + d.w, y: d.y + d.h },
+                { x: d.x, y: d.y + d.h },
+            ];
+            const ptStr = p.map(pt => `${pt.x},${pt.y}`).join(' ');
+            inner = `<polygon points="${ptStr}" ${fillAttr} ${strokeAttr}/>`;
+            break;
+        }
+        case 'arrow': {
+            if (strokeOpen) return '';
+            const dx = d.x2 - d.x1, dy = d.y2 - d.y1;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            const ux = dx / len, uy = dy / len;
+            const hw = Math.max(6, lw * 3.5);
+            const hlen = hw * 1.5;
+            const bx = d.x2 - ux * hlen, by = d.y2 - uy * hlen;
+            const headPts = [
+                `${d.x2},${d.y2}`,
+                `${bx - uy * hw},${by + ux * hw}`,
+                `${bx + uy * hw},${by - ux * hw}`,
+            ].join(' ');
+            inner = `<g>`
+                + `<line x1="${d.x1}" y1="${d.y1}" x2="${bx}" y2="${by}" stroke="${strokeCol}" stroke-width="${lw}" stroke-linecap="round"/>`
+                + `<polygon points="${headPts}" fill="${strokeCol}"/>`
+                + `</g>`;
+            break;
+        }
+        case 'text': {
+            const fs = d.fontSize || 16;
+            const tx = esc(d.text || '');
+            inner = `<text x="${d.x}" y="${d.y}" fill="${strokeCol}" font-family="'Courier New', Courier, monospace" font-size="${fs}" dominant-baseline="hanging">${tx}</text>`;
+            break;
+        }
+        case 'stroke': {
+            if (!d.pts || d.pts.length < 2) return '';
+            let pathD = `M ${d.pts[0].x} ${d.pts[0].y}`;
+            for (let i = 1; i < d.pts.length; i++) {
+                const prev = d.pts[i - 1], cur = d.pts[i];
+                pathD += ` Q ${prev.x} ${prev.y} ${(prev.x + cur.x) / 2} ${(prev.y + cur.y) / 2}`;
+            }
+            if (d.closed) pathD += ' Z';
+            const penStroke = strokeOpen
+                ? 'stroke="none"'
+                : `stroke="${strokeCol}" stroke-width="${d.lw || lw}" stroke-linecap="round" stroke-linejoin="round"`;
+            const penFill = (d.closed && fillCol) ? `fill="${fillCol}"` : 'fill="none"';
+            inner = `<path d="${pathD}" ${penFill} ${penStroke}/>`;
+            break;
+        }
+        case 'image':
+            inner = `<image x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" href="${d.src}" xlink:href="${d.src}" preserveAspectRatio="none"/>`;
+            break;
+        default:
+            return '';
+    }
+
+    if (rot !== 0) {
+        const c = getObjCenter(obj);
+        const deg = (rot * 180 / Math.PI).toFixed(4);
+        return `<g transform="rotate(${deg} ${c.x} ${c.y})">${inner}</g>`;
+    }
+    return inner;
 }
 
 document.getElementById('exportPngBtn').addEventListener('click', () => {
