@@ -143,6 +143,40 @@ Deep dive → [[08_Importing_Spells|08. Importing Spells]]
 
 ---
 
+## 6b. Camera wipe (new in v1.2)
+
+| Command | Effect |
+|---|---|
+| `Black Mirror` | Opens the browser camera — your face appears in a wipe box (top-right) |
+| `Black Mirror off` | Stops the camera and dismisses the wipe |
+
+- Picture-in-picture frame appears at top-right
+- Red REC dot + `◼ BLACK MIRROR` label
+- Selfie-mirrored view (natural self-facing orientation)
+- **Draggable — grab the wipe and move it anywhere** (mouse / touch / pen)
+- Position clamps to the viewport; re-clamps on window resize
+- **Requires HTTPS / localhost** (browser secure-context rule). Won't work from plain `file://`
+- Permission denial logs an error and skips the wipe
+- Hover the wipe → `×` button appears for manual off
+
+---
+
+## 6c. Share URL — broadcast your canvas (new in v1.2)
+
+| Command | Effect |
+|---|---|
+| `share` | Generate a URL that contains the current canvas → show modal |
+
+- Shapes / pen strokes / text are gzip-compressed and base64url-encoded into the URL hash
+- When someone else opens that URL, the board **loads with the exact same canvas**
+- Modal offers `COPY URL`, `OPEN IN NEW TAB`, and `SHARE VIA...` (native share sheet on iOS)
+- Images are stripped to keep URLs short — use `export data` for full bundles
+- Existing `share <name>` (copy a spell's JSON) still works with an argument
+
+Details → [[07_Exporting_and_Sharing_Spells|07. Exporting and Sharing]]
+
+---
+
 ## 7. Terminal operations
 
 | Command | Effect |
@@ -167,6 +201,7 @@ Deep dive → [[08_Importing_Spells|08. Importing Spells]]
 
 ```
 alias         duplicate a spell by a new name
+Black Mirror  selfie camera wipe (append "off" to dismiss)
 clear         wipe the terminal log
 dark          dark theme
 docs          summon usage overlay
@@ -191,7 +226,7 @@ objects       dump canvas objects
 register      register a spell
 save          snapshot project
 scatter       scatter preset
-share         copy spell JSON
+share         copy spell JSON (with name) / canvas URL share (no args)
 svg           export selection as SVG
 usage         summon usage overlay
 youtube       easter egg

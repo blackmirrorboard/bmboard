@@ -23,6 +23,7 @@ Pick by intent:
 | Archive the whole workspace | `export data` | File (`.json`) |
 | Export the drawing as an image | `export` | File (`.png`) |
 | Export the drawing as a vector | `$ svg` | File (`.svg`) |
+| Share the canvas via URL | `share` | URL (modal) |
 
 ---
 
@@ -249,6 +250,91 @@ Or `$ svg`.
 4. BM_CANVAS_20260420_1930.svg downloads
 5. Open in Illustrator → each object is an editable layer
 ```
+
+---
+
+## 4.6 `share` — broadcast your canvas as a URL (new in v1.2)
+
+### How to use
+
+Type `share` with no arguments.
+
+```
+share
+```
+
+A modal pops up with your **entire canvas state encoded into a single URL**.
+
+```
+◼ BLACK MIRROR BOARD · SHARE
+A share URL has been generated.
+
+https://blackmirrorboard.github.io/bmboard/app.html#s=H4sIAAAAAAAAA6tWKkgtKs7PS84wUrJSKi9OSiwu...
+
+2.3 KB · 18 object(s)
+
+[ COPY URL ] [ OPEN IN NEW TAB ] [ SHARE VIA... ]
+```
+
+### How it works
+
+1. Canvas state (objects + view + theme) → JSON
+2. **Native gzip** via `CompressionStream('gzip')`
+3. base64url encoding → URL-safe
+4. Appended as URL hash: `app.html#s=<encoded>`
+5. Anyone opening that URL sees the board **restore automatically** (terminal logs `[SYSTEM] shared-state detected`)
+
+### Buttons
+
+| Button | Effect |
+|---|---|
+| `COPY URL` | Copies to clipboard for pasting anywhere |
+| `OPEN IN NEW TAB` | Previews the URL in a new tab |
+| `SHARE VIA...` | iOS / Android native share sheet (Web Share API — mobile only) |
+
+### Images are stripped
+
+To keep URLs short, image objects (`image` type) are **automatically excluded**. The modal shows `N IMAGE(S) STRIPPED`. For full fidelity including images, use `export data` to distribute a bundle JSON file.
+
+### Size guidance
+
+| Content | URL size |
+|---|---|
+| ~10 shapes | ~1 KB |
+| ~50 shapes | ~3 KB |
+| ~200 shapes | ~8 KB (warning threshold) |
+| 500+ shapes | 10 KB+ — SNS link previews may break |
+
+URLs over 8 KB trigger an in-modal warning (`⚠ LONG URL — MAY FAIL`).
+
+### Limitations
+
+- **Browser support**: `CompressionStream` API required. Chrome 80+, Safari 16.4+, Firefox 113+
+- Safari 16.3 and older raise `CompressionStream unsupported`
+- **Serverless**: The URL carries everything — no server trip, no cloud state
+- **Async snapshot**: Not realtime co-editing. It's a frozen moment you send
+
+### Receiver behavior
+
+When someone opens the URL:
+
+```
+[SYSTEM] shared-state detected
+→ decoding URL hash...
+→ restoring 18 object(s)...
+[OK] canvas restored from shared URL.
+```
+
+- Their existing canvas is **replaced** (warn recipients to save first if needed)
+- URL hash is cleared after load (reload won't re-import)
+- Theme also matches the sender's choice
+
+### Use cases
+
+- Drop a quick brainstorm into Discord or Slack
+- Embed in a blog or tweet alongside a screenshot — readers can actually touch the canvas
+- In a meeting: "look at this sketch" — instant transmission
+- Without images, shares are typically 2–5 KB, so the URL stays compact
 
 ---
 

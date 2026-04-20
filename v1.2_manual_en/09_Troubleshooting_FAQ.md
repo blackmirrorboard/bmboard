@@ -156,6 +156,57 @@ Destination:    drop file → OVERWRITE
 
 ---
 
+## Camera wipe (Black Mirror command)
+
+### Q. `Black Mirror` doesn't open the camera
+
+Possible causes:
+
+1. **You opened via `file://`** — browsers block camera API outside secure contexts. Run `python -m http.server` locally or deploy to GitHub Pages (HTTPS)
+2. **Permission previously denied** — reset the site's camera permission in your browser settings
+3. **No camera on device** → `[black mirror] no camera detected` is logged
+4. **Browser too old** — requires Chrome 80+, Safari 12+, Firefox 90+
+
+### Q. Camera allowed but the wipe is black
+
+- A browser extension (ad-blocker, VPN) may be intercepting camera frames
+- Another app (Zoom etc.) is hogging the camera — close it and retry
+- `Black Mirror off` then `Black Mirror` to recycle
+
+### Q. iPhone is stuck in landscape
+
+The wipe works in any orientation. If it won't rotate, iOS orientation lock is on — toggle the lock off from Control Center.
+
+---
+
+## Share URL (`share` with no args)
+
+### Q. `share` doesn't open the modal
+
+- **Canvas is empty** → `[share] canvas is empty` is logged. Draw something first
+- **Old Safari (≤16.3)** → `CompressionStream` unsupported. Upgrade to Safari 16.4+ / Chrome 80+
+
+### Q. URL is too long and breaks on SNS
+
+If you see the `⚠ LONG URL — MAY FAIL` warning (URL > 8 KB):
+
+1. Delete unused objects and `share` again
+2. Images are already auto-stripped; reduce shape count if still too long
+3. Alternative: `export data` to make a bundle JSON and share the file via Drive/iCloud
+4. Receivers can paste the full URL directly into the address bar (bypass SNS preview)
+
+### Q. Opening a share URL wiped my canvas
+
+`share` is a **snapshot-replace** — incoming canvas overwrites current. Recovery:
+- `Cmd+Z` (Undo) may still work
+- Or pre-save with `save <name>` → `load <name>` to restore
+
+### Q. Images are missing in shared URL
+
+By design: images (from `fetch-img` or `I`-key upload) are **auto-stripped** to keep URLs short. The modal shows `N IMAGE(S) STRIPPED`. For full fidelity, use `export data` and distribute the bundle.
+
+---
+
 ## Mobile-specific
 
 ### Q. iPhone auto-zooms when I focus the input

@@ -189,7 +189,9 @@ image:    { x, y, w, h, src (dataURL or URL) }
 | GIF animation export | ❌ | No feature |
 | SVG export | ✅ | `$ svg` handles it (new in v1.2, Illustrator/Figma compatible) |
 | Video embed | ❌ | No `video` support in image type |
-| Realtime co-editing | ❌ | No server (by design) |
+| Selfie camera wipe | ✅ | `Black Mirror` → top-right PIP (new in v1.2, requires HTTPS/localhost) |
+| Share canvas via URL | ✅ | `share` (no args) → URL that re-opens the exact canvas (new in v1.2) |
+| Realtime co-editing | ❌ | No server (URL share is an async snapshot, not live) |
 | Cloud sync | ❌ | Local only (`export data` for manual backup) |
 
 ---
