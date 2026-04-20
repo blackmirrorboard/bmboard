@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>◼ BMBOARD — where designer's intuition meets hacker's command</title>
+<meta name="description" content="An infinite canvas terminal. Draw. Speak. Cast. Every command is a spell — JSON-portable, shareable, remixable. Black Mirror Board v1.2.">
+<meta property="og:title" content="BMBOARD — draw, speak, cast">
+<meta property="og:description" content="Where a designer's intuition meets a hacker's command. One HTML file. Zero dependencies.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://blackmirrorboard.github.io/bmboard/">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23000'/><rect x='5' y='5' width='22' height='22' rx='1' fill='%23fff'/><rect x='11' y='11' width='4' height='10' fill='%23000'/><rect x='17' y='11' width='4' height='10' fill='%23000'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────────────────────────────
+   BMBOARD · product page · "The Black Mirror Interface"
+   pure 1-bit · kinoshita studio · 2026
+   ───────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --ink:       #FFFFFF;
+    --void:      #000000;
+    --dim:       rgba(255,255,255,0.58);
+    --faint:     rgba(255,255,255,0.28);
+    --ghost:     rgba(255,255,255,0.10);
+    --rule:      rgba(255,255,255,0.18);
+    --glass:     rgba(255,255,255,0.04);
+    --accent:    #FFFFFF;
+    --warn:      #FF3B30;
+    --ease:      cubic-bezier(0.2, 0.7, 0.2, 1);
+    --mono:      'Space Mono', 'Courier New', Courier, monospace;
+}
+
+html, body {
+    background: var(--void);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+body { min-height: 100vh; position: relative; }
+
+/* ── Scanline overlay — a thin veil of CRT ────────────────────────── */
+body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0) 0px,
+        rgba(255,255,255,0) 2px,
+        rgba(255,255,255,0.022) 2px,
+        rgba(255,255,255,0.022) 3px
+    );
+    z-index: 1000;
+    mix-blend-mode: screen;
+}
+
+/* ── Ambient noise grain ──────────────────────────────────────────── */
+body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.015) 0, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.015) 0, transparent 40%);
+    z-index: 999;
+}
+
+::selection { background: var(--ink); color: var(--void); }
+
+a { color: inherit; text-decoration: none; }
+
+/* ── LANGUAGE TOGGLE VISIBILITY ────────────────────────────────── */
+html[lang="en"] .lang-ja { display: none !important; }
+html[lang="ja"] .lang-en { display: none !important; }
+
+.lang-toggle {
+    gap: 4px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--dim);
+    cursor: pointer;
+    transition: border-color 0.2s;
+    padding: 0 10px !important;  /* override the 12px from .site-nav block */
+}
+.lang-toggle:hover { border-color: var(--ink); }
+.lang-toggle .lang-tok {
+    color: var(--faint);
+    padding: 0 3px;
+    transition: color 0.2s;
+    cursor: pointer;
+}
+.lang-toggle .lang-tok:hover { color: var(--dim); }
+html[lang="en"] .lang-toggle .lang-tok[data-set-lang="en"],
+html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
+    color: var(--ink);
+}
+.lang-toggle .lang-sep { color: var(--faint); }
+
+/* ── BRAND LOGO IMAGE ─────────────────────────────────────────── */
+.brand-logo {
+    width: 30px; height: 30px;
+    object-fit: contain;
+    display: block;
+    /* logo.png is dark ink — invert to show on black surface */
+    filter: invert(1);
+}
+.hero-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+}
+.hero-title {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 0.92;
+    text-align: center;
+    margin: 0;
+    max-width: 100%;
+    text-transform: uppercase;
+}
+.hero-title.lang-en { font-size: clamp(34px, 9vw, 88px); letter-spacing: 0.04em; }
+.hero-title.lang-ja { font-size: clamp(28px, 7.4vw, 72px); letter-spacing: 0.08em; }
+
+.hero-logo {
+    width: clamp(140px, 22vw, 220px);
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    filter: invert(1);
+    opacity: 0.94;
+}
+
+.eyebrow {
+    font-size: 10px; letter-spacing: 0.32em;
+    color: var(--dim); text-transform: uppercase;
+}
+.rule { height: 1px; background: var(--rule); border: none; width: 100%; margin: 0; }
+
+/* ── HEADER ────────────────────────────────────────────────────── */
+.site-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 18px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 500;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0,0,0,0.6);
+    border-bottom: 1px solid var(--rule);
+}
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+.brand-text {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink);
+    line-height: 1;
+    white-space: nowrap;
+}
+.site-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+/* Unified sizing for every nav item (links, toggle, launch) */
+.site-nav a,
+.site-nav .lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    box-sizing: border-box;
+    line-height: 1;
+    white-space: nowrap;
+}
+.site-nav a {
+    color: var(--dim);
+    border: 1px solid transparent;
+    transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.site-nav a:hover { color: var(--ink); border-color: var(--rule); }
+.site-nav .launch {
+    color: var(--ink);
+    border-color: var(--ink);
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.site-nav .launch:hover { background: var(--ink); color: var(--void); }
+
+/* ── HERO ──────────────────────────────────────────────────────── */
+.hero {
+    min-height: 100vh;
+    padding: 120px 28px 80px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    gap: 48px;
+    position: relative;
+}
+.hero-mirror {
+    width: min(780px, 92vw);
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--rule);
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0)) ,
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px) 0 0 / 40px 40px,
+        linear-gradient(0deg,  rgba(255,255,255,0.015) 1px, transparent 1px) 0 0 / 40px 40px,
+        var(--void);
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        inset 0 0 80px rgba(255,255,255,0.04),
+        0 30px 60px -30px rgba(255,255,255,0.10);
+}
+.hero-mirror::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.08) 100%);
+    pointer-events: none;
+}
+.mirror-frame {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+.mirror-pane { position: relative; padding: 24px; overflow: hidden; }
+.mirror-pane--left  { border-right: 1px solid var(--rule); }
+.mirror-pane-label {
+    position: absolute;
+    top: 14px; left: 14px;
+    font-size: 9px; letter-spacing: 0.24em;
+    color: var(--faint); text-transform: uppercase;
+}
+.mirror-pane-label--right { left: auto; right: 14px; }
+
+.mirror-sketch { width: 100%; height: 100%; }
+.mirror-sketch path,
+.mirror-sketch ellipse,
+.mirror-sketch polygon {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.mirror-sketch .s1 {
+    stroke-dasharray: 520; stroke-dashoffset: 520;
+    animation: draw 2.4s var(--ease) 0.3s forwards, tint 6s 3.8s infinite;
+}
+.mirror-sketch .s2 {
+    stroke-dasharray: 360; stroke-dashoffset: 360;
+    animation: draw 2.2s var(--ease) 1.6s forwards, tint 6s 3.8s infinite;
+}
+.mirror-sketch .s3 {
+    stroke-dasharray: 240; stroke-dashoffset: 240;
+    animation: draw 1.8s var(--ease) 2.8s forwards, tint 6s 3.8s infinite;
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes tint {
+    0%, 35%, 100% { stroke: var(--ink); }
+    50%, 85%      { stroke: #FFFFFF; filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
+}
+
+.mirror-term {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    padding-top: 24px;
+}
+.mirror-term .line { opacity: 0; animation: appear 0.4s var(--ease) forwards; }
+.mirror-term .line:nth-child(1) { animation-delay: 0.8s; }
+.mirror-term .line:nth-child(2) { animation-delay: 1.9s; }
+.mirror-term .line:nth-child(3) { animation-delay: 3.0s; color: var(--dim); }
+.mirror-term .line:nth-child(4) { animation-delay: 3.8s; }
+.mirror-term .line:nth-child(5) { animation-delay: 4.6s; color: var(--dim); }
+.mirror-term .caret {
+    display: inline-block;
+    width: 8px; height: 1em;
+    background: var(--ink);
+    vertical-align: -3px;
+    animation: blink 1s steps(2) infinite;
+}
+@keyframes appear { to { opacity: 1; } }
+@keyframes blink  { 50% { opacity: 0; } }
+
+.hero-tagline {
+    font-size: clamp(18px, 3vw, 30px);
+    font-weight: 400;
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    color: var(--dim);
+    max-width: 22ch;
+    margin: 0 auto;
+    text-align: center;
+}
+.hero-tagline em { font-style: normal; color: var(--ink); font-weight: 700; }
+.hero-cta {
+    display: inline-flex; align-items: center; gap: 14px;
+    font-size: 12px; letter-spacing: 0.26em;
+    color: var(--ink); text-transform: uppercase;
+    border: 1px solid var(--ink);
+    padding: 16px 32px;
+    transition: background 0.2s, color 0.2s, letter-spacing 0.2s;
+}
+.hero-cta::before { content: "$"; color: var(--dim); }
+.hero-cta:hover {
+    background: var(--ink); color: var(--void);
+    letter-spacing: 0.3em;
+}
+.hero-cta:hover::before { color: var(--void); }
+.hero-meta {
+    font-size: 10px; letter-spacing: 0.24em;
+    color: var(--faint); text-transform: uppercase;
+    display: flex; gap: 24px; flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* ── SECTIONS ──────────────────────────────────────────────────── */
+.section {
+    padding: 120px 28px;
+    max-width: 1120px;
+    margin: 0 auto;
+    position: relative;
+}
+.section + .section { border-top: 1px solid var(--rule); }
+.section-number {
+    font-size: 10px; letter-spacing: 0.36em;
+    color: var(--dim); text-transform: uppercase;
+    margin-bottom: 18px;
+}
+.section-number::before { content: "// "; color: var(--faint); }
+.section h2 {
+    font-size: clamp(24px, 3.6vw, 40px);
+    font-weight: 700; line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-bottom: 14px;
+    max-width: 22ch;
+}
+.section h2 em { font-style: normal; color: var(--dim); font-weight: 400; }
+.section-jp {
+    font-size: 13px; letter-spacing: 0.12em;
+    color: var(--dim);
+    margin-bottom: 40px;
+    max-width: 42ch;
+    line-height: 2;
+}
+.split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+}
+.split p.en { color: var(--ink); margin-bottom: 14px; }
+.split p.jp { color: var(--dim); font-size: 12.5px; letter-spacing: 0.08em; line-height: 2; }
+
+.demo-frame {
+    border: 1px solid var(--rule);
+    background: rgba(255,255,255,0.015);
+    aspect-ratio: 16 / 10;
+    position: relative; overflow: hidden;
+}
+.demo-frame-label {
+    position: absolute; top: 12px; left: 12px;
+    font-size: 9px; letter-spacing: 0.22em;
+    color: var(--faint); text-transform: uppercase;
+}
+
+/* Section 01 — board demo */
+.board-demo svg { width: 100%; height: 100%; }
+.board-demo path,
+.board-demo ellipse {
+    fill: none; stroke: var(--ink);
+    stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.board-demo .snap-ring {
+    fill: none; stroke: var(--ink);
+    stroke-width: 1.2;
+    opacity: 0;
+    animation: snapPulse 5s 3s infinite;
+}
+@keyframes snapPulse {
+    0%, 90%, 100% { opacity: 0; transform: scale(0.8); transform-origin: center; }
+    50% { opacity: 0.9; transform: scale(1.4); transform-origin: center; }
+}
+.board-demo .drawn {
+    stroke-dasharray: 640; stroke-dashoffset: 640;
+    animation: draw 3s var(--ease) 0.5s infinite alternate;
+}
+
+/* Section 02 — terminal demo */
+.term-demo {
+    padding: 28px;
+    font-size: 12px;
+    line-height: 1.9;
+    display: flex; flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+}
+.term-demo .pasted {
+    color: var(--ink);
+    background: var(--glass);
+    border: 1px dashed var(--rule);
+    padding: 8px 12px; margin: 6px 0;
+    animation: appearSlide 0.8s var(--ease) 1s backwards;
+}
+.term-demo .dim { color: var(--dim); }
+.term-demo .ok  { color: var(--ink); }
+.term-demo .ok::before { content: "[OK] "; color: var(--faint); }
+@keyframes appearSlide {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Section 03 — dual perspective */
+.dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--rule);
+}
+.dual .persp { padding: 40px 32px; min-height: 340px; }
+.dual .persp + .persp { border-left: 1px solid var(--rule); }
+.dual .persp h3 {
+    font-size: 10px; letter-spacing: 0.32em;
+    color: var(--dim); text-transform: uppercase;
+    margin-bottom: 20px;
+}
+.dual .persp h3::before { content: "◼ "; color: var(--ink); }
+.dual .persp ul { list-style: none; padding: 0; margin: 0; }
+.dual .persp li {
+    font-size: 12.5px;
+    color: var(--ink);
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--rule);
+}
+.dual .persp li:last-child { border-bottom: none; }
+.dual .persp li .jp {
+    display: block;
+    color: var(--dim);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    margin-top: 3px;
+}
+
+/* ── EMBEDDED TERMINAL ────────────────────────────────────────── */
+.terminal-section {
+    padding: 100px 28px;
+    max-width: 920px;
+    margin: 0 auto;
+    border-top: 1px solid var(--rule);
+}
+.terminal-section h2 {
+    font-size: clamp(22px, 3vw, 32px);
+    margin-bottom: 14px;
+    font-weight: 700;
+}
+.term-embed {
+    border: 1px solid var(--rule);
+    background: rgba(255,255,255,0.015);
+    padding: 22px;
+    font-size: 12.5px;
+    line-height: 1.75;
+    min-height: 280px;
+    margin-top: 30px;
+}
+.term-embed .out {
+    margin-bottom: 12px;
+    min-height: 160px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.term-embed .out .entry { margin-bottom: 2px; }
+.term-embed .out .cmd   { color: var(--ink); }
+.term-embed .out .cmd::before { content: "❯ "; color: var(--dim); }
+.term-embed .out .dim   { color: var(--dim); }
+.term-embed .out .err   { color: var(--warn); }
+.term-embed .out .ok    { color: var(--ink); }
+.term-embed .out .ascii {
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: pre;
+    color: var(--ink);
+    overflow-x: auto;
+}
+.term-line {
+    display: flex; align-items: center; gap: 10px;
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+}
+.term-line .prompt { color: var(--dim); font-weight: 700; }
+.term-line input {
+    flex: 1;
+    background: transparent;
+    border: none; outline: none;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    caret-color: var(--ink);
+}
+.term-line input::placeholder { color: var(--faint); }
+.term-hint {
+    margin-top: 14px;
+    font-size: 10px; letter-spacing: 0.22em;
+    color: var(--faint); text-transform: uppercase;
+}
+.term-hint code {
+    color: var(--dim);
+    padding: 2px 6px;
+    border: 1px solid var(--rule);
+    margin-right: 4px;
+    letter-spacing: 0.18em;
+}
+
+/* ── LAUNCH TRANSITION ────────────────────────────────────────── */
+.launch-overlay {
+    position: fixed; inset: 0;
+    background: var(--void);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s var(--ease);
+    z-index: 2000;
+    display: flex;
+    align-items: center; justify-content: center;
+    color: var(--ink);
+    font-size: 11px; letter-spacing: 0.32em;
+    text-transform: uppercase;
+}
+.launch-overlay.on { opacity: 1; pointer-events: auto; }
+.launch-overlay .dots::after {
+    content: "...";
+    animation: dots 1s steps(4) infinite;
+}
+@keyframes dots {
+    0%   { content: "";    }
+    25%  { content: ".";   }
+    50%  { content: "..";  }
+    75%  { content: "..."; }
+}
+
+/* ── FOOTER ───────────────────────────────────────────────────── */
+footer {
+    border-top: 1px solid var(--rule);
+    padding: 40px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    font-size: 10px; letter-spacing: 0.22em;
+    color: var(--faint); text-transform: uppercase;
+}
+.foot-primary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.foot-primary a {
+    color: var(--dim);
+    border-bottom: 1px solid var(--faint);
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+}
+.foot-primary a:hover { color: var(--ink); border-color: var(--ink); }
+
+.foot-social {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+}
+.foot-social a {
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    color: var(--dim);
+    border: 1px solid var(--rule);
+    transition: color 0.2s, border-color 0.2s, transform 0.2s;
+}
+.foot-social a:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+    transform: translateY(-1px);
+}
+.foot-social a svg { width: 16px; height: 16px; display: block; }
+
+/* ── RESPONSIVE ────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+    .site-header { padding: 12px 16px; }
+    .site-nav { gap: 6px; }
+    .site-nav a,
+    .site-nav .lang-toggle {
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        padding: 0 9px;
+        height: 28px;
+    }
+    .lang-toggle { padding: 0 8px !important; }
+    .brand { gap: 8px; }
+    .brand-logo { width: 28px; height: 28px; }
+    .brand-text { font-size: 11px; letter-spacing: 0.18em; }
+    /* keep only Manual + lang toggle + launch on mobile */
+    .site-nav a:nth-child(1), .site-nav a:nth-child(2) { display: none; }
+
+    /* HERO — large, vertical mirror with maximum impact */
+    .hero { padding: 88px 12px 60px; gap: 32px; }
+    .hero-mirror {
+        width: min(780px, 96vw);
+        aspect-ratio: 2 / 3;         /* taller portrait — more vertical drama */
+    }
+    .mirror-frame {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+    }
+    .mirror-pane { padding: 28px 22px; }
+    .mirror-pane--left {
+        border-right: none;
+        border-bottom: 1px solid var(--rule);
+    }
+    .mirror-pane-label {
+        font-size: 10px;
+        letter-spacing: 0.3em;
+        top: 16px; left: 16px;
+    }
+    .mirror-pane-label--right { left: auto; right: 16px; }
+    .mirror-sketch path,
+    .mirror-sketch ellipse,
+    .mirror-sketch polygon { stroke-width: 3; }
+    .mirror-term {
+        font-size: 14px;
+        line-height: 1.85;
+        padding-top: 32px;
+    }
+    .mirror-term .caret { width: 9px; }
+
+    .section { padding: 80px 18px; }
+    .split { grid-template-columns: 1fr; gap: 32px; }
+    .dual { grid-template-columns: 1fr; }
+    .dual .persp + .persp { border-left: none; border-top: 1px solid var(--rule); }
+}
+@media (max-width: 380px) {
+    /* very narrow phones — hide brand text to preserve nav */
+    .brand-text { display: none; }
+}
+
+/* ── MOTION SAFETY ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .mirror-sketch .s1,
+    .mirror-sketch .s2,
+    .mirror-sketch .s3 { stroke-dashoffset: 0; }
+    .mirror-term .line { opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     HEADER
+     ═════════════════════════════════════════════════════════════════ -->
+<header class="site-header">
+    <a href="#top" class="brand" aria-label="Black Mirror Board — back to top">
+        <img src="./logo.png" alt="" class="brand-logo">
+        <span class="brand-text">BM Board</span>
+    </a>
+    <nav class="site-nav">
+        <a href="#the-board">
+            <span class="lang-en">Board</span>
+            <span class="lang-ja">ボード</span>
+        </a>
+        <a href="#the-terminal">
+            <span class="lang-en">Terminal</span>
+            <span class="lang-ja">ターミナル</span>
+        </a>
+        <a href="./usage.html">
+            <span class="lang-en">Manual</span>
+            <span class="lang-ja">マニュアル</span>
+        </a>
+        <div class="lang-toggle" id="langToggle" role="group" aria-label="switch language">
+            <span class="lang-tok" data-set-lang="en">EN</span>
+            <span class="lang-sep">·</span>
+            <span class="lang-tok" data-set-lang="ja">JP</span>
+        </div>
+        <a href="./app.html" class="launch">$ launch</a>
+    </nav>
+</header>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     HERO — the mirror
+     ═════════════════════════════════════════════════════════════════ -->
+<section class="hero">
+    <div class="hero-mirror" aria-label="a mirror where sketch meets command">
+        <div class="mirror-frame">
+            <!-- Left: designer's sketch drawing live -->
+            <div class="mirror-pane mirror-pane--left">
+                <div class="mirror-pane-label">DESIGNER</div>
+                <svg class="mirror-sketch" viewBox="0 0 300 220" preserveAspectRatio="xMidYMid meet">
+                    <ellipse class="s1" cx="150" cy="100" rx="70" ry="58"/>
+                    <path class="s2" d="M80 170 Q150 180 220 165 T 250 180"/>
+                    <polygon class="s3" points="150,48 190,130 110,130"/>
+                </svg>
+            </div>
+            <!-- Right: hacker's terminal commanding -->
+            <div class="mirror-pane mirror-pane--right">
+                <div class="mirror-pane-label mirror-pane-label--right">HACKER</div>
+                <div class="mirror-term">
+                    <div class="line">❯ draw circle</div>
+                    <div class="line">❯ draw arc</div>
+                    <div class="line">  → 2 strokes captured</div>
+                    <div class="line">❯ biwako-blue</div>
+                    <div class="line">  → retinted to #0044CC<span class="caret"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hero-brand">
+        <h1 class="hero-title lang-en">Black Mirror Board</h1>
+        <h1 class="hero-title lang-ja">ブラックミラーボード</h1>
+        <img src="./logo.png" alt="Black Mirror Board" class="hero-logo">
+    </div>
+
+    <p class="hero-tagline lang-en">Where Designer's Intuition<br><em>meets</em> Hacker's Command.</p>
+    <p class="hero-tagline lang-ja">デザイナーの直感と、<em>ハッカーの</em>コマンドが<br>交差する場所。</p>
+
+    <a class="hero-cta" href="./app.html" data-launch>launch</a>
+
+    <div class="hero-meta">
+        <span class="lang-en">one file</span>
+        <span class="lang-ja">一枚の HTML</span>
+        <span class="lang-en">zero deps</span>
+        <span class="lang-ja">依存ゼロ</span>
+        <span class="lang-en">zero build</span>
+        <span class="lang-ja">ビルド不要</span>
+        <span class="lang-en">local-first</span>
+        <span class="lang-ja">ローカル完結</span>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     SECTION 01 — THE BOARD
+     ═════════════════════════════════════════════════════════════════ -->
+<section class="section" id="the-board">
+    <div class="section-number">
+        <span class="lang-en">Section 01 — THE BOARD</span>
+        <span class="lang-ja">セクション 01 — ボード</span>
+    </div>
+    <h2 class="lang-en">Experience <em>begins</em> at the fingertip.</h2>
+    <h2 class="lang-ja">体験は、指先から<em>始まる</em>。</h2>
+
+    <div class="split">
+        <div>
+            <p class="en lang-en">A pressure-sensitive pen engine. Strokes snap to close. Eight anchors bend every shape. Rotation feels like Illustrator — not a browser demo. Nothing stutters at 60fps.</p>
+            <p class="jp lang-ja">筆圧の重みを読む鉛筆。始点近くで止めれば線は自動で閉じる。8つのアンカーが形を曲げ、回転は Illustrator のそれに近い。ブラウザのデモではなく、道具の仕事。60fps で止まらない。</p>
+            <p class="en lang-en">Themes are a single word: <code>dark</code>, <code>light</code>, <code>gray</code>. Your file is yours — no account, no server, no upload.</p>
+            <p class="jp lang-ja">テーマは一語で切り替わる。<code>dark</code>, <code>light</code>, <code>gray</code>。アカウントは無い。サーバーも無い。あなたのファイルは、あなたのディスクに。</p>
+        </div>
+
+        <div class="demo-frame board-demo" aria-hidden="true">
+            <div class="demo-frame-label">BOARD ▸ LIVE DEMO</div>
+            <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
+                <!-- animated pen stroke: a freehand circle that snaps closed -->
+                <path class="drawn" d="M 100 130 C 100 80, 140 60, 200 60 C 260 60, 300 80, 300 130 C 300 180, 260 200, 200 200 C 140 200, 100 180, 100 130 Z"/>
+                <circle class="snap-ring" cx="100" cy="130" r="6"/>
+            </svg>
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     SECTION 02 — THE TERMINAL
+     ═════════════════════════════════════════════════════════════════ -->
+<section class="section" id="the-terminal">
+    <div class="section-number">
+        <span class="lang-en">Section 02 — THE TERMINAL</span>
+        <span class="lang-ja">セクション 02 — ターミナル</span>
+    </div>
+    <h2 class="lang-en">Magic <em>travels</em> as JSON.</h2>
+    <h2 class="lang-ja">魔法は JSON で<em>流通する</em>。</h2>
+
+    <div class="split">
+        <div class="demo-frame term-demo" aria-hidden="true">
+            <div class="demo-frame-label">TERMINAL ▸ PASTE INTERCEPTED</div>
+            <div><span class="dim">paste</span> &gt; <span class="dim">[JSON payload]</span></div>
+            <div class="pasted">{"command":"grain","action":"for(let i=0;i&lt;120;i++){...}"}</div>
+            <div class="dim">→ schema check... ✓</div>
+            <div class="dim">→ binding $grain...</div>
+            <div class="dim">→ persisting to local storage...</div>
+            <div class="ok">spell acquired — run: $grain</div>
+        </div>
+
+        <div>
+            <p class="en lang-en">Paste a JSON payload. A new spell installs. Type its name. Your canvas bends to its will. Spells live in IndexedDB — portable, remixable, yours.</p>
+            <p class="jp lang-ja">JSON をペーストする。新しい呪文がインストールされ、名前を呼べばキャンバスは従う。呪文は IndexedDB に眠り、いつでも他人と交換できる。</p>
+            <p class="en lang-en"><b>Features are not bought. They are shared as spells.</b></p>
+            <p class="jp lang-ja"><b>機能は買うものではない。呪文として共有するものだ。</b></p>
+            <p class="en lang-en">An AI can write your next spell. Paste the BM API into Claude or ChatGPT, describe what you want, get back a JSON. The ecosystem grows one sentence at a time.</p>
+            <p class="jp lang-ja">次の呪文は AI に書かせられる。BM API を Claude や ChatGPT に貼り、自然言語で依頼すれば、動く JSON が返ってくる。エコシステムは、一文ずつ育つ。</p>
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     SECTION 03 — DUAL PERSPECTIVE
+     ═════════════════════════════════════════════════════════════════ -->
+<section class="section" id="dual">
+    <div class="section-number">
+        <span class="lang-en">Section 03 — DUAL PERSPECTIVE</span>
+        <span class="lang-ja">セクション 03 — 二律背反</span>
+    </div>
+    <h2 class="lang-en">Two minds. <em>One</em> board.</h2>
+    <h2 class="lang-ja">二つの知性、<em>一枚の</em>板。</h2>
+
+    <div class="dual">
+        <div class="persp">
+            <h3><span class="lang-en">Designer</span><span class="lang-ja">デザイナー</span></h3>
+            <ul>
+                <li class="lang-en">Pen, ink, pressure — the hand leads</li>
+                <li class="lang-ja">鉛筆、インク、筆圧 — 手が導く</li>
+                <li class="lang-en">Biwako silence as the default palette</li>
+                <li class="lang-ja">琵琶湖の静寂が、既定のパレット</li>
+                <li class="lang-en">Every shape edits like a native vector</li>
+                <li class="lang-ja">すべての図形が、ベクター然として編まれる</li>
+                <li class="lang-en">Export PNG in one keystroke · SVG in one word</li>
+                <li class="lang-ja">PNG は 1 キーで、SVG は 1 語で書き出せる</li>
+            </ul>
+        </div>
+        <div class="persp">
+            <h3><span class="lang-en">Hacker</span><span class="lang-ja">ハッカー</span></h3>
+            <ul>
+                <li class="lang-en">Terminal, JSON, spells — the mind commands</li>
+                <li class="lang-ja">ターミナル、JSON、呪文 — 知性が命じる</li>
+                <li class="lang-en">Register a spell in one line of JS</li>
+                <li class="lang-ja">1 行の JS で、新しい呪文を登録できる</li>
+                <li class="lang-en">Paste from SNS, drop a .json, bundle everything</li>
+                <li class="lang-ja">SNS から拾い、ファイルで配り、まとめて運ぶ</li>
+                <li class="lang-en">IndexedDB persistence · offline · forever yours</li>
+                <li class="lang-ja">IndexedDB に刻まれ、オフラインで生き続ける</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     EMBEDDED TERMINAL — splash-page spellbook
+     ═════════════════════════════════════════════════════════════════ -->
+<section class="terminal-section" id="try">
+    <div class="section-number">
+        <span class="lang-en">Section 04 — TRY A COMMAND</span>
+        <span class="lang-ja">セクション 04 — コマンドを試す</span>
+    </div>
+    <h2 class="lang-en">The mirror <em>is</em> already listening.</h2>
+    <h2 class="lang-ja">鏡は、すでに<em>聞いている</em>。</h2>
+
+    <div class="term-embed">
+        <div class="out" id="termOut" aria-live="polite" role="log">
+            <div class="entry dim">
+                <span class="lang-en">// BM splash shell · type a command, press Enter.</span>
+                <span class="lang-ja">// BM スプラッシュシェル · コマンドを打って Enter。</span>
+            </div>
+            <div class="entry dim">
+                <span class="lang-en">// try: <span style="color:var(--ink)">launch</span> · <span style="color:var(--ink)">about</span> · <span style="color:var(--ink)">help</span> · <span style="color:var(--ink)">clear</span></span>
+                <span class="lang-ja">// 試す: <span style="color:var(--ink)">launch</span> · <span style="color:var(--ink)">about</span> · <span style="color:var(--ink)">help</span> · <span style="color:var(--ink)">clear</span></span>
+            </div>
+        </div>
+        <form class="term-line" onsubmit="bmRun(event)">
+            <span class="prompt">❯</span>
+            <input id="termIn" type="text" autocomplete="off" spellcheck="false"
+                   placeholder="type: launch · about · help · clear"
+                   aria-label="terminal input">
+        </form>
+        <div class="term-hint lang-en">
+            <code>launch</code> → enter the board &nbsp;·&nbsp;
+            <code>about</code> → philosophy &nbsp;·&nbsp;
+            <code>help</code> → all commands
+        </div>
+        <div class="term-hint lang-ja">
+            <code>launch</code> → ボードへ遷移 &nbsp;·&nbsp;
+            <code>about</code> → 哲学 &nbsp;·&nbsp;
+            <code>help</code> → 全コマンド
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     FOOTER
+     ═════════════════════════════════════════════════════════════════ -->
+<footer>
+    <div class="foot-primary">
+        <div>
+            <span class="lang-en">◼ BM BOARD · kinoshita studio · born by Lake Biwa · 2026</span>
+            <span class="lang-ja">◼ BM BOARD · kinoshita studio · 琵琶湖のほとりで · 2026</span>
+        </div>
+        <div>
+            <a href="./app.html"><span class="lang-en">app</span><span class="lang-ja">アプリ</span></a> &nbsp;·&nbsp;
+            <a href="./usage.html"><span class="lang-en">manual</span><span class="lang-ja">マニュアル</span></a> &nbsp;·&nbsp;
+            <a href="https://99letters.github.io/md.html"><span class="lang-en">dev log</span><span class="lang-ja">開発ログ</span></a>
+        </div>
+    </div>
+    <div class="foot-social">
+        <a href="https://x.com/bmboards" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter) — @bmboards">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+        </a>
+        <a href="https://www.instagram.com/bmboard.official" target="_blank" rel="noopener noreferrer" aria-label="Instagram — @bmboard.official">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+            </svg>
+        </a>
+    </div>
+</footer>
+
+<!-- launch transition overlay -->
+<div class="launch-overlay" id="launchOverlay" aria-hidden="true">
+    <span class="lang-en">entering the board<span class="dots"></span></span>
+    <span class="lang-ja">ボードへ入る<span class="dots"></span></span>
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════════════════
+// LANGUAGE TOGGLE — EN (default) / JP · persists in localStorage
+// ══════════════════════════════════════════════════════════════════
+
+const LANG_KEY = 'bmboard.lang';
+function currentLang() { return document.documentElement.lang === 'ja' ? 'ja' : 'en'; }
+function setLang(lang) {
+    const next = (lang === 'ja') ? 'ja' : 'en';
+    document.documentElement.lang = next;
+    try { localStorage.setItem(LANG_KEY, next); } catch {}
+}
+// Restore preference on load
+try {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved === 'ja' || saved === 'en') document.documentElement.lang = saved;
+} catch {}
+
+// Wire toggle clicks — the whole box swaps, or click a token directly
+document.querySelectorAll('.lang-toggle .lang-tok').forEach(tok => {
+    tok.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setLang(tok.dataset.setLang);
+    });
+});
+document.getElementById('langToggle')?.addEventListener('click', (e) => {
+    // fallback: clicking outside a token → flip
+    if (e.target.matches('.lang-tok')) return;
+    setLang(currentLang() === 'en' ? 'ja' : 'en');
+});
+
+// ══════════════════════════════════════════════════════════════════
+// SPLASH SHELL — a tiny in-page terminal for the product page
+// ══════════════════════════════════════════════════════════════════
+
+const termOut = document.getElementById('termOut');
+const termIn  = document.getElementById('termIn');
+const overlay = document.getElementById('launchOverlay');
+
+const ABOUT_ASCII = `
+ ██████╗ ███╗   ███╗
+ ██╔══██╗████╗ ████║   BLACK MIRROR BOARD
+ ██████╔╝██╔████╔██║   ─────────────────────
+ ██╔══██╗██║╚██╔╝██║   draw · speak · cast
+ ██████╔╝██║ ╚═╝ ██║   kinoshita studio
+ ╚═════╝ ╚═╝     ╚═╝   2026 · shiga · japan
+`.trim();
+
+function printEntry(text, cls) {
+    const d = document.createElement('div');
+    d.className = 'entry' + (cls ? ' ' + cls : '');
+    d.textContent = text;
+    termOut.appendChild(d);
+    termOut.parentElement.scrollTop = termOut.parentElement.scrollHeight;
+    return d;
+}
+function printCmd(v)  { printEntry(v, 'cmd'); }
+function printDim(v)  { printEntry(v, 'dim'); }
+function printOk(v)   { printEntry(v, 'ok'); }
+function printErr(v)  { printEntry(v, 'err'); }
+function printAscii(text) {
+    const pre = document.createElement('pre');
+    pre.className = 'entry ascii';
+    pre.textContent = text;
+    termOut.appendChild(pre);
+    termOut.parentElement.scrollTop = termOut.parentElement.scrollHeight;
+}
+function printBlank() { printEntry('\u00a0', 'dim'); }
+
+function launchToApp() {
+    const ja = currentLang() === 'ja';
+    printOk(ja ? '起動シーケンス開始...' : 'initiating launch sequence...');
+    printDim(ja ? '→ スプラッシュからフェード...' : '→ fading from splash...');
+    printDim(ja ? '→ app.html を読み込み中...' : '→ loading app.html...');
+    overlay.classList.add('on');
+    setTimeout(() => { window.location.href = './app.html'; }, 820);
+}
+
+function bmAbout() {
+    const ja = currentLang() === 'ja';
+    printAscii(ABOUT_ASCII);
+    printBlank();
+    if (ja) {
+        printEntry("琵琶湖のほとりで生まれた黒い板 —", 'dim');
+        printEntry("静寂を既定のパレットに、描いた線は", 'dim');
+        printEntry("JSON で流通する呪文として返ってくる。", 'dim');
+        printBlank();
+        printEntry("描くことでコードが走り、コードを書くことでデザインが生まれる。", 'ok');
+        printEntry("Drawing feeds code. Code feeds design.", 'dim');
+        printBlank();
+        printEntry("— kinoshita studio / 2026", 'dim');
+    } else {
+        printEntry("A blackboard born by Lake Biwa — where silence", 'dim');
+        printEntry("is the default palette and every drawn line", 'dim');
+        printEntry("can echo back as a JSON-portable spell.", 'dim');
+        printBlank();
+        printEntry("Drawing feeds code. Code feeds design.", 'ok');
+        printEntry("描くことでコードが走り、コードを書くことでデザインが生まれる。", 'dim');
+        printBlank();
+        printEntry("— kinoshita studio / 2026", 'dim');
+    }
+}
+
+function bmHelp() {
+    const ja = currentLang() === 'ja';
+    if (ja) {
+        printEntry("利用可能なコマンド:", 'dim');
+        printEntry("  launch            ボード（app.html）へ遷移", 'dim');
+        printEntry("  about             哲学と ASCII アート", 'dim');
+        printEntry("  help              このリファレンス", 'dim');
+        printEntry("  clear             シェル出力クリア", 'dim');
+        printEntry("  version           ビルド情報", 'dim');
+        printEntry("  contact           作者情報", 'dim');
+        printBlank();
+        printEntry("ヒント: ↑ で直前のコマンドを呼び出せる。", 'dim');
+    } else {
+        printEntry("available commands:", 'dim');
+        printEntry("  launch            enter the board (app.html)", 'dim');
+        printEntry("  about             philosophy & ascii art", 'dim');
+        printEntry("  help              this reference", 'dim');
+        printEntry("  clear             wipe the shell", 'dim');
+        printEntry("  version           build info", 'dim');
+        printEntry("  contact           who built it", 'dim');
+        printBlank();
+        printEntry("tip: hit ↑ to recall the last command.", 'dim');
+    }
+}
+
+function bmClear() {
+    termOut.innerHTML = '';
+    printDim(currentLang() === 'ja' ? '// シェルをクリア。' : '// splash shell cleared.');
+}
+
+function bmVersion() {
+    const ja = currentLang() === 'ja';
+    printEntry(ja
+        ? 'BMBOARD スプラッシュ v1.2 · エンジン本体は app.html に同梱'
+        : 'BMBOARD splash v1.2 · engine bundled as app.html', 'ok');
+    printEntry(ja
+        ? '— プリセット: scatter · grid-3x3 · biwako-blue · fetch-img · monoclo · svg'
+        : '— presets: scatter · grid-3x3 · biwako-blue · fetch-img · monoclo · svg', 'dim');
+}
+
+function bmContact() {
+    const ja = currentLang() === 'ja';
+    printEntry(ja ? '作者: kinoshita studio · 滋賀 · 日本' : 'built by kinoshita studio · shiga · japan', 'ok');
+    printEntry(ja ? '  フィードバック → kinoshita.studio@gmail.com' : '  feedback → kinoshita.studio@gmail.com', 'dim');
+    printEntry('  instagram → @tkinoshita99', 'dim');
+    printEntry(ja ? '  開発ログ   → 99letters.github.io/md.html' : '  dev log   → 99letters.github.io/md.html', 'dim');
+}
+
+// ── history (↑ ↓) ────────────────────────────────────────────────
+let termHist = [], termIx = -1, termDraft = '';
+function pushHist(v) {
+    if (!v) return;
+    if (termHist[termHist.length-1] === v) return;
+    termHist.push(v);
+    if (termHist.length > 40) termHist.shift();
+    termIx = -1;
+}
+
+function bmRun(e) {
+    if (e) e.preventDefault();
+    const raw = (termIn.value || '').trim();
+    if (!raw) return;
+    termIn.value = '';
+    termIx = -1; termDraft = '';
+    pushHist(raw);
+
+    const head = raw.toLowerCase().replace(/^\$\s*/, '');
+    printCmd(raw);
+
+    switch (head) {
+        case 'launch': case 'start': case 'go':
+            launchToApp(); break;
+        case 'about': case 'philosophy': case 'who':
+            bmAbout(); break;
+        case 'help': case '?':
+            bmHelp(); break;
+        case 'clear': case 'flush':
+            bmClear(); break;
+        case 'version': case 'ver':
+            bmVersion(); break;
+        case 'contact': case 'feedback':
+            bmContact(); break;
+        case 'ls': case 'list':
+            printDim(currentLang() === 'ja'
+                ? "呪文は app 内に眠る — launch で入ってから list を打つと見える。"
+                : "spells live inside the app — type launch to enter."); break;
+        default:
+            printErr(head + (currentLang() === 'ja'
+                ? ": コマンドが見つかりません — 'help' と打ってください。"
+                : ": command not found — type 'help'."));
+    }
+}
+
+termIn.addEventListener('keydown', e => {
+    if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!termHist.length) return;
+        if (termIx === -1) { termDraft = termIn.value; termIx = termHist.length; }
+        termIx = Math.max(0, termIx - 1);
+        termIn.value = termHist[termIx] || '';
+        requestAnimationFrame(() => termIn.setSelectionRange(termIn.value.length, termIn.value.length));
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (termIx === -1) return;
+        termIx++;
+        if (termIx >= termHist.length) { termIx = -1; termIn.value = termDraft; }
+        else { termIn.value = termHist[termIx]; }
+        requestAnimationFrame(() => termIn.setSelectionRange(termIn.value.length, termIn.value.length));
+    }
+});
+
+// ── brand (logo) click → smooth scroll to top ────────────────────
+document.querySelector('.brand')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ── intercept hero-cta + nav launch for fade transition ──────────
+document.querySelectorAll('[data-launch], .site-nav .launch, .hero-cta').forEach(el => {
+    el.addEventListener('click', (e) => {
+        // Only intercept same-origin links to app.html
+        const href = el.getAttribute('href') || '';
+        if (!href.endsWith('app.html')) return;
+        e.preventDefault();
+        overlay.classList.add('on');
+        setTimeout(() => { window.location.href = href; }, 820);
+    });
+});
+
+// ── focus the input when the terminal scrolls into view ──────────
+const termSection = document.getElementById('try');
+if ('IntersectionObserver' in window && termSection) {
+    const io = new IntersectionObserver((entries) => {
+        for (const ent of entries) {
+            if (ent.isIntersecting && ent.intersectionRatio > 0.5) {
+                // subtle — don't steal focus on mobile
+                if (window.matchMedia('(hover: hover)').matches) termIn.focus({ preventScroll: true });
+            }
+        }
+    }, { threshold: [0.5] });
+    io.observe(termSection);
+}
+</script>
+</body>
+</html>

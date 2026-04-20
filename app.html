@@ -694,6 +694,97 @@
         }
         .usage-close:hover { border-color: var(--glow); color: var(--glow); }
 
+        /* ── BLACK MIRROR WIPE (v1.2 easter egg · self-facing camera) ─────── */
+        #bmBlackMirrorWipe {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            width: 220px;
+            height: 165px;
+            z-index: 9000;
+            border: 1px solid var(--glow, #F0EDE6);
+            background: #000;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.55), 0 0 0 2px rgba(0,0,0,0.25);
+            overflow: hidden;
+            display: none;
+            pointer-events: auto;
+            transform-origin: top right;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            opacity: 0;
+        }
+        #bmBlackMirrorWipe.on {
+            display: block;
+            opacity: 1;
+            animation: bmWipeIn 0.55s cubic-bezier(0.2,0.7,0.2,1) both;
+        }
+        @keyframes bmWipeIn {
+            0%   { opacity: 0; transform: scale(0.6) translateY(-10px); }
+            60%  { opacity: 1; transform: scale(1.04) translateY(0); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        #bmBlackMirrorWipe video {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+            transform: scaleX(-1);   /* selfie mirror — natural for user */
+            filter: grayscale(0.18) contrast(1.08);
+        }
+        #bmBlackMirrorWipe .bm-wipe-dot {
+            position: absolute;
+            top: 8px; left: 10px;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #FF3B30;
+            box-shadow: 0 0 8px #FF3B30, 0 0 2px #FF3B30;
+            animation: bmWipeBlink 1.4s infinite;
+        }
+        @keyframes bmWipeBlink {
+            0%, 55%, 100% { opacity: 1; }
+            60%, 90%      { opacity: 0.25; }
+        }
+        #bmBlackMirrorWipe .bm-wipe-label {
+            position: absolute;
+            bottom: 7px; left: 10px;
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.26em;
+            color: #F0EDE6;
+            text-transform: uppercase;
+            mix-blend-mode: difference;
+            text-shadow: 0 0 4px rgba(0,0,0,0.6);
+            pointer-events: none;
+        }
+        #bmBlackMirrorWipe .bm-wipe-close {
+            position: absolute;
+            top: 4px; right: 4px;
+            width: 20px; height: 20px;
+            background: rgba(0,0,0,0.5);
+            color: #F0EDE6;
+            border: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        #bmBlackMirrorWipe:hover .bm-wipe-close { opacity: 1; }
+        #bmBlackMirrorWipe .bm-wipe-close:hover { background: #FF3B30; }
+
+        @media (max-width: 640px) {
+            #bmBlackMirrorWipe {
+                top: 58px;
+                right: 10px;
+                width: 128px;
+                height: 170px;
+            }
+            #bmBlackMirrorWipe .bm-wipe-label {
+                font-size: 8px;
+                letter-spacing: 0.2em;
+            }
+        }
+
         /* ── DARK CANVAS MODE ─────────────────────────────────────────────── */
         /* All surfaces read from theme tokens so a single mode flip cascades
            across the whole UI (toolbar, popovers, swatches, separators). */
@@ -1233,6 +1324,8 @@ Set before drawing, or apply to selected object.</pre>
 <b>T</b>  stdin echo → terminal</pre>
         <h3>TERMINAL COMMANDS</h3>
         <pre><b>dark</b> / <b>light</b> / <b>gray</b>     theme switch
+<b>Black Mirror</b>             live selfie wipe · top-right
+<b>Black Mirror off</b>         dismiss the selfie wipe
 <b>youtube</b>                  a surprise awaits
 <b>help</b> / <b>?</b>                 quick in-terminal reference
 <b>usage</b> / <b>man</b> / <b>docs</b>       summon this manual overlay
@@ -3871,6 +3964,82 @@ const YT_ASCII = `
 ║  ████████████████████████████████  100%       ║
 ╚═══════════════════════════════════════════════╝`.trim();
 
+// ══════════════════════════════════════════════════
+// BLACK MIRROR WIPE — the board reflects you back
+//   type "Black Mirror"      → camera on, selfie in top-right wipe
+//   type "Black Mirror off"  → camera off, wipe dismissed
+// Everything stays local — no network, no recording.
+// ══════════════════════════════════════════════════
+let _bmMirrorStream = null;
+let _bmMirrorWipe   = null;
+
+async function enableBlackMirror() {
+    if (_bmMirrorStream) {
+        printRaw('[black mirror] already active — "Black Mirror off" to dismiss', 't-dim');
+        return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        printRaw('[black mirror] camera API unavailable in this browser', 't-err');
+        return;
+    }
+    enqueue('Black Mirror', [
+        '→ requesting camera access...',
+        '→ wiring picture-in-picture wipe...',
+        '→ the board will now reflect you.',
+    ]);
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+            audio: false,
+        });
+        _bmMirrorStream = stream;
+
+        if (!_bmMirrorWipe) {
+            const wipe = document.createElement('div');
+            wipe.id = 'bmBlackMirrorWipe';
+            wipe.innerHTML =
+                '<video autoplay playsinline muted></video>'
+              + '<span class="bm-wipe-dot"></span>'
+              + '<span class="bm-wipe-label">◼ BLACK MIRROR</span>'
+              + '<button type="button" class="bm-wipe-close" aria-label="close wipe">×</button>';
+            document.body.appendChild(wipe);
+            wipe.querySelector('.bm-wipe-close').addEventListener('click', disableBlackMirror);
+            _bmMirrorWipe = wipe;
+        }
+        const video = _bmMirrorWipe.querySelector('video');
+        video.srcObject = stream;
+        // Force autoplay on some browsers:
+        try { await video.play(); } catch {}
+        _bmMirrorWipe.classList.add('on');
+        printRaw('[OK] black mirror online — you are the reflection.', 't-ok');
+    } catch (err) {
+        const msg = (err && err.name === 'NotAllowedError')
+            ? 'permission denied — the mirror stays blind.'
+            : (err && err.name === 'NotFoundError')
+                ? 'no camera detected on this device.'
+                : ((err && err.message) || 'unknown error');
+        printRaw(`[black mirror] ${msg}`, 't-err');
+    }
+}
+
+function disableBlackMirror() {
+    if (!_bmMirrorStream) {
+        printRaw('[black mirror] not active — type "Black Mirror" to enable', 't-dim');
+        return;
+    }
+    try { _bmMirrorStream.getTracks().forEach(t => t.stop()); } catch {}
+    _bmMirrorStream = null;
+    if (_bmMirrorWipe) {
+        const video = _bmMirrorWipe.querySelector('video');
+        if (video) { try { video.pause(); } catch {} video.srcObject = null; }
+        _bmMirrorWipe.classList.remove('on');
+    }
+    enqueue('Black Mirror off', [
+        '→ releasing camera device...',
+        '[OK] mirror dismissed — the gaze returns to the board.',
+    ]);
+}
+
 function triggerYouTube() {
     enqueue('curl -v --http2 "https://www.youtube.com/"', [
         '* Trying 142.250.186.46:443...',
@@ -4195,6 +4364,18 @@ function runCommand(val) {
     // printRaw(`[DBG] head="${head}" rest="${rest}" raw="${raw}"`, 't-dim');
 
     if (head==='youtube'||head==='yt'||head==='youtube.com') { enqueue(`stdin > "${val}"`,['→ keyword match: YOUTUBE','→ triggering easter egg...']); setTimeout(triggerYouTube,600); return; }
+
+    // ── black mirror wipe (self-facing camera) ─────────────────────────────
+    //   "Black Mirror"       → on
+    //   "Black Mirror off"   → off
+    //   "Black Mirror on"    → also on (alias)
+    if (head === 'black') {
+        const sub = rest.toLowerCase().trim();
+        if (sub === 'mirror' || sub === 'mirror on') { enableBlackMirror(); return; }
+        if (sub === 'mirror off' || sub === 'mirror-off') { disableBlackMirror(); return; }
+        printRaw('black: usage → "Black Mirror" / "Black Mirror off"', 't-err');
+        return;
+    }
     if (head==='clear'||head==='flush') { flushTerm(); return; }
     if (head==='dark'||low==='dark mode') { if(MODE==='dark'){printRaw('[SYSTEM] already in dark mode.','t-dim');return;} enqueue('[SYSTEM] Switching to DARK MODE...',['[SYSTEM] inverting color matrix...','[SYSTEM] canvas: #000000  stroke: #F0EDE6','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('dark'),220); return; }
     if (head==='light'||low==='light mode') { if(MODE==='light'){printRaw('[SYSTEM] already in light mode.','t-dim');return;} enqueue('[SYSTEM] Switching to LIGHT MODE...',['[SYSTEM] restoring color matrix...','[SYSTEM] canvas: #FAFAF8  stroke: #0c0c0c','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('light'),220); return; }
@@ -4229,6 +4410,7 @@ function runCommand(val) {
             '  ╰─────────────────────────────────────────────────────────╯',
             '',
             '  THEMES: dark · light · gray     TOOLS: S P N E C G Q A T',
+            '  CAMERA: "Black Mirror" / "Black Mirror off"  (top-right wipe)',
         ]);
         return;
     }
