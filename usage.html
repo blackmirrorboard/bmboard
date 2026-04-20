@@ -406,6 +406,11 @@ $ fetch-img &lt;kw&gt; &lt;n&gt;    <span class="c">→  summon n images (Lorem 
 $ monoclo               <span class="c">→  grayscale the selected image(s)</span>
 $ svg                   <span class="c">→  selection → editable vector SVG</span>
 
+<span class="c">── camera & sharing (v1.2) ──</span>
+Black Mirror            <span class="c">→  selfie camera wipe, top-right PIP</span>
+Black Mirror off        <span class="c">→  dismiss the camera wipe</span>
+share                   <span class="c">→  canvas → shareable URL (modal, no args)</span>
+
 <span class="c">── export ──</span>
 export                  <span class="c">→  selection as transparent PNG</span>
 export magic            <span class="c">→  spell picker modal</span>
@@ -775,6 +780,7 @@ Esc       Dismiss / deselect</pre>
         <tbody>
             <tr><td><code>export</code></td><td>transparent PNG</td><td>Selection (or all) · Save-As dialog</td></tr>
             <tr><td><code>$ svg</code></td><td><code>BM_CANVAS_*.svg</code></td><td>Selection (or all) · editable vector · Illustrator / Figma / Inkscape</td></tr>
+            <tr><td><code>share</code></td><td>URL in modal</td><td>Canvas state → gzip-encoded URL · paste to SNS · recipient opens, board restores</td></tr>
             <tr><td><code>export magic</code></td><td><code>*_SPELLS.json</code></td><td>Modal · checkbox picker · pick any combination</td></tr>
             <tr><td><code>export data</code></td><td><code>*_BUNDLE.json</code> or <code>*_SPELLS.json</code></td><td>Modal · toggle canvas / user / preset</td></tr>
             <tr><td><code>share &lt;name&gt;</code></td><td>clipboard JSON</td><td>One spell · post to SNS directly</td></tr>
@@ -782,6 +788,28 @@ Esc       Dismiss / deselect</pre>
             <tr><td><code>export-spells [names]</code></td><td><code>*_SPELLS.json</code></td><td>Non-interactive · named or all user</td></tr>
         </tbody>
     </table>
+
+    <h3>8.1c URL share — <code>share</code> でキャンバス丸ごと送る</h3>
+    <div class="bil">
+        <div class="jp"><span class="flag">JP</span><code>share</code> を引数なしで打つと、現在のキャンバス状態が**gzip 圧縮 + base64url** でエンコードされ、URL hash に埋め込まれます。モーダルが開いて URL を表示、<code>COPY URL</code> でクリップボードへ。受信側が URL を開くと、自動で同じキャンバスが復元されます。</div>
+        <div class="en"><span class="flag">EN</span>Type <code>share</code> with no arguments and the current canvas gets gzip-compressed, base64url-encoded, and attached to the URL as a <code>#s=...</code> hash. A modal opens with the URL and a copy button. Whoever opens that URL reconstructs your board automatically.</div>
+    </div>
+    <pre class="code"><span class="c">// Typical size</span>
+  10 shapes   → ~1 KB
+  50 shapes   → ~3 KB
+ 200 shapes   → ~8 KB   <span class="c">(warning threshold)</span>
+ 500+ shapes  → 10 KB+  <span class="c">(may break SNS link previews)</span>
+
+<span class="c">// Stripped to keep URL short</span>
+· image objects (dataURLs too heavy) → use <code>export data</code> for full fidelity
+
+<span class="c">// Browser requirement</span>
+CompressionStream API — Chrome 80+ · Safari 16.4+ · Firefox 113+
+
+<span class="c">// Receiver behavior</span>
+open URL → board loads with #s=... → decodes → replaces canvas
+         terminal logs "[SYSTEM] shared-state detected"
+         URL hash is cleared after load (reload is idempotent)</pre>
 
     <h3>8.1b SVG export — ベクター書き出しの詳細</h3>
     <div class="bil">
@@ -1007,6 +1035,25 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
         <tbody>
             <tr><td>🇯🇵 動作が重い / 🇬🇧 Sluggish</td><td>🇯🇵 <code>objects</code> で数を確認、1000 超なら分割推奨。画像が多いとメモリを食う / 🇬🇧 Run <code>objects</code>. Split if &gt;1000. Many inline images eat memory.</td></tr>
             <tr><td><code>fetch-img</code> 20枚以上で固まる</td><td>🇯🇵 Lorem Flickr のレート制限。10枚ずつ取得を推奨 / 🇬🇧 Rate limit — fetch 10 at a time.</td></tr>
+        </tbody>
+    </table>
+
+    <h3>10.5b Camera wipe / カメラワイプ</h3>
+    <table>
+        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+            <tr><td>🇯🇵 <code>Black Mirror</code> と打ってもカメラが出ない / 🇬🇧 Camera doesn't open</td><td>🇯🇵 <code>file://</code> だと secure-context 制約で動かない。HTTPS または <code>localhost</code> に / 🇬🇧 <code>file://</code> blocks getUserMedia. Serve via <code>python -m http.server</code> or HTTPS.</td></tr>
+            <tr><td>🇯🇵 許可したのに画面が真っ黒 / 🇬🇧 Allowed but video is black</td><td>🇯🇵 他のアプリがカメラ占有中（Zoom 等）。<code>Black Mirror off</code> → <code>Black Mirror</code> で再試行 / 🇬🇧 Another app (Zoom etc.) holds the device. Cycle off/on.</td></tr>
+        </tbody>
+    </table>
+
+    <h3>10.5c Share URL</h3>
+    <table>
+        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+            <tr><td>🇯🇵 <code>share</code> でモーダルが出ない / 🇬🇧 <code>share</code> does nothing</td><td>🇯🇵 キャンバスが空 or Safari 16.3 以下（CompressionStream 未対応） / 🇬🇧 Empty canvas or Safari ≤16.3 (no CompressionStream).</td></tr>
+            <tr><td>🇯🇵 URL が長すぎて SNS で壊れる / 🇬🇧 URL is too long for SNS</td><td>🇯🇵 オブジェクト数を減らすか <code>export data</code> でファイル共有 / 🇬🇧 Reduce object count or use <code>export data</code> for a file bundle.</td></tr>
+            <tr><td>🇯🇵 共有 URL を開いたらキャンバスが消えた / 🇬🇧 Receiving a share URL wiped my canvas</td><td>🇯🇵 <code>Cmd+Z</code> で戻せる場合あり。事前に <code>save &lt;名前&gt;</code> 推奨 / 🇬🇧 <code>Cmd+Z</code> may help; pre-save with <code>save &lt;name&gt;</code>.</td></tr>
         </tbody>
     </table>
 

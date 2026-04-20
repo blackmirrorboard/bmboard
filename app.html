@@ -841,9 +841,19 @@
             display: none;
             pointer-events: auto;
             transform-origin: top right;
-            transition: opacity 0.4s ease, transform 0.4s ease;
+            transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.2s ease;
             opacity: 0;
+            cursor: grab;
+            touch-action: none;     /* prevent browser gestures on the wipe */
+            user-select: none;
+            -webkit-user-select: none;
         }
+        #bmBlackMirrorWipe.dragging {
+            cursor: grabbing;
+            transition: none;        /* no lag during drag */
+            box-shadow: 0 14px 48px rgba(0,0,0,0.7), 0 0 0 2px rgba(0,0,0,0.35);
+        }
+        #bmBlackMirrorWipe video { pointer-events: none; }   /* let pointer reach parent */
         #bmBlackMirrorWipe.on {
             display: block;
             opacity: 1;
@@ -889,17 +899,18 @@
         #bmBlackMirrorWipe .bm-wipe-close {
             position: absolute;
             top: 4px; right: 4px;
-            width: 20px; height: 20px;
-            background: rgba(0,0,0,0.5);
+            width: 22px; height: 22px;
+            background: rgba(0,0,0,0.6);
             color: #F0EDE6;
             border: none;
             font-family: 'Space Mono', monospace;
-            font-size: 12px;
-            line-height: 20px;
+            font-size: 13px;
+            line-height: 22px;
             text-align: center;
-            cursor: pointer;
+            cursor: pointer;       /* overrides parent grab cursor */
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, background 0.15s;
+            touch-action: manipulation;
         }
         #bmBlackMirrorWipe:hover .bm-wipe-close { opacity: 1; }
         #bmBlackMirrorWipe .bm-wipe-close:hover { background: #FF3B30; }
@@ -1495,7 +1506,7 @@ Set before drawing, or apply to selected object.</pre>
 <b>T</b>  stdin echo → terminal</pre>
         <h3>TERMINAL COMMANDS</h3>
         <pre><b>dark</b> / <b>light</b> / <b>gray</b>     theme switch
-<b>Black Mirror</b>             live selfie wipe · top-right
+<b>Black Mirror</b>             live selfie wipe · top-right · <b>drag to reposition</b>
 <b>Black Mirror off</b>         dismiss the selfie wipe
 <b>youtube</b>                  a surprise awaits
 <b>help</b> / <b>?</b>                 quick in-terminal reference
@@ -4305,6 +4316,76 @@ setTimeout(loadSharedStateFromHash, 600);
 let _bmMirrorStream = null;
 let _bmMirrorWipe   = null;
 
+// Make the Black Mirror wipe draggable via pointer events.
+// Viewport-constrained, works with mouse + touch + pen.
+// The close (×) button is excluded from drag so clicks still dismiss the wipe.
+function makeWipeDraggable(el) {
+    let dragging = false;
+    let sx = 0, sy = 0;       // pointer start
+    let ox = 0, oy = 0;       // element start (top-left)
+    let moved = false;
+
+    el.addEventListener('pointerdown', (e) => {
+        // Don't start drag from the close button
+        if (e.target.closest && e.target.closest('.bm-wipe-close')) return;
+        // Only primary button / touch / pen
+        if (e.button && e.button !== 0) return;
+
+        dragging = true;
+        moved = false;
+        try { el.setPointerCapture(e.pointerId); } catch {}
+
+        const rect = el.getBoundingClientRect();
+        sx = e.clientX; sy = e.clientY;
+        ox = rect.left; oy = rect.top;
+
+        // Switch to left/top-anchored positioning for math simplicity
+        el.style.left  = ox + 'px';
+        el.style.top   = oy + 'px';
+        el.style.right = 'auto';
+        el.classList.add('dragging');
+        e.preventDefault();
+    });
+
+    el.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - sx;
+        const dy = e.clientY - sy;
+        if (!moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) moved = true;
+
+        const w = el.offsetWidth;
+        const h = el.offsetHeight;
+        const maxL = Math.max(0, window.innerWidth  - w);
+        const maxT = Math.max(0, window.innerHeight - h);
+        const nx = Math.min(maxL, Math.max(0, ox + dx));
+        const ny = Math.min(maxT, Math.max(0, oy + dy));
+        el.style.left = nx + 'px';
+        el.style.top  = ny + 'px';
+    });
+
+    const end = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        try { el.releasePointerCapture(e.pointerId); } catch {}
+        el.classList.remove('dragging');
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+
+    // Keep wipe inside viewport when the window resizes
+    window.addEventListener('resize', () => {
+        if (!el.classList.contains('on')) return;
+        const rect = el.getBoundingClientRect();
+        const maxL = Math.max(0, window.innerWidth  - rect.width);
+        const maxT = Math.max(0, window.innerHeight - rect.height);
+        if (rect.left > maxL || rect.top > maxT) {
+            el.style.left = Math.min(maxL, Math.max(0, rect.left)) + 'px';
+            el.style.top  = Math.min(maxT, Math.max(0, rect.top))  + 'px';
+            el.style.right = 'auto';
+        }
+    });
+}
+
 async function enableBlackMirror() {
     if (_bmMirrorStream) {
         printRaw('[black mirror] already active — "Black Mirror off" to dismiss', 't-dim');
@@ -4336,6 +4417,7 @@ async function enableBlackMirror() {
               + '<button type="button" class="bm-wipe-close" aria-label="close wipe">×</button>';
             document.body.appendChild(wipe);
             wipe.querySelector('.bm-wipe-close').addEventListener('click', disableBlackMirror);
+            makeWipeDraggable(wipe);
             _bmMirrorWipe = wipe;
         }
         const video = _bmMirrorWipe.querySelector('video');

@@ -1,21 +1,20 @@
-<div align="center">
-<pre>
+```
  ██████╗ ███╗   ███╗
  ██╔══██╗████╗ ████║     BLACK MIRROR BOARD
  ██████╔╝██╔████╔██║     ─────────────────────────────
  ██╔══██╗██║╚██╔╝██║     draw · speak · cast
  ██████╔╝██║ ╚═╝ ██║     v1.2 · kinoshita studio · 2026
- ╚═════╝ ╚═╝     ╚═╝     updated: 2026-04-19
-</pre>
+ ╚═════╝ ╚═╝     ╚═╝     updated: 2026-04-20
+```
 
-![stack](https://img.shields.io/badge/stack-vanilla_JS-000?style=flat-square)
-![deps](https://img.shields.io/badge/deps-zero-000?style=flat-square)
-![canvas](https://img.shields.io/badge/canvas-HTML5-000?style=flat-square)
-![themes](https://img.shields.io/badge/themes-light_%7C_dark_%7C_gray-000?style=flat-square)
-![spells](https://img.shields.io/badge/spells-JSON_portable-000?style=flat-square)
-![license](https://img.shields.io/badge/license-MIT-000?style=flat-square)
-
-</div>
+<p align="center">
+  <img src="https://img.shields.io/badge/stack-vanilla_JS-000?style=flat-square" alt="stack">
+  <img src="https://img.shields.io/badge/deps-zero-000?style=flat-square" alt="deps">
+  <img src="https://img.shields.io/badge/canvas-HTML5-000?style=flat-square" alt="canvas">
+  <img src="https://img.shields.io/badge/themes-light_%7C_dark_%7C_gray-000?style=flat-square" alt="themes">
+  <img src="https://img.shields.io/badge/spells-JSON_portable-000?style=flat-square" alt="spells">
+  <img src="https://img.shields.io/badge/license-MIT-000?style=flat-square" alt="license">
+</p>
 
 ---
 
@@ -52,6 +51,20 @@ SVG EXPORT (new)    `$ svg` → selection (or all) as editable vector SVG
                     opens in Illustrator / Figma / Inkscape as layered shapes
                     ellipse · rect · polygon · path · text · image · arrow
                     theme colors resolved on write · rotation → <g rotate(...)>
+
+BLACK MIRROR (new)  `Black Mirror` → selfie camera wipe in top-right
+                    `Black Mirror off` → stops camera, dismisses wipe
+                    getUserMedia + selfie-mirrored video + REC dot
+                    requires HTTPS / localhost (secure context)
+
+SHARE URL (new)     `share` (no args) → canvas state → shareable URL
+                    gzip + base64url encoded in URL hash
+                    recipient opens URL → board restores exactly
+                    images auto-stripped · ~2–8 KB typical size
+
+DEL/BACKSPACE FIX   delete selected object(s) from terminal input
+                    (provided input is empty) — previously required
+                    canvas focus first
 
 EXPORT UX           export              → selection as transparent PNG
                     export magic        → picker modal (per-spell checkboxes)
@@ -212,6 +225,9 @@ T          text            Cmd+⇧Z     redo
 > export-all           non-interactive full bundle
 > export-spells [...]  non-interactive spell package
 > svg                  selection → editable vector SVG
+> share                canvas → shareable URL (modal, no args)
+> Black Mirror         selfie camera wipe (top-right)
+> Black Mirror off     dismiss the camera wipe
 > fetch-img <kw> <n>   summon n images by keyword
 > monoclo              grayscale selected image(s)
 > scatter              scatter selected objects
@@ -323,20 +339,18 @@ Push. Done.
 ## Contact
 
 ```
-feedback   →  kinoshita.studio@gmail.com
-              subject: Black Mirror Feedback
+feedback   →  blackmirror.board@gmail.com
+              subject: Black Mirror Board Feedback
               (tap the logo in-app to open the form)
 
-instagram  →  @tkinoshita99
-              instagram.com/tkinoshita99/
+x          →  @bmboards              x.com/bmboards
+instagram  →  @bmboard.official      instagram.com/bmboard.official
 
-dev log    →  /md.html  — retrospective from v0.1 → v1.2
+dev log    →  99letters.github.io/md.html  — retrospective v0.1 → v1.2
 ```
 
 ---
 
-<div align="center">
-
-*Draw · Speak · Cast. — kinoshita studio / 2026-04-19*
-
-</div>
+<p align="center">
+  <em>Draw · Speak · Cast. — kinoshita studio / 2026-04-20</em>
+</p>
