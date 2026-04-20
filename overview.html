@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⬛ BLACK MIRROR — Overview</title>
+    <link rel="icon" type="image/svg+xml"
+          href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='5' y='5' width='22' height='22' rx='2' fill='%230c0c0c'/><rect x='11' y='11' width='4' height='10' fill='%23FAFAF8'/><rect x='17' y='11' width='4' height='10' fill='%23FAFAF8'/></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --ink:   #080808;
+            --paper: #FAFAF8;
+            --glow:  #F2EFE8;
+            --dim:   #666;
+            --line:  #242424;
+            --mid:   #BEBAB2;
+            --warm:  #a0745a;
+        }
+
+        body {
+            background: var(--ink);
+            color: var(--glow);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        header {
+            border-bottom: 1px solid var(--line);
+            padding: 16px 40px;
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 0.24em;
+            color: var(--glow);
+        }
+
+        .logo-sub { font-size: 9px; color: var(--dim); letter-spacing: 0.1em; }
+
+        .nav {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav a {
+            color: var(--dim);
+            text-decoration: none;
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            border: 1px solid var(--line);
+            padding: 4px 10px;
+            transition: all 0.15s;
+        }
+
+        .nav a:hover { border-color: var(--glow); color: var(--glow); }
+        .nav a.active { border-color: var(--glow); color: var(--glow); }
+
+        /* ── Tab bar ── */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--line);
+            padding: 0 40px;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--dim);
+            font-family: inherit;
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tab:hover { color: var(--mid); }
+        .tab.active { color: var(--glow); border-bottom-color: var(--glow); }
+
+        /* ── Content ── */
+        .content-area {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 48px 40px;
+        }
+
+        /* MD styles */
+        .md-body h1 {
+            font-size: 1.6rem;
+            font-weight: 400;
+            letter-spacing: 0.06em;
+            color: var(--glow);
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .md-body h2 {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--glow);
+            margin: 44px 0 14px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--line);
+            letter-spacing: 0.1em;
+        }
+
+        .md-body h3 {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--warm);
+            margin: 28px 0 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .md-body p {
+            color: var(--mid);
+            line-height: 1.85;
+            margin-bottom: 14px;
+        }
+
+        .md-body ul, .md-body ol {
+            margin: 10px 0 18px 22px;
+        }
+
+        .md-body li {
+            color: var(--mid);
+            line-height: 1.85;
+            margin-bottom: 4px;
+        }
+
+        .md-body strong { color: var(--glow); font-weight: 600; }
+
+        .md-body blockquote {
+            border-left: 2px solid var(--warm);
+            padding: 6px 0 6px 18px;
+            margin: 18px 0;
+            color: var(--mid);
+            font-style: italic;
+        }
+
+        .md-body code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            background: var(--line);
+            color: var(--mid);
+            padding: 1px 6px;
+        }
+
+        .md-body pre {
+            background: #050505;
+            border: 1px solid var(--line);
+            padding: 20px 22px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-size: 0.76rem;
+            line-height: 1.7;
+            color: #9a9690;
+            /* first pre = logo block — give it a bit more breathing room */
+        }
+
+        /* Logo pre — first code block in README */
+        .md-body pre:first-of-type {
+            color: var(--glow);
+            font-size: 0.72rem;
+            letter-spacing: 0.01em;
+            border-color: #2a2a2a;
+            background: #020202;
+        }
+
+        .md-body pre code { background: none; padding: 0; color: inherit; }
+
+        .md-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.82rem;
+        }
+
+        .md-body th {
+            font-size: 0.6rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--dim);
+            border-bottom: 1px solid var(--line);
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        .md-body td {
+            border-bottom: 1px solid var(--line);
+            padding: 8px 10px;
+            vertical-align: top;
+            color: var(--mid);
+        }
+
+        .md-body hr {
+            border: none;
+            border-top: 1px solid var(--line);
+            margin: 36px 0;
+        }
+
+        .md-body a { color: var(--mid); }
+
+        /* Badge images */
+        .md-body p > img {
+            display: inline-block;
+            vertical-align: middle;
+            margin: 2px 3px 2px 0;
+            filter: brightness(0.85);
+        }
+
+        /* Loading */
+        .loading {
+            color: var(--dim);
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            padding: 40px 0;
+        }
+
+        @media (max-width: 640px) {
+            header, .tabs, .content-area { padding-left: 20px; padding-right: 20px; }
+            .content-area { padding-top: 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div>
+        <div class="logo">◼ BLACK MIRROR BOARD <span style="color:var(--dim);font-size:9px;letter-spacing:0.18em;margin-left:6px;">v1.2</span></div>
+        <div class="logo-sub">Draw to Build — 99letters studio / 2026-04-16</div>
+    </div>
+    <nav class="nav">
+        <a href="app.html">← APP</a>
+        <a href="usage.html">USAGE HTML</a>
+        <a href="../../md.html">DEV LOG</a>
+        <a href="../../history.html">SESSIONS</a>
+    </nav>
+</header>
+
+<div class="tabs">
+    <button class="tab active" data-file="README.md">README</button>
+    <button class="tab" data-file="usage.md">USAGE (MD)</button>
+    <button class="tab" data-file="ux.md">UX</button>
+    <button class="tab" data-file="designer.md">DESIGN</button>
+    <button class="tab" data-file="marketer.md">MARKET</button>
+</div>
+
+<div class="content-area">
+    <div class="md-body" id="mdBody">
+        <div class="loading">loading…</div>
+    </div>
+</div>
+
+<script>
+    const mdBody = document.getElementById('mdBody');
+
+    async function loadMd(file) {
+        try {
+            const res    = await fetch(file);
+            if (!res.ok) throw new Error(`${res.status}`);
+            const buf    = await res.arrayBuffer();
+            const text   = new TextDecoder('utf-8').decode(buf);
+            mdBody.innerHTML = marked.parse(text);
+            window.scrollTo(0, 0);
+        } catch(e) {
+            mdBody.innerHTML = `<p style="color:#666">Error loading ${file}: ${e.message}</p>`;
+        }
+    }
+
+    document.querySelectorAll('.tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            loadMd(btn.dataset.file);
+        });
+    });
+
+    // Initial load
+    loadMd('README.md');
+</script>
+</body>
+</html>
