@@ -268,13 +268,19 @@
             text-align: center;
         }
 
+        .fm-social-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .fm-social-btn,
         .fm-ig-link {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 7px;
             min-height: 44px;
-            margin-top: 10px;
             text-decoration: none;
             color: #aaa;
             font-family: 'Courier New', Courier, monospace;
@@ -284,7 +290,9 @@
             transition: color 0.15s, border-color 0.15s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
         }
+        .fm-social-btn:hover,
         .fm-ig-link:hover { color: #111; border-color: #999; }
 
         .header-right {
@@ -693,6 +701,130 @@
             padding: 6px 14px; cursor: pointer;
         }
         .usage-close:hover { border-color: var(--glow); color: var(--glow); }
+
+        /* ── SHARE URL MODAL (v1.2 · canvas → shareable link) ─────────────── */
+        #shareUrlOverlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 9200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #shareUrlOverlay.open { display: flex; }
+        #shareUrlModal {
+            background: #fafaf8;
+            color: #0c0c0c;
+            width: min(560px, 94vw);
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 28px 26px 24px;
+            position: relative;
+            border: 1px solid #0c0c0c;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            font-family: 'Space Mono', 'Courier New', Courier, monospace;
+        }
+        .share-close {
+            position: absolute;
+            top: 12px; right: 14px;
+            width: 28px; height: 28px;
+            border: 1px solid #ccc;
+            background: transparent;
+            color: #666;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 26px;
+            text-align: center;
+            padding: 0;
+        }
+        .share-close:hover { border-color: #0c0c0c; color: #0c0c0c; }
+        .share-eyebrow {
+            font-size: 9px;
+            letter-spacing: 0.28em;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .share-title {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: #0c0c0c;
+            margin-bottom: 14px;
+        }
+        .share-desc {
+            font-size: 11.5px;
+            line-height: 1.7;
+            color: #555;
+            margin-bottom: 18px;
+        }
+        .share-desc strong { color: #0c0c0c; }
+        .share-url-box {
+            background: #0c0c0c;
+            color: #F0EDE6;
+            padding: 12px 14px;
+            font-size: 10.5px;
+            letter-spacing: 0.02em;
+            line-height: 1.5;
+            word-break: break-all;
+            max-height: 120px;
+            overflow-y: auto;
+            border: 1px solid #0c0c0c;
+            margin-bottom: 10px;
+        }
+        .share-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .share-btn {
+            flex: 1;
+            min-width: 120px;
+            min-height: 38px;
+            background: #0c0c0c;
+            color: #F0EDE6;
+            border: 1px solid #0c0c0c;
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .share-btn.secondary {
+            background: transparent;
+            color: #0c0c0c;
+            border-color: #999;
+        }
+        .share-btn:hover { background: #333; }
+        .share-btn.secondary:hover { background: #0c0c0c; color: #F0EDE6; border-color: #0c0c0c; }
+        .share-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .share-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: #999;
+            text-transform: uppercase;
+            margin: 8px 0 14px;
+        }
+        .share-meta .warn { color: #c24a2a; font-weight: 700; }
+        .share-note {
+            font-size: 10px;
+            color: #888;
+            line-height: 1.6;
+            margin-top: 14px;
+            border-top: 1px dashed #ddd;
+            padding-top: 12px;
+        }
 
         /* ── BLACK MIRROR WIPE (v1.2 easter egg · self-facing camera) ─────── */
         #bmBlackMirrorWipe {
@@ -1127,6 +1259,34 @@
 <!-- ── Feedback Modal ─────────────────────────────────────────── -->
 <div id="modeOverlay"></div>
 
+<!-- SHARE URL MODAL — view-sharing via encoded URL hash -->
+<div id="shareUrlOverlay" role="dialog" aria-modal="true" aria-labelledby="shareUrlTitle">
+    <div id="shareUrlModal">
+        <button class="share-close" id="shareUrlClose" aria-label="close">✕</button>
+        <div class="share-eyebrow">◼ BLACK MIRROR BOARD · SHARE</div>
+        <div class="share-title" id="shareUrlTitle">画面を共有する URL が生成されました</div>
+        <div class="share-desc">
+            <strong>このURL を別のユーザーが開くと、あなたのキャンバスと同じ状態が表示されます。</strong><br>
+            When someone opens this URL, their board loads with your exact canvas state.<br>
+            <span style="color:#999; font-size:10.5px;">※ サーバーを使わず URL 内にキャンバスを gzip 圧縮で埋め込んでいます / encoded in the URL via gzip + base64url</span>
+        </div>
+        <div class="share-url-box" id="shareUrlBox">—</div>
+        <div class="share-meta">
+            <span id="shareUrlSize">— KB</span>
+            <span id="shareUrlWarn"></span>
+        </div>
+        <div class="share-actions">
+            <button class="share-btn" id="shareUrlCopyBtn">COPY URL</button>
+            <button class="share-btn secondary" id="shareUrlOpenBtn">OPEN IN NEW TAB</button>
+            <button class="share-btn secondary" id="shareUrlNativeBtn" hidden>SHARE VIA...</button>
+        </div>
+        <div class="share-note">
+            画像は URL 長の関係で埋め込まれません（代わりに <code>export data</code> をご利用ください）。<br>
+            Images are stripped from shared URLs to keep the link short — use <code>export data</code> for full bundles.
+        </div>
+    </div>
+</div>
+
 <div id="feedbackOverlay" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
     <div id="feedbackModal">
         <button class="fm-close" id="feedbackClose" aria-label="Close">✕</button>
@@ -1138,26 +1298,37 @@
             <strong>Draw to Build.</strong> — 一緒に育てましょう。
         </div>
         <a class="fm-mail-btn"
-           href="mailto:kinoshita.studio@gmail.com?subject=Black%20Mirror%20Feedback"
+           href="mailto:blackmirror.board@gmail.com?subject=Black%20Mirror%20Board%20Feedback"
            target="_blank" rel="noopener">
             <svg width="12" height="10" viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="0.5" y="0.5" width="11" height="9" rx="0"/>
                 <polyline points="0.5,0.5 6,5.5 11.5,0.5"/>
             </svg>
-            SEND FEEDBACK — kinoshita.studio@gmail.com
+            SEND FEEDBACK — blackmirror.board@gmail.com
         </a>
         <div class="fm-note">メーラーが起動します · no tracking · local only</div>
-        <a class="fm-ig-link"
-           href="https://www.instagram.com/tkinoshita99/"
-           target="_blank" rel="noopener noreferrer"
-           aria-label="Instagram @tkinoshita99">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                <circle cx="12" cy="12" r="4.5"/>
-                <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/>
-            </svg>
-            @tkinoshita99
-        </a>
+        <div class="fm-social-row">
+            <a class="fm-social-btn"
+               href="https://x.com/bmboards"
+               target="_blank" rel="noopener noreferrer"
+               aria-label="X (Twitter) — @bmboards">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                @bmboards
+            </a>
+            <a class="fm-social-btn"
+               href="https://www.instagram.com/bmboard.official"
+               target="_blank" rel="noopener noreferrer"
+               aria-label="Instagram — @bmboard.official">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                    <circle cx="12" cy="12" r="4.5"/>
+                    <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/>
+                </svg>
+                @bmboard.official
+            </a>
+        </div>
     </div>
 </div>
 
@@ -1348,6 +1519,7 @@ Set before drawing, or apply to selected object.</pre>
         <pre><b>register &lt;name&gt; &lt;js&gt;</b>   save a JS action as <code>$name</code>
 <b>alias &lt;new&gt;=&lt;old&gt;</b>     duplicate under a new name
 <b>share &lt;name&gt;</b>          copy command JSON → clipboard
+<b>share</b> (no args)        generate a URL that re-opens your exact canvas
 <b>list</b>                   preset + user spells inventory
 <b>forget &lt;name&gt;</b>         remove a user spell (presets protected)
 
@@ -3965,6 +4137,166 @@ const YT_ASCII = `
 ╚═══════════════════════════════════════════════╝`.trim();
 
 // ══════════════════════════════════════════════════
+// SHARE URL — encode current canvas into a shareable URL
+//   "share" (no args)   → open modal with generated URL
+//   Opening URL with #s=... → restore canvas state on load
+// Images are stripped (dataURL too large for URLs).
+// Compression via native CompressionStream (gzip) + base64url.
+// ══════════════════════════════════════════════════
+async function _bmCompress(str) {
+    const cs = new CompressionStream('gzip');
+    const w = cs.writable.getWriter();
+    w.write(new TextEncoder().encode(str));
+    w.close();
+    const buf = await new Response(cs.readable).arrayBuffer();
+    let bin = '';
+    const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function _bmDecompress(b64url) {
+    const pad = '='.repeat((4 - b64url.length % 4) % 4);
+    const b64 = (b64url + pad).replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const ds = new DecompressionStream('gzip');
+    const w = ds.writable.getWriter();
+    w.write(bytes);
+    w.close();
+    const buf = await new Response(ds.readable).arrayBuffer();
+    return new TextDecoder().decode(buf);
+}
+
+async function shareCanvasAsUrl() {
+    if (!S.objects.length) {
+        printRaw('share: canvas is empty — draw something first', 't-err');
+        return;
+    }
+    if (typeof CompressionStream === 'undefined') {
+        printRaw('share: CompressionStream unsupported in this browser', 't-err');
+        return;
+    }
+    enqueue('share', [
+        '→ serializing canvas...',
+        '→ compressing with gzip...',
+        '→ encoding to URL...',
+    ]);
+    try {
+        // Strip images — they make URLs too long. Keep everything else.
+        const stripped = S.objects.filter(o => o.type !== 'image');
+        const imgCount = S.objects.length - stripped.length;
+        const payload = {
+            v: '1.2',
+            mode: MODE,
+            view: { scale: VIEW.scale, tx: VIEW.tx, ty: VIEW.ty },
+            objects: stripped,
+        };
+        const json = JSON.stringify(payload);
+        const encoded = await _bmCompress(json);
+        const base = location.origin + location.pathname;
+        const url = base + '#s=' + encoded;
+        const sizeKB = (url.length / 1024).toFixed(1);
+
+        const box  = document.getElementById('shareUrlBox');
+        const sz   = document.getElementById('shareUrlSize');
+        const wrn  = document.getElementById('shareUrlWarn');
+        const copy = document.getElementById('shareUrlCopyBtn');
+        const open = document.getElementById('shareUrlOpenBtn');
+        const nat  = document.getElementById('shareUrlNativeBtn');
+        box.textContent = url;
+        sz.textContent  = sizeKB + ' KB · ' + stripped.length + ' object(s)';
+        wrn.textContent = (url.length > 8000)
+            ? '⚠ LONG URL — MAY FAIL ON SOME PLATFORMS'
+            : (imgCount > 0)
+                ? imgCount + ' IMAGE(S) STRIPPED'
+                : '';
+        wrn.className = 'warn';
+
+        // Copy button
+        copy.textContent = 'COPY URL';
+        copy.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(url);
+                copy.textContent = 'COPIED ✓';
+                setTimeout(() => { copy.textContent = 'COPY URL'; }, 1600);
+            } catch {
+                // Fallback: select the box
+                const r = document.createRange(); r.selectNodeContents(box);
+                const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+                copy.textContent = 'SELECTED — CMD+C';
+                setTimeout(() => { copy.textContent = 'COPY URL'; }, 2000);
+            }
+        };
+        // Open button
+        open.onclick = () => { window.open(url, '_blank', 'noopener'); };
+        // Native share (iOS / Android)
+        if (navigator.share) {
+            nat.hidden = false;
+            nat.onclick = () => {
+                navigator.share({ title: 'Black Mirror Board', text: 'my canvas →', url })
+                    .catch(() => {});
+            };
+        } else {
+            nat.hidden = true;
+        }
+
+        document.getElementById('shareUrlOverlay').classList.add('open');
+        printRaw(`[share] URL ready — ${sizeKB} KB · ${stripped.length} object(s)`
+            + (imgCount ? ` (${imgCount} image(s) stripped)` : ''), 't-ok');
+    } catch (err) {
+        printRaw('share: ' + err.message, 't-err');
+    }
+}
+
+// Close handlers for share modal
+document.addEventListener('DOMContentLoaded', () => {
+    const ov = document.getElementById('shareUrlOverlay');
+    const cl = document.getElementById('shareUrlClose');
+    if (cl) cl.addEventListener('click', () => ov.classList.remove('open'));
+    if (ov) ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('open'); });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && ov && ov.classList.contains('open')) ov.classList.remove('open');
+    });
+});
+
+// Load state from URL hash on boot — runs after everything is initialized
+async function loadSharedStateFromHash() {
+    const h = location.hash;
+    if (!h || !h.startsWith('#s=')) return;
+    const encoded = h.slice(3);
+    try {
+        const json = await _bmDecompress(encoded);
+        const payload = JSON.parse(json);
+        if (!payload || !Array.isArray(payload.objects)) throw new Error('invalid payload');
+        // Merge: replace current canvas with shared state
+        S.objects = payload.objects;
+        S.selectedId = null;
+        S.multiSelected = [];
+        S.objects.forEach(o => o.selected = false);
+        if (payload.view) {
+            VIEW.scale = payload.view.scale || 1;
+            VIEW.tx    = payload.view.tx    || 0;
+            VIEW.ty    = payload.view.ty    || 0;
+            updateZoomLabel();
+        }
+        if (payload.mode && payload.mode !== MODE) setMode(payload.mode);
+        redrawAll();
+        saveHistory();
+        enqueue('[SYSTEM] shared-state detected', [
+            '→ decoding URL hash...',
+            '→ restoring ' + payload.objects.length + ' object(s)...',
+            '[OK] canvas restored from shared URL.',
+        ]);
+        // Clean the hash so reload doesn't re-import
+        history.replaceState(null, '', location.pathname + location.search);
+    } catch (err) {
+        printRaw('shared URL could not be decoded: ' + err.message, 't-err');
+    }
+}
+setTimeout(loadSharedStateFromHash, 600);
+
+// ══════════════════════════════════════════════════
 // BLACK MIRROR WIPE — the board reflects you back
 //   type "Black Mirror"      → camera on, selfie in top-right wipe
 //   type "Black Mirror off"  → camera off, wipe dismissed
@@ -4403,7 +4735,8 @@ function runCommand(val) {
             '  │  $monoclo              grayscale the selected image(s) │',
             '  │  register <n> <js>     save a new spell                 │',
             '  │  alias <new>=<old>     duplicate a spell                │',
-            '  │  share <name>          copy JSON to clipboard           │',
+            '  │  share <name>          copy spell JSON to clipboard     │',
+            '  │  share                 canvas → shareable URL (modal)   │',
             '  │  list                  show every registered spell      │',
             '  │  export-all            project + spells → 1 .json       │',
             '  │  forget <name>         remove a user spell              │',
@@ -4485,7 +4818,16 @@ function runCommand(val) {
     if (head==='forget'||head==='unregister') { const target=rest.trim().replace(/^\$/,'').toLowerCase(); if(!target){printRaw('forget: missing name','t-err');return;} if(!BM_CMDS[target]){printRaw(`forget: "${target}" not found`,'t-err');return;} if(BM_CMDS[target].source==='preset'){printRaw(`forget: "${target}" is a preset`,'t-err');return;} delete BM_CMDS[target]; saveCmds(); printRaw(`[forget] ${target} removed.`,'t-ok'); return; }
     if (head==='register') { const m=rest.match(/^([a-zA-Z0-9][a-zA-Z0-9_-]{0,30})\s+([\s\S]+)$/); if(!m){printRaw('register: usage → register <name> <action JS>','t-err');return;} const saved=registerCmd(m[1],m[2]); if(saved)enqueue(`register ${m[1]}`,['→ compiling...','→ persisting...',`[OK] $${saved} — try it now.`]); return; }
     if (head==='alias') { const m=rest.match(/^([a-zA-Z0-9][a-zA-Z0-9_-]{0,30})\s*=\s*\$?([a-zA-Z0-9][a-zA-Z0-9_-]{0,30})$/); if(!m){printRaw('alias: usage → alias <new>=<existing>','t-err');return;} const target2=BM_CMDS[m[2].toLowerCase()]; if(!target2){printRaw(`alias: "${m[2]}" not found`,'t-err');return;} registerCmd(m[1],target2.action,{source:'user'}); printRaw(`[alias] $${m[1]} → $${m[2]}`,'t-ok'); return; }
-    if (head==='share') { const target3=rest.trim().replace(/^\$/,'').toLowerCase(); if(!target3||!BM_CMDS[target3]){printRaw(`share: "${rest}" not found`,'t-err');return;} const pl=JSON.stringify({command:target3,action:BM_CMDS[target3].action},null,2); const ship=()=>enqueue(`share ${target3}`,['→ copied to clipboard!','───────────────────',...pl.split('\n').slice(0,10),'───────────────────']); if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(pl).then(ship,ship)}else{ship()} return; }
+    if (head==='share') {
+        const target3=rest.trim().replace(/^\$/,'').toLowerCase();
+        // share (no args) → URL share of current canvas state
+        if (!target3) { shareCanvasAsUrl(); return; }
+        if (!BM_CMDS[target3]) { printRaw(`share: "${rest}" not found`,'t-err'); return; }
+        const pl=JSON.stringify({command:target3,action:BM_CMDS[target3].action},null,2);
+        const ship=()=>enqueue(`share ${target3}`,['→ copied to clipboard!','───────────────────',...pl.split('\n').slice(0,10),'───────────────────']);
+        if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(pl).then(ship,ship)}else{ship()}
+        return;
+    }
 
     // ── Debug: objects ────────────────────────────────────────────────────
     if (head==='objects') {
@@ -5270,6 +5612,29 @@ window.addEventListener('keyup', e => {
 window.addEventListener('blur', () => { S.modifiers.shift = false; S.modifiers.alt = false; });
 
 document.addEventListener('keydown', e => {
+    // Del / Backspace: delete the selected canvas object(s) even when the
+    // terminal input has focus — but only if the input is empty so we don't
+    // hijack text editing. Also skipped while a text object is being edited.
+    if ((e.key === 'Delete' || e.key === 'Backspace') && S.editingTextId == null) {
+        const tInput = document.getElementById('ti');
+        const emptyTermFocused = (e.target === tInput) && tInput && tInput.value === '';
+        const targetIsInput   = e.target.tagName === 'INPUT';
+        const hasSelection    = S.multiSelected.length > 0 || S.selectedId !== null;
+        if (hasSelection && (!targetIsInput || emptyTermFocused)) {
+            e.preventDefault();
+            if (S.multiSelected.length > 0) {
+                S.objects = S.objects.filter(o => !S.multiSelected.includes(o.id));
+                S.multiSelected = [];
+            } else if (S.selectedId) {
+                S.objects = S.objects.filter(o => o.id !== S.selectedId);
+                S.selectedId = null;
+            }
+            saveHistory();
+            redrawAll();
+            return;
+        }
+    }
+
     if (e.target.tagName==='INPUT') return;
     // Undo / Redo
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
