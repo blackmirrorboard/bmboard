@@ -3,7 +3,7 @@
 
 # ◼ BLACK MIRROR BOARD — USAGE
 
-**Version 1.2 — 99letters studio — 2026-04-16**
+**Version 1.2 — kinoshita studio — 2026-04-16**
 **Bilingual manual · 日本語 × English**
 
 ---
@@ -338,4 +338,4 @@ instagram  →  @tkinoshita99
 
 ---
 
-*Draw to Build. — 99letters studio / 2026-04-16*
+*Draw to Build. — kinoshita studio / 2026-04-16*
