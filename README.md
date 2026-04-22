@@ -346,7 +346,7 @@ feedback   →  blackmirror.board@gmail.com
 x          →  @bmboards              x.com/bmboards
 instagram  →  @bmboard.official      instagram.com/bmboard.official
 
-dev log    →  99letters.github.io/md.html  — retrospective v0.1 → v1.2
+dev log    →  blackmirrorboard.github.io/bmboard/dev-log.html  — retrospective v0.1 → v1.2+
 ```
 
 ---

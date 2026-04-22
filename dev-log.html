@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLACK MIRROR BOARD — DEV LOG v0.1 → v1.2+</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --bg:       #0b0b0b;
+        --bg-2:     #141414;
+        --fg:       #F0EDE6;
+        --fg-dim:   rgba(240,237,230,0.58);
+        --fg-faint: rgba(240,237,230,0.30);
+        --accent:   #F0EDE6;
+        --rule:     rgba(240,237,230,0.18);
+        --tag-bg:   rgba(240,237,230,0.08);
+    }
+
+    html, body { background: var(--bg); color: var(--fg); }
+    body {
+        font-family: 'Space Mono', 'Courier New', Courier, monospace;
+        font-size: 14px;
+        line-height: 1.75;
+        padding: 48px 28px 120px;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap { max-width: 880px; margin: 0 auto; }
+
+    /* ── Header ─────────────────────────────────────── */
+    header {
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 28px;
+        margin-bottom: 48px;
+    }
+    .eyebrow {
+        font-size: 10px; letter-spacing: 0.28em;
+        color: var(--fg-dim); text-transform: uppercase;
+        margin-bottom: 14px;
+    }
+    h1 {
+        font-size: 26px; font-weight: 700; letter-spacing: 0.04em;
+        line-height: 1.25; margin-bottom: 10px;
+    }
+    h1 .mark { display: inline-block; margin-right: 10px; }
+    .meta {
+        font-size: 12px; color: var(--fg-dim); letter-spacing: 0.06em;
+        display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px;
+    }
+    .meta b { color: var(--fg); font-weight: 700; }
+
+    .ascii {
+        font-size: 11px; line-height: 1.15; white-space: pre;
+        color: var(--fg-dim); margin: 22px 0 0;
+        overflow-x: auto;
+    }
+
+    /* ── Section ────────────────────────────────────── */
+    section { margin-bottom: 56px; }
+    h2 {
+        font-size: 11px; letter-spacing: 0.28em;
+        color: var(--fg); text-transform: uppercase;
+        font-weight: 700;
+        padding-bottom: 8px; margin-bottom: 20px;
+        border-bottom: 1px solid var(--rule);
+    }
+    h2::before { content: "// "; color: var(--fg-faint); }
+
+    h3 {
+        font-size: 14px; letter-spacing: 0.06em;
+        margin: 28px 0 10px; font-weight: 700;
+    }
+    h3::before {
+        content: "▸ "; color: var(--fg-dim); margin-right: 2px;
+    }
+
+    p  { margin: 10px 0; color: var(--fg); }
+    p.dim { color: var(--fg-dim); }
+
+    ul, ol { margin: 10px 0 10px 20px; }
+    li { margin: 5px 0; }
+    li::marker { color: var(--fg-dim); }
+
+    code {
+        font-family: 'Space Mono', monospace;
+        background: var(--tag-bg);
+        padding: 1px 6px;
+        border: 1px solid var(--rule);
+        font-size: 0.92em;
+    }
+
+    blockquote {
+        border-left: 2px solid var(--fg);
+        padding: 8px 18px;
+        margin: 14px 0;
+        background: var(--bg-2);
+        color: var(--fg);
+        font-style: normal;
+    }
+    blockquote.prompt::before {
+        content: "PROMPT · ";
+        font-size: 10px; letter-spacing: 0.24em;
+        color: var(--fg-dim); display: block;
+        margin-bottom: 6px;
+    }
+
+    /* ── Phase card ─────────────────────────────────── */
+    .phase {
+        border: 1px solid var(--rule);
+        padding: 20px 22px;
+        margin: 18px 0;
+        position: relative;
+    }
+    .phase .tag {
+        position: absolute; top: -10px; left: 14px;
+        background: var(--bg); padding: 0 10px;
+        font-size: 10px; letter-spacing: 0.22em;
+        color: var(--fg);
+    }
+    .phase h4 {
+        font-size: 15px; font-weight: 700;
+        margin: 0 0 4px; letter-spacing: 0.02em;
+    }
+    .phase .date {
+        font-size: 10px; letter-spacing: 0.18em;
+        color: var(--fg-dim); text-transform: uppercase;
+        margin-bottom: 12px;
+    }
+    .phase ul { margin-left: 18px; }
+
+    /* ── Issue card ─────────────────────────────────── */
+    .issue {
+        display: grid;
+        grid-template-columns: 80px 1fr;
+        gap: 16px;
+        border-top: 1px dashed var(--rule);
+        padding: 16px 0;
+    }
+    .issue:last-child { border-bottom: 1px dashed var(--rule); }
+    .issue .label {
+        font-size: 10px; letter-spacing: 0.22em;
+        color: var(--fg-dim); text-transform: uppercase;
+        padding-top: 3px;
+    }
+    .issue .body strong { display: block; margin-bottom: 4px; }
+
+    /* ── Chip row ───────────────────────────────────── */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+    .chip {
+        font-size: 10px; letter-spacing: 0.16em;
+        padding: 4px 10px;
+        border: 1px solid var(--rule);
+        color: var(--fg-dim);
+        text-transform: uppercase;
+    }
+    .chip.on { color: var(--fg); border-color: var(--fg); }
+
+    /* ── Rule + footer ──────────────────────────────── */
+    hr {
+        border: none;
+        border-top: 1px dashed var(--rule);
+        margin: 28px 0;
+    }
+
+    footer {
+        margin-top: 80px;
+        padding-top: 22px;
+        border-top: 1px solid var(--rule);
+        display: flex; justify-content: space-between; flex-wrap: wrap;
+        gap: 10px;
+        font-size: 11px; letter-spacing: 0.18em;
+        color: var(--fg-dim); text-transform: uppercase;
+    }
+    footer a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--fg-dim); }
+    footer a:hover { border-bottom-color: var(--fg); }
+
+    /* Selection */
+    ::selection { background: var(--fg); color: var(--bg); }
+
+    @media (max-width: 600px) {
+        body { padding: 32px 18px 80px; }
+        h1 { font-size: 20px; }
+        .issue { grid-template-columns: 1fr; gap: 4px; }
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+    <div class="eyebrow">KINOSHITA STUDIO · RELEASE DOSSIER</div>
+    <h1><span class="mark">◼</span>BLACK MIRROR BOARD — DEV LOG</h1>
+    <div class="meta">
+        <span><b>VERSION</b> v0.1 → v1.2+</span>
+        <span><b>SHIP DATE</b> 2026-04-19 · v1.2</span>
+        <span><b>LIVE ROUTE</b> blackmirrorboard.github.io/bmboard</span>
+        <span><b>AUTHOR</b> Kinoshita Studio</span>
+        <span><b>STATUS</b> ● LIVE · evolving</span>
+    </div>
+<pre class="ascii">
+ ██████╗ ██╗      █████╗  ██████╗██╗  ██╗    ███╗   ███╗██╗██████╗ ██████╗  ██████╗ ██████╗
+ ██╔══██╗██║     ██╔══██╗██╔════╝██║ ██╔╝    ████╗ ████║██║██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
+ ██████╔╝██║     ███████║██║     █████╔╝     ██╔████╔██║██║██████╔╝██████╔╝██║   ██║██████╔╝
+ ██╔══██╗██║     ██╔══██║██║     ██╔═██╗     ██║╚██╔╝██║██║██╔══██╗██╔══██╗██║   ██║██╔══██╗
+ ██████╔╝███████╗██║  ██║╚██████╗██║  ██╗    ██║ ╚═╝ ██║██║██║  ██║██║  ██║╚██████╔╝██║  ██║
+ ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝    ╚═╝     ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝
+</pre>
+</header>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section>
+    <h2>Premise</h2>
+    <p>Black Mirror Board は、ターミナル駆動型の無限キャンバス。
+    マウス/タッチ/ペン入力を1つのモデルに統合し、「図形を描く」と「コマンドを打つ」の境界を溶かすツールとして構築された。</p>
+    <p class="dim">This document catalogs the full development arc from initial sketch (v0.1) through the v1.0 release. Each phase is presented in chronological order with the driving prompt, the resolved challenge, and the resulting capability.</p>
+    <div class="chips">
+        <span class="chip on">HTML5 Canvas</span>
+        <span class="chip on">Pointer Events</span>
+        <span class="chip on">Vanilla JS</span>
+        <span class="chip on">Zero deps</span>
+        <span class="chip">Minimalism</span>
+        <span class="chip">Monochrome</span>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section>
+    <h2>Phase Log · v0.1 → v1.0</h2>
+
+    <div class="phase">
+        <span class="tag">v0.1 · PROTOTYPE</span>
+        <h4>Terminal + canvas skeleton</h4>
+        <div class="date">2026-04-08 — initial commit</div>
+        <ul>
+            <li>Split pane layout: canvas (left) + terminal (right).</li>
+            <li>Basic shapes — circle / square / triangle / arrow / text.</li>
+            <li>Pen tool with freehand stroke capture.</li>
+            <li>ASCII-only UI chrome, no colors beyond greyscale.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <span class="tag">v0.3 · INTERACTION</span>
+        <h4>Selection, drag, rotation, zoom</h4>
+        <div class="date">2026-04-10</div>
+        <ul>
+            <li>Unified Pointer Event handling for mouse / touch / pen.</li>
+            <li>Space-key pan + pinch-zoom for tablet parity.</li>
+            <li>Rotation handle above the bounding box.</li>
+            <li>Multi-select via marquee drag; group move / resize / rotate.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <span class="tag">v0.5 · VECTOR EDIT</span>
+        <h4>Illustrator-style anchor system</h4>
+        <div class="date">2026-04-12</div>
+        <ul>
+            <li>Per-vertex anchor handles on pen strokes & triangles.</li>
+            <li>8-handle bbox resize on squares / images / text.</li>
+            <li>Cardinal handles on circles (single-radius edits).</li>
+            <li>RDP simplification on freehand strokes → editable anchor count.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <span class="tag">v0.7 · EXPORT</span>
+        <h4>JSON persistence + transparent PNG</h4>
+        <div class="date">2026-04-13</div>
+        <ul>
+            <li>Export entire project (canvas + terminal log) as a single JSON blob.</li>
+            <li>PNG export on offscreen canvas — tight bbox + transparent background.</li>
+            <li>Selection-aware export: exports only selected objects when present.</li>
+            <li>3× DPR cap to prevent memory spikes on high-resolution exports.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <span class="tag">v0.9 · VOID THEME</span>
+        <h4>Dark mode + fill-swatch theming</h4>
+        <div class="date">2026-04-14</div>
+        <ul>
+            <li>Terminal command <code>dark mode</code> / <code>light mode</code> engages a glitch-flash mode transition.</li>
+            <li>All object fills invert on mode switch (<code>resolveFill()</code> channel inversion).</li>
+            <li>Swatch SVGs refactored to class-based CSS variables so the toolbar flips in lockstep.</li>
+            <li>Toolbar elevated off pure-black canvas with a subtle shadow for contrast.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <span class="tag">v1.0 · STUDIO RELEASE</span>
+        <h4>Gray mode · Hit-test 2.0 · Shift-lock resize</h4>
+        <div class="date">2026-04-16 — ship date</div>
+        <ul>
+            <li><b>Gray mode</b> — pebble ground <code>#DCDBD5</code> / cobalt ink <code>#1600A2</code>. Dedicated CSS-variable theme alongside light/dark, triggered by <code>gray</code> command.</li>
+            <li><b>Hit-test 2.0</b> — segment-distance hit testing on strokes; 8px invisible padding; hover glow + directional cursors.</li>
+            <li><b>Shift-lock resize</b> — aspect-ratio preserved on corner handles; Alt anchors to center; images lock by default.</li>
+            <li><b>Snap scale</b> — ×0.5 / ×1 / ×1.5 / ×2 magnet windows during Shift-resize.</li>
+            <li><b>Theme-aware selection</b> — selection box and marquee auto-invert for max contrast in each mode.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <span class="tag">v1.1 · INTERIM POLISH</span>
+        <h4>Modifier reliability · Cursor language · Escape routes</h4>
+        <div class="date">2026-04-17 → 2026-04-18</div>
+        <ul>
+            <li><b>Modifier pipeline</b> — Shift / Alt read from a window-level <code>S.modifiers</code> ledger so holding a key mid-drag updates geometry instantly; <code>window blur</code> resets the ledger to defeat the classic "stuck Shift after tab-swap" bug.</li>
+            <li><b>Directional cursors</b> — corner / edge / rotate handles expose OS cursors matching their drag axis; dashed directional glyphs on hover.</li>
+            <li><b>Escape routes</b> — <code>Esc</code> abandons any in-flight gesture (drag, marquee, rotate, resize, text edit) back to neutral; double-click exits text mode cleanly.</li>
+            <li><b>Text editing rigour</b> — commit on blur or <code>Enter</code>, cancel on <code>Esc</code>; click outside drops focus without losing the object.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <span class="tag">v1.2 · SPELLBOOK RELEASE</span>
+        <h4>SVG export · camera wipe · share URL · custom spells</h4>
+        <div class="date">2026-04-19 — ship date</div>
+        <ul>
+            <li><b>SVG export</b> — typing <code>svg</code> in the terminal writes a native SVG of the current selection (or the whole canvas). Every primitive translates: circle→<code>&lt;ellipse&gt;</code>, square→<code>&lt;rect&gt;</code>, triangle→<code>&lt;polygon&gt;</code>, arrow→<code>&lt;line&gt;+&lt;polygon&gt;</code>, text→<code>&lt;text dominant-baseline="hanging"&gt;</code>, pen stroke→<code>&lt;path M…Q…&gt;</code>, image→<code>&lt;image&gt;</code>. Rotation wraps as <code>&lt;g transform="rotate()"&gt;</code>. Colors resolved via <code>resolveFill()</code>. Opens in Figma / Illustrator / Inkscape editable.</li>
+            <li><b>Black Mirror camera wipe</b> — the phrase <code>Black Mirror</code> flips on <code>getUserMedia</code> and docks a 220×165 PIP in the top-right (128×170 on mobile). Red REC dot, <code>◼ BLACK MIRROR</code> label in <code>mix-blend-mode: difference</code>, selfie-mirrored with a faint grayscale + contrast filter for the CRT look. Hover exposes an <code>×</code> close; <code>Black Mirror off</code> also releases all tracks. The wipe is <b>draggable</b> — place it anywhere on screen.</li>
+            <li><b>Share URL</b> — <code>share</code> with no args gzips the canvas + terminal state via native <code>CompressionStream</code>, base64-urls it, and copies a self-contained link. Opening the URL on any device restores the full board. <code>share</code> vs <code>share url</code> selects between file download and clipboard.</li>
+            <li><b>Custom spells</b> — pasting a JSON payload into the terminal runs a schema check, binds it to IndexedDB, and exposes it as a named command. Features travel as text, one line at a time. <code>BM API</code> + natural language prompts to Claude / ChatGPT produce runnable spells.</li>
+            <li><b>Preset library</b> — <code>scatter</code>, <code>grid-3x3</code>, <code>biwako-blue</code>, <code>fetch-img</code>, <code>monoclo</code>, <code>svg</code> ship with the app, each as JSON-portable spells that can be dumped, remixed, and re-shared.</li>
+            <li><b>Image brainstorm</b> — <code>fetch-img &lt;keyword&gt;</code> pulls public images for the word, scatters them on the canvas with rotation + margin, turning the board into a self-writing mood-board.</li>
+            <li><b>Del / Backspace fix</b> — the delete key was swallowed by inputs outside text-edit mode; now correctly removes the selection, with the text-edit exception restored.</li>
+            <li><b>FEEDBACK modal</b> — tap the logo → prefilled feedback form with subject auto-stamped per version; studio email + Instagram + X links consolidated.</li>
+            <li><b>Manual split</b> — v1.2 manual authored in Obsidian (JP + EN), exported as markdown files under <code>v1.2_manual_ja/</code> and <code>v1.2_manual_en/</code>.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <span class="tag">v1.2+ · POST-RELEASE EVOLUTION</span>
+        <h4>Brand routing · capabilities grid · responsive chrome · OGP</h4>
+        <div class="date">2026-04-20 → 2026-04-22 (ongoing)</div>
+        <ul>
+            <li><b>URL migration</b> — moved from <code>99letters.github.io/projects/black_mirror/</code> to the canonical <code>blackmirrorboard.github.io/bmboard/</code>. All <code>../../md.html</code> / <code>../../history.html</code> references absolutized to <code>https://99letters.github.io/…</code> so the new origin still reaches the dev log.</li>
+            <li><b>Rebrand</b> — studio name corrected everywhere: "99letters studio" → "kinoshita studio" across 22 manual files, <code>README.md</code>, usage docs, app.html footer, terminal ghost lines (<code>Playing: kinoshita studio / Black Mirror Board</code>), and INDEX frontmatter tags. The <code>99letters</code> domain remains as the GitHub identity only.</li>
+            <li><b>ASCII-art render fix</b> — the BM pixel logo in README/overview collapsed because Courier New / SF Mono render <code>█</code> (U+2588) shorter than the cell, leaving vertical gaps. Loaded <b>JetBrains Mono</b> via Google Fonts and force-applied <code>font-size: 14px; line-height: 1; letter-spacing: 0; word-spacing: 0</code> to the logo <code>&lt;pre&gt;</code> with <code>!important</code>.</li>
+            <li><b>index.html — CAPABILITIES section</b> — six new feature cards ship below the Dual Perspective section, each with a 16:9 demo-frame SVG illustration: SVG Export / Transparent PNG / Image Brainstorm / Custom Spells / SNS Share / Camera + YouTube Live. Monochrome 1-bit aesthetic preserved.</li>
+            <li><b>index.html — light / dark theme</b> — a 1-bit inversion toggle (<code>● · ○</code>) next to the EN/JA switch. All colors run through CSS variables (<code>--ink</code> / <code>--void</code> / <code>--scan-color</code> / <code>--glow-halo</code> / <code>--checker-fill</code> / <code>--header-bg</code>); hard-coded whites and blacks were removed. <code>prefers-color-scheme</code> is honored on first visit; choice persists via <code>bmboard.theme</code> in <code>localStorage</code>. An inline head script applies the saved theme before paint to defeat flash-of-wrong-theme. Dark-ink <code>logo.png</code> is inverted via CSS <code>filter: invert(1)</code> in dark mode only, left as-is in light mode.</li>
+            <li><b>app.html — theme extension</b> — <code>dark</code> and <code>gray</code> commands now also theme the header (background, border, <code>.hbtn</code>, <code>.hlink</code>, <code>.zoom-label</code>, <code>.logo*</code>). All colors read from the existing <code>--bm-tb-*</code> / <code>--bm-fg</code> / <code>--bm-fg-dim</code> tokens. Logo PNG inverted only in dark mode.</li>
+            <li><b>app.html — mobile header</b> — logo pinned to the left, right-side chrome optimized for narrow viewports: <code>FLUSH</code> + <code>CLEAR</code> hidden (still reachable via terminal), icon+label stacked vertically inside each <code>.hbtn</code> (36px square), <code>OVERVIEW</code> split across two lines as <code>OVER</code> / <code>VIEW</code> with the arrow removed. All buttons' icons centered in their box via <code>inline-flex; justify-content: center</code>.</li>
+            <li><b>app.html — header grid</b> — replaced the old <code>margin-left: auto</code> trick with an explicit 2-column grid (<code>grid-template-columns: auto 1fr</code>), logo in column 1, right buttons in column 2 with <code>justify-self: end</code>. Predictable on every viewport.</li>
+            <li><b>OGP image</b> — <code>og-image.svg</code> (1200×630) authored for both <code>index.html</code> and <code>app.html</code>: black ground with scanline texture, corner brackets, top-right <code>● REC ON AIR</code>, 400-px logo (base64-embedded, SVG <code>feColorMatrix</code> inverted to white), title stack <code>BLACK MIRROR / BOARD</code>, subtitle <code>DRAW · SPEAK · CAST</code>, version strip.</li>
+            <li><b>Overview <code>README</code> tab</b> — BM pixel ASCII now renders crisply in Courier-deprived browsers via the JetBrains Mono fix + <code>font-feature-settings: "liga" 0, "calt" 0</code>.</li>
+        </ul>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section>
+    <h2>Driving Prompts</h2>
+    <p class="dim">The core prompts that shaped v1.0 — quoted verbatim from Kinoshita Studio, paraphrased where long.</p>
+
+    <blockquote class="prompt">
+        Dark Mode 時の図形・塗りの視認性改善。背景は反転するが、図形の「塗り（Fill）」や一部のスタイルが以前の黒（または濃い色）のまま残っているため、視認性が著しく低下している。
+    </blockquote>
+
+    <blockquote class="prompt">
+        第3のモードとして、ユーザーが最も頻繁に使用する "gray" モードを追加してください。
+        背景 <code>#DCDBD5</code> / アクセント <code>#1600A2</code>。最高にクールな青のコントラストを実現して。
+    </blockquote>
+
+    <blockquote class="prompt">
+        PCでの操作時、特に細い鉛筆やパスツールで描いたオブジェクトを選択・移動する際、正確に線の上をクリックしないと掴めない。判定領域を「見た目の線＋左右に 5〜8px」に拡張し、「直感的に掴める」プロの道具としての精度を完成させて。
+    </blockquote>
+
+    <blockquote class="prompt">
+        Shiftキー連動のアスペクト比固定。角のハンドルをドラッグしてリサイズする際、Shiftキーが押されている間は、オブジェクトの元のアスペクト比を完全に維持して拡大縮小するようにしてください。画像のリサイズで比率が崩れるのは致命的。
+    </blockquote>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section>
+    <h2>Resolved Technical Challenges</h2>
+
+    <div class="issue">
+        <div class="label">500 ERR</div>
+        <div class="body">
+            <strong>Local server 500 error — PermissionError</strong>
+            初期に <code>python -m http.server</code> を <code>~/</code> から起動した際、OS のアクセス制限でサブディレクトリの HTML が 500 を返した。
+            プロジェクトローカルの <code>server.py</code> を <code>projects/black_mirror/</code> 直下で立ち上げるフローに変更して解決。
+        </div>
+    </div>
+
+    <div class="issue">
+        <div class="label">RESIZE</div>
+        <div class="body">
+            <strong>5箇所に重複していた 8-handle bbox スイッチ</strong>
+            circle / triangle / square+image / arrow / text / stroke の各 <code>applyAnchor</code> ブロックに同一の switch が copy-paste されていた。
+            <code>resizeBoxWithMods(anchorId, ob, nx, ny, shift, alt)</code> に一本化し、Shift/Alt の挙動を一点で管理できるようにした。
+        </div>
+    </div>
+
+    <div class="issue">
+        <div class="label">HIT-TEST</div>
+        <div class="body">
+            <strong>Sparse stroke vertices created unclickable gaps</strong>
+            RDP simplification 後の折線は頂点間に最大 20–30px の空間ができ、「線の上を狙ってクリックしないと掴めない」問題が発生していた。
+            <code>pointToSegDist()</code> によるセグメント距離判定 + 閉パスの ray-cast fill check に切替えて解決。
+        </div>
+    </div>
+
+    <div class="issue">
+        <div class="label">THEME</div>
+        <div class="body">
+            <strong>ハードコードされた fill swatch SVG</strong>
+            popover 内のスウォッチが <code>fill="#111"</code> / <code>fill="#FAFAF8"</code> 直書きで、dark/gray モードで溶けていた。
+            <code>.sw-black / .sw-grey / .sw-white / .sw-ind</code> クラスに置換し、<code>var(--bm-swatch-*)</code> で自動反転させる設計に。
+        </div>
+    </div>
+
+    <div class="issue">
+        <div class="label">MODIFIER</div>
+        <div class="body">
+            <strong>ドラッグ途中で Shift を押しても制約が効かない</strong>
+            PointerEvent の <code>shiftKey</code> をその都度読んでいたため、マウスが停止した状態で Shift を押しても再評価されなかった。
+            <code>window keydown/keyup</code> で <code>S.modifiers</code> を更新し、<code>S.lastAnchorPt</code> を保持して即座に <code>applyAnchor()</code> を再実行することで解決。
+        </div>
+    </div>
+
+    <div class="issue">
+        <div class="label">BLUR</div>
+        <div class="body">
+            <strong>Stuck Shift after tab-switch</strong>
+            <code>window</code> blur で <code>S.modifiers</code> を強制リセット。タブを戻したときに「Shift が押されっぱなし扱い」になる問題を根絶。
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section>
+    <h2>v1.0 Ship Manifest</h2>
+    <h3>What's In</h3>
+    <ul>
+        <li><b>Themes</b> — light (surface) / dark (void) / gray (studio).</li>
+        <li><b>Tools</b> — select, pen, path, eraser, circle, triangle, square, arrow, text, image.</li>
+        <li><b>Selection</b> — hover glow, directional cursors, theme-aware selection chrome.</li>
+        <li><b>Resize</b> — Shift aspect-lock, Alt center-pinned, 0.5x/1x/1.5x/2x snap.</li>
+        <li><b>Export</b> — JSON project file + transparent PNG (selection-aware).</li>
+        <li><b>Keyboard</b> — S/P/E/C/G/Q/A/T tool switch · 1/2/3 line width · Space pan · X export · Del delete · Esc cancel.</li>
+    </ul>
+
+    <h3>What's Out (intentionally)</h3>
+    <ul>
+        <li>Layers / z-order beyond draw order.</li>
+        <li>Colored stroke (monochrome by design).</li>
+        <li>Cloud sync — local-first is the thesis.</li>
+    </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section>
+    <h2>Architecture Notes</h2>
+    <h3>State model</h3>
+    <p>Single <code>S</code> object holds all mutable canvas state; <code>VIEW</code> holds pan/zoom; <code>MODE</code> holds theme. No framework, no reactive glue — changes call <code>redrawAll()</code> explicitly.</p>
+
+    <h3>Theme tokens</h3>
+    <p>Per-mode CSS custom properties (<code>--bm-canvas-bg</code>, <code>--bm-fg</code>, <code>--bm-tb-bg</code>, <code>--bm-accent</code>, <code>--bm-swatch-*</code>) toggled via <code>body.bm-dark</code> / <code>body.bm-gray</code>. Single class swap cascades the entire UI.</p>
+
+    <h3>Fill resolution</h3>
+    <p>Objects store canonical light-mode fills. <code>resolveFill()</code> translates at render time: dark → channel-inverted, gray → cobalt family. No mutation of stored data — mode switch is pure view.</p>
+
+    <h3>Resize modifier pipeline</h3>
+    <p>One helper (<code>resizeBoxWithMods</code>) normalizes 8-handle bbox math + shift/alt constraints. Single source of truth for single-object anchors and multi-select group resize alike.</p>
+</section>
+
+<hr>
+
+<footer>
+    <span>◼ BLACK MIRROR BOARD v1.2</span>
+    <span>BUILD 2026-04-19 · evolving 2026-04-22</span>
+    <span><a href="https://blackmirrorboard.github.io/bmboard/app.html">→ open app</a></span>
+</footer>
+
+</div>
+</body>
+</html>
