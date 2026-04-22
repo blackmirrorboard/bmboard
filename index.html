@@ -11,6 +11,21 @@
 <meta property="og:url" content="https://blackmirrorboard.github.io/bmboard/">
 <link rel="icon" type="image/svg+xml"
       href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23000'/><rect x='5' y='5' width='22' height='22' rx='1' fill='%23fff'/><rect x='11' y='11' width='4' height='10' fill='%23000'/><rect x='17' y='11' width='4' height='10' fill='%23000'/></svg>">
+<!-- Apply stored theme before paint to avoid a flash-of-wrong-theme. -->
+<script>
+(function () {
+    try {
+        var t = localStorage.getItem('bmboard.theme');
+        if (t !== 'light' && t !== 'dark') {
+            t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches)
+                ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -23,6 +38,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+    /* DARK MODE (default) */
     --ink:       #FFFFFF;
     --void:      #000000;
     --dim:       rgba(255,255,255,0.58);
@@ -34,6 +50,35 @@
     --warn:      #FF3B30;
     --ease:      cubic-bezier(0.2, 0.7, 0.2, 1);
     --mono:      'Space Mono', 'Courier New', Courier, monospace;
+    /* Thematic tokens that swap between modes */
+    --scan-color:   rgba(255,255,255,0.022);
+    --noise-color:  rgba(255,255,255,0.015);
+    --glow-halo:    rgba(255,255,255,0.6);
+    --bevel-top:    rgba(255,255,255,0.08);
+    --bevel-btm:    rgba(255,255,255,0.08);
+    --checker-fill: rgba(255,255,255,0.05);
+    --header-bg:    rgba(0,0,0,0.6);
+    --scan-blend:   screen;
+}
+
+/* LIGHT MODE — inverted 1-bit palette. Activated by a `html[data-theme="light"]`. */
+html[data-theme="light"] {
+    --ink:       #000000;
+    --void:      #FFFFFF;
+    --dim:       rgba(0,0,0,0.64);
+    --faint:     rgba(0,0,0,0.34);
+    --ghost:     rgba(0,0,0,0.08);
+    --rule:      rgba(0,0,0,0.18);
+    --glass:     rgba(0,0,0,0.04);
+    --accent:    #000000;
+    --scan-color:   rgba(0,0,0,0.028);
+    --noise-color:  rgba(0,0,0,0.015);
+    --glow-halo:    rgba(0,0,0,0.35);
+    --bevel-top:    rgba(0,0,0,0.06);
+    --bevel-btm:    rgba(0,0,0,0.06);
+    --checker-fill: rgba(0,0,0,0.05);
+    --header-bg:    rgba(255,255,255,0.72);
+    --scan-blend:   multiply;
 }
 
 html, body {
@@ -55,13 +100,13 @@ body::before {
     pointer-events: none;
     background: repeating-linear-gradient(
         to bottom,
-        rgba(255,255,255,0) 0px,
-        rgba(255,255,255,0) 2px,
-        rgba(255,255,255,0.022) 2px,
-        rgba(255,255,255,0.022) 3px
+        transparent        0px,
+        transparent        2px,
+        var(--scan-color)  2px,
+        var(--scan-color)  3px
     );
     z-index: 1000;
-    mix-blend-mode: screen;
+    mix-blend-mode: var(--scan-blend);
 }
 
 /* ── Ambient noise grain ──────────────────────────────────────────── */
@@ -70,8 +115,8 @@ body::after {
     position: fixed; inset: 0;
     pointer-events: none;
     background-image:
-        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.015) 0, transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.015) 0, transparent 40%);
+        radial-gradient(circle at 20% 30%, var(--noise-color) 0, transparent 40%),
+        radial-gradient(circle at 80% 70%, var(--noise-color) 0, transparent 40%);
     z-index: 999;
 }
 
@@ -106,14 +151,45 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
 }
 .lang-toggle .lang-sep { color: var(--faint); }
 
+/* ── Theme toggle — mirrors the lang-toggle aesthetic ─────────────── */
+.theme-toggle {
+    gap: 4px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--dim);
+    cursor: pointer;
+    transition: border-color 0.2s;
+    padding: 0 10px !important;
+    display: inline-flex;
+    align-items: center;
+}
+.theme-toggle:hover { border-color: var(--ink); }
+.theme-toggle .theme-tok {
+    color: var(--faint);
+    padding: 0 3px;
+    transition: color 0.2s;
+    cursor: pointer;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+}
+.theme-toggle .theme-tok:hover { color: var(--dim); }
+html[data-theme="dark"]  .theme-toggle .theme-tok[data-set-theme="dark"],
+html:not([data-theme="light"]) .theme-toggle .theme-tok[data-set-theme="dark"],
+html[data-theme="light"] .theme-toggle .theme-tok[data-set-theme="light"] {
+    color: var(--ink);
+}
+.theme-toggle .theme-sep { color: var(--faint); }
+
 /* ── BRAND LOGO IMAGE ─────────────────────────────────────────── */
 .brand-logo {
     width: 30px; height: 30px;
     object-fit: contain;
     display: block;
-    /* logo.png is dark ink — invert to show on black surface */
+    /* logo.png ships as dark ink on transparent.
+       Dark mode needs it inverted to white; light mode keeps the original black. */
     filter: invert(1);
 }
+html[data-theme="light"] .brand-logo { filter: none; }
 .hero-brand {
     display: flex;
     flex-direction: column;
@@ -141,6 +217,7 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
     filter: invert(1);
     opacity: 0.94;
 }
+html[data-theme="light"] .hero-logo { filter: none; }
 
 .eyebrow {
     font-size: 10px; letter-spacing: 0.32em;
@@ -159,7 +236,7 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
     z-index: 500;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    background: rgba(0,0,0,0.6);
+    background: var(--header-bg);
     border-bottom: 1px solid var(--rule);
 }
 .brand {
@@ -184,7 +261,8 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
 }
 /* Unified sizing for every nav item (links, toggle, launch) */
 .site-nav a,
-.site-nav .lang-toggle {
+.site-nav .lang-toggle,
+.site-nav .theme-toggle {
     display: inline-flex;
     align-items: center;
     height: 30px;
@@ -225,20 +303,20 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
     aspect-ratio: 16 / 9;
     border: 1px solid var(--rule);
     background:
-        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0)) ,
-        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px) 0 0 / 40px 40px,
-        linear-gradient(0deg,  rgba(255,255,255,0.015) 1px, transparent 1px) 0 0 / 40px 40px,
+        linear-gradient(180deg, var(--glass), transparent),
+        linear-gradient(90deg, var(--noise-color) 1px, transparent 1px) 0 0 / 40px 40px,
+        linear-gradient(0deg,  var(--noise-color) 1px, transparent 1px) 0 0 / 40px 40px,
         var(--void);
     position: relative;
     overflow: hidden;
     box-shadow:
-        inset 0 0 80px rgba(255,255,255,0.04),
-        0 30px 60px -30px rgba(255,255,255,0.10);
+        inset 0 0 80px var(--glass),
+        0 30px 60px -30px var(--ghost);
 }
 .hero-mirror::before {
     content: "";
     position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.08) 100%);
+    background: linear-gradient(180deg, var(--bevel-top) 0%, transparent 30%, transparent 70%, var(--bevel-btm) 100%);
     pointer-events: none;
 }
 .mirror-frame {
@@ -283,7 +361,7 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
 @keyframes draw { to { stroke-dashoffset: 0; } }
 @keyframes tint {
     0%, 35%, 100% { stroke: var(--ink); }
-    50%, 85%      { stroke: #FFFFFF; filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
+    50%, 85%      { stroke: var(--ink); filter: drop-shadow(0 0 4px var(--glow-halo)); }
 }
 
 .mirror-term {
@@ -380,7 +458,7 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
 
 .demo-frame {
     border: 1px solid var(--rule);
-    background: rgba(255,255,255,0.015);
+    background: var(--noise-color);
     aspect-ratio: 16 / 10;
     position: relative; overflow: hidden;
 }
@@ -507,7 +585,7 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
 .cap-svg text.hi { fill: var(--ink); }
 
 /* Checkerboard for transparency preview */
-.cap-svg .checker { fill: rgba(255,255,255,0.05); stroke: none; }
+.cap-svg .checker { fill: var(--checker-fill); stroke: none; }
 
 /* Section 03 — dual perspective */
 .dual {
@@ -553,7 +631,7 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
 }
 .term-embed {
     border: 1px solid var(--rule);
-    background: rgba(255,255,255,0.015);
+    background: var(--noise-color);
     padding: 22px;
     font-size: 12.5px;
     line-height: 1.75;
@@ -689,18 +767,20 @@ footer {
     .site-header { padding: 12px 16px; }
     .site-nav { gap: 6px; }
     .site-nav a,
-    .site-nav .lang-toggle {
+    .site-nav .lang-toggle,
+    .site-nav .theme-toggle {
         font-size: 9px;
         letter-spacing: 0.16em;
         padding: 0 9px;
         height: 28px;
     }
-    .lang-toggle { padding: 0 8px !important; }
+    .lang-toggle, .theme-toggle { padding: 0 8px !important; }
     .brand { gap: 8px; }
     .brand-logo { width: 28px; height: 28px; }
     .brand-text { font-size: 11px; letter-spacing: 0.18em; }
-    /* keep only Manual + lang toggle + launch on mobile */
-    .site-nav a:nth-child(1), .site-nav a:nth-child(2) { display: none; }
+    /* Mobile: hide nav text links — keep only brand + toggles + $ launch */
+    .site-nav > a { display: none; }
+    .site-nav > a.launch { display: inline-flex; }
 
     /* HERO — large, vertical mirror with maximum impact */
     .hero { padding: 88px 12px 60px; gap: 32px; }
@@ -788,6 +868,11 @@ footer {
             <span class="lang-tok" data-set-lang="en">EN</span>
             <span class="lang-sep">·</span>
             <span class="lang-tok" data-set-lang="ja">JP</span>
+        </div>
+        <div class="theme-toggle" id="themeToggle" role="group" aria-label="switch theme" title="dark / light">
+            <span class="theme-tok" data-set-theme="dark">●</span>
+            <span class="theme-sep">·</span>
+            <span class="theme-tok" data-set-theme="light">○</span>
         </div>
         <a href="./app.html" class="launch">$ launch</a>
     </nav>
@@ -1337,6 +1422,44 @@ document.getElementById('langToggle')?.addEventListener('click', (e) => {
     // fallback: clicking outside a token → flip
     if (e.target.matches('.lang-tok')) return;
     setLang(currentLang() === 'en' ? 'ja' : 'en');
+});
+
+// ══════════════════════════════════════════════════════════════════
+// THEME TOGGLE — dark (default) / light, persisted to localStorage.
+// First-time visitors inherit the OS `prefers-color-scheme`.
+// ══════════════════════════════════════════════════════════════════
+const THEME_KEY = 'bmboard.theme';
+function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+function setTheme(theme) {
+    const next = (theme === 'light') ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem(THEME_KEY, next); } catch {}
+}
+// Restore preference on load — saved value wins, else OS setting, else dark.
+try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'light' || saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', saved);
+    } else if (window.matchMedia?.('(prefers-color-scheme: light)').matches) {
+        document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+} catch {
+    document.documentElement.setAttribute('data-theme', 'dark');
+}
+
+document.querySelectorAll('.theme-toggle .theme-tok').forEach(tok => {
+    tok.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setTheme(tok.dataset.setTheme);
+    });
+});
+document.getElementById('themeToggle')?.addEventListener('click', (e) => {
+    if (e.target.matches('.theme-tok')) return;
+    setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
 });
 
 // ══════════════════════════════════════════════════════════════════
