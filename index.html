@@ -437,6 +437,78 @@ html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Section 04 — CAPABILITIES grid ──────────────────────────────── */
+.cap-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px;
+    margin-top: 28px;
+}
+@media (max-width: 760px) {
+    .cap-grid { grid-template-columns: 1fr; gap: 18px; }
+}
+.cap-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    background: var(--glass);
+    border: 1px solid var(--rule);
+    transition: border-color 0.2s var(--ease), transform 0.25s var(--ease);
+}
+.cap-card:hover { border-color: var(--ink); transform: translateY(-2px); }
+.cap-card .demo-frame { aspect-ratio: 16 / 9; margin: 0; }
+.cap-card h3 {
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    color: var(--ink);
+    margin: 2px 0 2px;
+}
+.cap-card h3 small { display: block; font-size: 11px; letter-spacing: 0.15em; color: var(--dim); margin-top: 3px; }
+.cap-card p { color: var(--dim); font-size: 12.5px; line-height: 1.65; }
+.cap-card .spell-tag {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+    padding: 3px 8px;
+    border: 1px solid var(--rule);
+    display: inline-block;
+    margin-top: 4px;
+    align-self: flex-start;
+    background: var(--glass);
+}
+
+/* demo illustration helpers (all monochrome, SVG-only) */
+.cap-svg path,
+.cap-svg line,
+.cap-svg rect,
+.cap-svg circle,
+.cap-svg polyline,
+.cap-svg polygon {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.cap-svg .fill     { fill: var(--ink); stroke: none; }
+.cap-svg .dim      { stroke: var(--dim); }
+.cap-svg .faint    { stroke: var(--faint); }
+.cap-svg .rec      { fill: #FF3B30; stroke: none; animation: blinkRec 1.2s infinite; }
+@keyframes blinkRec { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+.cap-svg .shimmer  { animation: capShimmer 4.6s infinite var(--ease); transform-origin: center; }
+@keyframes capShimmer { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+.cap-svg text {
+    fill: var(--dim);
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.08em;
+}
+.cap-svg text.hi { fill: var(--ink); }
+
+/* Checkerboard for transparency preview */
+.cap-svg .checker { fill: rgba(255,255,255,0.05); stroke: none; }
+
 /* Section 03 — dual perspective */
 .dual {
     display: grid;
@@ -704,6 +776,10 @@ footer {
             <span class="lang-en">Terminal</span>
             <span class="lang-ja">ターミナル</span>
         </a>
+        <a href="#capabilities">
+            <span class="lang-en">Capabilities</span>
+            <span class="lang-ja">できること</span>
+        </a>
         <a href="./usage.html">
             <span class="lang-en">Manual</span>
             <span class="lang-ja">マニュアル</span>
@@ -874,12 +950,291 @@ footer {
 </section>
 
 <!-- ═════════════════════════════════════════════════════════════════
+     SECTION 04 — CAPABILITIES (six doors into the mirror)
+     ═════════════════════════════════════════════════════════════════ -->
+<section class="section" id="capabilities">
+    <div class="section-number">
+        <span class="lang-en">Section 04 — CAPABILITIES</span>
+        <span class="lang-ja">セクション 04 — できること</span>
+    </div>
+    <h2 class="lang-en">Six <em>doors</em> into the mirror.</h2>
+    <h2 class="lang-ja">鏡に開かれた、<em>6つの扉</em>。</h2>
+
+    <div class="cap-grid">
+
+        <!-- ── 1. SVG EXPORT — for designers who work in Figma / Illustrator ── -->
+        <article class="cap-card">
+            <div class="demo-frame">
+                <div class="demo-frame-label">▸ SVG EXPORT</div>
+                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                    <!-- left: a pencil stroke -->
+                    <path d="M 40 150 C 60 100, 90 80, 120 100 S 150 160, 170 130" stroke-width="2"/>
+                    <!-- pencil nib -->
+                    <polygon points="170,128 180,122 182,128 172,134" class="fill"/>
+                    <!-- arrow -->
+                    <line x1="200" y1="112" x2="230" y2="112"/>
+                    <polyline points="224,106 232,112 224,118"/>
+                    <!-- svg tag -->
+                    <rect x="246" y="86" width="64" height="52"/>
+                    <text x="278" y="118" text-anchor="middle" class="hi">&lt;svg/&gt;</text>
+                    <!-- destination apps -->
+                    <rect x="330" y="70" width="42" height="42"/>
+                    <text x="351" y="97" text-anchor="middle" class="hi">F</text>
+                    <text x="351" y="108" text-anchor="middle">figma</text>
+                    <rect x="330" y="118" width="42" height="42"/>
+                    <text x="351" y="145" text-anchor="middle" class="hi">Ai</text>
+                    <text x="351" y="156" text-anchor="middle">illust</text>
+                    <!-- whispers of precision -->
+                    <text x="40" y="190">pen · pressure · bezier</text>
+                    <text x="40" y="204" class="faint" style="stroke:none; fill:var(--faint);">native vectors — no raster bake</text>
+                </svg>
+            </div>
+            <h3>
+                SVG EXPORT
+                <small class="lang-en">Pencil strokes become editable vectors</small>
+                <small class="lang-ja">鉛筆の線が、そのまま編集可能なベクターに</small>
+            </h3>
+            <p class="lang-en">Draw with the pen. Type <code>svg</code>. Drop the file into Figma or Illustrator and keep editing — beziers, anchors, strokes all intact.</p>
+            <p class="lang-ja">鉛筆で描いて、<code>svg</code> と唱える。書き出した SVG を Figma / Illustrator に放り込めば、曲線・アンカー・線幅すべてそのまま編集できる。</p>
+            <span class="spell-tag">$ svg</span>
+        </article>
+
+        <!-- ── 2. TRANSPARENT PNG — objects on alpha ── -->
+        <article class="cap-card">
+            <div class="demo-frame">
+                <div class="demo-frame-label">▸ TRANSPARENT PNG</div>
+                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                    <!-- checkerboard background for transparency -->
+                    <g>
+                        <!-- 20×12 cells of 16px -->
+                        <rect class="checker" x="16"  y="22"  width="16" height="16"/>
+                        <rect class="checker" x="48"  y="22"  width="16" height="16"/>
+                        <rect class="checker" x="80"  y="22"  width="16" height="16"/>
+                        <rect class="checker" x="112" y="22"  width="16" height="16"/>
+                        <rect class="checker" x="144" y="22"  width="16" height="16"/>
+                        <rect class="checker" x="176" y="22"  width="16" height="16"/>
+                        <rect class="checker" x="208" y="22"  width="16" height="16"/>
+                        <rect class="checker" x="240" y="22"  width="16" height="16"/>
+                        <rect class="checker" x="272" y="22"  width="16" height="16"/>
+                        <rect class="checker" x="304" y="22"  width="16" height="16"/>
+                        <rect class="checker" x="336" y="22"  width="16" height="16"/>
+                        <rect class="checker" x="32"  y="38"  width="16" height="16"/>
+                        <rect class="checker" x="64"  y="38"  width="16" height="16"/>
+                        <rect class="checker" x="96"  y="38"  width="16" height="16"/>
+                        <rect class="checker" x="128" y="38"  width="16" height="16"/>
+                        <rect class="checker" x="160" y="38"  width="16" height="16"/>
+                        <rect class="checker" x="192" y="38"  width="16" height="16"/>
+                        <rect class="checker" x="224" y="38"  width="16" height="16"/>
+                        <rect class="checker" x="256" y="38"  width="16" height="16"/>
+                        <rect class="checker" x="288" y="38"  width="16" height="16"/>
+                        <rect class="checker" x="320" y="38"  width="16" height="16"/>
+                        <rect class="checker" x="16"  y="54"  width="16" height="16"/>
+                        <rect class="checker" x="48"  y="54"  width="16" height="16"/>
+                        <rect class="checker" x="80"  y="54"  width="16" height="16"/>
+                        <rect class="checker" x="112" y="54"  width="16" height="16"/>
+                        <rect class="checker" x="144" y="54"  width="16" height="16"/>
+                        <rect class="checker" x="176" y="54"  width="16" height="16"/>
+                        <rect class="checker" x="208" y="54"  width="16" height="16"/>
+                        <rect class="checker" x="240" y="54"  width="16" height="16"/>
+                        <rect class="checker" x="272" y="54"  width="16" height="16"/>
+                        <rect class="checker" x="304" y="54"  width="16" height="16"/>
+                        <rect class="checker" x="336" y="54"  width="16" height="16"/>
+                        <rect class="checker" x="32"  y="70"  width="16" height="16"/>
+                        <rect class="checker" x="64"  y="70"  width="16" height="16"/>
+                        <rect class="checker" x="96"  y="70"  width="16" height="16"/>
+                        <rect class="checker" x="128" y="70"  width="16" height="16"/>
+                        <rect class="checker" x="160" y="70"  width="16" height="16"/>
+                        <rect class="checker" x="192" y="70"  width="16" height="16"/>
+                        <rect class="checker" x="224" y="70"  width="16" height="16"/>
+                        <rect class="checker" x="256" y="70"  width="16" height="16"/>
+                        <rect class="checker" x="288" y="70"  width="16" height="16"/>
+                        <rect class="checker" x="320" y="70"  width="16" height="16"/>
+                        <rect class="checker" x="16"  y="86"  width="16" height="16"/>
+                        <rect class="checker" x="48"  y="86"  width="16" height="16"/>
+                        <rect class="checker" x="80"  y="86"  width="16" height="16"/>
+                        <rect class="checker" x="112" y="86"  width="16" height="16"/>
+                        <rect class="checker" x="144" y="86"  width="16" height="16"/>
+                        <rect class="checker" x="176" y="86"  width="16" height="16"/>
+                        <rect class="checker" x="208" y="86"  width="16" height="16"/>
+                        <rect class="checker" x="240" y="86"  width="16" height="16"/>
+                        <rect class="checker" x="272" y="86"  width="16" height="16"/>
+                        <rect class="checker" x="304" y="86"  width="16" height="16"/>
+                        <rect class="checker" x="336" y="86"  width="16" height="16"/>
+                        <rect class="checker" x="32"  y="102" width="16" height="16"/>
+                        <rect class="checker" x="64"  y="102" width="16" height="16"/>
+                        <rect class="checker" x="96"  y="102" width="16" height="16"/>
+                        <rect class="checker" x="128" y="102" width="16" height="16"/>
+                        <rect class="checker" x="160" y="102" width="16" height="16"/>
+                        <rect class="checker" x="192" y="102" width="16" height="16"/>
+                        <rect class="checker" x="224" y="102" width="16" height="16"/>
+                        <rect class="checker" x="256" y="102" width="16" height="16"/>
+                        <rect class="checker" x="288" y="102" width="16" height="16"/>
+                        <rect class="checker" x="320" y="102" width="16" height="16"/>
+                    </g>
+                    <!-- floating object — an asymmetric blob -->
+                    <path d="M 140 70 C 120 55, 120 95, 140 105 C 165 120, 210 130, 240 115 C 275 97, 275 60, 240 52 C 215 46, 170 50, 140 70 Z"
+                          class="fill" style="opacity:0.9"/>
+                    <!-- .png badge -->
+                    <rect x="272" y="140" width="88" height="28"/>
+                    <text x="316" y="158" text-anchor="middle" class="hi">.png  ·  α</text>
+                    <!-- copy hints -->
+                    <text x="20" y="180" class="hi">OBJECT → PNG</text>
+                    <text x="20" y="196" class="faint" style="stroke:none; fill:var(--faint);">alpha channel preserved · 2× pixel-ratio</text>
+                </svg>
+            </div>
+            <h3>
+                TRANSPARENT PNG
+                <small class="lang-en">Ship objects with a clean alpha channel</small>
+                <small class="lang-ja">背景透過のままオブジェクトを書き出し</small>
+            </h3>
+            <p class="lang-en">Select one or many shapes, hit <code>png</code>, get a pixel-crisp raster with full transparency — drop it into Keynote, Notion, a deck, a Discord post.</p>
+            <p class="lang-ja">形を選んで <code>png</code> と唱えれば、アルファチャンネル付きの高精細 PNG に。Keynote でも Notion でもスライドでも、そのまま置ける。</p>
+            <span class="spell-tag">$ png</span>
+        </article>
+
+        <!-- ── 3. IMAGE BRAINSTORM — keywords fetch images non-stop ── -->
+        <article class="cap-card">
+            <div class="demo-frame">
+                <div class="demo-frame-label">▸ IMAGE BRAINSTORM</div>
+                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                    <!-- terminal line at top -->
+                    <text x="20" y="32" class="hi" style="font-size:10px;">&gt; fetch-img  biwako  mist  dawn</text>
+                    <line x1="20" y1="42" x2="380" y2="42" class="faint"/>
+                    <!-- 3×3 image placeholders with X inside -->
+                    <g transform="translate(28 54)">
+                        <g><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
+                        <g transform="translate(118 0)"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
+                        <g transform="translate(236 0)"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
+                        <g transform="translate(0 60)"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
+                        <g transform="translate(118 60)" class="shimmer"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
+                        <g transform="translate(236 60)"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
+                    </g>
+                    <text x="20" y="212" class="faint" style="stroke:none; fill:var(--faint);">scatter on canvas · drop any keyword · never stops</text>
+                </svg>
+            </div>
+            <h3>
+                IMAGE BRAINSTORM
+                <small class="lang-en">Keywords → scatter of images. Thoughts, non-stop.</small>
+                <small class="lang-ja">キーワードでイメージが散る。思考、ノンストップ。</small>
+            </h3>
+            <p class="lang-en">Type a word. Images of it appear on the board — spread, rotated, ready to annotate. The canvas becomes a mood-board that writes itself.</p>
+            <p class="lang-ja">一語を投げれば、イメージがボード上に散らばる。回転、余白、注釈。キャンバスが、勝手にムードボードになる。</p>
+            <span class="spell-tag">$ fetch-img &lt;keyword&gt;</span>
+        </article>
+
+        <!-- ── 4. CUSTOM SPELLS — write your own magic ── -->
+        <article class="cap-card">
+            <div class="demo-frame">
+                <div class="demo-frame-label">▸ CUSTOM SPELLS</div>
+                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                    <!-- sparkles -->
+                    <path d="M 30 40 L 34 44 M 34 40 L 30 44" class="faint"/>
+                    <path d="M 360 58 L 366 64 M 366 58 L 360 64" class="faint"/>
+                    <path d="M 50 180 L 56 186 M 56 180 L 50 186" class="faint"/>
+                    <path d="M 370 180 L 378 188 M 378 180 L 370 188" class="faint"/>
+                    <!-- JSON card -->
+                    <rect x="70" y="36" width="260" height="150"/>
+                    <line x1="90" y1="58" x2="310" y2="58" class="faint"/>
+                    <text x="86" y="54" class="hi">{  custom spell  }</text>
+                    <text x="86" y="80"  class="hi">  "$":   "moonpaint",</text>
+                    <text x="86" y="100" class="hi">  "on":  "click",</text>
+                    <text x="86" y="120" class="hi">  "do":  "ink.blur(3)  →</text>
+                    <text x="86" y="138" class="hi">          bloom(✶✶✶)"</text>
+                    <text x="86" y="166">}  —  saved as $moonpaint</text>
+                    <!-- arrow to canvas -->
+                    <line x1="340" y1="110" x2="380" y2="110"/>
+                    <polyline points="374,104 380,110 374,116"/>
+                </svg>
+            </div>
+            <h3>
+                CUSTOM SPELLS
+                <small class="lang-en">Author your own magic. Yours forever.</small>
+                <small class="lang-ja">自分だけの魔法を、自分だけに</small>
+            </h3>
+            <p class="lang-en">Write one line of JS or paste JSON — your command is registered, auto-completed, persisted. Describe what you want to Claude or ChatGPT and get a spell back instantly.</p>
+            <p class="lang-ja">1 行の JS を書く。あるいは JSON を貼るだけ。呪文は登録され、補完され、IndexedDB に残る。Claude や ChatGPT に自然言語で依頼すれば、動く JSON が返ってくる。</p>
+            <span class="spell-tag">$ register  ·  paste JSON</span>
+        </article>
+
+        <!-- ── 5. SHARE / SNS — spells travel as JSON ── -->
+        <article class="cap-card">
+            <div class="demo-frame">
+                <div class="demo-frame-label">▸ SHARE · SNS</div>
+                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                    <!-- center spell card -->
+                    <rect x="160" y="88" width="80" height="50"/>
+                    <text x="200" y="110" text-anchor="middle" class="hi">$ spell</text>
+                    <text x="200" y="124" text-anchor="middle" class="faint" style="stroke:none; fill:var(--faint);">.json</text>
+                    <!-- arrows radiating -->
+                    <line x1="160" y1="92"  x2="92"  y2="62"/>
+                    <polyline points="98,56 90,62 96,68"/>
+                    <line x1="240" y1="92"  x2="308" y2="62"/>
+                    <polyline points="302,56 310,62 304,68"/>
+                    <line x1="160" y1="136" x2="92"  y2="168"/>
+                    <polyline points="98,162 90,168 96,174"/>
+                    <line x1="240" y1="136" x2="308" y2="168"/>
+                    <polyline points="302,162 310,168 304,174"/>
+                    <!-- destinations -->
+                    <rect x="52"  y="40"  width="40" height="40"/><text x="72" y="65" text-anchor="middle" class="hi">X</text>
+                    <rect x="308" y="40"  width="40" height="40"/><text x="328" y="65" text-anchor="middle" class="hi">◇</text>
+                    <rect x="52"  y="154" width="40" height="40"/><text x="72" y="179" text-anchor="middle" class="hi">DM</text>
+                    <rect x="308" y="154" width="40" height="40"/><text x="328" y="179" text-anchor="middle" class="hi">☁</text>
+                </svg>
+            </div>
+            <h3>
+                SHARE / SNS
+                <small class="lang-en">A spell is a text string. Text travels.</small>
+                <small class="lang-ja">魔法は一片のテキスト。いくらでも、どこにでも</small>
+            </h3>
+            <p class="lang-en">Export any spell as JSON — drop it into X, Slack, a gist, or your friend's DM. They paste, it installs. Features spread like memes.</p>
+            <p class="lang-ja">呪文は JSON 1枚。X に貼る、Slack に貼る、gist にしてもいい。受け取った人は貼るだけで自分のボードに魔法が住み着く。機能はミームのように広がる。</p>
+            <span class="spell-tag">$ export  ·  $ paste</span>
+        </article>
+
+        <!-- ── 6. CAMERA / YouTube LIVE ── -->
+        <article class="cap-card">
+            <div class="demo-frame">
+                <div class="demo-frame-label">▸ CAMERA / LIVE</div>
+                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                    <!-- viewport frame -->
+                    <rect x="28" y="26" width="344" height="152"/>
+                    <!-- silhouette -->
+                    <circle cx="200" cy="95" r="22" class="faint"/>
+                    <path d="M 160 160 C 170 125, 230 125, 240 160 Z" class="faint"/>
+                    <!-- PIP (the wipe) -->
+                    <rect x="288" y="34" width="72" height="54"/>
+                    <circle cx="304" cy="48" r="4" class="rec"/>
+                    <text x="312" y="52" class="hi">REC</text>
+                    <circle cx="324" cy="60" r="10" class="faint"/>
+                    <path d="M 314 76 C 320 68, 328 68, 334 76 Z" class="faint"/>
+                    <!-- live label + waveform -->
+                    <text x="40" y="50" class="hi">● LIVE  ·  YouTube</text>
+                    <polyline class="dim"
+                        points="40,168 60,160 70,172 90,150 100,170 120,156 140,170 160,160 180,172 200,152 220,170 240,160 260,170 280,156 300,170 320,158 340,170 360,162"/>
+                    <!-- spell call-out -->
+                    <text x="212" y="210" text-anchor="middle" class="faint" style="stroke:none; fill:var(--faint);">type: Black Mirror → camera · draggable PIP · one-click stream</text>
+                </svg>
+            </div>
+            <h3>
+                CAMERA / YouTube LIVE
+                <small class="lang-en">The mirror can look back.</small>
+                <small class="lang-ja">鏡は、こちらも覗き返す</small>
+            </h3>
+            <p class="lang-en">Type <code>Black Mirror</code>. A draggable webcam wipe appears — selfie-mirrored, CRT-tinted. Flip a switch and the canvas streams straight to YouTube. Casual, personal, live.</p>
+            <p class="lang-ja"><code>Black Mirror</code> と唱えれば、カメラのワイプがふわっと現れる。ドラッグで自由に置ける。スイッチ一つで、キャンバスはそのまま YouTube ライブへ。気楽で、個人的で、生。</p>
+            <span class="spell-tag">$ Black Mirror  ·  $ live</span>
+        </article>
+
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════
      EMBEDDED TERMINAL — splash-page spellbook
      ═════════════════════════════════════════════════════════════════ -->
 <section class="terminal-section" id="try">
     <div class="section-number">
-        <span class="lang-en">Section 04 — TRY A COMMAND</span>
-        <span class="lang-ja">セクション 04 — コマンドを試す</span>
+        <span class="lang-en">Section 05 — TRY A COMMAND</span>
+        <span class="lang-ja">セクション 05 — コマンドを試す</span>
     </div>
     <h2 class="lang-en">The mirror <em>is</em> already listening.</h2>
     <h2 class="lang-ja">鏡は、すでに<em>聞いている</em>。</h2>
