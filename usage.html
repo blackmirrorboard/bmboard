@@ -6,6 +6,20 @@
 <title>⬛ BLACK MIRROR — USAGE</title>
 <link rel="icon" type="image/svg+xml"
       href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='5' y='5' width='22' height='22' rx='2' fill='%230c0c0c'/><rect x='11' y='11' width='4' height='10' fill='%23FAFAF8'/><rect x='17' y='11' width='4' height='10' fill='%23FAFAF8'/></svg>">
+<!-- Apply stored theme before paint. Shares `bmboard.theme` across BM pages. -->
+<script>
+(function () {
+    try {
+        var t = localStorage.getItem('bmboard.theme');
+        if (t !== 'light' && t !== 'dark') {
+            t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -13,6 +27,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
+        /* DARK MODE (default) */
         --bg:       #0b0b0b;
         --bg-2:     #141414;
         --bg-3:     #191919;
@@ -24,6 +39,52 @@
         --ok:       #8fe3c5;
         --jp:       #F0EDE6;
         --en:       rgba(240,237,230,0.72);
+    }
+    html[data-theme="light"] {
+        --bg:       #FAFAF8;
+        --bg-2:     #F1EFE9;
+        --bg-3:     #E8E6DE;
+        --fg:       #0c0c0c;
+        --fg-dim:   rgba(12,12,12,0.62);
+        --fg-faint: rgba(12,12,12,0.34);
+        --rule:     rgba(12,12,12,0.16);
+        --tag-bg:   rgba(12,12,12,0.06);
+        --ok:       #227a5a;
+        --jp:       #0c0c0c;
+        --en:       rgba(12,12,12,0.72);
+    }
+
+    /* Theme toggle — fixed top-right, shared across BM sub-pages */
+    .theme-toggle {
+        position: fixed;
+        top: 12px;
+        right: 14px;
+        z-index: 300;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border: 1px solid var(--rule);
+        background: var(--bg);
+        font-family: 'Space Mono','Courier New',Courier,monospace;
+        font-size: 12px;
+        cursor: pointer;
+        transition: border-color .15s;
+        user-select: none;
+    }
+    .theme-toggle:hover { border-color: var(--fg); }
+    .theme-toggle .theme-tok {
+        color: var(--fg-faint);
+        padding: 0 3px;
+        cursor: pointer;
+        transition: color .15s;
+    }
+    .theme-toggle .theme-tok:hover { color: var(--fg-dim); }
+    .theme-toggle .theme-sep { color: var(--fg-faint); }
+    html[data-theme="dark"]  .theme-toggle [data-set-theme="dark"],
+    html:not([data-theme="light"]) .theme-toggle [data-set-theme="dark"],
+    html[data-theme="light"] .theme-toggle [data-set-theme="light"] {
+        color: var(--fg);
     }
 
     html, body { background: var(--bg); color: var(--fg); }
@@ -1088,5 +1149,31 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
 </footer>
 
 </div>
+
+<div class="theme-toggle" id="themeToggle" role="group" aria-label="switch theme" title="dark / light">
+    <span class="theme-tok" data-set-theme="dark">●</span>
+    <span class="theme-sep">·</span>
+    <span class="theme-tok" data-set-theme="light">○</span>
+</div>
+
+<script>
+(function () {
+    const KEY = 'bmboard.theme';
+    const root = document.documentElement;
+    const current = () => root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const apply = (t) => {
+        const next = (t === 'light') ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem(KEY, next); } catch {}
+    };
+    document.querySelectorAll('.theme-toggle .theme-tok').forEach(tok => {
+        tok.addEventListener('click', (e) => { e.stopPropagation(); apply(tok.dataset.setTheme); });
+    });
+    document.getElementById('themeToggle')?.addEventListener('click', (e) => {
+        if (e.target.matches('.theme-tok')) return;
+        apply(current() === 'dark' ? 'light' : 'dark');
+    });
+})();
+</script>
 </body>
 </html>
