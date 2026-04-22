@@ -124,9 +124,9 @@
             height: 50px;
             background: var(--wb);
             border-bottom: 1px solid var(--wb-border);
-            /* 3-column grid: [ empty spacer | centered logo | right buttons ] */
+            /* 2-column grid: [ logo (left) | right buttons ] */
             display: grid;
-            grid-template-columns: 1fr auto 1fr;
+            grid-template-columns: auto 1fr;
             align-items: center;
             padding: 0 16px;
             gap: 12px;
@@ -161,8 +161,8 @@
             align-items: center;
             gap: 0;
             touch-action: manipulation;
-            grid-column: 2;                 /* centered middle column of header grid */
-            justify-self: center;
+            grid-column: 1;                 /* left column of header grid */
+            justify-self: start;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
@@ -179,15 +179,30 @@
                `flush` / `clear` terminal command and the in-terminal flush. */
             .hbtn-flush     { display: none !important; }
             .hbtn-clear     { display: none !important; }
-            .hlink-overview { display: none !important; }
-
-            /* Mobile layout: pin the logo to the LEFT edge, right buttons stay at the end. */
-            header {
-                grid-template-columns: auto 1fr;
-                padding: 0 10px;
+            /* OVERVIEW stays visible on mobile but stacks as "OVER / VIEW"
+               so it fits next to the other vertical hbtn icons. */
+            .hlink-overview {
+                display: inline-flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 1px;
+                padding: 3px 5px;
+                min-width: 36px;
+                font-size: 7px;
+                letter-spacing: 0.08em;
+                line-height: 1;
+                border: 1px solid var(--wb-border);
+                color: #888;
+                text-decoration: none;
             }
-            .logo-btn     { grid-column: 1; justify-self: start; }
-            .header-right { grid-column: 2; justify-self: end; gap: 4px; }
+            .hlink-overview:hover { color: #111; border-color: #999; }
+            .hlink-overview .ov-line1,
+            .hlink-overview .ov-line2 { display: block; }
+
+            /* Mobile layout: same grid as desktop, just tighter padding / gap. */
+            header        { padding: 0 10px; }
+            .header-right { gap: 4px; }
 
             /* Stack icon above label so each button stays narrow and doesn't
                overlap the left-pinned logo. */
@@ -330,7 +345,7 @@
         .fm-ig-link:hover { color: #111; border-color: #999; }
 
         .header-right {
-            grid-column: 3;                 /* right column of header grid */
+            grid-column: 2;                 /* right column of header grid */
             justify-self: end;
             display: flex;
             align-items: center;
@@ -378,6 +393,10 @@
         }
 
         .hlink:hover { color: #111; }
+
+        /* Desktop: the spans flow inline as plain text "OVERVIEW" */
+        .hlink-overview .ov-line1,
+        .hlink-overview .ov-line2 { display: inline; }
 
         /* ══════════════════════════════════
            MAIN LAYOUT
@@ -986,6 +1005,56 @@
             border-right-color: var(--bm-tb-border);
             border-bottom-color: var(--bm-tb-border);
         }
+
+        /* ── Header theming for dark / gray canvas modes ─────────────── */
+        body.bm-dark header,
+        body.bm-gray header {
+            background: var(--bm-tb-bg);
+            border-bottom-color: var(--bm-tb-border);
+        }
+        body.bm-dark .hbtn,
+        body.bm-gray .hbtn {
+            color: var(--bm-tb-icon);
+            border-color: var(--bm-tb-border);
+        }
+        body.bm-dark .hbtn:hover,
+        body.bm-gray .hbtn:hover {
+            color: var(--bm-tb-icon-hover);
+            border-color: var(--bm-tb-border);
+            background: var(--bm-tb-hover-bg);
+        }
+        body.bm-dark .hlink,
+        body.bm-gray .hlink { color: var(--bm-tb-icon); }
+        body.bm-dark .hlink:hover,
+        body.bm-gray .hlink:hover { color: var(--bm-tb-icon-hover); }
+        body.bm-dark .hlink-overview,
+        body.bm-gray .hlink-overview {
+            color: var(--bm-tb-icon);
+            border-color: var(--bm-tb-border);
+        }
+        body.bm-dark .hlink-overview:hover,
+        body.bm-gray .hlink-overview:hover {
+            color: var(--bm-tb-icon-hover);
+            border-color: var(--bm-tb-border);
+            background: var(--bm-tb-hover-bg);
+        }
+        body.bm-dark .zoom-label,
+        body.bm-gray .zoom-label { color: var(--bm-tb-icon); }
+        body.bm-dark .logo,
+        body.bm-gray .logo { color: var(--bm-fg); }
+        body.bm-dark .logo-mark,  body.bm-dark .logo-ver,
+        body.bm-gray .logo-mark,  body.bm-gray .logo-ver {
+            color: var(--bm-fg-dim);
+        }
+        body.bm-dark .logo-fallback,
+        body.bm-gray .logo-fallback { color: var(--bm-fg); }
+        body.bm-dark .logo-fallback .logo-mark,
+        body.bm-dark .logo-fallback .logo-ver,
+        body.bm-gray .logo-fallback .logo-mark,
+        body.bm-gray .logo-fallback .logo-ver { color: var(--bm-fg-dim); }
+
+        /* Logo PNG is dark ink on transparent → invert for dark mode only */
+        body.bm-dark .logo-img { filter: invert(1); }
         body.bm-dark .toolbar .tool-btn,
         body.bm-gray .toolbar .tool-btn        { color: var(--bm-tb-icon); border-color: transparent; }
         body.bm-dark .toolbar .tool-btn:hover,
@@ -1190,7 +1259,9 @@
         <button class="hbtn hbtn-clear" onclick="clearCanvas()">CLEAR</button>
         <button class="hbtn hbtn-flush" onclick="flushTerm()">FLUSH</button>
         <button class="hbtn" onclick="openUsage()">USAGE</button>
-        <a class="hlink hlink-overview" href="overview.html">OVERVIEW →</a>
+        <a class="hlink hlink-overview" href="overview.html">
+            <span class="ov-line1">OVER</span><span class="ov-line2">VIEW</span>
+        </a>
     </div>
 </header>
 
