@@ -6,6 +6,20 @@
     <title>⬛ BLACK MIRROR — Overview</title>
     <link rel="icon" type="image/svg+xml"
           href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='5' y='5' width='22' height='22' rx='2' fill='%230c0c0c'/><rect x='11' y='11' width='4' height='10' fill='%23FAFAF8'/><rect x='17' y='11' width='4' height='10' fill='%23FAFAF8'/></svg>">
+    <!-- Apply stored theme before paint. Shares `bmboard.theme` across BM pages. -->
+    <script>
+    (function () {
+        try {
+            var t = localStorage.getItem('bmboard.theme');
+            if (t !== 'light' && t !== 'dark') {
+                t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+            }
+            document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    })();
+    </script>
     <!-- JetBrains Mono: renders U+2588 full blocks and box-drawing chars at
          proper cell height so the BM ASCII art stays intact. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,13 +30,63 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
+            /* DARK MODE (default) */
             --ink:   #080808;
             --paper: #FAFAF8;
             --glow:  #F2EFE8;
-            --dim:   #666;
+            --dim:   #BEBAB2;
             --line:  #242424;
             --mid:   #BEBAB2;
             --warm:  #a0745a;
+            --pre-bg:     #050505;
+            --pre-text:   #9a9690;
+            --logo-bg:    #020202;
+            --logo-border:#2a2a2a;
+        }
+        html[data-theme="light"] {
+            --ink:   #FAFAF8;   /* body background becomes paper */
+            --paper: #080808;   /* role reversed — kept for any legacy ref */
+            --glow:  #0c0c0c;   /* text color becomes dark ink */
+            --dim:   #5a5a5a;
+            --line:  #d6d2c9;
+            --mid:   #6a635a;
+            --warm:  #a0745a;
+            --pre-bg:     #f2efe8;
+            --pre-text:   #3a3632;
+            --logo-bg:    #ececec;
+            --logo-border:#c6c1b5;
+        }
+        /* Theme toggle — fixed top-right, same pattern as other BM pages */
+        .theme-toggle {
+            position: fixed;
+            top: 12px;
+            right: 14px;
+            z-index: 400;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border: 1px solid var(--line);
+            background: var(--ink);
+            font-family: 'JetBrains Mono','Courier New',monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: border-color .15s;
+            user-select: none;
+        }
+        .theme-toggle:hover { border-color: var(--glow); }
+        .theme-toggle .theme-tok {
+            color: var(--dim);
+            padding: 0 3px;
+            cursor: pointer;
+            transition: color .15s;
+        }
+        .theme-toggle .theme-tok:hover { color: var(--glow); }
+        .theme-toggle .theme-sep { color: var(--dim); }
+        html[data-theme="dark"]  .theme-toggle [data-set-theme="dark"],
+        html:not([data-theme="light"]) .theme-toggle [data-set-theme="dark"],
+        html[data-theme="light"] .theme-toggle [data-set-theme="light"] {
+            color: var(--glow);
         }
 
         body {
@@ -168,14 +232,14 @@
         }
 
         .md-body pre {
-            background: #050505;
+            background: var(--pre-bg);
             border: 1px solid var(--line);
             padding: 20px 22px;
             overflow-x: auto;
             margin: 16px 0;
             font-size: 0.76rem;
             line-height: 1.7;
-            color: #9a9690;
+            color: var(--pre-text);
             /* Use a true box-drawing-capable monospace stack (Courier New renders
                ██ / ╔ / ║ etc at inconsistent widths, which shatters ASCII art). */
             font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', 'DejaVu Sans Mono', 'Courier New', monospace;
@@ -202,8 +266,8 @@
             letter-spacing: 0 !important;
             word-spacing: 0 !important;
             white-space: pre !important;
-            border-color: #2a2a2a;
-            background: #020202;
+            border-color: var(--logo-border);
+            background: var(--logo-bg);
             padding: 24px 22px;
             text-align: left;         /* block won't inherit div[align=center] */
             display: block;
@@ -275,6 +339,7 @@
     <nav class="nav">
         <a href="app.html">← APP</a>
         <a href="usage.html">USAGE HTML</a>
+        <a href="./commands.html">COMMANDS</a>
         <a href="./dev-log.html">DEV LOG</a>
     </nav>
 </header>
@@ -1000,6 +1065,32 @@ instagram  →  @tkinoshita99
     });
 
     loadMd('README.md');
+</script>
+
+<!-- Theme toggle — floats top-right, syncs via bmboard.theme -->
+<div class="theme-toggle" id="themeToggle" role="group" aria-label="switch theme" title="dark / light">
+    <span class="theme-tok" data-set-theme="dark">●</span>
+    <span class="theme-sep">·</span>
+    <span class="theme-tok" data-set-theme="light">○</span>
+</div>
+<script>
+(function () {
+    const KEY = 'bmboard.theme';
+    const root = document.documentElement;
+    const current = () => root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const apply = (t) => {
+        const next = (t === 'light') ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem(KEY, next); } catch {}
+    };
+    document.querySelectorAll('.theme-toggle .theme-tok').forEach(tok => {
+        tok.addEventListener('click', (e) => { e.stopPropagation(); apply(tok.dataset.setTheme); });
+    });
+    document.getElementById('themeToggle')?.addEventListener('click', (e) => {
+        if (e.target.matches('.theme-tok')) return;
+        apply(current() === 'dark' ? 'light' : 'dark');
+    });
+})();
 </script>
 </body>
 </html>
