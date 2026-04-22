@@ -6,6 +6,11 @@
     <title>⬛ BLACK MIRROR — Overview</title>
     <link rel="icon" type="image/svg+xml"
           href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='5' y='5' width='22' height='22' rx='2' fill='%230c0c0c'/><rect x='11' y='11' width='4' height='10' fill='%23FAFAF8'/><rect x='17' y='11' width='4' height='10' fill='%23FAFAF8'/></svg>">
+    <!-- JetBrains Mono: renders U+2588 full blocks and box-drawing chars at
+         proper cell height so the BM ASCII art stays intact. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -171,16 +176,37 @@
             font-size: 0.76rem;
             line-height: 1.7;
             color: #9a9690;
-            /* first pre = logo block — give it a bit more breathing room */
+            /* Use a true box-drawing-capable monospace stack (Courier New renders
+               ██ / ╔ / ║ etc at inconsistent widths, which shatters ASCII art). */
+            font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', 'DejaVu Sans Mono', 'Courier New', monospace;
+            font-variant-ligatures: none;
+            white-space: pre;
+            tab-size: 4;
         }
 
-        /* Logo pre — first code block in README */
-        .md-body pre:first-of-type {
+        /* Logo pre — first code block in README (the BM ASCII art).
+           Use JetBrains Mono with aggressive resets: the default system
+           fonts render U+2588 (█) shorter than the cell, leaving vertical
+           gaps that shatter the pixel art. JetBrains Mono fills the full
+           cell consistently. Everything is !important to defeat any later
+           rule that might creep in. */
+        .md-body pre:first-of-type,
+        .md-body div[align="center"] > pre {
+            font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace !important;
+            font-variant-ligatures: none !important;
+            font-feature-settings: "liga" 0, "calt" 0 !important;
+            -webkit-font-smoothing: subpixel-antialiased;
             color: var(--glow);
-            font-size: 0.72rem;
-            letter-spacing: 0.01em;
+            font-size: 14px !important;
+            line-height: 1 !important;
+            letter-spacing: 0 !important;
+            word-spacing: 0 !important;
+            white-space: pre !important;
             border-color: #2a2a2a;
             background: #020202;
+            padding: 24px 22px;
+            text-align: left;         /* block won't inherit div[align=center] */
+            display: block;
         }
 
         .md-body pre code { background: none; padding: 0; color: inherit; }
