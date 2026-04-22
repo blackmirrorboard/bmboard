@@ -124,7 +124,9 @@
             height: 50px;
             background: var(--wb);
             border-bottom: 1px solid var(--wb-border);
-            display: flex;
+            /* 3-column grid: [ empty spacer | centered logo | right buttons ] */
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
             padding: 0 16px;
             gap: 12px;
@@ -159,6 +161,8 @@
             align-items: center;
             gap: 0;
             touch-action: manipulation;
+            grid-column: 2;                 /* centered middle column of header grid */
+            justify-self: center;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
@@ -171,6 +175,36 @@
         }
         @media (max-width: 700px) {
             .logo-img { height: 26px; }
+            /* Hide the header FLUSH button on mobile — still reachable via the
+               `flush` / `clear` terminal command and the in-terminal flush. */
+            .hbtn-flush     { display: none !important; }
+            .hbtn-clear     { display: none !important; }
+            .hlink-overview { display: none !important; }
+
+            /* Mobile layout: pin the logo to the LEFT edge, right buttons stay at the end. */
+            header {
+                grid-template-columns: auto 1fr;
+                padding: 0 10px;
+            }
+            .logo-btn     { grid-column: 1; justify-self: start; }
+            .header-right { grid-column: 2; justify-self: end; gap: 4px; }
+
+            /* Stack icon above label so each button stays narrow and doesn't
+               overlap the left-pinned logo. */
+            .hbtn {
+                flex-direction: column;
+                gap: 1px;
+                padding: 3px 5px;
+                min-width: 36px;
+                font-size: 7px;
+                letter-spacing: 0.08em;
+                line-height: 1;
+            }
+            .hbtn svg {
+                margin-right: 0 !important;   /* override the inline spacing */
+                width: 11px; height: 11px;
+            }
+            .zoom-label { min-width: 28px; font-size: 8px; }
         }
         /* Fallback text logo shown when img fails to load */
         .logo-fallback {
@@ -296,10 +330,12 @@
         .fm-ig-link:hover { color: #111; border-color: #999; }
 
         .header-right {
-            margin-left: auto;
+            grid-column: 3;                 /* right column of header grid */
+            justify-self: end;
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: 0;                   /* let horizontal overflow shrink, not push */
         }
 
         .zoom-label {
@@ -323,6 +359,11 @@
             transition: border-color 0.12s, color 0.12s;
             touch-action: manipulation;
             user-select: none;
+            /* keep icon + label centered inside the button box */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -1146,10 +1187,10 @@
         <button class="hbtn" id="redoBtn" onclick="redo()" title="Redo (Ctrl+Y)" disabled>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px"><path d="M8 3.5 Q8 1 4.5 1 Q1 1 1 5 Q1 9 4.5 9 L7.5 9"/><polyline points="6,7 7.5,9 6,11"/></svg>REDO
         </button>
-        <button class="hbtn" onclick="clearCanvas()">CLEAR</button>
-        <button class="hbtn" onclick="flushTerm()">FLUSH</button>
+        <button class="hbtn hbtn-clear" onclick="clearCanvas()">CLEAR</button>
+        <button class="hbtn hbtn-flush" onclick="flushTerm()">FLUSH</button>
         <button class="hbtn" onclick="openUsage()">USAGE</button>
-        <a class="hlink" href="overview.html">OVERVIEW →</a>
+        <a class="hlink hlink-overview" href="overview.html">OVERVIEW →</a>
     </div>
 </header>
 
