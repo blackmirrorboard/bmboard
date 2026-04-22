@@ -4946,6 +4946,12 @@ function runCommand(val) {
     if (head==='light'||low==='light mode') { if(MODE==='light'){printRaw('[SYSTEM] already in light mode.','t-dim');return;} enqueue('[SYSTEM] Switching to LIGHT MODE...',['[SYSTEM] restoring color matrix...','[SYSTEM] canvas: #FAFAF8  stroke: #0c0c0c','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('light'),220); return; }
     if (head==='gray'||head==='grey'||low==='gray mode'||low==='grey mode') { if(MODE==='gray'){printRaw('[SYSTEM] already in gray mode.','t-dim');return;} enqueue('[SYSTEM] Initializing Studio Environment...',['[SYSTEM] canvas: #DCDBD5  accent: #1600A2','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('gray'),220); return; }
     if (head==='usage'||head==='man'||head==='docs') { enqueue(`$ ${head}`,['→ loading manual...','[SYSTEM] USAGE summoned — Esc to dismiss.'],'t-dim'); setTimeout(openUsage,260); return; }
+    // Open the personal spellbook (commands.html) in a new tab
+    if (head==='commands'||head==='cmds'||head==='spellbook') {
+        enqueue(`$ ${head}`, ['→ opening spellbook...', '[SYSTEM] commands.html — new tab'], 't-dim');
+        setTimeout(() => { try { window.open('./commands.html', '_blank', 'noopener'); } catch(_) { location.href = './commands.html'; } }, 220);
+        return;
+    }
 
     // ── help ──────────────────────────────────────────────────────────────
     if (head==='help'||head==='?') {
@@ -4977,6 +4983,7 @@ function runCommand(val) {
             '',
             '  THEMES: dark · light · gray     TOOLS: S P N E C G Q A T',
             '  CAMERA: "Black Mirror" / "Black Mirror off"  (top-right wipe)',
+            '  DOCS:   $usage (modal)  ·  $commands (full spellbook HTML)',
         ]);
         return;
     }
