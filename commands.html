@@ -381,15 +381,19 @@
     }
     footer.end a { color: var(--ink); }
 
-    /* theme toggle */
+    /* Theme toggle — fixed top-right so it's visible on every viewport */
     .theme-toggle {
-        margin-top: 14px;
+        position: fixed;
+        top: 12px;
+        right: 14px;
+        z-index: 300;
         display: inline-flex;
         align-items: center;
         gap: 4px;
         padding: 4px 10px;
         border: 1px solid var(--line);
-        background: var(--card-tint);
+        background: var(--void);
+        font-family: var(--mono);
         font-size: 12px;
         cursor: pointer;
         transition: border-color .15s;
@@ -454,13 +458,14 @@
     </ul>
 
     <a href="./app.html" class="back-link">← OPEN BOARD</a>
-
-    <div class="theme-toggle" id="themeToggle" role="group" aria-label="switch theme" title="dark / light">
-        <span class="theme-tok" data-set-theme="dark">●</span>
-        <span class="theme-sep">·</span>
-        <span class="theme-tok" data-set-theme="light">○</span>
-    </div>
 </aside>
+
+<!-- Theme toggle — floats top-right on every viewport -->
+<div class="theme-toggle" id="themeToggle" role="group" aria-label="switch theme" title="dark / light">
+    <span class="theme-tok" data-set-theme="dark">●</span>
+    <span class="theme-sep">·</span>
+    <span class="theme-tok" data-set-theme="light">○</span>
+</div>
 
 <main class="body">
 
