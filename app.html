@@ -2127,6 +2127,21 @@ function updateZoomLabel() {
 // OBJECT GEOMETRY HELPERS
 // ══════════════════════════════════════════════════
 
+// Shared offscreen 2d context for precise text metrics. Used by all text-
+// bbox consumers (render, hit-test, center, bounds) so the blue selection
+// chrome, rotation pivot and drag hit region always match the rendered glyphs
+// — including wide Japanese / emoji runs where a length×0.6 approximation
+// over- or under-shoots badly.
+const _textMeasureCtx = (document.createElement('canvas')).getContext('2d');
+function measureTextMetrics(text, fs) {
+    _textMeasureCtx.font = `${fs}px "Courier New", monospace`;
+    const m = _textMeasureCtx.measureText(text || '');
+    const ascent  = (m.actualBoundingBoxAscent  || fs * 0.8);
+    const descent = (m.actualBoundingBoxDescent || fs * 0.22);
+    const width   = Math.max(m.width, 8);              // keep empty string clickable
+    return { width, ascent, descent, height: ascent + descent };
+}
+
 function getObjCenter(obj) {
     switch (obj.type) {
         case 'circle':   return { x: obj.data.cx, y: obj.data.cy };
@@ -2141,8 +2156,8 @@ function getObjCenter(obj) {
         case 'arrow':    return { x: (obj.data.x1+obj.data.x2)/2, y: (obj.data.y1+obj.data.y2)/2 };
         case 'text': {
             const fs = obj.data.fontSize || 16;
-            const tw = obj.data.text.length * fs * 0.6;
-            return { x: obj.data.x + tw / 2, y: obj.data.y - fs / 2 };
+            const m  = measureTextMetrics(obj.data.text, fs);
+            return { x: obj.data.x + m.width/2, y: obj.data.y - m.ascent + m.height/2 };
         }
         case 'stroke': {
             const bb = strokeBBox(obj.data.pts);
@@ -2173,8 +2188,8 @@ function getObjBounds(obj) {
         }
         case 'text': {
             const fs = obj.data.fontSize || 16;
-            const tw = obj.data.text.length * fs * 0.6;
-            return { x: obj.data.x, y: obj.data.y - fs, w: Math.max(tw, 16), h: fs * 1.3 };
+            const m  = measureTextMetrics(obj.data.text, fs);
+            return { x: obj.data.x, y: obj.data.y - m.ascent, w: m.width, h: m.height };
         }
         case 'stroke': return strokeBBox(obj.data.pts);
         case 'image':  return { x: obj.data.x, y: obj.data.y, w: obj.data.w, h: obj.data.h };
@@ -2809,8 +2824,10 @@ function renderText(obj) {
     ctx.fillStyle = getStrokeColor();
     ctx.fillText(text, x, y);
     if (obj.selected) {
-        const tw = ctx.measureText(text).width;
-        selBox(x, y - fs, tw, fs * 1.3);
+        // Tight bbox via shared metrics — the blue chrome now actually
+        // hugs the glyph run regardless of char width (ASCII / CJK / emoji).
+        const m = measureTextMetrics(text, fs);
+        selBox(x, y - m.ascent, m.width, m.height);
         drawAnchors(obj);
     }
     ctx.restore();
@@ -3284,9 +3301,11 @@ function scaleObjToGroupBounds(obj, origData, origGB, newGB) {
             const newFs = Math.max(8, Math.min(200, Math.round(Math.min(fsH, fsW))));
             obj.data.fontSize = newFs;
             obj.data.x = sX(od.x);
-            // text y is baseline; bbox top = y - fontSize; scale bbox top then re-add fontSize
-            const origBboxTop = od.y - (od.fontSize || 16);
-            obj.data.y = sY(origBboxTop) + newFs;
+            // text y is baseline; re-anchor using measured ascent so the
+            // visual bbox top tracks the scale correctly.
+            const origAsc = measureTextMetrics(od.text, od.fontSize || 16).ascent;
+            const newAsc  = measureTextMetrics(od.text, newFs).ascent;
+            obj.data.y = sY(od.y - origAsc) + newAsc;
             break;
         }
         case 'stroke':
@@ -3348,7 +3367,9 @@ function hitTest(obj, x, y, extraPad = 0) {
         case 'text': {
             const {x: ox, y: oy, text, fontSize} = obj.data;
             const fs = fontSize || 16;
-            return px >= ox-pad && px <= ox+text.length*fs*0.6+pad && py >= oy-fs-pad && py <= oy+fs*0.3+pad;
+            const m  = measureTextMetrics(text, fs);
+            return px >= ox - pad && px <= ox + m.width + pad
+                && py >= oy - m.ascent - pad && py <= oy + m.descent + pad;
         }
         case 'stroke': {
             const pts = obj.data.pts;
@@ -3753,15 +3774,21 @@ function applyAnchor(obj, anchorId, nx, ny) {
             const rt = resizeBoxWithMods(anchorId, ob, nx, ny, mods5.shift, mods5.alt);
             if (!rt) return;
             const { nBx, nBy, nBw, nBh } = rt;
-            const fsH = nBh / 1.3;
-            const fsW = nBw / ((od.text.length || 1) * 0.6);
+            // Scale relative to the *measured* pre-resize metrics — not a
+            // constant 0.6×length guess — so Japanese / emoji text resizes
+            // proportionally instead of stretching or squishing.
+            const origFs   = od.fontSize || 16;
+            const origMetr = measureTextMetrics(od.text, origFs);
+            const fsH = origFs * (nBh / Math.max(1, origMetr.height));
+            const fsW = origFs * (nBw / Math.max(1, origMetr.width));
             let newFs = (anchorId==='tm'||anchorId==='bm') ? fsH
                       : (anchorId==='bl'||anchorId==='br') ? Math.min(fsH, fsW)
                       : fsW;
             newFs = Math.max(8, Math.min(200, Math.round(newFs)));
             obj.data.fontSize = newFs;
+            const newMetr = measureTextMetrics(od.text, newFs);
             obj.data.x = nBx;
-            obj.data.y = nBy + newFs;
+            obj.data.y = nBy + newMetr.ascent;
             break;
         }
 
