@@ -2587,7 +2587,7 @@ function onUp() {
         if (S.pathDrag) {
             const d  = S.pathDrag;
             const pt = S.pathPts[d.idx];
-            const moveTol = (S.lastPointerType === 'touch' ? 6 : 4) / VIEW.scale;
+            const moveTol = (S.lastPointerType === 'touch' ? 10 : 7) / VIEW.scale;
             const movedFar = Math.hypot(S.curPt.x - d.startPt.x, S.curPt.y - d.startPt.y) > moveTol;
             if (pt && d.mode === 'newHandle' && !movedFar) {
                 // Pure click, no drag → corner anchor (no handles)
@@ -2838,11 +2838,37 @@ function renderStroke(obj) {
     if (pts.length < 2) return;
     ctx.save();
     ctx.strokeStyle = obj.data.stroke || getStrokeColor(); ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+    // Flag sharp-turn vertices as true corners so star/triangle tips keep their
+    // angles instead of being rounded away by the quadratic-midpoint smoothing.
+    // Threshold picked to trigger on intentional corners (>~65° turn) while
+    // leaving hand-drawn circles/arcs with their handwritten smoothing.
+    const n = pts.length;
+    const CORNER_TURN = 1.13;
+    const isCorner = new Uint8Array(n);
+    for (let i = 1; i < n - 1; i++) {
+        const a = pts[i-1], b = pts[i], c = pts[i+1];
+        const v1x = b.x - a.x, v1y = b.y - a.y;
+        const v2x = c.x - b.x, v2y = c.y - b.y;
+        const l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y);
+        if (l1 < 1e-6 || l2 < 1e-6) continue;
+        const dot = (v1x*v2x + v1y*v2y) / (l1 * l2);
+        const turn = Math.acos(Math.max(-1, Math.min(1, dot)));
+        if (turn > CORNER_TURN) isCorner[i] = 1;
+    }
+
     ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length; i++) {
+    for (let i = 1; i < n; i++) {
         const pp = pts[i-1], p = pts[i];
-        const mx = (pp.x+p.x)/2, my = (pp.y+p.y)/2;
-        ctx.quadraticCurveTo(pp.x, pp.y, mx, my);
+        const startAtVertex = (i === 1) || isCorner[i-1];
+        const endAtVertex   = (i === n - 1) || isCorner[i];
+        const ex = endAtVertex ? p.x : (pp.x + p.x) / 2;
+        const ey = endAtVertex ? p.y : (pp.y + p.y) / 2;
+        if (startAtVertex && endAtVertex) {
+            ctx.lineTo(ex, ey);
+        } else {
+            ctx.quadraticCurveTo(pp.x, pp.y, ex, ey);
+        }
     }
     if (closed) {
         ctx.closePath();
@@ -2910,6 +2936,9 @@ function renderPenInProgress() {
         const mx = (pp.x+p.x)/2, my = (pp.y+p.y)/2;
         ctx.quadraticCurveTo(pp.x, pp.y, mx, my);
     }
+    // Extend to the actual final sample so the live stroke reaches the pointer
+    const _lastP = pts[pts.length - 1];
+    ctx.lineTo(_lastP.x, _lastP.y);
     ctx.stroke();
     // Closing preview line (dashed) when snapping
     if (S.penSnapClose) {
