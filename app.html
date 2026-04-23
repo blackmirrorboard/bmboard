@@ -591,6 +591,112 @@
             pointer-events: none;
         }
 
+        /* ── TIMER overlay ─────────────────────────────────────────────── */
+        .bm-timer {
+            position: absolute;
+            z-index: 35;
+            background: var(--bm-pop-bg, #fff);
+            border: 1px solid var(--bm-pop-border, #e5e2da);
+            box-shadow: var(--bm-pop-shadow, 0 2px 8px rgba(0,0,0,0.08));
+            font-family: 'Courier New', monospace;
+            color: var(--bm-fg, #0c0c0c);
+            padding: 6px 10px 10px;
+            min-width: 168px;
+            user-select: none;
+        }
+        .bm-timer-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            color: var(--bm-fg-dim, rgba(0,0,0,0.55));
+            cursor: move;
+            padding: 2px 2px 6px;
+            border-bottom: 1px solid var(--bm-sep, #eee);
+        }
+        .bm-timer-title { flex: 1; }
+        .bm-timer-x {
+            background: transparent;
+            border: none;
+            color: var(--bm-fg-dim, #888);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .bm-timer-x:hover { color: var(--bm-fg, #0c0c0c); }
+        .bm-timer-time {
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            font-size: 40px;
+            font-weight: 500;
+            padding: 10px 0 8px;
+            letter-spacing: 0.04em;
+            font-variant-numeric: tabular-nums;
+        }
+        .bm-timer-seg {
+            cursor: pointer;
+            padding: 0 3px;
+            border-radius: 2px;
+            outline: none;
+        }
+        .bm-timer-seg:hover { background: var(--bm-tb-hover-bg, rgba(0,0,0,0.05)); }
+        .bm-timer-seg.editing {
+            background: var(--bm-tb-hover-bg, rgba(0,0,0,0.05));
+            box-shadow: 0 0 0 1px var(--bm-accent, #1e6fe0);
+        }
+        .bm-timer-col { padding: 0 2px; }
+        .bm-timer.running .bm-timer-col { animation: bm-timer-tick 1s step-end infinite; }
+        @keyframes bm-timer-tick { 50% { opacity: 0.25; } }
+        .bm-timer-ctrl {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+        .bm-timer-ctrl button {
+            flex: 1;
+            background: transparent;
+            border: 1px solid var(--bm-pop-border, #ddd);
+            color: var(--bm-fg, #0c0c0c);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            padding: 4px 6px;
+            cursor: pointer;
+            min-width: 30px;
+            line-height: 1;
+        }
+        .bm-timer-ctrl button:hover { background: var(--bm-tb-hover-bg, rgba(0,0,0,0.05)); }
+        .bm-timer.warn .bm-timer-time { color: var(--bm-accent, #1e6fe0); }
+        .bm-timer.done .bm-timer-time { color: var(--bm-accent, #1e6fe0); }
+
+        .bm-timer-banner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 40;
+            font-family: 'Courier New', monospace;
+            font-size: 56px;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            color: var(--bm-fg, #0c0c0c);
+            background: var(--bm-pop-bg, #fff);
+            border: 2px solid var(--bm-fg, #0c0c0c);
+            padding: 20px 42px;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .bm-timer-banner.show { animation: bm-timer-banner-anim 3.2s ease-out forwards; }
+        @keyframes bm-timer-banner-anim {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+            8%   { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+            16%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            78%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
         .det-label {
             position: absolute;
             font-size: 13px;
@@ -1371,6 +1477,22 @@
         <div id="textOverlay">
             <input id="ti2" type="text" autocomplete="off" spellcheck="false" placeholder="type…">
         </div>
+        <div id="bmTimer" class="bm-timer" style="display:none">
+            <div class="bm-timer-bar">
+                <span class="bm-timer-title">TIMER</span>
+                <button class="bm-timer-x" title="close">×</button>
+            </div>
+            <div class="bm-timer-time">
+                <span id="bmTimerMM" class="bm-timer-seg" data-seg="mm">05</span><span class="bm-timer-col">:</span><span id="bmTimerSS" class="bm-timer-seg" data-seg="ss">00</span>
+            </div>
+            <div class="bm-timer-ctrl">
+                <button data-tm="dec" title="−30s">−</button>
+                <button data-tm="start" id="bmTimerStart" title="start/pause">▶</button>
+                <button data-tm="reset" title="reset">↺</button>
+                <button data-tm="inc" title="+30s">+</button>
+            </div>
+        </div>
+        <div id="bmTimerBanner" class="bm-timer-banner" style="display:none">TIME UP</div>
         <div class="shape-hint">○ △ □ → — draw · wheel/pinch zoom · space+drag to pan · drag □ anchors to deform</div>
     </section>
 
@@ -4931,6 +5053,250 @@ let _termHist = [], _termHistIx = -1, _termDraft = '';
 function pushHistory(val) { if(!val)return; if(_termHist[_termHist.length-1]===val)return; _termHist.push(val); if(_termHist.length>BM_HISTORY_MAX)_termHist.shift(); _termHistIx=-1; try{localStorage.setItem('bm.termHistory.v1',JSON.stringify(_termHist))}catch{} }
 function loadTermHistory() { try{const raw=localStorage.getItem('bm.termHistory.v1');if(raw)_termHist=JSON.parse(raw)||[]}catch{} }
 
+// ══════════════════════════════════════════════════
+// TIMER — `timer` command overlay
+// ══════════════════════════════════════════════════
+const _bmT = {
+    el: null, mmEl: null, ssEl: null, startBtn: null, banner: null,
+    duration: 300, remaining: 300, running: false, endAt: 0,
+    tickId: null, lastBeep: null, wired: false,
+};
+
+function bmTimerInit() {
+    if (_bmT.wired) return;
+    _bmT.el       = document.getElementById('bmTimer');
+    _bmT.mmEl     = document.getElementById('bmTimerMM');
+    _bmT.ssEl     = document.getElementById('bmTimerSS');
+    _bmT.startBtn = document.getElementById('bmTimerStart');
+    _bmT.banner   = document.getElementById('bmTimerBanner');
+    if (!_bmT.el) return;
+
+    _bmT.el.addEventListener('click', e => {
+        const act = e.target && e.target.dataset && e.target.dataset.tm;
+        if (!act) return;
+        if (act === 'start') bmTimerToggle();
+        else if (act === 'reset') bmTimerReset();
+        else if (act === 'inc') bmTimerAdjust(+30);
+        else if (act === 'dec') bmTimerAdjust(-30);
+        e.stopPropagation();
+    });
+    _bmT.el.querySelector('.bm-timer-x').addEventListener('click', e => {
+        e.stopPropagation(); bmTimerHide();
+    });
+    [_bmT.mmEl, _bmT.ssEl].forEach(seg => {
+        seg.addEventListener('click', e => { e.stopPropagation(); bmTimerEditSeg(seg); });
+    });
+
+    // Drag via header bar (relative to canvas-panel #cp)
+    const bar = _bmT.el.querySelector('.bm-timer-bar');
+    let dragging = false, ox = 0, oy = 0;
+    bar.addEventListener('pointerdown', e => {
+        if (e.target.classList.contains('bm-timer-x')) return;
+        dragging = true;
+        const r = _bmT.el.getBoundingClientRect();
+        ox = e.clientX - r.left; oy = e.clientY - r.top;
+        try { bar.setPointerCapture(e.pointerId); } catch {}
+        e.stopPropagation();
+    });
+    bar.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const cp = document.getElementById('cp').getBoundingClientRect();
+        _bmT.el.style.left = (e.clientX - cp.left - ox) + 'px';
+        _bmT.el.style.top  = (e.clientY - cp.top  - oy) + 'px';
+    });
+    bar.addEventListener('pointerup', e => {
+        dragging = false;
+        try { bar.releasePointerCapture(e.pointerId); } catch {}
+    });
+
+    _bmT.wired = true;
+}
+
+function bmTimerShow(initialSec) {
+    bmTimerInit();
+    if (!_bmT.el) return;
+    if (typeof initialSec === 'number' && initialSec > 0) {
+        _bmT.duration  = Math.min(3599, Math.max(1, Math.floor(initialSec)));
+        _bmT.remaining = _bmT.duration;
+    }
+    bmTimerStop();
+    bmTimerRender();
+    _bmT.el.style.display = 'block';
+    const cp = document.getElementById('cp').getBoundingClientRect();
+    const w  = _bmT.el.offsetWidth || 180, h = _bmT.el.offsetHeight || 140;
+    _bmT.el.style.left = Math.max(8, (cp.width  - w) / 2) + 'px';
+    _bmT.el.style.top  = Math.max(8, (cp.height - h) / 2 - 40) + 'px';
+}
+
+function bmTimerHide() {
+    bmTimerStop();
+    if (_bmT.el) _bmT.el.style.display = 'none';
+}
+
+function bmTimerRender() {
+    if (!_bmT.el) return;
+    const r = Math.max(0, Math.ceil(_bmT.remaining));
+    if (document.activeElement !== _bmT.mmEl) _bmT.mmEl.textContent = String(Math.floor(r / 60)).padStart(2, '0');
+    if (document.activeElement !== _bmT.ssEl) _bmT.ssEl.textContent = String(r % 60).padStart(2, '0');
+    _bmT.startBtn.textContent = _bmT.running ? '❙❙' : '▶';
+    _bmT.el.classList.toggle('running', _bmT.running);
+    _bmT.el.classList.toggle('warn', _bmT.running && r <= 10 && r > 0);
+    _bmT.el.classList.toggle('done', r === 0);
+}
+
+function bmTimerToggle() { _bmT.running ? bmTimerStop() : bmTimerStart(); }
+
+function bmTimerStart() {
+    if (_bmT.remaining <= 0) _bmT.remaining = _bmT.duration;
+    if (_bmT.remaining <= 0) return;
+    _bmT.running  = true;
+    _bmT.endAt    = performance.now() + _bmT.remaining * 1000;
+    _bmT.lastBeep = null;
+    if (_bmT.tickId) cancelAnimationFrame(_bmT.tickId);
+    const tick = () => {
+        if (!_bmT.running) return;
+        const left = Math.max(0, (_bmT.endAt - performance.now()) / 1000);
+        _bmT.remaining = left;
+        const whole = Math.ceil(left);
+        // Last-10s countdown beeps (fired once per whole-second transition)
+        if (whole >= 1 && whole <= 10 && _bmT.lastBeep !== whole) {
+            _bmT.lastBeep = whole;
+            bmTimerBeep(880, 0.09, 0.16);
+        }
+        bmTimerRender();
+        if (left <= 0) {
+            _bmT.running = false; _bmT.remaining = 0;
+            bmTimerRender();
+            bmTimerAlert();
+            return;
+        }
+        _bmT.tickId = requestAnimationFrame(tick);
+    };
+    _bmT.tickId = requestAnimationFrame(tick);
+    bmTimerRender();
+}
+
+function bmTimerStop() {
+    _bmT.running = false;
+    if (_bmT.tickId) { cancelAnimationFrame(_bmT.tickId); _bmT.tickId = null; }
+    bmTimerRender();
+}
+
+function bmTimerReset() {
+    bmTimerStop();
+    _bmT.remaining = _bmT.duration;
+    _bmT.lastBeep  = null;
+    bmTimerRender();
+}
+
+function bmTimerAdjust(deltaSec) {
+    if (_bmT.running) return;
+    _bmT.duration  = Math.min(3599, Math.max(0, _bmT.duration + deltaSec));
+    _bmT.remaining = _bmT.duration;
+    bmTimerRender();
+}
+
+function bmTimerEditSeg(seg) {
+    if (_bmT.running) return;
+    const isMm = seg.dataset.seg === 'mm';
+    seg.classList.add('editing');
+    seg.contentEditable = 'true';
+    seg.focus();
+    const range = document.createRange();
+    range.selectNodeContents(seg);
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(range);
+    const commit = () => {
+        seg.classList.remove('editing');
+        seg.contentEditable = 'false';
+        const raw = (seg.textContent || '').replace(/\D/g, '');
+        let v = Math.min(59, Math.max(0, parseInt(raw || '0', 10)));
+        const curMm = Math.floor(_bmT.duration / 60), curSs = _bmT.duration % 60;
+        const mm = isMm ? v : curMm;
+        const ss = isMm ? curSs : v;
+        _bmT.duration  = mm * 60 + ss;
+        _bmT.remaining = _bmT.duration;
+        bmTimerRender();
+        seg.removeEventListener('blur', commit);
+        seg.removeEventListener('keydown', keyH);
+    };
+    const keyH = (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); seg.blur(); }
+        if (e.key === 'Escape') { e.preventDefault(); bmTimerRender(); seg.blur(); }
+    };
+    seg.addEventListener('blur', commit);
+    seg.addEventListener('keydown', keyH);
+}
+
+function bmTimerBeep(freq, dur, gain) {
+    try {
+        const ac = getAC();
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = freq;
+        o.connect(g); g.connect(ac.destination);
+        const now = ac.currentTime;
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(gain, now + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        o.start(now); o.stop(now + dur + 0.02);
+    } catch {}
+}
+
+function bmTimerAlert() {
+    try {
+        const ac = getAC();
+        const now = ac.currentTime;
+        // Two ascending chimes — monochrome alert
+        [660, 880, 1320].forEach((f, i) => {
+            const o = ac.createOscillator(), g = ac.createGain();
+            o.type = 'sine'; o.frequency.value = f;
+            o.connect(g); g.connect(ac.destination);
+            const t0 = now + i * 0.18;
+            g.gain.setValueAtTime(0.0001, t0);
+            g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.6);
+            o.start(t0); o.stop(t0 + 0.65);
+        });
+    } catch {}
+    const b = _bmT.banner;
+    if (!b) return;
+    b.style.display = 'block';
+    b.classList.remove('show');
+    void b.offsetWidth;  // force reflow to restart the animation
+    b.classList.add('show');
+    clearTimeout(_bmT._bannerTO);
+    _bmT._bannerTO = setTimeout(() => {
+        b.classList.remove('show');
+        b.style.display = 'none';
+    }, 3250);
+}
+
+// "5" → 300s (minutes shortcut) · "5:30" → 330 · "1:02:00" → 3720
+// "30s", "5m", "1h", "5m30s", "1分", "30秒" も許容
+function bmParseTimerArg(s) {
+    if (!s) return null;
+    const str = String(s).trim().toLowerCase();
+    if (!str) return null;
+    if (/^\d+(:\d{1,2}){1,2}$/.test(str)) {
+        const parts = str.split(':').map(n => parseInt(n, 10));
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+    const re = /(\d+)\s*(h|m|s|時間|分|秒)/g;
+    let total = 0, matched = false, m;
+    while ((m = re.exec(str))) {
+        matched = true;
+        const n = parseInt(m[1], 10), u = m[2];
+        if (u === 'h' || u === '時間') total += n * 3600;
+        else if (u === 'm' || u === '分') total += n * 60;
+        else total += n;
+    }
+    if (matched) return total;
+    if (/^\d+$/.test(str)) return parseInt(str, 10) * 60;
+    return null;
+}
+
 // ── Main dispatcher — the single entry point for every terminal input ─────
 function runCommand(val) {
     if (!val) return;
@@ -4975,6 +5341,34 @@ function runCommand(val) {
     if (head==='light'||low==='light mode') { if(MODE==='light'){printRaw('[SYSTEM] already in light mode.','t-dim');return;} enqueue('[SYSTEM] Switching to LIGHT MODE...',['[SYSTEM] restoring color matrix...','[SYSTEM] canvas: #FAFAF8  stroke: #0c0c0c','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('light'),220); return; }
     if (head==='gray'||head==='grey'||low==='gray mode'||low==='grey mode') { if(MODE==='gray'){printRaw('[SYSTEM] already in gray mode.','t-dim');return;} enqueue('[SYSTEM] Initializing Studio Environment...',['[SYSTEM] canvas: #DCDBD5  accent: #1600A2','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('gray'),220); return; }
     if (head==='usage'||head==='man'||head==='docs') { enqueue(`$ ${head}`,['→ loading manual...','[SYSTEM] USAGE summoned — Esc to dismiss.'],'t-dim'); setTimeout(openUsage,260); return; }
+
+    // ── timer ─ board overlay with start/stop + last-10s countdown + time-up chime
+    //   timer            → default 5:00
+    //   timer 3          → 3 minutes (bare number = minutes)
+    //   timer 2:30       → 2 min 30 sec
+    //   timer 1:02:00    → 1 hour 2 min
+    //   timer 90s / 5m / 1h / 5m30s / 30秒 / 5分  もOK
+    //   timer off|close  → dismiss
+    if (head === 'timer') {
+        const sub = rest.trim().toLowerCase();
+        if (sub === 'off' || sub === 'close' || sub === 'hide') {
+            bmTimerHide();
+            enqueue(`$ timer ${sub}`, ['→ timer dismissed.']);
+            return;
+        }
+        const parsed = bmParseTimerArg(rest);
+        const sec    = (parsed && parsed > 0) ? Math.min(3599, parsed) : 300;
+        bmTimerShow(sec);
+        const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+        const ss = String(sec % 60).padStart(2, '0');
+        enqueue(`$ timer${rest ? ' ' + rest : ''}`, [
+            `→ summoning timer — ${mm}:${ss}`,
+            '→ ▶ start · ❙❙ pause · ↺ reset · ± adjust 30s',
+            '→ click mm/ss to edit · drag header to move',
+        ]);
+        return;
+    }
+
     // Open the personal spellbook (commands.html) in a new tab
     if (head==='commands'||head==='cmds'||head==='spellbook') {
         enqueue(`$ ${head}`, ['→ opening spellbook...', '[SYSTEM] commands.html — new tab'], 't-dim');
@@ -5011,6 +5405,7 @@ function runCommand(val) {
             '  ╰─────────────────────────────────────────────────────────╯',
             '',
             '  THEMES: dark · light · gray     TOOLS: S P N E C G Q A T',
+            '  TIMER:  timer [mm:ss | 5 | 90s | 1h]  ·  timer off',
             '  CAMERA: "Black Mirror" / "Black Mirror off"  (top-right wipe)',
             '  DOCS:   $usage (modal)  ·  $commands (full spellbook HTML)',
         ]);
