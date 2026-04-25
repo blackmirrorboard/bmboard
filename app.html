@@ -5037,7 +5037,79 @@ function runCustomCmd(name, rawArgs) {
 }
 
 // ── iOS Share + file naming ───────────────────────────────────────────────
-function bmFilename(suffix = '') { const d=new Date(),p=n=>String(n).padStart(2,'0'); return `BM_PROJECT_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${suffix}.json`; }
+// ── Device detection (for default save filename) ─────────────────────────
+function bmDetectDevice() {
+    const ua = navigator.userAgent || '';
+    if (/iPhone/.test(ua)) return 'iphone';
+    if (/iPad/.test(ua))   return 'ipad';
+    // iPad on iOS 13+ may identify as Mac; differentiate by touch support
+    if (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1) return 'ipad';
+    if (/Macintosh|Mac OS X/.test(ua)) return 'mac';
+    if (/Windows/.test(ua)) return 'windows';
+    if (/Android/.test(ua)) return 'android';
+    if (/Linux/.test(ua))   return 'linux';
+    return 'web';
+}
+function bmDefaultName() {
+    const d=new Date(), p=n=>String(n).padStart(2,'0');
+    const yy=String(d.getFullYear()).slice(-2);
+    return `BMboard_${bmDetectDevice()}_${yy}${p(d.getMonth()+1)}${p(d.getDate())}`;
+}
+function bmFilename(suffix = '') { return `${bmDefaultName()}${suffix}.json`; }
+
+// ── Filename prompt dialog (lets user edit before save) ──────────────────
+// Shows default name, allows edit, Enter to confirm, Esc to cancel.
+function showSaveDialog(defaultBase, onConfirm) {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);display:flex;align-items:center;justify-content:center;z-index:99999;font:13px/1.5 monospace;color:#e8e6e0;';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#0c0c0c;border:1px solid #333;padding:24px 28px;min-width:340px;max-width:520px;width:calc(100% - 32px);';
+    card.innerHTML = `
+        <div style="font-size:11px;letter-spacing:.3em;color:#666;margin-bottom:14px;">◼ SAVE PROJECT</div>
+        <div style="color:#888;font-size:12px;margin-bottom:14px;">ファイル名 (filename) — Enter to save, Esc to cancel</div>
+        <div style="display:flex;align-items:stretch;gap:0;margin-bottom:6px;border:1px solid #333;background:#000;">
+            <input type="text" data-role="name" style="flex:1;background:transparent;border:none;outline:none;color:#e8e6e0;font:inherit;padding:10px 12px;min-width:0;" autocomplete="off" spellcheck="false">
+            <span style="display:inline-flex;align-items:center;color:#666;padding:0 12px;border-left:1px solid #1a1a1a;">.json</span>
+        </div>
+        <div style="color:#666;font-size:11px;margin-bottom:18px;">device: <span style="color:#7fdb7f;">${bmDetectDevice()}</span> · ${new Date().toLocaleString()}</div>
+        <div style="display:flex;gap:8px;justify-content:space-between;">
+            <button data-a="default" style="background:transparent;border:1px solid #333;color:#888;padding:8px 14px;font:inherit;cursor:pointer;">USE DEFAULT</button>
+            <div style="display:flex;gap:8px;">
+                <button data-a="cancel" style="background:transparent;border:1px solid #333;color:#888;padding:8px 14px;font:inherit;cursor:pointer;">CANCEL</button>
+                <button data-a="save" style="background:#1a1a1a;border:1px solid #7fdb7f;color:#7fdb7f;padding:8px 18px;font:inherit;cursor:pointer;">SAVE</button>
+            </div>
+        </div>
+    `;
+    ov.appendChild(card);
+    document.body.appendChild(ov);
+    const input = card.querySelector('[data-role=name]');
+    input.value = defaultBase;
+    setTimeout(() => { input.focus(); input.select(); }, 30);
+
+    const close = () => { try { document.body.removeChild(ov); } catch {} window.removeEventListener('keydown', keyHandler); };
+    const submit = () => {
+        let name = (input.value||'').trim();
+        if (!name) name = defaultBase;
+        // strip trailing .json if user typed it
+        name = name.replace(/\.json$/i, '');
+        // sanitize for filename safety
+        name = name.replace(/[\/\\:*?"<>|]+/g, '_');
+        close();
+        onConfirm(name + '.json');
+    };
+    function keyHandler(e) {
+        if (e.key === 'Enter')  { e.preventDefault(); submit(); }
+        if (e.key === 'Escape') { e.preventDefault(); close(); }
+    }
+    window.addEventListener('keydown', keyHandler);
+    card.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+        const a = b.getAttribute('data-a');
+        if (a === 'save')    submit();
+        else if (a === 'cancel')  close();
+        else if (a === 'default') { input.value = defaultBase; input.focus(); input.select(); }
+    }));
+    ov.addEventListener('click', e => { if (e.target === ov) close(); });
+}
 function bmIsIOS() { const ua=navigator.userAgent||''; if(/iPhone|iPad|iPod/.test(ua)) return true; return ua.includes('Mac')&&(navigator.maxTouchPoints||0)>1; }
 async function bmDeliverJson(json, fname) {
     if (bmIsIOS() && navigator.share) {
@@ -6452,13 +6524,24 @@ function exportProject() {
         objects:   JSON.parse(JSON.stringify(S.objects)),
         termLog,
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `blackmirror-${Date.now()}.json`;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
-    printRaw('[export] project saved as JSON ✓', 't-ok');
+    const json = JSON.stringify(payload, null, 2);
+    // Show filename dialog: default = BMboard_<device>_<YYMMDD>; user can edit
+    showSaveDialog(bmDefaultName(), (fname) => {
+        // Debug: print env so we can see why share sheet may not appear
+        const ios    = bmIsIOS();
+        const share  = !!navigator.share;
+        const secure = !!window.isSecureContext;
+        printRaw(`[export] env: ios=${ios} share=${share} secure=${secure} host=${location.host||'(file)'} → ${fname}`, 't-dim');
+        // Route through bmDeliverJson:
+        // - iOS + secure context + navigator.share: opens share sheet → user picks location
+        // - Otherwise: <a download> fallback
+        bmDeliverJson(json, fname).then(result => {
+            if (result === 'share')        printRaw(`[export] shared ✓ — ${fname}`, 't-ok');
+            else if (result === 'download') printRaw(`[export] downloaded ✓ — ${fname}`, 't-ok');
+        }).catch(err => {
+            printRaw('[export] error: ' + (err && err.message ? err.message : err), 't-err');
+        });
+    });
 }
 
 function importProject(file) {
