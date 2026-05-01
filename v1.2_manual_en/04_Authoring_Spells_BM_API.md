@@ -255,4 +255,4 @@ Paste that JSON onto social media — anyone can register it by pasting into the
 
 ---
 
-*99letters studio · Black Mirror Board v1.2 · 2026-04-19*
+*kinoshita studio · Black Mirror Board v1.2 · 2026-04-19*

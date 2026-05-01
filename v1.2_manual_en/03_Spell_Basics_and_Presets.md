@@ -221,4 +221,4 @@ Even explicit `register` can't clobber a preset.
 
 ---
 
-*99letters studio · Black Mirror Board v1.2 · 2026-04-19*
+*kinoshita studio · Black Mirror Board v1.2 · 2026-04-19*

@@ -164,4 +164,4 @@ A compact toolbar appears at the bottom. Keyboard shortcuts don't apply on mobil
 
 ---
 
-*99letters studio · Black Mirror Board v1.2 · 2026-04-19*
+*kinoshita studio · Black Mirror Board v1.2 · 2026-04-19*

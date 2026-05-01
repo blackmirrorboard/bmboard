@@ -539,6 +539,103 @@
         details.cmd summary .desc { display: block; width: 100%; }
         table.tbl th, table.tbl td { padding: 5px 6px; font-size: 11px; }
     }
+
+    /* ── QUICK START GRID ────────────────────────────────────── */
+    .qs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+        margin-top: 14px;
+    }
+    .qs-card {
+        border: 1px solid var(--line);
+        background: var(--card-tint, rgba(240,237,230,0.018));
+        padding: 16px 18px;
+        transition: border-color .15s, background .15s;
+    }
+    .qs-card:hover {
+        border-color: var(--ink);
+    }
+    .qs-cat {
+        font-family: var(--tech);
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        color: var(--faint);
+        margin-bottom: 12px;
+    }
+    .qs-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .qs-list li {
+        padding: 6px 0;
+        border-bottom: 1px dashed var(--rule);
+        font-size: 12.5px;
+        line-height: 1.65;
+        color: var(--dim);
+    }
+    .qs-list li:last-child { border-bottom: 0; }
+    .qs-list li b {
+        color: var(--ink);
+        font-weight: 400;
+    }
+    .qs-list li code {
+        font-family: var(--tech);
+        font-size: 11.5px;
+        color: var(--ink);
+        background: var(--pill-tint, rgba(240,237,230,0.08));
+        padding: 1px 6px;
+        margin: 0 1px;
+    }
+    .qs-list li code i {
+        color: var(--dim);
+        font-style: normal;
+    }
+
+    /* ── WRITE YOUR FIRST SPELL — step cards ────────────────── */
+    .spell-step {
+        display: grid;
+        grid-template-columns: 50px 1fr;
+        gap: 18px;
+        padding: 16px 0;
+        border-top: 1px solid var(--rule);
+        align-items: start;
+    }
+    .spell-step:last-of-type { border-bottom: 1px solid var(--rule); }
+    .spell-step-num {
+        font-family: var(--tech);
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        color: var(--ink);
+        background: var(--pill-tint, rgba(240,237,230,0.08));
+        padding: 6px 10px;
+        text-align: center;
+        align-self: start;
+    }
+    .spell-step-body {
+        font-size: 13.5px;
+        line-height: 1.75;
+        color: var(--ink);
+    }
+    .spell-step-body b {
+        font-weight: 400;
+        letter-spacing: 0.04em;
+    }
+    .spell-step-body code {
+        font-family: var(--tech);
+        font-size: 12px;
+        background: var(--pill-tint, rgba(240,237,230,0.08));
+        padding: 1px 6px;
+    }
+    .spell-step-body code i {
+        color: var(--dim);
+        font-style: normal;
+    }
+    @media (max-width: 600px) {
+        .spell-step { grid-template-columns: 1fr; gap: 8px; }
+        .spell-step-num { width: fit-content; }
+    }
 </style>
 </head>
 <body>
@@ -562,6 +659,8 @@
         </div>
 
         <ul class="toc-list" id="tocList">
+            <li><a href="#quickstart"><span class="n">▸</span>Quick Start — I want to…</a></li>
+            <li><a href="#first-spell"><span class="n">▸</span>Write Your First Spell</a></li>
             <li><a href="#themes"><span class="n">01</span>Themes</a></li>
             <li><a href="#canvas"><span class="n">02</span>Canvas Control</a></li>
             <li><a href="#camera"><span class="n">03</span>Camera / Wipe</a></li>
@@ -599,6 +698,158 @@
         <code>$command</code> の形式は "呪文（spell）" — プリセットとユーザー定義どちらも同じ表記です。
     </p>
 </header>
+
+<!-- ════════════════════════════════════════════════════════
+     QUICK START — "I want to do X, type Y"
+     ════════════════════════════════════════════════════════ -->
+<section class="section" id="quickstart">
+    <h2><span class="num">▸</span>Quick Start — I want to…</h2>
+    <p style="margin: 0 0 18px; color: var(--dim);">
+        BMBoard を久しぶりに開いて「あれ、何ができるんだっけ？」となった時のチートシート。<br>
+        やりたい事 → 打つコマンドの逆引きです。詳細は各セクションへ。
+    </p>
+
+    <div class="qs-grid">
+        <div class="qs-card">
+            <div class="qs-cat">— DRAW</div>
+            <ul class="qs-list">
+                <li><b>図形を出したい</b> → キーボード <code>C</code>（円）/ <code>Q</code>（四角）/ <code>G</code>（三角）/ <code>A</code>（矢印）</li>
+                <li><b>フリーハンドで描く</b> → <code>P</code>（pen）</li>
+                <li><b>テキスト</b> → <code>T</code> → クリックして入力</li>
+                <li><b>画像を貼る</b> → <code>I</code>（ファイル選択） or 直接ドラッグ&ドロップ</li>
+                <li><b>キーワードで画像を呼ぶ</b> → <code>fetch-img <i>mountain 6</i></code></li>
+            </ul>
+        </div>
+
+        <div class="qs-card">
+            <div class="qs-cat">— EDIT</div>
+            <ul class="qs-list">
+                <li><b>選択</b> → <code>S</code> → クリック / 範囲ドラッグ</li>
+                <li><b>削除</b> → 選択して <code>Delete</code> / <code>Backspace</code></li>
+                <li><b>取り消し</b> → <code>⌘ + Z</code> / やり直し <code>⌘ + Shift + Z</code></li>
+                <li><b>パン</b> → <code>Space</code> + ドラッグ</li>
+                <li><b>ズーム</b> → ホイール or ピンチ / リセット <code>ダブルタップ</code></li>
+                <li><b>画像を白黒に</b> → 選択して <code>monoclo</code></li>
+            </ul>
+        </div>
+
+        <div class="qs-card">
+            <div class="qs-cat">— TERMINAL</div>
+            <ul class="qs-list">
+                <li><b>テーマ切替</b> → <code>light</code> / <code>dark</code> / <code>gray</code></li>
+                <li><b>履歴を消す</b> → <code>clear</code></li>
+                <li><b>プリセット魔法を見る</b> → <code>list</code></li>
+                <li><b>過去の入力を呼ぶ</b> → ターミナルで <code>↑</code> / <code>↓</code></li>
+                <li><b>ヘルプ</b> → <code>help</code></li>
+            </ul>
+        </div>
+
+        <div class="qs-card">
+            <div class="qs-cat">— SAVE / SHARE</div>
+            <ul class="qs-list">
+                <li><b>キャンバスを保存</b> → <code>save <i>name</i></code></li>
+                <li><b>保存一覧</b> → <code>ls</code></li>
+                <li><b>呼び戻し</b> → <code>load <i>name</i></code></li>
+                <li><b>PNG で書き出し</b> → <code>X</code> または <code>export</code></li>
+                <li><b>SVG で書き出し</b> → <code>svg</code>（Illustrator/Figma 編集可）</li>
+                <li><b>URL でシェア</b> → <code>share</code>（gzip+URL に圧縮）</li>
+            </ul>
+        </div>
+
+        <div class="qs-card">
+            <div class="qs-cat">— SPELL（魔法）</div>
+            <ul class="qs-list">
+                <li><b>魔法を一発実行</b> → <code>$<i>spell-name</i></code> または <code><i>spell-name</i></code></li>
+                <li><b>登録済の魔法を見る</b> → <code>list</code></li>
+                <li><b>自分で魔法を作る</b> → <a href="#first-spell" style="color: var(--ink); border-bottom: 1px solid var(--ink);">↓ Write Your First Spell</a></li>
+                <li><b>他人の魔法を取り込む</b> → JSON を canvas に drag-drop</li>
+                <li><b>魔法を共有</b> → <code>share <i>spell-name</i></code> でクリップボードにコピー</li>
+            </ul>
+        </div>
+
+        <div class="qs-card">
+            <div class="qs-cat">— EASTER EGGS</div>
+            <ul class="qs-list">
+                <li><b>自撮りカメラで自分を映す</b> → <code>Black Mirror</code></li>
+                <li><b>カメラ OFF</b> → <code>Black Mirror off</code></li>
+                <li><b>?</b> → <code>youtube</code></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     WRITE YOUR FIRST SPELL — make-your-own intro
+     ════════════════════════════════════════════════════════ -->
+<section class="section" id="first-spell">
+    <h2><span class="num">▸</span>Write Your First Spell</h2>
+    <p style="margin: 0 0 18px; color: var(--dim);">
+        "魔法 (spell)" は <b>選択中の図形を変形させる JS スニペット</b>。
+        <code>register</code> で名前付き登録 → 以降は <code>$その名前</code> で何度でも呼び出せる。
+        他人にも JSON 1 個で送れる。
+    </p>
+
+    <div class="spell-step">
+        <div class="spell-step-num">01</div>
+        <div class="spell-step-body">
+            <b>まずプリセットを試す</b><br>
+            円を描いて選択 → ターミナルに <code>$biwako-blue</code> と打つ → 線が琵琶湖ブルー (#0044CC) に。<br>
+            これが「魔法」の最小例。1 行で全選択を一括変換します。
+        </div>
+    </div>
+
+    <div class="spell-step">
+        <div class="spell-step-num">02</div>
+        <div class="spell-step-body">
+            <b>自作してみる（コピペで OK）</b><br>
+            ターミナルに以下を 1 行で打つ：
+            <pre style="background: var(--pre-bg, #050505); color: var(--pre-text, #9a9690); padding: 14px; margin: 10px 0; overflow-x: auto; font-size: 12px;">register paint-red for(const o of BM.all()){BM.setStroke(o,'#FF0000')}BM.redraw();BM.log('painted red!')</pre>
+            登録完了。次から <code>$paint-red</code> で全図形が赤線になる。
+        </div>
+    </div>
+
+    <div class="spell-step">
+        <div class="spell-step-num">03</div>
+        <div class="spell-step-body">
+            <b>仕組み</b><br>
+            <code>register <i>spell-name</i> <i>JS コード</i></code> の形式で登録。コードの中で <code>BM.xxx()</code> という API が使える。
+            よく使う API：
+            <ul style="margin: 8px 0 0 20px; line-height: 1.7;">
+                <li><code>BM.all()</code> — 全図形の配列</li>
+                <li><code>BM.getSelected()</code> — 今選択中の図形</li>
+                <li><code>BM.setStroke(obj, color)</code> — 線の色を変える</li>
+                <li><code>BM.translate(obj, dx, dy)</code> — 位置をずらす</li>
+                <li><code>BM.create(type, props)</code> — 新規作成 (`circle` / `square` / `triangle` / `arrow` / `text`)</li>
+                <li><code>BM.redraw()</code> — 反映</li>
+                <li><code>BM.log(text)</code> — ターミナルにメッセージ</li>
+            </ul>
+            全 API は <a href="#bmapi" style="color: var(--ink); border-bottom: 1px solid var(--ink);">↓ BM API</a> へ。
+        </div>
+    </div>
+
+    <div class="spell-step">
+        <div class="spell-step-num">04</div>
+        <div class="spell-step-body">
+            <b>魔法を共有</b><br>
+            <code>share paint-red</code> → JSON がクリップボードへ。SNS や Discord に貼り付ければ、相手はそれを drag-drop or paste するだけで使える。<br>
+            「自分の作品 + 自作魔法」をワンセットで人に送れるのが BMBoard の核です。
+        </div>
+    </div>
+
+    <div class="spell-step">
+        <div class="spell-step-num">05</div>
+        <div class="spell-step-body">
+            <b>AI に書いてもらう</b><br>
+            ChatGPT や Claude に「BM API（<code>BM.all() / BM.setStroke() / BM.translate()</code>）を使って、選択した全図形をランダム位置に散らす JS スニペットを 1 行で」と頼めば、すぐ出してくれる。<br>
+            出力をそのまま <code>register scatter-mine ...</code> に貼って登録、で完成。
+        </div>
+    </div>
+
+    <div style="margin-top: 24px; padding: 16px 18px; background: var(--card-tint, rgba(240,237,230,0.018)); border: 1px solid var(--rule); font-size: 13px; line-height: 1.7;">
+        <b>⚠ 注意：</b> <code>register</code> は JS をそのまま実行できます。
+        <b>知らない人から受け取った魔法を取り込む前に、JSON の中身を確認</b>してください。怪しいコードは登録しない。
+    </div>
+</section>
 
 <!-- ════════════════════════════════════════════════════════ -->
 <section class="section" id="themes">

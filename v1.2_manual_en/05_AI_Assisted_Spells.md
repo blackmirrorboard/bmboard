@@ -273,4 +273,4 @@ The AI usually corrects it in one round.
 
 ---
 
-*99letters studio · Black Mirror Board v1.2 · 2026-04-19*
+*kinoshita studio · Black Mirror Board v1.2 · 2026-04-19*

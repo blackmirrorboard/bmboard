@@ -448,4 +448,4 @@ On iPhone / iPad, `export-all`, `export-spells`, and `export data` all open the 
 
 ---
 
-*99letters studio · Black Mirror Board v1.2 · 2026-04-19*
+*kinoshita studio · Black Mirror Board v1.2 · 2026-04-19*

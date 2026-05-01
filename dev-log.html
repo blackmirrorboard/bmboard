@@ -445,6 +445,24 @@
             <li><b>Overview <code>README</code> tab</b> — BM pixel ASCII now renders crisply in Courier-deprived browsers via the JetBrains Mono fix + <code>font-feature-settings: "liga" 0, "calt" 0</code>.</li>
         </ul>
     </div>
+
+    <div class="phase">
+        <span class="tag">v1.2+ · DOMAIN + ICONS + DOCS</span>
+        <h4>Custom domain · favicon set · OGP png · onboarding rewrite</h4>
+        <div class="date">2026-05-01</div>
+        <ul>
+            <li><b>Custom domain</b> — <code>bmboard.studio</code> acquired via お名前.com, registry NS pointed at <code>01-04.dnsv.jp</code> after a detour where records were saved on dnsv.jp but the registry was still <code>dns1/dns2.onamae.com</code>. Live at <code>https://bmboard.studio/</code> with <code>Enforce HTTPS</code> on. Old <code>blackmirrorboard.github.io/bmboard/</code> still resolves but all OGP / canonical URLs migrated.</li>
+            <li><b>Favicon set from <code>logo.png</code></b> — the round black smiley logo became the brand mark in the tab. Generated <code>favicon.ico</code> (16/32/48), <code>favicon-16x16.png</code>, <code>favicon-32x32.png</code>, <code>apple-touch-icon.png</code> (180), <code>icon-192.png</code>, <code>icon-512.png</code> from a 1024² source. Added <code>manifest.json</code> for PWA / iOS home-screen.</li>
+            <li><b>OGP <code>og-image.png</code> (1200×630)</b> — black ground, white inverted smiley left, <code>BMBOARD</code> title + tagline + version strip on the right. Replaces the old <code>og-image.svg</code> across all 6 HTML files. Twitter Card validator now picks up the new card.</li>
+            <li><b>Title de-duplication</b> — every <code>&lt;title&gt;</code> dropped its leading <code>⬛</code> / <code>◼</code> emoji glyph; the favicon (smiley) is the brand now and two glyphs side-by-side in the tab read as a duplicate logo. The <code>applyTabBrand()</code> dynamic favicon SVG-swap logic was retired with the static smiley taking over.</li>
+            <li><b>URL cleanup — <code>/app</code> over <code>/app.html</code></b> — internal hrefs and OGP <code>og:url</code> migrated to the cleaner extensionless form. <code>/app.html</code> still serves the same content (GitHub Pages auto-resolution), so all existing bookmarks survive. <code>index.html</code>'s splash-transition <code>endsWith</code> intercept widened to recognize both forms.</li>
+            <li><b>Security / reliability hardening</b> — terminal log <code>innerHTML</code> on import is now sanitized to allow only <code>&lt;span class="t-*"&gt;</code> elements (was XSS-able via crafted JSON). Camera <code>MediaStream</code> tracks are now released on <code>beforeunload</code> + <code>pagehide</code>. Share-URL decode failures surface in the terminal with a hash strip so reload doesn't loop. <code>saveCmds()</code> IndexedDB / localStorage write errors no longer get swallowed.</li>
+            <li><b>Repo wiring</b> — local <code>projects/black_mirror/</code> connected to <code>github.com/blackmirrorboard/bmboard</code> via <code>git init</code> + <code>git remote add</code> + <code>git fetch</code> + <code>git reset origin/main</code> (working tree preserved). GitHub Desktop now manages BMBoard alongside Atelier, replacing the previous web-UI-upload workflow. <code>kinoshitastudio</code> added as collaborator on <code>blackmirrorboard/bmboard</code> for push access.</li>
+            <li><b>Onboarding rewrite — <code>commands.html</code></b> — added a <b>Quick Start</b> categorized "I want to → type X" lookup grid at the top (Draw / Edit / Terminal / Save-Share / Spell / Easter eggs), plus a <b>Write Your First Spell</b> section with a 5-step walkthrough (try preset → register your own → BM API cheat sheet → share → ask AI to write one). The studio's own author had reopened BMBoard after a break and needed a "what can I do here?" reorientation; this is the cure.</li>
+            <li><b>Cross-linking</b> — <code>index.html</code> nav now points to <code>commands.html</code> directly; the footer adds deep links to <code>#quickstart</code> and <code>#first-spell</code> so the spell-authoring path is reachable in two clicks from the landing.</li>
+            <li><b>Manual rebrand</b> — every "99letters studio" reference in the EN + JA v1.2 manuals (22 files) corrected to "kinoshita studio".</li>
+        </ul>
+    </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════ -->
@@ -569,7 +587,7 @@
 
 <footer>
     <span>◼ BLACK MIRROR BOARD v1.2</span>
-    <span>BUILD 2026-04-19 · evolving 2026-04-22</span>
+    <span>BUILD 2026-04-19 · evolving 2026-05-01</span>
     <span><a href="https://bmboard.studio/app">→ open app</a></span>
 </footer>
 

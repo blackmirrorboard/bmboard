@@ -271,4 +271,4 @@ When you're the one sharing, make sure recipients have a smooth import:
 
 ---
 
-*99letters studio · Black Mirror Board v1.2 · 2026-04-19*
+*kinoshita studio · Black Mirror Board v1.2 · 2026-04-19*
