@@ -1944,29 +1944,13 @@ function resolveFill(fill) {
 // Light:  ⬛ black mark on light ground
 // Dark:   ⬜ white mark on void ground
 // Gray:   ◼ cobalt mark on pebble ground
-const TAB_BRAND = {
-    light: { emoji: '⬛', mark: '#0c0c0c', slot: '#FAFAF8' },
-    dark:  { emoji: '⬜', mark: '#F0EDE6', slot: '#0c0c0c' },
-    gray:  { emoji: '◼', mark: '#1600A2', slot: '#DCDBD5' },
-};
 function applyTabBrand(mode) {
-    const b = TAB_BRAND[mode] || TAB_BRAND.light;
-    // Title kept emoji-free now that the favicon (smiley logo) is the
-    // brand mark in the tab. Two glyphs stacked next to each other read
-    // as a duplicate "logo", which is what the user flagged.
+    // The favicon is a static smiley PNG (logo-based) now, so this just
+    // keeps the title constant. The previous TAB_BRAND map and dynamic
+    // SVG-favicon swap were removed when the static logo replaced the
+    // theme-tinted glyph — the swap targeted a `bmFavicon` link element
+    // that no longer exists in the head.
     document.title = 'BLACK MIRROR';
-    const fav = document.getElementById('bmFavicon');
-    if (fav) {
-        // Minimalist BM glyph: rounded square ground + two vertical slots
-        // (a pixel-art shorthand for "B" that reads at 16×16).
-        const svg =
-            `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>` +
-              `<rect x='5' y='5' width='22' height='22' rx='2' fill='${encodeURIComponent(b.mark)}'/>` +
-              `<rect x='11' y='11' width='4' height='10' fill='${encodeURIComponent(b.slot)}'/>` +
-              `<rect x='17' y='11' width='4' height='10' fill='${encodeURIComponent(b.slot)}'/>` +
-            `</svg>`;
-        fav.setAttribute('href', 'data:image/svg+xml;utf8,' + svg);
-    }
 }
 
 function setMode(next) {
@@ -4617,7 +4601,13 @@ async function loadSharedStateFromHash() {
         // Clean the hash so reload doesn't re-import
         history.replaceState(null, '', location.pathname + location.search);
     } catch (err) {
-        printRaw('shared URL could not be decoded: ' + err.message, 't-err');
+        // Surface the failure clearly: malformed / truncated / tampered hash.
+        // The canvas state isn't mutated yet (we only assign S.objects on
+        // successful parse above), so the user's existing work is preserved.
+        // Strip the hash so a reload doesn't re-attempt the same broken decode.
+        printRaw('shared URL could not be decoded — link may be tampered or truncated', 't-err');
+        printRaw('  detail: ' + err.message, 't-dim');
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
     }
 }
 setTimeout(loadSharedStateFromHash, 600);
@@ -4768,6 +4758,22 @@ function disableBlackMirror() {
         '[OK] mirror dismissed — the gaze returns to the board.',
     ]);
 }
+
+// Release the camera device on tab close / navigation. Without this, a user
+// who leaves the tab without running "Black Mirror off" leaves the camera
+// LED on until the OS reclaims the device — privacy / hygiene concern.
+window.addEventListener('beforeunload', () => {
+    if (_bmMirrorStream) {
+        try { _bmMirrorStream.getTracks().forEach(t => t.stop()); } catch {}
+        _bmMirrorStream = null;
+    }
+});
+window.addEventListener('pagehide', () => {
+    if (_bmMirrorStream) {
+        try { _bmMirrorStream.getTracks().forEach(t => t.stop()); } catch {}
+        _bmMirrorStream = null;
+    }
+});
 
 function triggerYouTube() {
     enqueue('curl -v --http2 "https://www.youtube.com/"', [
@@ -4994,7 +5000,25 @@ BM.redraw();
 
 function loadCmdsSync() { BM_CMDS = { ...BM_PRESETS }; try { const raw=localStorage.getItem(BM_STORE_KEY); const saved=raw?JSON.parse(raw):{}; for(const[name,v]of Object.entries(saved))BM_CMDS[name]=v; } catch{} }
 async function loadCmds() { loadCmdsSync(); try { const records=await _bmDbGetAll(); if(records.length){for(const r of records)BM_CMDS[r.name]={action:r.action,source:r.source||'user',createdAt:r.createdAt||null};} else { const migrated=Object.entries(BM_CMDS).filter(([,v])=>v.source!=='preset'); if(migrated.length) await _bmDbReplaceAll(migrated.map(([name,v])=>({name,action:v.action,source:v.source||'user',createdAt:v.createdAt||null}))); } } catch{} }
-function saveCmds() { const userOnly=Object.entries(BM_CMDS).filter(([,v])=>v.source!=='preset').map(([name,v])=>({name,action:v.action,source:v.source||'user',createdAt:v.createdAt||null})); _bmDbReplaceAll(userOnly).catch(()=>{}); try{const obj=Object.fromEntries(userOnly.map(r=>[r.name,{action:r.action,source:r.source,createdAt:r.createdAt}]));localStorage.setItem(BM_STORE_KEY,JSON.stringify(obj))}catch{} }
+function saveCmds() {
+    const userOnly = Object.entries(BM_CMDS)
+        .filter(([,v]) => v.source !== 'preset')
+        .map(([name,v]) => ({ name, action: v.action, source: v.source || 'user', createdAt: v.createdAt || null }));
+    // Persist to IndexedDB (canonical). Surface failures to the terminal so
+    // a quota / corruption issue isn't silent — previously the .catch(()=>{})
+    // swallowed every error and the user thought their spell saved when it
+    // didn't, only finding out on next reload.
+    _bmDbReplaceAll(userOnly).catch(err => {
+        try { printRaw('[save] IndexedDB write failed — spells may not persist (' + (err?.message || 'unknown') + ')', 't-err'); } catch (_) {}
+    });
+    // Mirror to localStorage as a fallback. Quota errors here surface too.
+    try {
+        const obj = Object.fromEntries(userOnly.map(r => [r.name, { action: r.action, source: r.source, createdAt: r.createdAt }]));
+        localStorage.setItem(BM_STORE_KEY, JSON.stringify(obj));
+    } catch (err) {
+        try { printRaw('[save] localStorage quota — clear old data (' + (err?.message || 'quota') + ')', 't-dim'); } catch (_) {}
+    }
+}
 function registerCmd(name, action, opts = {}) { const clean=(name||'').trim().toLowerCase().replace(/^\$/,''); if(!/^[a-z0-9][a-z0-9_-]{0,30}$/.test(clean)){printRaw(`[register] invalid command name: "${name}"`,'t-err');return false;} BM_CMDS[clean]={action:String(action),source:opts.source||'user',createdAt:new Date().toISOString()}; saveCmds(); return clean; }
 
 // Import a spell JSON ({command, action}) with collision-safe naming:
@@ -6740,12 +6764,45 @@ function importProject(file) {
                 VIEW.tx    = d.view.tx    || 0;
                 VIEW.ty    = d.view.ty    || 0;
             }
-            // Restore terminal
+            // Restore terminal — sanitize imported HTML so a malicious export
+            // file can't smuggle <script> / event handlers via l.html. We
+            // reparse into a sandboxed div, walk all elements, drop anything
+            // that's not <span> (the only tag we ever emit via highlightLine),
+            // strip any attribute that isn't `class`, and only allow class
+            // names matching our own t-* / t-tok-* prefix. This preserves the
+            // visual highlighting we authored while blocking injection.
             if (d.termLog && d.termLog.length) {
+                const ALLOWED_TAG = 'SPAN';
+                const ALLOWED_CLASS = /^(t-|tok-)[a-z0-9_-]+$/;
+                function sanitizeTermHtml(raw) {
+                    const sandbox = document.createElement('div');
+                    sandbox.innerHTML = String(raw || '');
+                    const walk = (node) => {
+                        const kids = Array.from(node.children);
+                        kids.forEach(walk);
+                        if (node === sandbox) return;
+                        if (node.tagName !== ALLOWED_TAG) {
+                            // Replace disallowed element with its text content,
+                            // preserving order but stripping the element itself.
+                            const text = document.createTextNode(node.textContent || '');
+                            node.replaceWith(text);
+                            return;
+                        }
+                        // Strip every attribute except a whitelisted class.
+                        Array.from(node.attributes).forEach(a => {
+                            if (a.name !== 'class') node.removeAttribute(a.name);
+                        });
+                        const cls = (node.getAttribute('class') || '').split(/\s+/).filter(c => ALLOWED_CLASS.test(c));
+                        if (cls.length) node.setAttribute('class', cls.join(' '));
+                        else node.removeAttribute('class');
+                    };
+                    walk(sandbox);
+                    return sandbox.innerHTML;
+                }
                 tb.innerHTML = '';
                 d.termLog.forEach(l => {
                     const el = mk('div', l.cls);
-                    el.innerHTML = l.html;
+                    el.innerHTML = sanitizeTermHtml(l.html);
                     tb.appendChild(el);
                 });
                 scroll();

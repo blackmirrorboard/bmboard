@@ -1668,9 +1668,11 @@ document.querySelector('.brand')?.addEventListener('click', (e) => {
 // ── intercept hero-cta + nav launch for fade transition ──────────
 document.querySelectorAll('[data-launch], .site-nav .launch, .hero-cta').forEach(el => {
     el.addEventListener('click', (e) => {
-        // Only intercept same-origin links to the app (either /app or /app.html)
+        // Only intercept same-origin links to the app (either /app or /app.html).
+        // The check is exact-suffix on '/app' so a hypothetical link like
+        // 'something-app' wouldn't accidentally match.
         const href = el.getAttribute('href') || '';
-        if (!href.endsWith('app.html') && !href.endsWith('/app') && !href.endsWith('app')) return;
+        if (!href.endsWith('app.html') && !href.endsWith('/app')) return;
         e.preventDefault();
         overlay.classList.add('on');
         setTimeout(() => { window.location.href = href; }, 820);
