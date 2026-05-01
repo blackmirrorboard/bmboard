@@ -92,9 +92,20 @@ gray     → studio theme (pebble ground · cobalt accent)
 | Action | Effect |
 |---|---|
 | **I** key | Upload an image from your machine |
+| Drop a file onto canvas | Place an image file directly (PNG/JPEG/GIF/WebP/SVG) |
+| **Cmd + V** / **Ctrl + V** | Paste a clipboard image onto canvas |
 | `fetch-img` in terminal | Search by keyword and place |
 | Drag image | Move |
 | Corner handle | Resize |
+
+### Screenshot → canvas
+
+Take a screenshot and bring it straight in. All three routes flow through the same placement pipeline (centered, auto-scaled, undo-safe).
+
+| OS | Capture to clipboard → **Cmd/Ctrl + V** | Capture to file → drop onto canvas |
+|---|---|---|
+| macOS | `Cmd + Shift + Ctrl + 4` | `Cmd + Shift + 4` → drag from Desktop |
+| Windows | `PrtScn` (default) / `Win + Shift + S` | `Win + PrtScn` → drag from Pictures › Screenshots |
 
 ---
 

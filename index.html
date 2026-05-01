@@ -751,6 +751,19 @@ footer {
 }
 .foot-primary a:hover { color: var(--ink); border-color: var(--ink); }
 
+.foot-deep-manual {
+    width: 100%;
+    margin-top: 4px;
+    color: var(--faint);
+}
+.foot-deep-manual a {
+    color: var(--dim);
+    border-bottom: 1px solid var(--faint);
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+}
+.foot-deep-manual a:hover { color: var(--ink); border-color: var(--ink); }
+
 .foot-social {
     display: flex;
     justify-content: center;
@@ -1387,6 +1400,13 @@ footer {
             <a href="./commands.html#first-spell"><span class="lang-en">spell guide</span><span class="lang-ja">魔法の作り方</span></a> &nbsp;·&nbsp;
             <a href="./usage.html"><span class="lang-en">manual</span><span class="lang-ja">マニュアル</span></a> &nbsp;·&nbsp;
             <a href="./dev-log.html"><span class="lang-en">dev log</span><span class="lang-ja">開発ログ</span></a>
+        </div>
+        <div class="foot-deep-manual">
+            <span class="lang-en">v1.2 deep-dive manual on GitHub —&nbsp;</span>
+            <span class="lang-ja">v1.2 詳細マニュアル（GitHub）—&nbsp;</span>
+            <a href="https://github.com/99letters/99letters.github.io/blob/main/projects/black_mirror/v1.2_manual_ja/INDEX.md" target="_blank" rel="noopener noreferrer">日本語</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/99letters/99letters.github.io/blob/main/projects/black_mirror/v1.2_manual_en/INDEX.md" target="_blank" rel="noopener noreferrer">English</a>
         </div>
     </div>
     <div class="foot-social">

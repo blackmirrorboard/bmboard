@@ -134,10 +134,25 @@ Deep dive → [[07_Exporting_and_Sharing_Spells|07. Exporting and Sharing]]
 
 ## 6. Import
 
-No explicit import command. Both paths are auto-detected:
+No explicit import command — every entry point is auto-detected.
 
+**Spells (JSON):**
 - **Paste JSON into the terminal** → registered automatically
-- **Drop a file onto the board** → format auto-detected and registered
+- **Drop a `.json` file onto the board** → format auto-detected and registered
+
+**Images:**
+- **`I` key** → file picker upload
+- **Drop an image file onto the canvas** → placed directly (PNG/JPEG/GIF/WebP/SVG)
+- **`Cmd/Ctrl + V`** → paste a clipboard image
+
+Screenshot routes:
+
+| OS | Clipboard (→ **Cmd/Ctrl + V**) | File (→ drop onto canvas) |
+|---|---|---|
+| macOS | `Cmd + Shift + Ctrl + 4` | `Cmd + Shift + 4` → drag from Desktop |
+| Windows | `PrtScn` (default) / `Win + Shift + S` | `Win + PrtScn` → drag from Pictures › Screenshots |
+
+All three image paths (upload / paste / drop) share the same placement pipeline — centered, auto-scaled, undo-safe.
 
 Deep dive → [[08_Importing_Spells|08. Importing Spells]]
 
