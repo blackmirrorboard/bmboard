@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>⬛ BLACK MIRROR</title>
+    <title>BLACK MIRROR</title>
     <meta name="description" content="Black Mirror Board — an infinite canvas terminal. Draw. Speak. Cast. One HTML file.">
     <!-- Open Graph / Twitter -->
     <meta property="og:title" content="BLACK MIRROR BOARD — app">
@@ -1951,7 +1951,10 @@ const TAB_BRAND = {
 };
 function applyTabBrand(mode) {
     const b = TAB_BRAND[mode] || TAB_BRAND.light;
-    document.title = `${b.emoji} BLACK MIRROR`;
+    // Title kept emoji-free now that the favicon (smiley logo) is the
+    // brand mark in the tab. Two glyphs stacked next to each other read
+    // as a duplicate "logo", which is what the user flagged.
+    document.title = 'BLACK MIRROR';
     const fav = document.getElementById('bmFavicon');
     if (fav) {
         // Minimalist BM glyph: rounded square ground + two vertical slots
