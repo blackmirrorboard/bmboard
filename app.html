@@ -7240,17 +7240,16 @@ document.getElementById('exportPngBtn').addEventListener('click', () => {
     exportPng();
 });
 
-// ── Image Upload ────────────────────────────────────────────────────────────
-document.getElementById('imgFileInput').addEventListener('change', e => {
-    const file = e.target.files[0];
+// ── Image placement (shared by file-upload and clipboard-paste) ─────────────
+// Extracted so both the I-key file picker and Cmd/Ctrl+V paste route through
+// the same scaling / placement / undo / terminal-feedback flow.
+//   source: 'upload' | 'paste' | 'drop' — labels the terminal log line
+function placeImageOnCanvas(file, source) {
     if (!file) return;
-    e.target.value = ''; // reset so same file can be re-uploaded
-
+    const src = source || 'upload';
     const reader = new FileReader();
     reader.onload = ev => {
-        const src = ev.target.result; // base64 dataURL
-
-        // Pre-load to get natural dimensions
+        const dataUrl = ev.target.result; // base64 dataURL
         const tmp = new Image();
         tmp.onload = () => {
             // Scale to fit within canvas view (max 480px wide/tall)
@@ -7260,19 +7259,16 @@ document.getElementById('imgFileInput').addEventListener('change', e => {
                 const s = MAX / Math.max(w, h);
                 w = Math.round(w * s); h = Math.round(h * s);
             }
-
             // Place at center of current canvas view
             const cx = (-VIEW.tx + CW / 2) / VIEW.scale;
             const cy = (-VIEW.ty + CH / 2) / VIEW.scale;
-
             const id  = genId();
             const obj = {
                 id,
                 type: 'image',
-                data: { x: cx - w/2, y: cy - h/2, w, h, src, rotation: 0 },
+                data: { x: cx - w/2, y: cy - h/2, w, h, src: dataUrl, rotation: 0 },
                 selected: false,
             };
-            // Deselect all, add and select the new image
             S.objects.forEach(o => o.selected = false);
             S.selectedId     = id;
             obj.selected     = true;
@@ -7281,20 +7277,52 @@ document.getElementById('imgFileInput').addEventListener('change', e => {
             saveHistory();
             redrawAll();
 
-            // Terminal feedback
-            const kb = (file.size / 1024).toFixed(1);
-            enqueue(`[IO] image upload — ${file.name}`, [
-                `→ file: ${file.name}`,
+            const kb    = (file.size / 1024).toFixed(1);
+            const fname = file.name || (src === 'paste' ? 'pasted-image' : 'image');
+            const verb  = src === 'paste' ? 'image paste' : 'image upload';
+            const sourceLabel = src === 'paste' ? 'clipboard'
+                              : src === 'drop' ? 'drag-and-drop'
+                              : 'file picker';
+            enqueue(`[IO] ${verb} — ${fname}`, [
+                `→ source: ${sourceLabel}`,
                 `→ size: ${kb} KB  dims: ${tmp.naturalWidth}×${tmp.naturalHeight}px`,
                 `→ display: ${w}×${h}px`,
                 `→ placed at canvas (${Math.round(cx)}, ${Math.round(cy)})`,
                 `[OK] image asset loaded.`,
             ]);
         };
-        tmp.src = src;
-        _imgCache.set(src, tmp); // prime the cache immediately
+        tmp.src = dataUrl;
+        _imgCache.set(dataUrl, tmp); // prime the cache immediately
     };
     reader.readAsDataURL(file);
+}
+
+// ── Image Upload (I key / file picker) ──────────────────────────────────────
+document.getElementById('imgFileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = ''; // reset so same file can be re-uploaded
+    placeImageOnCanvas(file, 'upload');
+});
+
+// ── Image Paste (Cmd/Ctrl+V with image in clipboard) ────────────────────────
+// Lets users screenshot (e.g. macOS Cmd+Shift+Ctrl+4) and paste straight onto
+// the board. Skips when paste lands in an editable input (terminal has its
+// own JSON-paste handler; native paste should keep working in text fields).
+window.addEventListener('paste', e => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (const item of items) {
+        if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
+            const file = item.getAsFile();
+            if (file) {
+                e.preventDefault();
+                placeImageOnCanvas(file, 'paste');
+                return;
+            }
+        }
+    }
 });
 
 // ── Prevent browser zoom on UI elements (iOS Safari ignores user-scalable=no) ──
