@@ -37,6 +37,18 @@
     }
 })();
 </script>
+<!-- Apply stored language before paint. Shares `bmboard.lang` across BM pages. -->
+<script>
+(function () {
+    try {
+        var l = localStorage.getItem('bmboard.lang');
+        if (l !== 'en' && l !== 'ja') l = 'ja';
+        document.documentElement.lang = l;
+    } catch (e) {
+        document.documentElement.lang = 'ja';
+    }
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -69,6 +81,42 @@
         --ok:       #227a5a;
         --jp:       #0c0c0c;
         --en:       rgba(12,12,12,0.72);
+    }
+
+    /* Language toggle visibility — shared across BM sub-pages */
+    html[lang="en"] .lang-ja { display: none !important; }
+    html[lang="ja"] .lang-en { display: none !important; }
+
+    /* Language toggle UI — sits next to theme toggle */
+    .lang-toggle {
+        position: fixed;
+        top: 12px;
+        right: 88px;
+        z-index: 300;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border: 1px solid var(--rule);
+        background: var(--bg);
+        font-family: 'Space Mono','Courier New',Courier,monospace;
+        font-size: 12px;
+        cursor: pointer;
+        transition: border-color .15s;
+        user-select: none;
+    }
+    .lang-toggle:hover { border-color: var(--fg); }
+    .lang-toggle .lang-tok {
+        color: var(--fg-faint);
+        padding: 0 3px;
+        cursor: pointer;
+        transition: color .15s;
+    }
+    .lang-toggle .lang-tok:hover { color: var(--fg-dim); }
+    .lang-toggle .lang-sep { color: var(--fg-faint); }
+    html[lang="en"] .lang-toggle [data-set-lang="en"],
+    html[lang="ja"] .lang-toggle [data-set-lang="ja"] {
+        color: var(--fg);
     }
 
     /* Theme toggle — fixed top-right, shared across BM sub-pages */
@@ -324,6 +372,7 @@
         table { display: block; overflow-x: auto; }
         /* Theme toggle stays visible but doesn't block nav */
         .theme-toggle { padding: 3px 8px; font-size: 11px; }
+        .lang-toggle  { padding: 3px 8px; font-size: 11px; right: 76px; }
     }
     @media (max-width: 520px) {
         body { padding: 28px 14px 80px; }
@@ -376,18 +425,18 @@
     <h2><span class="sec-num">§1</span>Welcome to Black Mirror Board</h2>
 
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>Black Mirror Board は、<b>デザイナーの「直感」を、エンジニアの「コマンド」で増幅する</b>ための無限キャンバスです。</div>
-        <div class="en"><span class="flag">EN</span>Black Mirror Board is an infinite canvas that <b>amplifies a designer's intuition with an engineer's command layer.</b></div>
+        <div class="jp lang-ja">Black Mirror Board は、<b>デザイナーの「直感」を、エンジニアの「コマンド」で増幅する</b>ための無限キャンバスです。</div>
+        <div class="en lang-en">Black Mirror Board is an infinite canvas that <b>amplifies a designer's intuition with an engineer's command layer.</b></div>
     </div>
 
     <ul>
-        <li>🇯🇵 図形を描けば、ターミナルがそれに応えて言葉を返す。 / 🇬🇧 Draw a shape — the terminal answers in words.</li>
-        <li>🇯🇵 打鍵ではなく描画で、世界を構築していく。 / 🇬🇧 Build the world by gesture, not just by keystroke.</li>
-        <li>🇯🇵 個人の小さな呪文（コマンド）を SNS で共有し合い、<b>他人の魔法を自分の道具にできる</b>。 / 🇬🇧 Share tiny spells on SNS — <b>someone else's magic becomes your tool.</b></li>
+        <li><span class="lang-ja">図形を描けば、ターミナルがそれに応えて言葉を返す。</span><span class="lang-en">Draw a shape — the terminal answers in words.</span></li>
+        <li><span class="lang-ja">打鍵ではなく描画で、世界を構築していく。</span><span class="lang-en">Build the world by gesture, not just by keystroke.</span></li>
+        <li><span class="lang-ja">個人の小さな呪文（コマンド）を SNS で共有し合い、<b>他人の魔法を自分の道具にできる</b>。</span><span class="lang-en">Share tiny spells on SNS — <b>someone else's magic becomes your tool.</b></span></li>
     </ul>
 
-    <p class="dim">🇯🇵 コードを書かない美学と、コマンドを打つ快感が交わる場所。それが Black Mirror です。</p>
-    <p class="dim">🇬🇧 It's where the aesthetic of <em>"I don't write code"</em> meets the thrill of <em>"I speak to the machine."</em></p>
+    <p class="dim lang-ja">コードを書かない美学と、コマンドを打つ快感が交わる場所。それが Black Mirror です。</p>
+    <p class="dim lang-en">It's where the aesthetic of <em>"I don't write code"</em> meets the thrill of <em>"I speak to the machine."</em></p>
 
     <div class="chips">
         <span class="chip on">Infinite canvas</span>
@@ -452,8 +501,8 @@ The group rotates + resizes like a single object.
     <h2><span class="sec-num">§3</span>The Terminal Interface / ターミナル</h2>
 
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>Black Mirror のターミナルは「環境音としてのログ」と「入力受付の対話型プロンプト」の二重構造です。入力欄は常に右下にあり、キーボードに触れればいつでもコマンドが打てます。</div>
-        <div class="en"><span class="flag">EN</span>The terminal is two things at once: an ambient log that hums with system activity, <b>and</b> an interactive prompt that accepts commands. The input is always pinned bottom-right.</div>
+        <div class="jp lang-ja">Black Mirror のターミナルは「環境音としてのログ」と「入力受付の対話型プロンプト」の二重構造です。入力欄は常に右下にあり、キーボードに触れればいつでもコマンドが打てます。</div>
+        <div class="en lang-en">The terminal is two things at once: an ambient log that hums with system activity, <b>and</b> an interactive prompt that accepts commands. The input is always pinned bottom-right.</div>
     </div>
 
     <h3>History &amp; Recall / 履歴の呼び出し</h3>
@@ -466,7 +515,7 @@ The group rotates + resizes like a single object.
             <tr><td><code>Esc</code></td><td>If USAGE overlay is open, close it first. / オーバーレイを優先して閉じる。</td></tr>
         </tbody>
     </table>
-    <p class="dim">🇯🇵 履歴は最大 80 件まで <code>localStorage</code> に保存 — リロードしても残る。 / 🇬🇧 History persists (up to 80 entries) in <code>localStorage</code> — survives reload.</p>
+    <p class="dim"><span class="lang-ja">履歴は最大 80 件まで <code>localStorage</code> に保存 — リロードしても残る。</span><span class="lang-en">History persists (up to 80 entries) in <code>localStorage</code> — survives reload.</span></p>
 
     <h3>Built-in Commands / 組込みコマンド</h3>
     <pre class="code"><span class="c">── navigation ──</span>
@@ -519,16 +568,15 @@ youtube                 <span class="c">→  (try it)</span></pre>
     <h2><span class="sec-num">§4</span>Custom Commands / カスタムコマンドの魔法</h2>
 
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>Black Mirror の最大の遊びは、<b>「誰かが作ったコマンドを、SNS 経由で手に入れて、自分のボードで使える」</b>ことです。</div>
-        <div class="en"><span class="flag">EN</span>The single most interesting thing about Black Mirror is that <b>commands travel.</b> Someone writes a spell, posts it on SNS, and with a single paste your board inherits it.</div>
+        <div class="jp lang-ja">Black Mirror の最大の遊びは、<b>「誰かが作ったコマンドを、SNS 経由で手に入れて、自分のボードで使える」</b>ことです。</div>
+        <div class="en lang-en">The single most interesting thing about Black Mirror is that <b>commands travel.</b> Someone writes a spell, posts it on SNS, and with a single paste your board inherits it.</div>
     </div>
 
     <h3>4.1 Importing a spell / 魔法を拾う</h3>
 
     <div class="step">
         <span class="num">STEP · 01</span>
-        🇯🇵 X / Discord / Slack などで以下のような JSON を見つける。<br>
-        🇬🇧 Spot a JSON payload like this on social media.
+        <span class="lang-ja">X / Discord / Slack などで以下のような JSON を見つける。</span><span class="lang-en">Spot a JSON payload like this on social media.</span>
 <pre class="code">{
   <span class="s">"command"</span>: <span class="s">"scatter"</span>,
   <span class="s">"action"</span>: <span class="s">"const sel = BM.getSelected(); for (const o of sel) BM.translate(o, BM.rand(-400,400), BM.rand(-300,300)); BM.log('scattered ' + sel.length);"</span>
@@ -537,14 +585,12 @@ youtube                 <span class="c">→  (try it)</span></pre>
 
     <div class="step">
         <span class="num">STEP · 02</span>
-        🇯🇵 ターミナル入力欄にペーストする。<br>
-        🇬🇧 Paste it directly into the terminal input.
+        <span class="lang-ja">ターミナル入力欄にペーストする。</span><span class="lang-en">Paste it directly into the terminal input.</span>
     </div>
 
     <div class="step">
         <span class="num">STEP · 03</span>
-        🇯🇵 自動で <code>$&lt;name&gt;</code> として登録される。リロードしても残る。<br>
-        🇬🇧 Auto-registered as <code>$&lt;name&gt;</code>. Persists across reload.
+        <span class="lang-ja">自動で <code>$&lt;name&gt;</code> として登録される。リロードしても残る。</span><span class="lang-en">Auto-registered as <code>$&lt;name&gt;</code>. Persists across reload.</span>
 <pre class="code">paste &gt; [JSON payload intercepted]
 → schema check... { command, action } ✓
 → binding $scatter → sandboxed function...
@@ -555,8 +601,8 @@ youtube                 <span class="c">→  (try it)</span></pre>
     <h3>4.2 Exporting a spell / 魔法を放つ</h3>
     <pre class="code">share &lt;name&gt;</pre>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>コマンドの JSON 定義をクリップボードにコピー。そのまま SNS に貼れば、誰でも拾える呪文として世界に放流できます。</div>
-        <div class="en"><span class="flag">EN</span>Copies the spell's JSON to your clipboard. Paste it on SNS and you've just released a spell into the wild.</div>
+        <div class="jp lang-ja">コマンドの JSON 定義をクリップボードにコピー。そのまま SNS に貼れば、誰でも拾える呪文として世界に放流できます。</div>
+        <div class="en lang-en">Copies the spell's JSON to your clipboard. Paste it on SNS and you've just released a spell into the wild.</div>
     </div>
 <pre class="code">[CLIPBOARD] Copied to clipboard. Paste this on SNS!
 ───────────────────────────────────────────
@@ -595,21 +641,20 @@ youtube                 <span class="c">→  (try it)</span></pre>
     </table>
 
     <blockquote>
-        🇯🇵 <b>重要：</b> <code>BM.create('rect', ...)</code> は<b>使えません</b>。四角は <code>'square'</code> を使ってください。対応タイプは <code>circle / square / triangle / arrow / text</code> の5種のみです。<br>
-        🇬🇧 <b>Important:</b> <code>BM.create('rect', ...)</code> is <b>not supported</b>. Use <code>'square'</code> instead. The five valid types are <code>circle / square / triangle / arrow / text</code>.
+        <span class="lang-ja"><b>重要：</b> <code>BM.create('rect', ...)</code> は<b>使えません</b>。四角は <code>'square'</code> を使ってください。対応タイプは <code>circle / square / triangle / arrow / text</code> の5種のみです。</span><span class="lang-en"><b>Important:</b> <code>BM.create('rect', ...)</code> is <b>not supported</b>. Use <code>'square'</code> instead. The five valid types are <code>circle / square / triangle / arrow / text</code>.</span>
     </blockquote>
 
     <h3>4.4 Aliasing / 別名</h3>
     <pre class="code">alias ripple = scatter</pre>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>既存コマンドを別の名前で複製します。呪文に自分の名前をつけたい時に。</div>
-        <div class="en"><span class="flag">EN</span>Duplicates an existing spell under a new name. Brand the magic with your own naming.</div>
+        <div class="jp lang-ja">既存コマンドを別の名前で複製します。呪文に自分の名前をつけたい時に。</div>
+        <div class="en lang-en">Duplicates an existing spell under a new name. Brand the magic with your own naming.</div>
     </div>
 
     <h3>4.5 Import collision behavior / 取り込み時の衝突回避</h3>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>ペーストや D&D で同名の魔法が送られてきた場合、<b>既存の魔法は上書きされず</b>、取り込んだ方が <code>&lt;name&gt;_2026-04-19</code> のように日付サフィックス付きにリネームされます。action が完全一致の場合はスキップ。preset（組み込み魔法）は絶対に上書き不可。</div>
-        <div class="en"><span class="flag">EN</span>When a spell with the same name arrives via paste or drop, <b>existing spells are never overwritten</b>. The incoming spell is renamed to <code>&lt;name&gt;_2026-04-19</code>. Identical payloads are skipped. Presets are always protected.</div>
+        <div class="jp lang-ja">ペーストや D&D で同名の魔法が送られてきた場合、<b>既存の魔法は上書きされず</b>、取り込んだ方が <code>&lt;name&gt;_2026-04-19</code> のように日付サフィックス付きにリネームされます。action が完全一致の場合はスキップ。preset（組み込み魔法）は絶対に上書き不可。</div>
+        <div class="en lang-en">When a spell with the same name arrives via paste or drop, <b>existing spells are never overwritten</b>. The incoming spell is renamed to <code>&lt;name&gt;_2026-04-19</code>. Identical payloads are skipped. Presets are always protected.</div>
     </div>
 </section>
 
@@ -619,8 +664,8 @@ youtube                 <span class="c">→  (try it)</span></pre>
 
     <h3>$ fetch-img — keyword-based image summoning</h3>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>キーワードで画像を取得してキャンバスに配置します。API キー不要（Lorem Flickr 使用）。枚数指定で自動グリッド配置。</div>
-        <div class="en"><span class="flag">EN</span>Summons photos from Lorem Flickr by keyword. No API key required. Multiple images auto-arrange into a grid.</div>
+        <div class="jp lang-ja">キーワードで画像を取得してキャンバスに配置します。API キー不要（Lorem Flickr 使用）。枚数指定で自動グリッド配置。</div>
+        <div class="en lang-en">Summons photos from Lorem Flickr by keyword. No API key required. Multiple images auto-arrange into a grid.</div>
     </div>
 
     <table>
@@ -644,8 +689,8 @@ cors     : falls back to URL ref if dataURL conversion fails</pre>
 
     <h3>$ monoclo — grayscale selected images</h3>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>選択中の画像をグレースケール化します。カラーで <code>fetch-img</code> した画像を後からモノクロ統一したい時に。シェイプやペン線には効きません（エラー表示）。</div>
-        <div class="en"><span class="flag">EN</span>Grayscales selected image objects. Pair with <code>fetch-img</code> to retroactively monochrome a mood board. Shapes and pen strokes are ignored (explicit error).</div>
+        <div class="jp lang-ja">選択中の画像をグレースケール化します。カラーで <code>fetch-img</code> した画像を後からモノクロ統一したい時に。シェイプやペン線には効きません（エラー表示）。</div>
+        <div class="en lang-en">Grayscales selected image objects. Pair with <code>fetch-img</code> to retroactively monochrome a mood board. Shapes and pen strokes are ignored (explicit error).</div>
     </div>
 
     <pre class="code"><span class="c">// Filter applied</span>
@@ -662,12 +707,12 @@ grayscale(100%) contrast(110%) brightness(95%)
     <h2><span class="sec-num">§5</span>AI-Assisted Spells / AI に魔法を作らせる</h2>
 
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>JavaScript が書けなくても、Claude / ChatGPT に BM API を教え込めば、動く魔法 JSON を生成してくれます。このセクションは<b>そのまま AI に渡せる</b>テンプレートとして設計されています。</div>
-        <div class="en"><span class="flag">EN</span>Non-coders can still author spells — hand Claude or ChatGPT the BM API spec and it returns working JSON. This section is designed to be <b>copy-pasted directly into an AI chat.</b></div>
+        <div class="jp lang-ja">JavaScript が書けなくても、Claude / ChatGPT に BM API を教え込めば、動く魔法 JSON を生成してくれます。このセクションは<b>そのまま AI に渡せる</b>テンプレートとして設計されています。</div>
+        <div class="en lang-en">Non-coders can still author spells — hand Claude or ChatGPT the BM API spec and it returns working JSON. This section is designed to be <b>copy-pasted directly into an AI chat.</b></div>
     </div>
 
     <h3>5.1 Prompt template / プロンプト雛形</h3>
-    <p class="dim">🇯🇵 以下のブロックを AI に貼って、最後の「リクエスト」部分だけ書き換えてください。 / 🇬🇧 Paste the block below into your AI chat and fill in the request at the bottom.</p>
+    <p class="dim"><span class="lang-ja">以下のブロックを AI に貼って、最後の「リクエスト」部分だけ書き換えてください。</span><span class="lang-en">Paste the block below into your AI chat and fill in the request at the bottom.</span></p>
 <pre class="code"><span class="k">You are a Black Mirror Board spell author.</span>
 <span class="k">Return exactly one JSON object in this shape — nothing else:</span>
 
@@ -702,7 +747,7 @@ BM.log(msg, cls?) <span class="c">// cls ∈ {t-ok, t-err, t-dim}</span>
 (write what you want in one or two sentences)</pre>
 
     <h3>5.2 Short form / 超短縮版</h3>
-    <p class="dim">🇯🇵 上のテンプレが長すぎる場合に。 / 🇬🇧 When the full template is overkill:</p>
+    <p class="dim"><span class="lang-ja">上のテンプレが長すぎる場合に。</span><span class="lang-en">When the full template is overkill:</span></p>
 <pre class="code">Make a Black Mirror Board spell as JSON: {"command":"NAME","action":"JS"}.
 BM API: getSelected(), all(), create(type, props), translate(o,dx,dy),
 setStroke/setFill(o, c), remove(o), viewCenter(), rand(min,max),
@@ -725,8 +770,7 @@ Request: (what you want)</pre>
     </div>
     <div class="step">
         <span class="num">YOU ↘</span>
-        🇯🇵 JSON をコピー → ターミナルにペースト → 自動登録 → <code>$ center-all</code> で実行。<br>
-        🇬🇧 Copy the JSON, paste into the terminal, auto-registers, run with <code>$ center-all</code>.
+        <span class="lang-ja">JSON をコピー → ターミナルにペースト → 自動登録 → <code>$ center-all</code> で実行。</span><span class="lang-en">Copy the JSON, paste into the terminal, auto-registers, run with <code>$ center-all</code>.</span>
     </div>
 
     <h3>5.4 Common AI pitfalls / よくある失敗と対処</h3>
@@ -743,11 +787,11 @@ Request: (what you want)</pre>
 
     <h3>5.5 Growing a spell incrementally / 段階的に育てる</h3>
     <ol>
-        <li>🇯🇵 最初は最小の魔法を頼む（動作1つ） / 🇬🇧 Start with the smallest version that works.</li>
-        <li>🇯🇵 取り込んで実行確認 / 🇬🇧 Register it and verify it runs.</li>
-        <li>🇯🇵 「次は選択が無いときの分岐を追加して」 / 🇬🇧 Then ask: "add a guard for empty selection."</li>
-        <li>🇯🇵 「次はランダム色を追加して」 / 🇬🇧 Then: "add random color."</li>
-        <li>🇯🇵 動く状態を保ちながら機能追加。一気に複雑化しないのがコツ。 / 🇬🇧 Keep it working at every step — avoid big-bang complexity.</li>
+        <li><span class="lang-ja">最初は最小の魔法を頼む（動作1つ）</span><span class="lang-en">Start with the smallest version that works.</span></li>
+        <li><span class="lang-ja">取り込んで実行確認</span><span class="lang-en">Register it and verify it runs.</span></li>
+        <li><span class="lang-ja">「次は選択が無いときの分岐を追加して」</span><span class="lang-en">Then ask: "add a guard for empty selection."</span></li>
+        <li><span class="lang-ja">「次はランダム色を追加して」</span><span class="lang-en">Then: "add random color."</span></li>
+        <li><span class="lang-ja">動く状態を保ちながら機能追加。一気に複雑化しないのがコツ。</span><span class="lang-en">Keep it working at every step — avoid big-bang complexity.</span></li>
     </ol>
 </section>
 
@@ -756,64 +800,54 @@ Request: (what you want)</pre>
     <h2><span class="sec-num">§6</span>Tutorial — Your First Command / 最初の一手</h2>
 
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>まずは呪文を撃ってみよう。</div>
-        <div class="en"><span class="flag">EN</span>Let's cast your first spell.</div>
+        <div class="jp lang-ja">まずは呪文を撃ってみよう。</div>
+        <div class="en lang-en">Let's cast your first spell.</div>
     </div>
 
     <div class="step">
         <span class="num">STEP · 01</span>
-        🇯🇵 画面上に適当な図形を 3〜5 個描いてください（鉛筆でも矩形でも OK）。<br>
-        🇬🇧 Draw 3–5 objects anywhere on the canvas (pen strokes or squares, both work).
+        <span class="lang-ja">画面上に適当な図形を 3〜5 個描いてください（鉛筆でも矩形でも OK）。</span><span class="lang-en">Draw 3–5 objects anywhere on the canvas (pen strokes or squares, both work).</span>
     </div>
 
     <div class="step">
         <span class="num">STEP · 02</span>
-        🇯🇵 ターミナルに打ち込んで <code>Enter</code>：<br>
-        🇬🇧 Type into the terminal and hit <code>Enter</code>:
+        <span class="lang-ja">ターミナルに打ち込んで <code>Enter</code>：</span><span class="lang-en">Type into the terminal and hit <code>Enter</code>:</span>
 <pre class="code">biwako-blue</pre>
-        🇯🇵 → 全ての線が <code>#0044CC</code>（琵琶湖の静寂を思わせる青）に変わる。<br>
-        🇬🇧 → Every stroke turns to <code>#0044CC</code> — the blue of Lake Biwa's silence.
+        <span class="lang-ja">→ 全ての線が <code>#0044CC</code>（琵琶湖の静寂を思わせる青）に変わる。</span><span class="lang-en">→ Every stroke turns to <code>#0044CC</code> — the blue of Lake Biwa's silence.</span>
     </div>
 
     <div class="step">
         <span class="num">STEP · 03</span>
-        🇯🇵 Select ツールで全部まとめて範囲選択。<br>
-        🇬🇧 With Select, marquee-drag to grab all objects.
+        <span class="lang-ja">Select ツールで全部まとめて範囲選択。</span><span class="lang-en">With Select, marquee-drag to grab all objects.</span>
     </div>
 
     <div class="step">
         <span class="num">STEP · 04</span>
 <pre class="code">scatter</pre>
-        🇯🇵 → 選択したオブジェクトがランダムに散らばります。<br>
-        🇬🇧 → The selected objects fling themselves into random positions.
+        <span class="lang-ja">→ 選択したオブジェクトがランダムに散らばります。</span><span class="lang-en">→ The selected objects fling themselves into random positions.</span>
     </div>
 
     <div class="step">
         <span class="num">STEP · 05</span>
 <pre class="code">grid-3x3</pre>
-        🇯🇵 → ビュー中心に 3×3 のマスが整列配置されます。<br>
-        🇬🇧 → A crisp 3×3 grid snaps into existence at the view center.
+        <span class="lang-ja">→ ビュー中心に 3×3 のマスが整列配置されます。</span><span class="lang-en">→ A crisp 3×3 grid snaps into existence at the view center.</span>
     </div>
 
     <div class="step">
         <span class="num">STEP · 06</span>
 <pre class="code">fetch-img ocean 4</pre>
-        🇯🇵 → 「ocean」で検索した4枚の画像が 2×2 グリッドで配置されます。<br>
-        🇬🇧 → 4 "ocean" images appear in a 2×2 grid · Lorem Flickr · no API key.
+        <span class="lang-ja">→ 「ocean」で検索した4枚の画像が 2×2 グリッドで配置されます。</span><span class="lang-en">→ 4 "ocean" images appear in a 2×2 grid · Lorem Flickr · no API key.</span>
     </div>
 
     <div class="step">
         <span class="num">STEP · 07</span>
-        🇯🇵 画像をマーキーで全選択してから：<br>
-        🇬🇧 Marquee-select all the images, then:
+        <span class="lang-ja">画像をマーキーで全選択してから：</span><span class="lang-en">Marquee-select all the images, then:</span>
 <pre class="code">monoclo</pre>
-        🇯🇵 → 画像が一括でモノクロ化されます。<code>Cmd+Z</code> で戻せます。<br>
-        🇬🇧 → All selected images grayscale in one pass. <code>Cmd+Z</code> reverts.
+        <span class="lang-ja">→ 画像が一括でモノクロ化されます。<code>Cmd+Z</code> で戻せます。</span><span class="lang-en">→ All selected images grayscale in one pass. <code>Cmd+Z</code> reverts.</span>
     </div>
 
     <blockquote>
-        🇯🇵 <b>これで、あなたは5つの呪文を既に使ったことになります。</b><br>
-        🇬🇧 <b>You've just cast five spells. Now make your own.</b>
+        <span class="lang-ja"><b>これで、あなたは5つの呪文を既に使ったことになります。</b></span><span class="lang-en"><b>You've just cast five spells. Now make your own.</b></span>
     </blockquote>
 
     <h3>Next Steps / 次の一歩</h3>
@@ -862,8 +896,8 @@ Esc       Dismiss / deselect</pre>
     <h2><span class="sec-num">§8</span>Export &amp; Import / 書き出しと取り込み</h2>
 
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>v1.2 で書き出し・取り込みが刷新されました。対話モーダル・D&D・衝突自動回避まで揃っています。</div>
-        <div class="en"><span class="flag">EN</span>v1.2 overhauls the export and import story — modal pickers, drag-and-drop, and collision-safe auto-rename.</div>
+        <div class="jp lang-ja">v1.2 で書き出し・取り込みが刷新されました。対話モーダル・D&D・衝突自動回避まで揃っています。</div>
+        <div class="en lang-en">v1.2 overhauls the export and import story — modal pickers, drag-and-drop, and collision-safe auto-rename.</div>
     </div>
 
     <h3>8.1 Export — 書き出し</h3>
@@ -883,8 +917,8 @@ Esc       Dismiss / deselect</pre>
 
     <h3>8.1c URL share — <code>share</code> でキャンバス丸ごと送る</h3>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span><code>share</code> を引数なしで打つと、現在のキャンバス状態が**gzip 圧縮 + base64url** でエンコードされ、URL hash に埋め込まれます。モーダルが開いて URL を表示、<code>COPY URL</code> でクリップボードへ。受信側が URL を開くと、自動で同じキャンバスが復元されます。</div>
-        <div class="en"><span class="flag">EN</span>Type <code>share</code> with no arguments and the current canvas gets gzip-compressed, base64url-encoded, and attached to the URL as a <code>#s=...</code> hash. A modal opens with the URL and a copy button. Whoever opens that URL reconstructs your board automatically.</div>
+        <div class="jp lang-ja"><code>share</code> を引数なしで打つと、現在のキャンバス状態が**gzip 圧縮 + base64url** でエンコードされ、URL hash に埋め込まれます。モーダルが開いて URL を表示、<code>COPY URL</code> でクリップボードへ。受信側が URL を開くと、自動で同じキャンバスが復元されます。</div>
+        <div class="en lang-en">Type <code>share</code> with no arguments and the current canvas gets gzip-compressed, base64url-encoded, and attached to the URL as a <code>#s=...</code> hash. A modal opens with the URL and a copy button. Whoever opens that URL reconstructs your board automatically.</div>
     </div>
     <pre class="code"><span class="c">// Typical size</span>
   10 shapes   → ~1 KB
@@ -905,8 +939,8 @@ open URL → board loads with #s=... → decodes → replaces canvas
 
     <h3>8.1b SVG export — ベクター書き出しの詳細</h3>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>鉛筆ストローク・テキスト・シェイプ・画像を選択して <code>svg</code> と打つと、選択範囲だけを標準 SVG として保存します。選択が空ならキャンバス全体を出力。書き出した .svg は Illustrator / Figma / Inkscape で直接開いて、各オブジェクトをレイヤーとして編集できます。</div>
-        <div class="en"><span class="flag">EN</span>Select pen strokes, text, shapes, or images, type <code>svg</code>. The selection (or all objects, if selection is empty) is serialized as standard SVG. The resulting file opens in Illustrator / Figma / Inkscape as editable layered vectors.</div>
+        <div class="jp lang-ja">鉛筆ストローク・テキスト・シェイプ・画像を選択して <code>svg</code> と打つと、選択範囲だけを標準 SVG として保存します。選択が空ならキャンバス全体を出力。書き出した .svg は Illustrator / Figma / Inkscape で直接開いて、各オブジェクトをレイヤーとして編集できます。</div>
+        <div class="en lang-en">Select pen strokes, text, shapes, or images, type <code>svg</code>. The selection (or all objects, if selection is empty) is serialized as standard SVG. The resulting file opens in Illustrator / Figma / Inkscape as editable layered vectors.</div>
     </div>
     <pre class="code"><span class="c">// Mapping</span>
 circle    → &lt;ellipse&gt;                rotation → &lt;g transform="rotate(...)"&gt;
@@ -927,8 +961,8 @@ BM_CANVAS_YYYYMMDD_HHMM.svg
 
     <h3>8.2 Import — 取り込み</h3>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>ターミナルへのペースト、または画面への <code>.json</code> ファイル D&D で自動取り込みされます。形式は4種類を自動判別：</div>
-        <div class="en"><span class="flag">EN</span>Paste into the terminal, or drop a <code>.json</code> file anywhere on the board. Four payload shapes are auto-detected:</div>
+        <div class="jp lang-ja">ターミナルへのペースト、または画面への <code>.json</code> ファイル D&D で自動取り込みされます。形式は4種類を自動判別：</div>
+        <div class="en lang-en">Paste into the terminal, or drop a <code>.json</code> file anywhere on the board. Four payload shapes are auto-detected:</div>
     </div>
 
     <pre class="code"><span class="c">1. single spell</span>
@@ -945,8 +979,8 @@ BM_CANVAS_YYYYMMDD_HHMM.svg
 
     <h3>8.3 Drop zone</h3>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span><code>.json</code> ファイルをデスクトップからボードにドラッグすると、「◼ DROP JSON HERE」と点線枠が画面全体に現れます。ドロップすれば自動判別されて登録。</div>
-        <div class="en"><span class="flag">EN</span>Drag a <code>.json</code> file onto the board and the whole screen shows a dashed overlay: "◼ DROP JSON HERE". Drop to auto-detect and register.</div>
+        <div class="jp lang-ja"><code>.json</code> ファイルをデスクトップからボードにドラッグすると、「◼ DROP JSON HERE」と点線枠が画面全体に現れます。ドロップすれば自動判別されて登録。</div>
+        <div class="en lang-en">Drag a <code>.json</code> file onto the board and the whole screen shows a dashed overlay: "◼ DROP JSON HERE". Drop to auto-detect and register.</div>
     </div>
 
     <h3>8.4 Bundle confirmation dialog</h3>
@@ -957,8 +991,8 @@ current canvas: 5 object(s)
 [O] OVERWRITE — replace current canvas with the bundle
 [A] ADD       — merge bundle into current canvas (re-IDs incoming)
 [C] CANCEL    — do nothing</pre>
-    <p class="dim">🇯🇵 完全バンドル（キャンバス込み）を取り込む時だけ、3択の確認ダイアログが出ます。<br>
-    🇬🇧 The confirmation dialog appears only for full bundles that include canvas objects.</p>
+    <p class="dim lang-ja">完全バンドル（キャンバス込み）を取り込む時だけ、3択の確認ダイアログが出ます。</p>
+    <p class="dim lang-en">The confirmation dialog appears only for full bundles that include canvas objects.</p>
 
     <h3>8.5 Collision-safe rename / 衝突時の自動リネーム</h3>
     <table>
@@ -978,8 +1012,8 @@ current canvas: 5 object(s)
     <h2><span class="sec-num">§9</span>Capabilities &amp; Limits / できること・できないこと</h2>
 
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>自作やAI生成で魔法を書く際、「できる・できない」の境界を先に知るとストレスが減ります。</div>
-        <div class="en"><span class="flag">EN</span>Knowing the edges of what's possible up-front — especially when asking an AI to write spells for you — saves a lot of friction.</div>
+        <div class="jp lang-ja">自作やAI生成で魔法を書く際、「できる・できない」の境界を先に知るとストレスが減ります。</div>
+        <div class="en lang-en">Knowing the edges of what's possible up-front — especially when asking an AI to write spells for you — saves a lot of friction.</div>
     </div>
 
     <h3>9.1 BM.create types (the only 5 valid)</h3>
@@ -993,8 +1027,8 @@ current canvas: 5 object(s)
             <tr><td><code>text</code></td><td><code>{ x, y, text, fontSize }</code></td></tr>
         </tbody>
     </table>
-    <p class="dim">🇯🇵 <code>rect</code> / <code>ellipse</code> / <code>polygon</code> / <code>path</code> / <code>line</code> は未対応。<code>square</code>・<code>circle</code>（rx≠ry で楕円）・<code>arrow</code> 等で代用してください。<br>
-    🇬🇧 <code>rect</code> / <code>ellipse</code> / <code>polygon</code> / <code>path</code> / <code>line</code> are not valid. Use <code>square</code> / <code>circle</code> (with different rx/ry) / <code>arrow</code> etc.</p>
+    <p class="dim lang-ja"><code>rect</code> / <code>ellipse</code> / <code>polygon</code> / <code>path</code> / <code>line</code> は未対応。<code>square</code>・<code>circle</code>（rx≠ry で楕円）・<code>arrow</code> 等で代用してください。</p>
+    <p class="dim lang-en"><code>rect</code> / <code>ellipse</code> / <code>polygon</code> / <code>path</code> / <code>line</code> are not valid. Use <code>square</code> / <code>circle</code> (with different rx/ry) / <code>arrow</code> etc.</p>
 
     <h3>9.2 JS features available in actions</h3>
     <table>
@@ -1018,8 +1052,8 @@ Tip: call BM.redraw() <b>once</b> after a bulk loop, not on every iteration.</pr
 
     <h3>9.4 External APIs via CORS</h3>
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>画像やAPIを外部から取得する魔法を書くなら、<code>Access-Control-Allow-Origin: *</code> を返すサーバーでないとブラウザがブロックします。Lorem Flickr・Picsum Photos・JSONPlaceholder 等は OK。</div>
-        <div class="en"><span class="flag">EN</span>If your spell fetches external data, the server must return <code>Access-Control-Allow-Origin: *</code>. Lorem Flickr, Picsum Photos, JSONPlaceholder all work; many others won't.</div>
+        <div class="jp lang-ja">画像やAPIを外部から取得する魔法を書くなら、<code>Access-Control-Allow-Origin: *</code> を返すサーバーでないとブラウザがブロックします。Lorem Flickr・Picsum Photos・JSONPlaceholder 等は OK。</div>
+        <div class="en lang-en">If your spell fetches external data, the server must return <code>Access-Control-Allow-Origin: *</code>. Lorem Flickr, Picsum Photos, JSONPlaceholder all work; many others won't.</div>
     </div>
 
     <h3>9.5 Persistence layout</h3>
@@ -1029,10 +1063,10 @@ Tip: call BM.redraw() <b>once</b> after a bulk loop, not on every iteration.</pr
         <li>Terminal history → <code>localStorage</code> key <code>bm.termHistory.v1</code></li>
         <li>Everything is local-only. Nothing is uploaded.</li>
     </ul>
-    <p class="dim">🇯🇵 リロードしてもタブを閉じても残ります。ブラウザのデータを消すと消えるので、重要なワークは <code>export data</code> でファイル書き出し推奨。 / 🇬🇧 Survives reloads and tab-close. Lost if you clear browser data — use <code>export data</code> for hard backups.</p>
+    <p class="dim"><span class="lang-ja">リロードしてもタブを閉じても残ります。ブラウザのデータを消すと消えるので、重要なワークは <code>export data</code> でファイル書き出し推奨。</span><span class="lang-en">Survives reloads and tab-close. Lost if you clear browser data — use <code>export data</code> for hard backups.</span></p>
 
     <h3>9.6 Object <code>data</code> properties / オブジェクト型ごとのプロパティ</h3>
-    <p class="dim">🇯🇵 <code>BM.all()</code> で返ってくる各オブジェクトの <code>obj.data</code> で読み書きできる属性。 / 🇬🇧 Attributes available on each object's <code>obj.data</code>, returned by <code>BM.all()</code>.</p>
+    <p class="dim"><span class="lang-ja"><code>BM.all()</code> で返ってくる各オブジェクトの <code>obj.data</code> で読み書きできる属性。</span><span class="lang-en">Attributes available on each object's <code>obj.data</code>, returned by <code>BM.all()</code>.</span></p>
 <pre class="code">circle    { cx, cy, rx, ry, rotation, fill, stroke, strokeOff }
 square    { x, y, w, h, rotation, fill, stroke, strokeOff }
 triangle  { x, y, w, h, rotation, fill, stroke, strokeOff }
@@ -1075,17 +1109,17 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     <h2><span class="sec-num">§10</span>FAQ / トラブルシューティング</h2>
 
     <div class="bil">
-        <div class="jp"><span class="flag">JP</span>よくある問題と対処。ここを先に見るのが一番早い。</div>
-        <div class="en"><span class="flag">EN</span>Common problems and their fixes — check here first.</div>
+        <div class="jp lang-ja">よくある問題と対処。ここを先に見るのが一番早い。</div>
+        <div class="en lang-en">Common problems and their fixes — check here first.</div>
     </div>
 
     <h3>10.1 Drawing / 描画</h3>
     <table>
         <thead><tr><th>Symptom / 症状</th><th>Fix / 対処</th></tr></thead>
         <tbody>
-            <tr><td>🇯🇵 絵が描けない / 🇬🇧 Can't draw</td><td>🇯🇵 セレクトツール (<code>S</code>) になっている → <code>P</code> でペンに切替 / 🇬🇧 You're in Select — press <code>P</code> for Pen.</td></tr>
-            <tr><td>🇯🇵 選択しているのに色が変わらない / 🇬🇧 Color change won't apply</td><td>🇯🇵 v1.2 以前のペン線色バグ。最新 app.html を使う / 🇬🇧 Pre-v1.2 pen-stroke color bug. Reload with the latest <code>app.html</code>.</td></tr>
-            <tr><td>🇯🇵 描いた絵が全部消えた / 🇬🇧 All my work disappeared</td><td>🇯🇵 シークレットモードでは保存されない。重要なら <code>save &lt;name&gt;</code> と <code>export data</code> を併用 / 🇬🇧 Private/incognito tabs don't persist. Combine <code>save &lt;name&gt;</code> with <code>export data</code> for safety.</td></tr>
+            <tr><td><span class="lang-ja">絵が描けない</span><span class="lang-en">Can't draw</span></td><td><span class="lang-ja">セレクトツール (<code>S</code>) になっている → <code>P</code> でペンに切替</span><span class="lang-en">You're in Select — press <code>P</code> for Pen.</span></td></tr>
+            <tr><td><span class="lang-ja">選択しているのに色が変わらない</span><span class="lang-en">Color change won't apply</span></td><td><span class="lang-ja">v1.2 以前のペン線色バグ。最新 app.html を使う</span><span class="lang-en">Pre-v1.2 pen-stroke color bug. Reload with the latest <code>app.html</code>.</span></td></tr>
+            <tr><td><span class="lang-ja">描いた絵が全部消えた</span><span class="lang-en">All my work disappeared</span></td><td><span class="lang-ja">シークレットモードでは保存されない。重要なら <code>save &lt;name&gt;</code> と <code>export data</code> を併用</span><span class="lang-en">Private/incognito tabs don't persist. Combine <code>save &lt;name&gt;</code> with <code>export data</code> for safety.</span></td></tr>
         </tbody>
     </table>
 
@@ -1093,9 +1127,9 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     <table>
         <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
         <tbody>
-            <tr><td><code>command not found</code></td><td>🇯🇵 スペルミス・<code>$</code> の重複・<code>list</code> で登録名を確認 / 🇬🇧 Typo, duplicated <code>$</code>, or run <code>list</code> to verify the name.</td></tr>
-            <tr><td>🇯🇵 実行ログは出るが何も起きない / 🇬🇧 Log prints but nothing visible</td><td>🇯🇵 対象オブジェクトが 0 個、または画面外にいる。<code>objects</code> で確認 / 🇬🇧 Zero targets, or off-screen. Check with <code>objects</code>.</td></tr>
-            <tr><td>🇯🇵 引数が表示から消える / 🇬🇧 Arguments look truncated</td><td>🇯🇵 v1.2 以前の表示バグ。最新版で解消済み / 🇬🇧 Pre-v1.2 cosmetic bug — fixed in the current release.</td></tr>
+            <tr><td><code>command not found</code></td><td><span class="lang-ja">スペルミス・<code>$</code> の重複・<code>list</code> で登録名を確認</span><span class="lang-en">Typo, duplicated <code>$</code>, or run <code>list</code> to verify the name.</span></td></tr>
+            <tr><td><span class="lang-ja">実行ログは出るが何も起きない</span><span class="lang-en">Log prints but nothing visible</span></td><td><span class="lang-ja">対象オブジェクトが 0 個、または画面外にいる。<code>objects</code> で確認</span><span class="lang-en">Zero targets, or off-screen. Check with <code>objects</code>.</span></td></tr>
+            <tr><td><span class="lang-ja">引数が表示から消える</span><span class="lang-en">Arguments look truncated</span></td><td><span class="lang-ja">v1.2 以前の表示バグ。最新版で解消済み</span><span class="lang-en">Pre-v1.2 cosmetic bug — fixed in the current release.</span></td></tr>
         </tbody>
     </table>
 
@@ -1103,11 +1137,11 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     <table>
         <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
         <tbody>
-            <tr><td><code>unknown type "rect"</code></td><td>🇯🇵 <code>BM.create('square', ...)</code> に書き換え / 🇬🇧 Replace with <code>'square'</code>.</td></tr>
-            <tr><td><code>Cannot read property 'x' of undefined</code></td><td>🇯🇵 <code>BM.getById</code> の戻り値 null チェックを入れる / 🇬🇧 Null-check the result of <code>BM.getById</code>.</td></tr>
-            <tr><td>🇯🇵 取り込んだら <code>$grain_2026-04-19</code> になった / 🇬🇧 Imported spell got a date suffix</td><td>🇯🇵 既存名を保護する仕様。元を削るなら <code>forget grain</code>、別名にするなら <code>alias grain=grain_2026-04-19</code> / 🇬🇧 Collision-safe rename. Remove original with <code>forget</code>, or re-point via <code>alias</code>.</td></tr>
-            <tr><td>🇯🇵 preset を削除したい / 🇬🇧 Want to delete a preset</td><td>🇯🇵 不可。preset は上書き・削除禁止 / 🇬🇧 Not possible — presets are immutable by design.</td></tr>
-            <tr><td>🇯🇵 <code>$ fetch-img</code> で画像が出ない / 🇬🇧 No images from fetch-img</td><td>🇯🇵 user 版が preset を上書きしている可能性 → <code>forget fetch-img</code> → リロード。あるいはオフライン / 🇬🇧 A user spell may be shadowing the preset — <code>forget fetch-img</code> and reload. Or you're offline.</td></tr>
+            <tr><td><code>unknown type "rect"</code></td><td><span class="lang-ja"><code>BM.create('square', ...)</code> に書き換え</span><span class="lang-en">Replace with <code>'square'</code>.</span></td></tr>
+            <tr><td><code>Cannot read property 'x' of undefined</code></td><td><span class="lang-ja"><code>BM.getById</code> の戻り値 null チェックを入れる</span><span class="lang-en">Null-check the result of <code>BM.getById</code>.</span></td></tr>
+            <tr><td><span class="lang-ja">取り込んだら <code>$grain_2026-04-19</code> になった</span><span class="lang-en">Imported spell got a date suffix</span></td><td><span class="lang-ja">既存名を保護する仕様。元を削るなら <code>forget grain</code>、別名にするなら <code>alias grain=grain_2026-04-19</code></span><span class="lang-en">Collision-safe rename. Remove original with <code>forget</code>, or re-point via <code>alias</code>.</span></td></tr>
+            <tr><td><span class="lang-ja">preset を削除したい</span><span class="lang-en">Want to delete a preset</span></td><td><span class="lang-ja">不可。preset は上書き・削除禁止</span><span class="lang-en">Not possible — presets are immutable by design.</span></td></tr>
+            <tr><td><span class="lang-ja"><code>$ fetch-img</code> で画像が出ない</span><span class="lang-en">No images from fetch-img</span></td><td><span class="lang-ja">user 版が preset を上書きしている可能性 → <code>forget fetch-img</code> → リロード。あるいはオフライン</span><span class="lang-en">A user spell may be shadowing the preset — <code>forget fetch-img</code> and reload. Or you're offline.</span></td></tr>
         </tbody>
     </table>
 
@@ -1115,9 +1149,9 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     <table>
         <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
         <tbody>
-            <tr><td>🇯🇵 <code>export</code> しても PNG が落ちない / 🇬🇧 PNG doesn't download</td><td>🇯🇵 キャンバスが空・モバイル Safari は共有シート / 🇬🇧 Canvas might be empty; on iOS the share sheet opens instead of a download.</td></tr>
-            <tr><td>🇯🇵 D&D しても無反応 / 🇬🇧 Drop does nothing</td><td>🇯🇵 拡張子が <code>.json</code> でない、JSON が壊れている、または複数ファイル（先頭のみ処理） / 🇬🇧 Wrong extension, invalid JSON, or multiple files dropped (only the first is processed).</td></tr>
-            <tr><td>🇯🇵 バンドル取り込みで絵が消えた / 🇬🇧 Canvas wiped after bundle import</td><td>🇯🇵 <b>OVERWRITE</b> を選んだため。<code>Cmd+Z</code> で戻せる場合あり。または最後の <code>save</code> を <code>load</code> で復元 / 🇬🇧 You picked <b>OVERWRITE</b>. Try <code>Cmd+Z</code>, or <code>load</code> your last <code>save</code>.</td></tr>
+            <tr><td><span class="lang-ja"><code>export</code> しても PNG が落ちない</span><span class="lang-en">PNG doesn't download</span></td><td><span class="lang-ja">キャンバスが空・モバイル Safari は共有シート</span><span class="lang-en">Canvas might be empty; on iOS the share sheet opens instead of a download.</span></td></tr>
+            <tr><td><span class="lang-ja">D&D しても無反応</span><span class="lang-en">Drop does nothing</span></td><td><span class="lang-ja">拡張子が <code>.json</code> でない、JSON が壊れている、または複数ファイル（先頭のみ処理）</span><span class="lang-en">Wrong extension, invalid JSON, or multiple files dropped (only the first is processed).</span></td></tr>
+            <tr><td><span class="lang-ja">バンドル取り込みで絵が消えた</span><span class="lang-en">Canvas wiped after bundle import</span></td><td><span class="lang-ja"><b>OVERWRITE</b> を選んだため。<code>Cmd+Z</code> で戻せる場合あり。または最後の <code>save</code> を <code>load</code> で復元</span><span class="lang-en">You picked <b>OVERWRITE</b>. Try <code>Cmd+Z</code>, or <code>load</code> your last <code>save</code>.</span></td></tr>
         </tbody>
     </table>
 
@@ -1125,8 +1159,8 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     <table>
         <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
         <tbody>
-            <tr><td>🇯🇵 動作が重い / 🇬🇧 Sluggish</td><td>🇯🇵 <code>objects</code> で数を確認、1000 超なら分割推奨。画像が多いとメモリを食う / 🇬🇧 Run <code>objects</code>. Split if &gt;1000. Many inline images eat memory.</td></tr>
-            <tr><td><code>fetch-img</code> 20枚以上で固まる</td><td>🇯🇵 Lorem Flickr のレート制限。10枚ずつ取得を推奨 / 🇬🇧 Rate limit — fetch 10 at a time.</td></tr>
+            <tr><td><span class="lang-ja">動作が重い</span><span class="lang-en">Sluggish</span></td><td><span class="lang-ja"><code>objects</code> で数を確認、1000 超なら分割推奨。画像が多いとメモリを食う</span><span class="lang-en">Run <code>objects</code>. Split if &gt;1000. Many inline images eat memory.</span></td></tr>
+            <tr><td><code>fetch-img</code> 20枚以上で固まる</td><td><span class="lang-ja">Lorem Flickr のレート制限。10枚ずつ取得を推奨</span><span class="lang-en">Rate limit — fetch 10 at a time.</span></td></tr>
         </tbody>
     </table>
 
@@ -1134,8 +1168,8 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     <table>
         <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
         <tbody>
-            <tr><td>🇯🇵 <code>Black Mirror</code> と打ってもカメラが出ない / 🇬🇧 Camera doesn't open</td><td>🇯🇵 <code>file://</code> だと secure-context 制約で動かない。HTTPS または <code>localhost</code> に / 🇬🇧 <code>file://</code> blocks getUserMedia. Serve via <code>python -m http.server</code> or HTTPS.</td></tr>
-            <tr><td>🇯🇵 許可したのに画面が真っ黒 / 🇬🇧 Allowed but video is black</td><td>🇯🇵 他のアプリがカメラ占有中（Zoom 等）。<code>Black Mirror off</code> → <code>Black Mirror</code> で再試行 / 🇬🇧 Another app (Zoom etc.) holds the device. Cycle off/on.</td></tr>
+            <tr><td><span class="lang-ja"><code>Black Mirror</code> と打ってもカメラが出ない</span><span class="lang-en">Camera doesn't open</span></td><td><span class="lang-ja"><code>file://</code> だと secure-context 制約で動かない。HTTPS または <code>localhost</code> に</span><span class="lang-en"><code>file://</code> blocks getUserMedia. Serve via <code>python -m http.server</code> or HTTPS.</span></td></tr>
+            <tr><td><span class="lang-ja">許可したのに画面が真っ黒</span><span class="lang-en">Allowed but video is black</span></td><td><span class="lang-ja">他のアプリがカメラ占有中（Zoom 等）。<code>Black Mirror off</code> → <code>Black Mirror</code> で再試行</span><span class="lang-en">Another app (Zoom etc.) holds the device. Cycle off/on.</span></td></tr>
         </tbody>
     </table>
 
@@ -1143,9 +1177,9 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     <table>
         <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
         <tbody>
-            <tr><td>🇯🇵 <code>share</code> でモーダルが出ない / 🇬🇧 <code>share</code> does nothing</td><td>🇯🇵 キャンバスが空 or Safari 16.3 以下（CompressionStream 未対応） / 🇬🇧 Empty canvas or Safari ≤16.3 (no CompressionStream).</td></tr>
-            <tr><td>🇯🇵 URL が長すぎて SNS で壊れる / 🇬🇧 URL is too long for SNS</td><td>🇯🇵 オブジェクト数を減らすか <code>export data</code> でファイル共有 / 🇬🇧 Reduce object count or use <code>export data</code> for a file bundle.</td></tr>
-            <tr><td>🇯🇵 共有 URL を開いたらキャンバスが消えた / 🇬🇧 Receiving a share URL wiped my canvas</td><td>🇯🇵 <code>Cmd+Z</code> で戻せる場合あり。事前に <code>save &lt;名前&gt;</code> 推奨 / 🇬🇧 <code>Cmd+Z</code> may help; pre-save with <code>save &lt;name&gt;</code>.</td></tr>
+            <tr><td><span class="lang-ja"><code>share</code> でモーダルが出ない</span><span class="lang-en"><code>share</code> does nothing</span></td><td><span class="lang-ja">キャンバスが空 or Safari 16.3 以下（CompressionStream 未対応）</span><span class="lang-en">Empty canvas or Safari ≤16.3 (no CompressionStream).</span></td></tr>
+            <tr><td><span class="lang-ja">URL が長すぎて SNS で壊れる</span><span class="lang-en">URL is too long for SNS</span></td><td><span class="lang-ja">オブジェクト数を減らすか <code>export data</code> でファイル共有</span><span class="lang-en">Reduce object count or use <code>export data</code> for a file bundle.</span></td></tr>
+            <tr><td><span class="lang-ja">共有 URL を開いたらキャンバスが消えた</span><span class="lang-en">Receiving a share URL wiped my canvas</span></td><td><span class="lang-ja"><code>Cmd+Z</code> で戻せる場合あり。事前に <code>save &lt;名前&gt;</code> 推奨</span><span class="lang-en"><code>Cmd+Z</code> may help; pre-save with <code>save &lt;name&gt;</code>.</span></td></tr>
         </tbody>
     </table>
 
@@ -1153,17 +1187,17 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     <table>
         <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
         <tbody>
-            <tr><td>🇯🇵 iPhone で入力するとズームされる / 🇬🇧 iPhone auto-zooms on input</td><td>🇯🇵 2026-04-18 修正済み（font-size 16px 以上に調整） / 🇬🇧 Fixed on 2026-04-18 — use the latest build.</td></tr>
-            <tr><td>🇯🇵 長押しペーストで魔法が登録されない / 🇬🇧 Long-press paste doesn't register</td><td>🇯🇵 2026-04-18 修正済み / 🇬🇧 Fixed on 2026-04-18.</td></tr>
-            <tr><td>🇯🇵 タッチで描画できない / 🇬🇧 Touch drawing doesn't work</td><td>🇯🇵 Safari の JS が無効の可能性。Chrome for iOS でも試す / 🇬🇧 Check that JavaScript is enabled; try Chrome for iOS as fallback.</td></tr>
+            <tr><td><span class="lang-ja">iPhone で入力するとズームされる</span><span class="lang-en">iPhone auto-zooms on input</span></td><td><span class="lang-ja">2026-04-18 修正済み（font-size 16px 以上に調整）</span><span class="lang-en">Fixed on 2026-04-18 — use the latest build.</span></td></tr>
+            <tr><td><span class="lang-ja">長押しペーストで魔法が登録されない</span><span class="lang-en">Long-press paste doesn't register</span></td><td><span class="lang-ja">2026-04-18 修正済み</span><span class="lang-en">Fixed on 2026-04-18.</span></td></tr>
+            <tr><td><span class="lang-ja">タッチで描画できない</span><span class="lang-en">Touch drawing doesn't work</span></td><td><span class="lang-ja">Safari の JS が無効の可能性。Chrome for iOS でも試す</span><span class="lang-en">Check that JavaScript is enabled; try Chrome for iOS as fallback.</span></td></tr>
         </tbody>
     </table>
 
     <h3>10.7 Still stuck? / それでも解決しない</h3>
     <ol>
-        <li>🇯🇵 DevTools (F12) の Console でエラーログを取得 / 🇬🇧 Open DevTools (F12) → Console to capture the real error.</li>
-        <li>🇯🇵 再現手順を添えて SNS (#blackmirror) または GitHub Issues に報告 / 🇬🇧 Report to SNS (<code>#blackmirror</code>) or GitHub Issues with the steps.</li>
-        <li>🇯🇵 「こういう魔法が作れない」系は §9 をまず確認 / 🇬🇧 For "spell X won't work" questions, check §9 first.</li>
+        <li><span class="lang-ja">DevTools (F12) の Console でエラーログを取得</span><span class="lang-en">Open DevTools (F12) → Console to capture the real error.</span></li>
+        <li><span class="lang-ja">再現手順を添えて SNS (#blackmirror) または GitHub Issues に報告</span><span class="lang-en">Report to SNS (<code>#blackmirror</code>) or GitHub Issues with the steps.</span></li>
+        <li><span class="lang-ja">「こういう魔法が作れない」系は §9 をまず確認</span><span class="lang-en">For "spell X won't work" questions, check §9 first.</span></li>
     </ol>
 </section>
 
@@ -1179,6 +1213,12 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     </span>
 </footer>
 
+</div>
+
+<div class="lang-toggle" id="langToggle" role="group" aria-label="switch language" title="日本語 / English">
+    <span class="lang-tok" data-set-lang="ja">JP</span>
+    <span class="lang-sep">·</span>
+    <span class="lang-tok" data-set-lang="en">EN</span>
 </div>
 
 <div class="theme-toggle" id="themeToggle" role="group" aria-label="switch theme" title="dark / light">
@@ -1203,6 +1243,26 @@ image     { x, y, w, h, src (dataURL or URL) }                        <span clas
     document.getElementById('themeToggle')?.addEventListener('click', (e) => {
         if (e.target.matches('.theme-tok')) return;
         apply(current() === 'dark' ? 'light' : 'dark');
+    });
+})();
+</script>
+
+<script>
+(function () {
+    const KEY = 'bmboard.lang';
+    const root = document.documentElement;
+    const current = () => root.lang === 'en' ? 'en' : 'ja';
+    const apply = (l) => {
+        const next = (l === 'en') ? 'en' : 'ja';
+        root.lang = next;
+        try { localStorage.setItem(KEY, next); } catch {}
+    };
+    document.querySelectorAll('.lang-toggle .lang-tok').forEach(tok => {
+        tok.addEventListener('click', (e) => { e.stopPropagation(); apply(tok.dataset.setLang); });
+    });
+    document.getElementById('langToggle')?.addEventListener('click', (e) => {
+        if (e.target.matches('.lang-tok')) return;
+        apply(current() === 'ja' ? 'en' : 'ja');
     });
 })();
 </script>
