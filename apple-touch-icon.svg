@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <!-- Black background — iOS will auto-mask with rounded corners -->
+  <rect width="180" height="180" fill="#0c0c0c"/>
+  <!-- White face -->
+  <circle cx="90" cy="90" r="62" fill="#FAFAF8"/>
+  <!-- Eyes (downward triangles, black) -->
+  <polygon points="62,68 84,68 73,88" fill="#0c0c0c"/>
+  <polygon points="96,68 118,68 107,88" fill="#0c0c0c"/>
+  <!-- Smile (banana / crescent, black) -->
+  <path d="M 50 102 Q 90 150 130 102 Q 90 122 50 102 Z" fill="#0c0c0c"/>
+</svg>

@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Editor / OS junk
+*~
+.Trashes
+.Spotlight-V100
+.fseventsd
+Thumbs.db
+
+# Local backups (don't ship to public repo)
+*_backup_*.html
