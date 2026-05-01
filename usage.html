@@ -662,6 +662,35 @@ youtube                 <span class="c">→  (try it)</span></pre>
 <section id="s4b">
     <h2><span class="sec-num">§4.5</span>Images / 画像の召喚とモノクロ化</h2>
 
+    <h3>Screenshot → paste / drop — クリップボードから直接</h3>
+    <div class="bil">
+        <div class="jp lang-ja">スクリーンショットをそのままキャンバスに貼れます。クリップボード経由なら <code>⌘ + V</code>（Mac）/ <code>Ctrl + V</code>（Windows）。デスクトップに保存したスクショなら、ファイルをキャンバスにドラッグ&ドロップ。</div>
+        <div class="en lang-en">Screenshot any region of your screen, then paste or drop it onto the board. Both routes flow through the same image placement pipeline (centered, scaled to fit, undo-safe).</div>
+    </div>
+
+    <table>
+        <thead><tr><th>OS</th><th>クリップボードに撮る (paste with <kbd>⌘/Ctrl</kbd>+<kbd>V</kbd>)</th><th>ファイルに撮る (drag onto canvas)</th></tr></thead>
+        <tbody>
+            <tr>
+                <td>macOS</td>
+                <td><kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>4</kbd></td>
+                <td><kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>4</kbd> → デスクトップから D&D</td>
+            </tr>
+            <tr>
+                <td>Windows</td>
+                <td><kbd>PrtScn</kbd>（通常キー） / <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td>
+                <td><kbd>Win</kbd>+<kbd>PrtScn</kbd> → ピクチャ ＞ スクリーンショット から D&D</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <pre class="code"><span class="c">// Pipeline</span>
+clipboard image  →  paste handler  →  placeImageOnCanvas('paste')
+file drop        →  drop handler   →  placeImageOnCanvas('drop')
+file picker (I)  →  change handler →  placeImageOnCanvas('upload')
+
+<span class="c">// All three routes share the same scaling, centering, undo, and terminal log.</span></pre>
+
     <h3>$ fetch-img — keyword-based image summoning</h3>
     <div class="bil">
         <div class="jp lang-ja">キーワードで画像を取得してキャンバスに配置します。API キー不要（Lorem Flickr 使用）。枚数指定で自動グリッド配置。</div>

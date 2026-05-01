@@ -89,10 +89,11 @@
         html[lang="en"] .lang-ja { display: none !important; }
         html[lang="ja"] .lang-en { display: none !important; }
 
-        /* Language toggle UI — sits next to theme toggle */
+        /* Language toggle UI — sits next to theme toggle.
+           top: 60px keeps it clear of the COMMANDS / DEV LOG nav inside <header>. */
         .lang-toggle {
             position: fixed;
-            top: 12px;
+            top: 60px;
             right: 88px;
             z-index: 400;
             display: inline-flex;
@@ -121,10 +122,11 @@
             color: var(--glow);
         }
 
-        /* Theme toggle — fixed top-right, same pattern as other BM pages */
+        /* Theme toggle — fixed top-right, same pattern as other BM pages.
+           top: 60px keeps it clear of the COMMANDS / DEV LOG nav inside <header>. */
         .theme-toggle {
             position: fixed;
-            top: 12px;
+            top: 60px;
             right: 14px;
             z-index: 400;
             display: inline-flex;
@@ -447,8 +449,9 @@
     </div>
 </div>
 
-<!-- Inlined markdown — self-contained, works on file:// -->
-<script type="text/markdown" id="md-readme">
+<!-- Inlined markdown — self-contained, works on file://.
+     The README is split en/ja so the JP/EN toggle can swap the rendered tree. -->
+<script type="text/markdown" id="md-readme-en">
 <div align="center">
 <pre>
  ██████╗ ███╗   ███╗
@@ -792,6 +795,257 @@ dev log    →  /md.html  — retrospective from v0.1 → v1.2
 
 </div>
 </script>
+
+<script type="text/markdown" id="md-readme-ja">
+<div align="center">
+<pre>
+ ██████╗ ███╗   ███╗
+ ██╔══██╗████╗ ████║     BLACK MIRROR BOARD
+ ██████╔╝██╔████╔██║     ─────────────────────────────
+ ██╔══██╗██║╚██╔╝██║     描く · 話す · 唱える
+ ██████╔╝██║ ╚═╝ ██║     v1.2 · kinoshita studio · 2026
+ ╚═════╝ ╚═╝     ╚═╝     updated: 2026-05-01
+</pre>
+
+![stack](https://img.shields.io/badge/stack-vanilla_JS-000?style=flat-square)
+![deps](https://img.shields.io/badge/deps-zero-000?style=flat-square)
+![canvas](https://img.shields.io/badge/canvas-HTML5-000?style=flat-square)
+![themes](https://img.shields.io/badge/themes-light_%7C_dark_%7C_gray-000?style=flat-square)
+![spells](https://img.shields.io/badge/spells-JSON_portable-000?style=flat-square)
+![license](https://img.shields.io/badge/license-MIT-000?style=flat-square)
+
+</div>
+
+---
+
+ターミナルで操る無限キャンバス。HTML 1 ファイル、依存ゼロ、ビルドなし。
+すべての描画にシェルが応え、すべてのコマンドが「魔法」になる —
+魔法は JSON で持ち運べて、共有できて、再構成できる。**v1.2 は 2026-04-19 リリース。**
+
+```
+open app.html
+```
+
+これがインストール。または公開ビルドへ：
+
+```
+https://bmboard.studio/app
+```
+
+---
+
+## クイックスタート
+
+```sh
+# インストール不要。直接開く：
+open app.html
+
+# またはローカルでサーブ：
+python -m http.server 8000
+# → http://localhost:8000/app.html
+```
+
+---
+
+## 哲学
+
+**構文より直感。** 図形を描けば、ターミナルが応える。
+
+**引き算の美学。** 1 ファイル、依存ゼロ、ビルドなし。要らないものは存在しない。
+
+**ローカルファースト。** クラウドなし、認証なし。書き出しは PNG か JSON。あなたのファイル、あなたのディスク。
+
+**持ち運べる魔法。** あなたが作ったコマンドは JSON。SNS にペースト、誰かが受け取って自分のボードに貼れば、あなたの魔法が彼らのキャンバスで動く。
+
+---
+
+## v1.2 で追加されたこと
+
+```
+FETCH-IMG (改良)    キーワードで画像召喚（Lorem Flickr 経由）
+                    `fetch-img mountain 6` → 写真 6 枚を 3×2 で自動配置
+                    既定はカラー、`$ monoclo` でモノクロ化
+                    API キー不要、最大 25 枚/コール
+
+MONOCLO (新)        `monoclo` → 選択中の画像をグレースケール化
+                    Undo 対応・dataURL 保存・bundle 安全
+
+SVG エクスポート(新) `$ svg` → 選択中（または全部）を編集可能な SVG として出力
+                    Illustrator / Figma / Inkscape でレイヤー付きで開ける
+
+BLACK MIRROR (新)   `Black Mirror` → 右上にセルフィー・カメラのワイプ
+                    `Black Mirror off` → カメラ停止、ワイプ消去
+
+SHARE URL (新)      `share`（引数なし）→ キャンバス状態 → 共有可能 URL
+                    gzip + base64url で URL ハッシュにエンコード
+                    画像は自動除外、~2-8 KB 程度
+```
+
+---
+
+## 図形 → コマンド
+
+```
+○  円         git init / npm create / python -m http.server
+◎  二重円     docker run / kubectl apply -f
+△  三角       git checkout -b / if [ condition ]
+□  四角       docker build / terraform plan
+→  矢印       curl | jq / grep | sort | uniq
+T  テキスト   stdin echo / raw injection
+✎  ペン       フリーハンド — 始点に戻すと自動で閉じて塗れる
+🖼  画像       写真を D&D / fetch-img でキーワード召喚
+```
+
+---
+
+## プリセット魔法（最初から入ってる）
+
+```
+$ scatter        選択中の物をランダム位置に散らす
+$ grid-3x3       ビュー中央に 3×3 のグリッドを配置
+$ biwako-blue    すべての線を琵琶湖ブルー(#0044CC)に
+$ fetch-img      Lorem Flickr からキーワードで画像召喚
+$ monoclo        選択中の画像をグレースケール化
+$ svg            選択中を編集可能な SVG として書き出し
+```
+
+詳しい BM API と魔法の作り方 → `commands.html` または `usage.html`。
+
+---
+
+## ターミナルコマンド
+
+```
+> help                 ターミナルのチートシート
+> clear                出力をクリア
+> light / dark / gray  テーマ切替
+> save <name>          キャンバスを IndexedDB にスナップショット保存
+> ls                   保存済スナップショット一覧
+> load <name>          スナップショットを復元
+> list                 登録済の魔法一覧
+> register <n> <js>    魔法を登録
+> alias <new>=<old>    魔法を別名で複製
+> share <name>         魔法 JSON をクリップボードへ
+> forget <name>        ユーザー魔法を削除
+> export               選択範囲 → 透過 PNG 書き出し
+> export magic         魔法ピッカーモーダル
+> export data          バンドル書き出しモーダル
+> svg                  選択範囲 → 編集可能 SVG
+> share                キャンバス → 共有可能 URL（モーダル）
+> Black Mirror         セルフィー・カメラのワイプ
+> Black Mirror off     カメラ停止
+> fetch-img <kw> <n>   キーワードで n 枚の画像召喚
+> monoclo              選択画像をグレースケール
+> scatter              選択中をランダム配置
+> grid-3x3             3×3 グリッド配置
+> biwako-blue          全線を琵琶湖ブルーに
+```
+
+---
+
+## 自分で魔法を作る
+
+```
+register paint-red for(const o of BM.all()){BM.setStroke(o,'#FF0000')}BM.redraw();BM.log('painted red!')
+```
+
+これで `$ paint-red` を打つと、すべての線が赤くなります。
+
+利用可能な BM API：
+
+```
+BM.getSelected()          選択中の物
+BM.all()                  全オブジェクト
+BM.getById(id)            ID で取得
+BM.find(fn)               条件で絞り込み
+BM.create(type, props?)   生成 (circle | square | triangle | arrow | text)
+BM.update(obj|id, patch)  data 属性を一括更新
+BM.translate(obj, dx, dy) 平行移動
+BM.setStroke(obj, color)  線の色を変更
+BM.setFill(obj, color)    塗りの色を変更
+BM.remove(obj)            削除
+BM.clear()                キャンバスをクリア
+BM.viewCenter()           ビューの中心 { x, y }
+BM.rand(min, max)         一様乱数
+BM.getMode() / setMode()  テーマ取得・設定
+BM.redraw()               再描画（変更後に呼ぶ）
+BM.save()                 Undo 履歴にコミット
+BM.log(msg, cls?)         ターミナル出力
+```
+
+**注意:** `BM.create('rect', ...)` はサポートされていません。`'square'` を使ってください。上記 5 種類のみ有効。
+
+---
+
+## キーボード
+
+```
+S          選択         1 2 3      線の太さ
+P          ペン         Space      パン（押し続け）
+N          パス         Shift      アスペクト固定（リサイズ中）
+E          消しゴム     Alt        中心固定（リサイズ中）
+C          円           X          透過 PNG 書き出し
+G          三角         I          画像アップロード
+Q          四角         Del        選択中を削除
+A          矢印         Cmd+Z      取消
+T          テキスト     Cmd+⇧Z     やり直し
+                        Esc        選択解除・キャンセル
+```
+
+---
+
+## スタック
+
+```
+描画         HTML5 Canvas · ctx.setTransform · devicePixelRatio
+入力         Pointer Events · setPointerCapture · マルチタッチピンチ
+ジオメトリ   RDP 簡略化 · ベジェ平滑化 · セグメント距離
+             閉領域は ray-cast で点-多角形判定
+テーマ       CSS カスタムプロパティ · body.bm-{light|dark|gray}
+リサイズ     resizeBoxWithMods(anchorId, ob, nx, ny, shift, alt)
+永続化       IndexedDB（プロジェクト + 魔法）· localStorage（履歴）
+インポート   FileReader · D&D · ペースト捕捉 · 4 形式 JSON ルータ
+エクスポート オフスクリーンキャンバス → toDataURL · blob ダウンロード
+             iOS Web Share API でネイティブ共有
+オーディオ   Web Audio API · オシレーター · 機械式キーボードの感触
+```
+
+---
+
+## デプロイ
+
+GitHub Pages。ビルドなし、CI なし、設定なし。
+
+```
+https://bmboard.studio/app
+```
+
+push するだけ。
+
+---
+
+## 連絡先
+
+```
+フィードバック  →  blackmirror.board@gmail.com
+                   件名: Black Mirror Board Feedback
+
+X              →  @bmboards            x.com/bmboards
+Instagram      →  @bmboard.official    instagram.com/bmboard.official
+
+開発ログ       →  bmboard.studio/dev-log.html
+                   v0.1 → v1.2+ までの全工程
+```
+
+---
+
+<div align="center">
+
+*Draw · Speak · Cast. — kinoshita studio / 2026-05-01*
+
+</div>
+</script>
+
 <script type="text/markdown" id="md-usage">
 <!-- On case-insensitive filesystems (macOS APFS default), this file is
      served as both `usage.md` and `USAGE.md` — same inode, same content. -->
@@ -1171,10 +1425,19 @@ instagram  →  @tkinoshita99
 
 <script>
     const mdBody = document.getElementById('mdBody');
-    const MAP = { 'README.md': 'md-readme', 'usage.md': 'md-usage' };
+    // README has separate en/ja markdown blocks so the JP/EN toggle can swap
+    // the rendered tree wholesale; usage.md is bilingual via .lang-ja/.lang-en spans.
+    const currentLang = () => document.documentElement.lang === 'en' ? 'en' : 'ja';
+    function resolveId(file) {
+        if (file === 'README.md') return 'md-readme-' + currentLang();
+        if (file === 'usage.md')  return 'md-usage';
+        return null;
+    }
+    let activeFile = 'README.md';
 
     function loadMd(file) {
-        const id = MAP[file];
+        activeFile = file;
+        const id = resolveId(file);
         const el = id && document.getElementById(id);
         if (!el) { mdBody.innerHTML = '<p style="color:#666">content not embedded: ' + file + '</p>'; return; }
         mdBody.innerHTML = marked.parse(el.textContent);
@@ -1188,6 +1451,11 @@ instagram  →  @tkinoshita99
             loadMd(btn.dataset.file);
         });
     });
+
+    // Re-render when lang changes — README needs a different markdown block;
+    // usage.md just needs its .lang-ja/.lang-en spans recomputed by CSS, but
+    // re-rendering is cheap and keeps both tabs consistent.
+    window.addEventListener('bmboard:langchange', () => loadMd(activeFile));
 
     loadMd('README.md');
 </script>
@@ -1232,8 +1500,10 @@ instagram  →  @tkinoshita99
     const current = () => root.lang === 'en' ? 'en' : 'ja';
     const apply = (l) => {
         const next = (l === 'en') ? 'en' : 'ja';
+        if (root.lang === next) return;
         root.lang = next;
         try { localStorage.setItem(KEY, next); } catch {}
+        window.dispatchEvent(new CustomEvent('bmboard:langchange', { detail: { lang: next } }));
     };
     document.querySelectorAll('.lang-toggle .lang-tok').forEach(tok => {
         tok.addEventListener('click', (e) => { e.stopPropagation(); apply(tok.dataset.setLang); });

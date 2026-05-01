@@ -6124,7 +6124,7 @@ function showBundleExportDialog() {
 (function setupBoardDnD() {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(12,12,12,0.88);border:2px dashed #7fdb7f;display:none;align-items:center;justify-content:center;z-index:99998;font:14px/1.5 monospace;color:#e8e6e0;letter-spacing:.2em;pointer-events:none;';
-    overlay.textContent = '◼ DROP JSON HERE';
+    overlay.textContent = '◼ DROP IMAGE OR JSON HERE';
     document.body.appendChild(overlay);
 
     let dragDepth = 0;
@@ -6149,8 +6149,14 @@ function showBundleExportDialog() {
         dragDepth = 0;
         overlay.style.display = 'none';
         const file = e.dataTransfer.files[0];
+        const isImage = (file.type && file.type.startsWith('image/')) ||
+                        /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(file.name);
+        if (isImage) {
+            placeImageOnCanvas(file, 'drop');
+            return;
+        }
         if (!/\.json$/i.test(file.name) && file.type !== 'application/json') {
-            printRaw(`[drop] "${file.name}" is not a JSON file.`, 't-err');
+            printRaw(`[drop] "${file.name}" is not a JSON or image file.`, 't-err');
             return;
         }
         const reader = new FileReader();
@@ -7306,8 +7312,12 @@ document.getElementById('imgFileInput').addEventListener('change', e => {
 });
 
 // ── Image Paste (Cmd/Ctrl+V with image in clipboard) ────────────────────────
-// Lets users screenshot (e.g. macOS Cmd+Shift+Ctrl+4) and paste straight onto
-// the board. Skips when paste lands in an editable input (terminal has its
+// Lets users screenshot and paste straight onto the board.
+//   macOS:    Cmd+Shift+Ctrl+4 → clipboard, then Cmd+V here
+//   Windows:  PrtScn or Win+Shift+S → clipboard, then Ctrl+V here
+// For file-based screenshots (Cmd+Shift+4 / Win+PrtScn), drag the saved file
+// onto the canvas — the drop handler routes images through placeImageOnCanvas
+// the same way. Skips when paste lands in an editable input (terminal has its
 // own JSON-paste handler; native paste should keep working in text fields).
 window.addEventListener('paste', e => {
     const t = e.target;
