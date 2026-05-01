@@ -888,7 +888,7 @@ footer {
             <span class="theme-sep">·</span>
             <span class="theme-tok" data-set-theme="light">○</span>
         </div>
-        <a href="./app.html" class="launch">$ launch</a>
+        <a href="./app" class="launch">$ launch</a>
     </nav>
 </header>
 
@@ -930,7 +930,7 @@ footer {
     <p class="hero-tagline lang-en">Where Designer's Intuition<br><em>meets</em> Hacker's Command.</p>
     <p class="hero-tagline lang-ja">デザイナーの直感と、<em>ハッカーの</em>コマンドが<br>交差する場所。</p>
 
-    <a class="hero-cta" href="./app.html" data-launch>launch</a>
+    <a class="hero-cta" href="./app" data-launch>launch</a>
 
     <div class="hero-meta">
         <span class="lang-en">one file</span>
@@ -1378,7 +1378,7 @@ footer {
             <span class="lang-ja">◼ BM BOARD · kinoshita studio · 琵琶湖のほとりで · 2026</span>
         </div>
         <div>
-            <a href="./app.html"><span class="lang-en">app</span><span class="lang-ja">アプリ</span></a> &nbsp;·&nbsp;
+            <a href="./app"><span class="lang-en">app</span><span class="lang-ja">アプリ</span></a> &nbsp;·&nbsp;
             <a href="./usage.html"><span class="lang-en">manual</span><span class="lang-ja">マニュアル</span></a> &nbsp;·&nbsp;
             <a href="./dev-log.html"><span class="lang-en">dev log</span><span class="lang-ja">開発ログ</span></a>
         </div>
@@ -1520,7 +1520,7 @@ function launchToApp() {
     printDim(ja ? '→ スプラッシュからフェード...' : '→ fading from splash...');
     printDim(ja ? '→ app.html を読み込み中...' : '→ loading app.html...');
     overlay.classList.add('on');
-    setTimeout(() => { window.location.href = './app.html'; }, 820);
+    setTimeout(() => { window.location.href = './app'; }, 820);
 }
 
 function bmAbout() {
@@ -1668,9 +1668,9 @@ document.querySelector('.brand')?.addEventListener('click', (e) => {
 // ── intercept hero-cta + nav launch for fade transition ──────────
 document.querySelectorAll('[data-launch], .site-nav .launch, .hero-cta').forEach(el => {
     el.addEventListener('click', (e) => {
-        // Only intercept same-origin links to app.html
+        // Only intercept same-origin links to the app (either /app or /app.html)
         const href = el.getAttribute('href') || '';
-        if (!href.endsWith('app.html')) return;
+        if (!href.endsWith('app.html') && !href.endsWith('/app') && !href.endsWith('app')) return;
         e.preventDefault();
         overlay.classList.add('on');
         setTimeout(() => { window.location.href = href; }, 820);
