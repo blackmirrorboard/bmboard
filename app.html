@@ -7427,23 +7427,27 @@ document.getElementById('imgFileInput').addEventListener('change', e => {
 //   Windows:  PrtScn or Win+Shift+S → clipboard, then Ctrl+V here
 // For file-based screenshots (Cmd+Shift+4 / Win+PrtScn), drag the saved file
 // onto the canvas — the drop handler routes images through placeImageOnCanvas
-// the same way. Skips when paste lands in an editable input (terminal has its
-// own JSON-paste handler; native paste should keep working in text fields).
+// the same way.
+//
+// IMPORTANT: image paste is captured **regardless of focus** — even when the
+// terminal input is active, an image in the clipboard is routed to the canvas.
+// Pure-text paste falls through to the default handler (and the terminal's
+// own JSON-paste handler at #ti runs separately for spell registration).
 window.addEventListener('paste', e => {
-    const t = e.target;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
     const items = (e.clipboardData && e.clipboardData.items) || [];
     for (const item of items) {
         if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
             const file = item.getAsFile();
             if (file) {
                 e.preventDefault();
+                e.stopPropagation();
                 placeImageOnCanvas(file, 'paste');
                 return;
             }
         }
     }
-});
+    // No image → let the default paste happen (text into inputs, etc.)
+}, true);  // capture phase: run before any input-level paste handlers
 
 // ── Prevent browser zoom on UI elements (iOS Safari ignores user-scalable=no) ──
 // Block Safari gesture events globally
