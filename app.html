@@ -4573,7 +4573,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load state from URL hash on boot — runs after everything is initialized
 async function loadSharedStateFromHash() {
     const h = location.hash;
-    if (!h || !h.startsWith('#s=')) return;
+    if (!h || !h.startsWith('#s=')) {
+        // No shared URL → restore from local auto-save (if any).
+        try { _loadCanvasFromLocal(); } catch(_) {}
+        return;
+    }
     const encoded = h.slice(3);
     try {
         const json = await _bmDecompress(encoded);
@@ -4593,10 +4597,12 @@ async function loadSharedStateFromHash() {
         if (payload.mode && payload.mode !== MODE) setMode(payload.mode);
         redrawAll();
         saveHistory();
+        // Persist immediately so PWA / reload continues from this state
+        try { _saveCanvasNow(); } catch(_) {}
         enqueue('[SYSTEM] shared-state detected', [
             '→ decoding URL hash...',
             '→ restoring ' + payload.objects.length + ' object(s)...',
-            '[OK] canvas restored from shared URL.',
+            '[OK] canvas restored from shared URL (auto-saved).',
         ]);
         // Clean the hash so reload doesn't re-import
         history.replaceState(null, '', location.pathname + location.search);
@@ -5105,10 +5111,17 @@ function showSaveDialog(defaultBase, onConfirmFile) {
     card.innerHTML = `
         <div style="font-size:11px;letter-spacing:.3em;color:#666;margin-bottom:14px;">◼ SAVE PROJECT</div>
 
+        <!-- Auto-save banner -->
+        <div style="background:#0f1a0f;border:1px solid #2a4a2a;color:#7fdb7f;padding:10px 12px;margin-bottom:14px;font-size:11.5px;line-height:1.6;">
+            ✓ <b>自動保存中</b> — 通常の編集はブラウザ内に自動で保存されます。<br>
+            <span style="color:#5a8a5a;">タブを閉じても・リロードしても・PCを再起動しても、次に開いた時に復元されます。<br>
+            このダイアログは「別端末への移行」「友人と共有」など特別な保存をしたい時に使います。</span>
+        </div>
+
         <!-- Tabs -->
         <div style="display:flex;gap:0;margin-bottom:14px;">
-            <button data-tab="file" data-active="1" style="flex:1;background:#1a1a1a;border:1px solid #7fdb7f;border-right:1px solid #333;color:#7fdb7f;padding:8px 12px;font:inherit;cursor:pointer;">FILE</button>
-            <button data-tab="url" style="flex:1;background:transparent;border:1px solid #333;border-left:none;color:#888;padding:8px 12px;font:inherit;cursor:pointer;">URL · HOME SCREEN</button>
+            <button data-tab="file" data-active="1" style="flex:1;background:#1a1a1a;border:1px solid #7fdb7f;border-right:1px solid #333;color:#7fdb7f;padding:8px 12px;font:inherit;cursor:pointer;">📁 FILE (.json)</button>
+            <button data-tab="url" style="flex:1;background:transparent;border:1px solid #333;border-left:none;color:#888;padding:8px 12px;font:inherit;cursor:pointer;">🔗 URL · 共有</button>
         </div>
 
         <!-- Name input (shared by both tabs) -->
@@ -5121,12 +5134,19 @@ function showSaveDialog(defaultBase, onConfirmFile) {
 
         <!-- FILE tab content -->
         <div data-pane="file" style="margin-bottom:18px;color:#888;font-size:11.5px;line-height:1.55;">
-            プロジェクト全体を JSON ファイルとして書き出します。<br>
-            iOS では共有シートが開き、保存先(iCloud Drive / On My iPhone / AirDrop / etc.)を選べます。
+            <b style="color:#bbb;">📁 ファイル保存（永続アーカイブ）</b><br>
+            プロジェクト全体を <code style="color:#9bd2ff;">.json</code> ファイルに書き出します。<br>
+            <span style="color:#666;">・別の端末・別のブラウザに移行できる唯一の手段<br>
+            ・ファイルがあれば <b>OPEN</b> ボタンでいつでも完全復元<br>
+            ・iOS では共有シートが開き、iCloud Drive / On My iPhone / AirDrop などに保存可</span>
         </div>
 
         <!-- URL tab content (hidden by default) -->
         <div data-pane="url" style="display:none;margin-bottom:18px;">
+            <div style="color:#888;font-size:11.5px;line-height:1.55;margin-bottom:10px;">
+                <b style="color:#bbb;">🔗 URL 共有（一時的なコピー）</b><br>
+                <span style="color:#666;">キャンバス全体を圧縮して URL に埋め込みます。リンクを送れば相手のブラウザに展開されます。</span>
+            </div>
             <div style="background:#000;border:1px solid #333;padding:10px 12px;margin-bottom:6px;word-break:break-all;font-family:monospace;font-size:11px;line-height:1.45;color:#9bd2ff;max-height:140px;overflow-y:auto;" data-role="url-box">
                 generating URL...
             </div>
@@ -5134,9 +5154,11 @@ function showSaveDialog(defaultBase, onConfirmFile) {
                 <span data-role="url-size">— KB</span>
                 <span data-role="url-warn" style="color:#d79921"></span>
             </div>
-            <div style="color:#888;font-size:11.5px;line-height:1.55;">
-                ホーム画面に追加すると、アイコンタップでこのキャンバスが復元されます。<br>
-                <span style="color:#666;">画像オブジェクトは URL に入りません(自動除外)</span>
+            <div style="background:#1a1410;border:1px solid #4a3820;color:#d79921;padding:8px 10px;font-size:11px;line-height:1.55;">
+                ⚠ <b>iPhone のホーム画面追加には不向き</b><br>
+                <span style="color:#a08050;">PWA 仕様で URL ハッシュが落ちて空のボードが開きます。<br>
+                自動保存（上記）またはファイル保存（FILE タブ）を使ってください。<br>
+                画像オブジェクトは URL に含まれません（自動除外）。</span>
             </div>
         </div>
 
@@ -6254,6 +6276,90 @@ function saveHistory() {
     if (_history.length > HISTORY_MAX) _history.shift();
     else _histIdx++;
     updateUndoRedoBtns();
+    _scheduleCanvasSave();
+}
+
+// ══════════════════════════════════════════════════
+// LOCAL AUTO-SAVE  (bm.canvas.v1)
+// ══════════════════════════════════════════════════
+// Persist the canvas to localStorage so the user's work survives
+// reload, tab close, browser restart, and home-screen PWA launches.
+// URL "#s=" hash takes priority on boot (explicit consume of a shared board).
+const BM_CANVAS_KEY = 'bm.canvas.v1';
+let _saveTimer = null;
+function _scheduleCanvasSave() {
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(_saveCanvasNow, 1500);
+}
+function _saveCanvasNow() {
+    try {
+        const payload = {
+            v: '1.2',
+            ts: Date.now(),
+            mode: typeof MODE !== 'undefined' ? MODE : undefined,
+            view: { scale: VIEW.scale, tx: VIEW.tx, ty: VIEW.ty },
+            objects: S.objects,
+        };
+        localStorage.setItem(BM_CANVAS_KEY, JSON.stringify(payload));
+    } catch (err) {
+        // Quota exceeded → drop oldest undo history and retry once.
+        if (err && err.name === 'QuotaExceededError') {
+            try {
+                while (_history.length > 10) _history.shift();
+                if (_histIdx > _history.length - 1) _histIdx = _history.length - 1;
+                const compact = { v:'1.2', ts:Date.now(), mode: typeof MODE!=='undefined'?MODE:undefined,
+                    view:{scale:VIEW.scale,tx:VIEW.tx,ty:VIEW.ty}, objects:S.objects };
+                localStorage.setItem(BM_CANVAS_KEY, JSON.stringify(compact));
+                try { printRaw('[autosave] storage quota tight — trimmed undo history', 't-dim'); } catch(_) {}
+            } catch (_) {
+                try { printRaw('[autosave] localStorage full — please SAVE to .json', 't-err'); } catch(_) {}
+            }
+        }
+    }
+}
+function _loadCanvasFromLocal() {
+    try {
+        const raw = localStorage.getItem(BM_CANVAS_KEY);
+        if (!raw) return false;
+        const payload = JSON.parse(raw);
+        if (!payload || !Array.isArray(payload.objects) || !payload.objects.length) return false;
+        S.objects = payload.objects;
+        S.selectedId = null; S.multiSelected = [];
+        S.objects.forEach(o => o.selected = false);
+        if (payload.view) {
+            VIEW.scale = payload.view.scale || 1;
+            VIEW.tx    = payload.view.tx    || 0;
+            VIEW.ty    = payload.view.ty    || 0;
+            try { updateZoomLabel(); } catch(_) {}
+        }
+        if (payload.mode && typeof MODE !== 'undefined' && payload.mode !== MODE) {
+            try { setMode(payload.mode); } catch(_) {}
+        }
+        try { redrawAll(); } catch(_) {}
+        // Seed history so undo doesn't snap back to empty
+        _history.length = 1;
+        _history[0] = JSON.stringify(S.objects);
+        _histIdx = 0;
+        try { updateUndoRedoBtns(); } catch(_) {}
+        const ago = payload.ts ? _humanAgo(payload.ts) : '';
+        try {
+            enqueue('[autosave] restored', [
+                '→ ' + payload.objects.length + ' object(s) loaded from browser storage' + (ago ? ' · ' + ago : ''),
+                '→ all changes will be auto-saved.',
+            ]);
+        } catch(_) {}
+        return true;
+    } catch (_) { return false; }
+}
+function _clearCanvasLocal() {
+    try { localStorage.removeItem(BM_CANVAS_KEY); } catch(_) {}
+}
+function _humanAgo(ts) {
+    const sec = Math.max(0, (Date.now() - ts) / 1000);
+    if (sec < 60)    return 'just now';
+    if (sec < 3600)  return Math.floor(sec/60) + ' min ago';
+    if (sec < 86400) return Math.floor(sec/3600) + ' h ago';
+    return Math.floor(sec/86400) + ' d ago';
 }
 
 function _restoreHistory() {
@@ -6263,6 +6369,7 @@ function _restoreHistory() {
     S.multiResizeId = null; S.multiResizeOrig = null;
     redrawAll();
     updateUndoRedoBtns();
+    _scheduleCanvasSave();
 }
 
 function undo() {
@@ -6814,7 +6921,8 @@ function importProject(file) {
                 scroll();
             }
             updateZoomLabel(); redrawAll();
-            printRaw(`[import] ${d.objects.length} objects restored — v${d.version} ✓`, 't-ok');
+            try { saveHistory(); _saveCanvasNow(); } catch(_) {}
+            printRaw(`[import] ${d.objects.length} objects restored — v${d.version} ✓ (auto-saved)`, 't-ok');
         } catch (err) {
             printRaw(`[import] error: ${err.message}`, 't-dim');
         }
@@ -6838,6 +6946,8 @@ function clearCanvas() {
     S.objects=[]; S.selectedId=null;
     document.querySelectorAll('.det-label').forEach(el=>el.remove());
     redrawAll();
+    _clearCanvasLocal();
+    try { saveHistory(); } catch(_) {}
 }
 
 // ══════════════════════════════════════════════════
