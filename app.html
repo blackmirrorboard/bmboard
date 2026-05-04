@@ -7434,10 +7434,15 @@ document.getElementById('imgFileInput').addEventListener('change', e => {
 // Pure-text paste falls through to the default handler (and the terminal's
 // own JSON-paste handler at #ti runs separately for spell registration).
 window.addEventListener('paste', e => {
-    const items = (e.clipboardData && e.clipboardData.items) || [];
+    const cd = e.clipboardData || window.clipboardData;
+    if (!cd) { try { printRaw('[paste] no clipboardData', 't-dim'); } catch(_) {} return; }
+
+    // 1) items API — most reliable for screenshots
+    const items = cd.items || [];
     for (const item of items) {
-        if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
-            const file = item.getAsFile();
+        const looksLikeImage = item.type && item.type.startsWith('image/');
+        if (looksLikeImage) {
+            const file = item.getAsFile && item.getAsFile();
             if (file) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -7446,6 +7451,27 @@ window.addEventListener('paste', e => {
             }
         }
     }
+    // 2) files API — fallback for some browsers / sources
+    const files = cd.files || [];
+    for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        if (f && f.type && f.type.startsWith('image/')) {
+            e.preventDefault();
+            e.stopPropagation();
+            placeImageOnCanvas(f, 'paste');
+            return;
+        }
+    }
+    // 3) Diagnostic: show what was actually in the clipboard
+    try {
+        const types = (cd.types && Array.from(cd.types).join(', ')) || '(empty)';
+        const kinds = items.length ? Array.from(items).map(i => `${i.kind}/${i.type}`).join(', ') : '(no items)';
+        // Only log if user is on the canvas (not typing) so we don't spam terminal log on text paste
+        if (!(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable))) {
+            printRaw(`[paste] no image — types: ${types}`, 't-dim');
+            printRaw(`[paste]   items: ${kinds}`, 't-dim');
+        }
+    } catch(_) {}
     // No image → let the default paste happen (text into inputs, etc.)
 }, true);  // capture phase: run before any input-level paste handlers
 
