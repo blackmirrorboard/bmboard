@@ -90,9 +90,9 @@ Esc              → deselect all.
 
 ### Clipboard / クリップボード
 
-🇯🇵 **コピー & ペースト** は OS 標準どおり。スマホは長押しで複製できる。
+🇯🇵 **コピー & ペースト** は OS 標準どおり。
 
-🇬🇧 **Copy & paste** is OS-standard. Mobile has a long-press shortcut.
+🇬🇧 **Copy & paste** is OS-standard.
 
 ```
 Ctrl/Cmd + A     Select every object on the board / 全オブジェクト選択

@@ -1881,8 +1881,6 @@ const S = {
     multiSelected:   [],        // [id, ...] — ids of all marquee-selected objects
     marquee:         null,      // {x1,y1,x2,y2} world coords while dragging
     clipboard:       [],        // deep-copied objects waiting for Cmd+V paste
-    longPressTimer:  null,      // setTimeout id for touch-and-hold duplicate
-    longPressOrigin: null,      // {x,y} screen coords where long-press started — used to cancel on movement
     multiDragOff:    null,      // {x,y} anchor for group move
     multiRotId:      false,     // bool — group rotation in progress
     multiRotCenter:  null,      // {x,y} pivot for group rotation
@@ -2142,12 +2140,6 @@ function initCanvas() {
     canvas.addEventListener('pointermove', e => {
         e.preventDefault();
         ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
-        // Cancel pending long-press if the finger drifts more than ~6px
-        if (S.longPressTimer && S.longPressOrigin) {
-            const dx = e.clientX - S.longPressOrigin.x;
-            const dy = e.clientY - S.longPressOrigin.y;
-            if (Math.hypot(dx, dy) > 6) cancelLongPressDup();
-        }
 
         // Pinch zoom + pan (two pointers)
         if (ptrs.size >= 2 && pinch) {
@@ -2189,8 +2181,6 @@ function initCanvas() {
     const endPtr = e => {
         ptrs.delete(e.pointerId);
         if (ptrs.size < 2) pinch = null;
-        // Cancel pending long-press on lift (timer hadn't fired yet)
-        if (S.longPressTimer) cancelLongPressDup();
         if (S.panning && ptrs.size === 0) {
             S.panning = false;
             canvas.style.cursor = S.spaceDown ? 'grab' : toolCursor(S.tool); return;
@@ -2481,8 +2471,6 @@ function onDown(cx, cy, isTouch = false) {
                 return;
             }
             S.lastTapInfo = (hit.type === 'text' || hit.type === 'sticky') ? { id: hit.id, time: now } : null;
-            // Touch long-press (500ms) on the hit object → duplicate (mobile equivalent of Cmd+D)
-            if (isTouch) startLongPressDup(hit, cx, cy);
 
             if (prevSel && hit.id === prevSel.id) {
                 // Same object body → move
@@ -6691,31 +6679,6 @@ function selectAllObjects() {
     S.multiSelected = S.objects.map(o => o.id);
     S.selectedId = null; // multi-select takes over from single-select
     redrawAll();
-}
-
-// ── Touch long-press → duplicate (mobile equivalent of Cmd+D) ─────────────
-// Fires after 500ms of stationary contact on a hit object. Cancelled on
-// finger drift (>6px) or lift before timeout.
-function startLongPressDup(hitObj, screenX, screenY) {
-    cancelLongPressDup();
-    S.longPressOrigin = { x: screenX, y: screenY };
-    S.longPressTimer = setTimeout(() => {
-        S.longPressTimer = null; S.longPressOrigin = null;
-        // Make sure the held object (and any siblings already in S.multiSelected) get duplicated
-        if (!S.selectedId && !(S.multiSelected && S.multiSelected.length)) {
-            S.objects.forEach(o => o.selected = false);
-            hitObj.selected = true;
-            S.selectedId = hitObj.id;
-        }
-        // Cancel any pending drag so the object doesn't jump
-        S.dragOff = null; S.isDown = false;
-        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
-        duplicateSelection();
-    }, 500);
-}
-function cancelLongPressDup() {
-    if (S.longPressTimer) clearTimeout(S.longPressTimer);
-    S.longPressTimer = null; S.longPressOrigin = null;
 }
 
 function updateUndoRedoBtns() {
