@@ -4500,7 +4500,11 @@ const textInput   = document.getElementById('ti2');
 function showTextInput(p, editObj = null) {
     S.textPos        = p;
     S.editingTextId  = editObj ? editObj.id : null;
-    const fs  = editObj ? (editObj.data.fontSize || 16) : 16;
+    // Use the same scale-compensated default as commitText so the input
+    // size matches the post-commit rendered size (no pop on Enter).
+    const _baseFs = 16;
+    const _newFs = Math.max(_baseFs, Math.round(_baseFs / Math.max(0.01, VIEW.scale)));
+    const fs  = editObj ? (editObj.data.fontSize || 16) : _newFs;
     const sx  = p.x * VIEW.scale + VIEW.tx;
     const sy  = p.y * VIEW.scale + VIEW.ty;
     textOverlay.style.display = 'block';
@@ -4534,7 +4538,12 @@ function commitText() {
     }
     if (!text || !S.textPos) { S.textPos = null; return; }
     const id = genId();
-    S.objects.push({ id, type:'text', data:{x:S.textPos.x,y:S.textPos.y,text,fontSize:16,rotation:0}, selected:false });
+    // Scale-aware fontSize: when zoomed out, compensate so the placed text
+    // looks ~16px on screen (matching the WYSIWYG input overlay) rather than
+    // shrinking to a hard-to-read few pixels at e.g. 30% zoom.
+    const _baseFs = 16;
+    const _fs = Math.max(_baseFs, Math.round(_baseFs / Math.max(0.01, VIEW.scale)));
+    S.objects.push({ id, type:'text', data:{x:S.textPos.x,y:S.textPos.y,text,fontSize:_fs,rotation:0}, selected:false });
     saveHistory(); redrawAll(); echoText(text); S.textPos = null;
 }
 
@@ -6665,6 +6674,17 @@ function duplicateSelection() {
     _cloneInto(tpls, dx, dy);
 }
 
+// ── Select all (Cmd+A) ─ pulls every object on the board into multi-select ──
+function selectAllObjects() {
+    if (!S.objects.length) return;
+    // Switch to select tool so the selection chrome is interactable
+    if (typeof setTool === 'function' && S.tool !== 'select') setTool('select');
+    S.objects.forEach(o => o.selected = true);
+    S.multiSelected = S.objects.map(o => o.id);
+    S.selectedId = null; // multi-select takes over from single-select
+    redrawAll();
+}
+
 // ── Touch long-press → duplicate (mobile equivalent of Cmd+D) ─────────────
 // Fires after 500ms of stationary contact on a hit object. Cancelled on
 // finger drift (>6px) or lift before timeout.
@@ -7011,6 +7031,11 @@ document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && !e.shiftKey && !e.altKey) {
         if (!S.selectedId && !S.multiSelected.length) return;
         e.preventDefault(); duplicateSelection(); return;
+    }
+    // Select all canvas objects
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && !e.shiftKey && !e.altKey) {
+        if (!S.objects.length) return; // nothing on the board
+        e.preventDefault(); selectAllObjects(); return;
     }
     // Space → pan mode
     if (e.code==='Space' && !e.repeat) {
