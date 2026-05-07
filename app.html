@@ -569,6 +569,9 @@
             height: 100%;
             z-index: 3;
             touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         #textOverlay {
@@ -2086,7 +2089,7 @@ function initCanvas() {
     // Enables setPointerCapture so moves fire even outside the canvas.
     const ptrs = new Map();   // pointerId → {x, y}
     let pinch = null;         // {mid:{x,y}, dist} snapshot, updated per move
-    let lastTapMs = 0, lastTapXY = null;
+    let lastTapMs = 0, lastTapXY = null, lastTapCount = 0;
 
     function pinchSnapshot() {
         const vs = [...ptrs.values()];
@@ -2117,13 +2120,18 @@ function initCanvas() {
             canvas.style.cursor='grabbing'; return;
         }
 
-        // Double-tap (touch) → reset zoom
-        if (e.pointerType === 'touch') {
+        // Triple-tap reset (touch, select tool only) — 二度押しの誤発火回避で 3 回必須
+        if (e.pointerType === 'touch' && S.tool === 'select') {
             const now=Date.now(), pos={x:e.clientX,y:e.clientY};
             if (lastTapXY && now-lastTapMs<300 && Math.hypot(pos.x-lastTapXY.x,pos.y-lastTapXY.y)<36) {
-                VIEW.scale=1; VIEW.tx=0; VIEW.ty=0;
-                updateZoomLabel(); redrawAll();
-                lastTapMs=0; lastTapXY=null; return;
+                lastTapCount++;
+                if (lastTapCount >= 3) {
+                    VIEW.scale=1; VIEW.tx=0; VIEW.ty=0;
+                    updateZoomLabel(); redrawAll();
+                    lastTapMs=0; lastTapXY=null; lastTapCount=0; return;
+                }
+            } else {
+                lastTapCount=1;
             }
             lastTapMs=now; lastTapXY=pos;
         }
