@@ -590,6 +590,25 @@
             letter-spacing: 0.02em;
         }
 
+        #stickyEditor {
+            position: absolute;
+            display: none;
+            z-index: 31;
+            box-sizing: border-box;
+            padding: 8%;
+            background: #FFE873;
+            border: 1px solid rgba(0,0,0,0.10);
+            box-shadow: 2px 4px 10px rgba(0,0,0,0.18);
+            font-family: "Helvetica Neue", "Hiragino Kaku Gothic ProN", -apple-system, system-ui, sans-serif;
+            font-weight: 600;
+            color: #1a1a1a;
+            text-align: center;
+            outline: none;
+            resize: none;
+            overflow: hidden;
+            line-height: 1.22;
+        }
+
         .shape-hint {
             position: absolute;
             bottom: 12px;
@@ -1487,6 +1506,7 @@
         <div id="textOverlay">
             <input id="ti2" type="text" autocomplete="off" spellcheck="false" placeholder="type…">
         </div>
+        <textarea id="stickyEditor" spellcheck="false" placeholder="type…"></textarea>
         <div id="bmTimer" class="bm-timer" style="display:none">
             <div class="bm-timer-bar">
                 <span class="bm-timer-title">TIMER</span>
@@ -1857,6 +1877,9 @@ const S = {
     // Multi-select (marquee)
     multiSelected:   [],        // [id, ...] — ids of all marquee-selected objects
     marquee:         null,      // {x1,y1,x2,y2} world coords while dragging
+    clipboard:       [],        // deep-copied objects waiting for Cmd+V paste
+    longPressTimer:  null,      // setTimeout id for touch-and-hold duplicate
+    longPressOrigin: null,      // {x,y} screen coords where long-press started — used to cancel on movement
     multiDragOff:    null,      // {x,y} anchor for group move
     multiRotId:      false,     // bool — group rotation in progress
     multiRotCenter:  null,      // {x,y} pivot for group rotation
@@ -1864,6 +1887,7 @@ const S = {
     multiResizeId:   null,      // anchor id string for group resize, or null
     multiResizeOrig: null,      // { groupBounds, objDataMap:{id->deepCopy} } at resize start
     editingTextId:   null,      // id of text object being re-edited, or null (new text)
+    editingStickyId: null,      // id of sticky note being edited via textarea overlay, or null
     lastTapInfo:     null,      // {id, time} for double-tap detection
     penSnapClose:    false,     // true when pen tip is near the start point (auto-close ready)
     // Path tool (click-to-place anchors, Illustrator-style)
@@ -2071,6 +2095,9 @@ function initCanvas() {
     }
 
     canvas.addEventListener('pointerdown', e => {
+        // Commit any in-progress sticky edit when the user touches the board.
+        // (canvas isn't focusable, so blur won't fire on its own — do it here.)
+        if (S.editingStickyId) commitStickyEdit();
         e.preventDefault(); getAC();
         ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
         canvas.setPointerCapture(e.pointerId);
@@ -2107,6 +2134,12 @@ function initCanvas() {
     canvas.addEventListener('pointermove', e => {
         e.preventDefault();
         ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
+        // Cancel pending long-press if the finger drifts more than ~6px
+        if (S.longPressTimer && S.longPressOrigin) {
+            const dx = e.clientX - S.longPressOrigin.x;
+            const dy = e.clientY - S.longPressOrigin.y;
+            if (Math.hypot(dx, dy) > 6) cancelLongPressDup();
+        }
 
         // Pinch zoom + pan (two pointers)
         if (ptrs.size >= 2 && pinch) {
@@ -2148,6 +2181,8 @@ function initCanvas() {
     const endPtr = e => {
         ptrs.delete(e.pointerId);
         if (ptrs.size < 2) pinch = null;
+        // Cancel pending long-press on lift (timer hadn't fired yet)
+        if (S.longPressTimer) cancelLongPressDup();
         if (S.panning && ptrs.size === 0) {
             S.panning = false;
             canvas.style.cursor = S.spaceDown ? 'grab' : toolCursor(S.tool); return;
@@ -2157,7 +2192,7 @@ function initCanvas() {
     canvas.addEventListener('pointerup',     endPtr, { passive:false });
     canvas.addEventListener('pointercancel', endPtr, { passive:false });
 
-    // Double-click on text object → re-edit (desktop)
+    // Double-click on text / sticky object → re-edit (desktop)
     canvas.addEventListener('dblclick', e => {
         // Path tool: double-click commits the in-progress path (open)
         if (S.tool === 'path' && S.pathPts.length > 0) {
@@ -2166,11 +2201,17 @@ function initCanvas() {
         if (S.tool !== 'select') return;
         const r  = canvas.getBoundingClientRect();
         const p  = getPos(e.clientX - r.left, e.clientY - r.top);
-        const hit = [...S.objects].reverse().find(o => o.type === 'text' && hitTest(o, p.x, p.y, 0));
+        const hit = [...S.objects].reverse().find(o =>
+            (o.type === 'text' || o.type === 'sticky') && hitTest(o, p.x, p.y, 0));
         if (!hit) return;
         e.preventDefault();
         commitText();
-        showTextInput({ x: hit.data.x, y: hit.data.y }, hit);
+        commitStickyEdit();
+        if (hit.type === 'sticky') {
+            showStickyEdit(hit);
+        } else {
+            showTextInput({ x: hit.data.x, y: hit.data.y }, hit);
+        }
     });
 
     // Wheel zoom (no pointer equivalent for scroll delta)
@@ -2284,6 +2325,8 @@ function getObjCenter(obj) {
         }
         case 'image':
             return { x: obj.data.x + obj.data.w/2, y: obj.data.y + obj.data.h/2 };
+        case 'sticky':
+            return { x: obj.data.x + obj.data.w/2, y: obj.data.y + obj.data.h/2 };
     }
 }
 
@@ -2312,6 +2355,7 @@ function getObjBounds(obj) {
         }
         case 'stroke': return strokeBBox(obj.data.pts);
         case 'image':  return { x: obj.data.x, y: obj.data.y, w: obj.data.w, h: obj.data.h };
+        case 'sticky': return { x: obj.data.x, y: obj.data.y, w: obj.data.w, h: obj.data.h };
     }
 }
 
@@ -2415,16 +2459,22 @@ function onDown(cx, cy, isTouch = false) {
         const hit = [...S.objects].reverse().find(o => hitTest(o, p.x, p.y, touchPad));
 
         if (hit) {
-            // Double-tap detection: same text object tapped twice within 350ms → re-edit
+            // Double-tap detection: same text/sticky tapped twice within 350ms → re-edit
             const now = Date.now();
-            if (hit.type === 'text' && S.lastTapInfo && S.lastTapInfo.id === hit.id && now - S.lastTapInfo.time < 350) {
+            if ((hit.type === 'text' || hit.type === 'sticky')
+                && S.lastTapInfo && S.lastTapInfo.id === hit.id && now - S.lastTapInfo.time < 350) {
                 S.lastTapInfo = null;
-                commitText(); // close any open overlay first
-                const c  = getObjCenter(hit);
-                showTextInput({ x: hit.data.x, y: hit.data.y }, hit);
+                commitText(); commitStickyEdit(); // close any open overlay first
+                if (hit.type === 'sticky') {
+                    showStickyEdit(hit);
+                } else {
+                    showTextInput({ x: hit.data.x, y: hit.data.y }, hit);
+                }
                 return;
             }
-            S.lastTapInfo = (hit.type === 'text') ? { id: hit.id, time: now } : null;
+            S.lastTapInfo = (hit.type === 'text' || hit.type === 'sticky') ? { id: hit.id, time: now } : null;
+            // Touch long-press (500ms) on the hit object → duplicate (mobile equivalent of Cmd+D)
+            if (isTouch) startLongPressDup(hit, cx, cy);
 
             if (prevSel && hit.id === prevSel.id) {
                 // Same object body → move
@@ -2869,6 +2919,7 @@ function renderObject(obj) {
         case 'text':     renderText(obj);     break;
         case 'stroke':   renderStroke(obj);   break;
         case 'image':    renderImage(obj);    break;
+        case 'sticky':   renderSticky(obj);   break;
     }
     ctx.restore();
 }
@@ -3023,6 +3074,78 @@ function renderImage(obj) {
         ctx.fillStyle = '#f5f5f5'; ctx.fillRect(x, y, w, h);
         ctx.fillStyle = '#bbb'; ctx.font = `${12/VIEW.scale}px Courier New`;
         ctx.fillText('loading…', x + 4/VIEW.scale, y + h/2);
+    }
+    if (obj.selected) { selBox(x, y, w, h); drawAnchors(obj); }
+    ctx.restore();
+}
+
+// ── Sticky note ─ Miro-style yellow post-it with auto-fit text ──────────
+function stickyWrapText(c2, text, maxW) {
+    const paragraphs = String(text || '').split('\n');
+    const out = [];
+    for (const para of paragraphs) {
+        if (!para) { out.push(''); continue; }
+        let line = '';
+        for (const ch of para) {
+            const test = line + ch;
+            if (c2.measureText(test).width > maxW && line.length) {
+                out.push(line); line = ch;
+            } else {
+                line = test;
+            }
+        }
+        if (line) out.push(line);
+    }
+    return out;
+}
+function stickyAutoFit(c2, text, w, h, fontFamily) {
+    if (!text) return { fs: Math.floor(Math.min(w, h) * 0.25), lines: [] };
+    const maxFs = Math.max(10, Math.floor(Math.min(w, h) * 0.45));
+    const minFs = 8;
+    for (let fs = maxFs; fs >= minFs; fs -= 1) {
+        c2.font = `600 ${fs}px ${fontFamily}`;
+        const lines = stickyWrapText(c2, text, w);
+        const totalH = lines.length * fs * 1.22;
+        if (totalH <= h) return { fs, lines };
+    }
+    c2.font = `600 ${minFs}px ${fontFamily}`;
+    return { fs: minFs, lines: stickyWrapText(c2, text, w) };
+}
+const STICKY_FONT = `"Helvetica Neue", "Hiragino Kaku Gothic ProN", -apple-system, system-ui, sans-serif`;
+function renderSticky(obj) {
+    const { x, y, w, h, text, color } = obj.data;
+    const fill = color || '#FFE873';
+    ctx.save();
+    // Drop shadow for "stuck on board" feel
+    ctx.shadowColor   = 'rgba(0,0,0,0.18)';
+    ctx.shadowBlur    = 10 / VIEW.scale;
+    ctx.shadowOffsetX = 2  / VIEW.scale;
+    ctx.shadowOffsetY = 4  / VIEW.scale;
+    ctx.fillStyle = fill;
+    ctx.fillRect(x, y, w, h);
+    // Reset shadow before text/border
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+    // Subtle border
+    ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+    ctx.lineWidth = 1 / VIEW.scale;
+    ctx.strokeRect(x, y, w, h);
+    // Auto-fit text
+    if (text && obj.id !== S.editingStickyId) {
+        const pad = Math.min(w, h) * 0.08;
+        const innerW = w - pad * 2;
+        const innerH = h - pad * 2;
+        const { fs, lines } = stickyAutoFit(ctx, text, innerW, innerH, STICKY_FONT);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.font = `600 ${fs}px ${STICKY_FONT}`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign    = 'center';
+        const lineH = fs * 1.22;
+        const totalH = lines.length * lineH;
+        const startY = y + h/2 - totalH/2 + lineH/2;
+        for (let i = 0; i < lines.length; i++) {
+            ctx.fillText(lines[i], x + w/2, startY + i * lineH);
+        }
     }
     if (obj.selected) { selBox(x, y, w, h); drawAnchors(obj); }
     ctx.restore();
@@ -3439,6 +3562,10 @@ function scaleObjToGroupBounds(obj, origData, origGB, newGB) {
             obj.data.x = sX(od.x); obj.data.y = sY(od.y);
             obj.data.w = Math.max(8, od.w * sx); obj.data.h = Math.max(8, od.h * sy);
             break;
+        case 'sticky':
+            obj.data.x = sX(od.x); obj.data.y = sY(od.y);
+            obj.data.w = Math.max(40, od.w * sx); obj.data.h = Math.max(40, od.h * sy);
+            break;
         case 'arrow':
             obj.data.x1 = sX(od.x1); obj.data.y1 = sY(od.y1);
             obj.data.x2 = sX(od.x2); obj.data.y2 = sY(od.y2);
@@ -3540,6 +3667,10 @@ function hitTest(obj, x, y, extraPad = 0) {
             const {x: ox, y: oy, w, h} = obj.data;
             return px >= ox-pad && px <= ox+w+pad && py >= oy-pad && py <= oy+h+pad;
         }
+        case 'sticky': {
+            const {x: ox, y: oy, w, h} = obj.data;
+            return px >= ox-pad && px <= ox+w+pad && py >= oy-pad && py <= oy+h+pad;
+        }
     }
     return false;
 }
@@ -3556,6 +3687,7 @@ function moveObj(obj, dx, dy) {
         case 'text':    obj.data.x+=dx;  obj.data.y+=dy;  break;
         case 'stroke':  obj.data.pts = obj.data.pts.map(p => ({x:p.x+dx,y:p.y+dy})); break;
         case 'image':   obj.data.x += dx; obj.data.y += dy; break;
+        case 'sticky':  obj.data.x += dx; obj.data.y += dy; break;
     }
 }
 
@@ -3635,7 +3767,8 @@ function getAnchors(obj) {
 
         // ── Square / Image: 8-handle bbox resize ────────────────────────────
         case 'square':
-        case 'image': {
+        case 'image':
+        case 'sticky': {
             const { x, y, w, h } = obj.data;
             return [
                 { id:'tl', x:x,     y:y,     kind:'bbox' },
@@ -3880,10 +4013,11 @@ function applyAnchor(obj, anchorId, nx, ny) {
             break;
         }
 
-        // ── Square / Image: 8-handle proportional bbox resize ───────────────
+        // ── Square / Image / Sticky: 8-handle proportional bbox resize ──────
         // Images default to aspect-locked on corners so photos never warp.
         case 'square':
-        case 'image': {
+        case 'image':
+        case 'sticky': {
             if (!ob) break;
             const mods3 = S.modifiers || { shift:false, alt:false };
             const isCorner = anchorId==='tl'||anchorId==='tr'||anchorId==='bl'||anchorId==='br';
@@ -4410,6 +4544,66 @@ textInput.addEventListener('keydown', e => {
     e.stopPropagation();
 });
 
+// ── Sticky editor (textarea) ─ Miro-style in-place editing ──────────────
+const stickyEditor = document.getElementById('stickyEditor');
+function showStickyEdit(stickyObj) {
+    if (!stickyObj) return;
+    S.editingStickyId = stickyObj.id;
+    const { x, y, w, h } = stickyObj.data;
+    const sx = x * VIEW.scale + VIEW.tx;
+    const sy = y * VIEW.scale + VIEW.ty;
+    const sw = w * VIEW.scale;
+    const sh = h * VIEW.scale;
+    stickyEditor.style.display = 'block';
+    stickyEditor.style.left   = sx + 'px';
+    stickyEditor.style.top    = sy + 'px';
+    stickyEditor.style.width  = sw + 'px';
+    stickyEditor.style.height = sh + 'px';
+    // Auto-fit font size for the editor too, using current text
+    const pad = Math.min(w, h) * 0.08;
+    const innerW = w - pad * 2;
+    const innerH = h - pad * 2;
+    const probe = stickyAutoFit(ctx, stickyObj.data.text || 'M', innerW, innerH, STICKY_FONT);
+    stickyEditor.style.fontSize = Math.max(10, Math.round(probe.fs * VIEW.scale)) + 'px';
+    stickyEditor.value = stickyObj.data.text || '';
+    stickyEditor.focus();
+    stickyEditor.select();
+    redrawAll(); // hide rendered text while editing
+}
+function commitStickyEdit() {
+    if (stickyEditor.style.display === 'none' || !S.editingStickyId) return;
+    const id = S.editingStickyId;
+    const obj = S.objects.find(o => o.id === id);
+    const text = stickyEditor.value;
+    stickyEditor.style.display = 'none';
+    S.editingStickyId = null;
+    if (!obj) { redrawAll(); return; }
+    if (text.trim() === '' && !obj.data.text) {
+        // brand-new sticky never typed into → keep empty (don't auto-delete)
+    }
+    obj.data.text = text;
+    saveHistory(); redrawAll();
+}
+stickyEditor.addEventListener('keydown', e => {
+    // Esc commits & closes; Cmd/Ctrl+Enter also commits; plain Enter inserts newline
+    if (e.key === 'Escape') { e.preventDefault(); commitStickyEdit(); }
+    else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commitStickyEdit(); }
+    e.stopPropagation();
+});
+stickyEditor.addEventListener('input', () => {
+    // Live re-fit font size as user types so it shrinks like Miro
+    if (!S.editingStickyId) return;
+    const obj = S.objects.find(o => o.id === S.editingStickyId);
+    if (!obj) return;
+    const { w, h } = obj.data;
+    const pad = Math.min(w, h) * 0.08;
+    const innerW = w - pad * 2;
+    const innerH = h - pad * 2;
+    const probe = stickyAutoFit(ctx, stickyEditor.value || 'M', innerW, innerH, STICKY_FONT);
+    stickyEditor.style.fontSize = Math.max(10, Math.round(probe.fs * VIEW.scale)) + 'px';
+});
+stickyEditor.addEventListener('blur', () => commitStickyEdit());
+
 function echoText(text) {
     const low = text.toLowerCase();
     if (low.includes('youtube') || low.includes('yt')) {
@@ -4831,6 +5025,7 @@ window.BM = {
             case 'triangle': data = { x: vc.x-60, y: vc.y-50, w: 120, h: 100, rotation: 0, fill: null, strokeOff: false }; break;
             case 'arrow':    data = { x1: vc.x-60, y1: vc.y, x2: vc.x+60, y2: vc.y, rotation: 0 }; break;
             case 'text':     data = { x: vc.x, y: vc.y, text: props.text || 'text', fontSize: 20 }; break;
+            case 'sticky':   data = { x: vc.x-100, y: vc.y-100, w: 200, h: 200, text: props.text || '', color: props.color || '#FFE873', rotation: 0 }; break;
             default: throw new Error(`BM.create: unknown type "${type}"`);
         }
         Object.assign(data, props);
@@ -5788,6 +5983,30 @@ function runCommand(val) {
         return;
     }
 
+    // ── sticky ─ Miro-style yellow post-it note ──────────────────────────
+    //   sticky                 → empty 200×200 yellow note at view center (double-click to edit)
+    //   sticky <text>          → note prefilled with <text>
+    //   sticky note            → alias for empty note (treats "note" as no-text)
+    if (head === 'sticky') {
+        const initial = (rest.trim().toLowerCase() === 'note') ? '' : rest;
+        const vc = BM.viewCenter();
+        const W = 200, H = 200;
+        const id = genId();
+        const obj = {
+            id, type: 'sticky',
+            data: { x: vc.x - W/2, y: vc.y - H/2, w: W, h: H, text: initial, color: '#FFE873', rotation: 0 },
+            selected: false,
+        };
+        S.objects.push(obj);
+        saveHistory(); redrawAll();
+        enqueue(`$ sticky${rest ? ' ' + rest : ''}`, [
+            '→ summoning yellow post-it...',
+            `→ size: ${W} × ${H}  ·  ${initial ? `text: "${initial}"` : 'empty (double-click to edit)'}`,
+            '[OK] sticky note placed.',
+        ]);
+        return;
+    }
+
     // ── Debug: objects ────────────────────────────────────────────────────
     if (head==='objects') {
         if (!S.objects.length) { enqueue('objects',['(canvas empty)']); return; }
@@ -6384,6 +6603,93 @@ function redo() {
     _restoreHistory();
 }
 
+// ── Copy / Paste / Duplicate selected canvas objects ──────────────────────
+// S.clipboard stores deep-copied object templates; paste re-IDs them and
+// nudges them by ~20px so the duplicate is visible next to the original.
+function _selectedIds() {
+    if (S.multiSelected && S.multiSelected.length) return S.multiSelected.slice();
+    if (S.selectedId) return [S.selectedId];
+    return [];
+}
+function copySelection() {
+    const ids = _selectedIds();
+    if (!ids.length) return;
+    S.clipboard = S.objects
+        .filter(o => ids.includes(o.id))
+        .map(o => JSON.parse(JSON.stringify(o)));
+}
+function cutSelection() {
+    const ids = _selectedIds();
+    if (!ids.length) return;
+    S.clipboard = S.objects
+        .filter(o => ids.includes(o.id))
+        .map(o => JSON.parse(JSON.stringify(o)));
+    S.objects = S.objects.filter(o => !ids.includes(o.id));
+    S.selectedId = null; S.multiSelected = [];
+    saveHistory(); redrawAll();
+}
+function _cloneInto(templates, dx, dy) {
+    const newIds = [];
+    S.objects.forEach(o => o.selected = false);
+    for (const tpl of templates) {
+        const clone = JSON.parse(JSON.stringify(tpl));
+        clone.id = genId();
+        clone.selected = true;
+        moveObj(clone, dx, dy);
+        S.objects.push(clone);
+        newIds.push(clone.id);
+    }
+    S.selectedId    = newIds.length === 1 ? newIds[0] : null;
+    S.multiSelected = newIds.length > 1   ? newIds   : [];
+    saveHistory(); redrawAll();
+    return newIds;
+}
+function pasteSelection() {
+    if (!S.clipboard || !S.clipboard.length) return;
+    const dx = 20 / VIEW.scale, dy = 20 / VIEW.scale;
+    _cloneInto(S.clipboard, dx, dy);
+    // Subsequent pastes drift further so a chain of Cmd+V doesn't pile in one spot
+    S.clipboard = S.clipboard.map(t => {
+        const c = JSON.parse(JSON.stringify(t));
+        moveObj(c, dx, dy);
+        return c;
+    });
+}
+function duplicateSelection() {
+    const ids = _selectedIds();
+    if (!ids.length) return;
+    const tpls = S.objects
+        .filter(o => ids.includes(o.id))
+        .map(o => JSON.parse(JSON.stringify(o)));
+    const dx = 20 / VIEW.scale, dy = 20 / VIEW.scale;
+    _cloneInto(tpls, dx, dy);
+}
+
+// ── Touch long-press → duplicate (mobile equivalent of Cmd+D) ─────────────
+// Fires after 500ms of stationary contact on a hit object. Cancelled on
+// finger drift (>6px) or lift before timeout.
+function startLongPressDup(hitObj, screenX, screenY) {
+    cancelLongPressDup();
+    S.longPressOrigin = { x: screenX, y: screenY };
+    S.longPressTimer = setTimeout(() => {
+        S.longPressTimer = null; S.longPressOrigin = null;
+        // Make sure the held object (and any siblings already in S.multiSelected) get duplicated
+        if (!S.selectedId && !(S.multiSelected && S.multiSelected.length)) {
+            S.objects.forEach(o => o.selected = false);
+            hitObj.selected = true;
+            S.selectedId = hitObj.id;
+        }
+        // Cancel any pending drag so the object doesn't jump
+        S.dragOff = null; S.isDown = false;
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
+        duplicateSelection();
+    }, 500);
+}
+function cancelLongPressDup() {
+    if (S.longPressTimer) clearTimeout(S.longPressTimer);
+    S.longPressTimer = null; S.longPressOrigin = null;
+}
+
 function updateUndoRedoBtns() {
     const u = document.getElementById('undoBtn');
     const r = document.getElementById('redoBtn');
@@ -6665,10 +6971,10 @@ document.addEventListener('keydown', e => {
     // Del / Backspace: delete the selected canvas object(s) even when the
     // terminal input has focus — but only if the input is empty so we don't
     // hijack text editing. Also skipped while a text object is being edited.
-    if ((e.key === 'Delete' || e.key === 'Backspace') && S.editingTextId == null) {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && S.editingTextId == null && S.editingStickyId == null) {
         const tInput = document.getElementById('ti');
         const emptyTermFocused = (e.target === tInput) && tInput && tInput.value === '';
-        const targetIsInput   = e.target.tagName === 'INPUT';
+        const targetIsInput   = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
         const hasSelection    = S.multiSelected.length > 0 || S.selectedId !== null;
         if (hasSelection && (!targetIsInput || emptyTermFocused)) {
             e.preventDefault();
@@ -6685,10 +6991,27 @@ document.addEventListener('keydown', e => {
         }
     }
 
-    if (e.target.tagName==='INPUT') return;
+    if (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
     // Undo / Redo
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
     if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
+    // Copy / Cut / Paste / Duplicate (canvas objects)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && !e.shiftKey && !e.altKey) {
+        if (!S.selectedId && !S.multiSelected.length) return; // let browser handle
+        e.preventDefault(); copySelection(); return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'x' && !e.shiftKey && !e.altKey) {
+        if (!S.selectedId && !S.multiSelected.length) return;
+        e.preventDefault(); cutSelection(); return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v' && !e.shiftKey && !e.altKey) {
+        if (!S.clipboard || !S.clipboard.length) return; // nothing to paste
+        e.preventDefault(); pasteSelection(); return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && !e.shiftKey && !e.altKey) {
+        if (!S.selectedId && !S.multiSelected.length) return;
+        e.preventDefault(); duplicateSelection(); return;
+    }
     // Space → pan mode
     if (e.code==='Space' && !e.repeat) {
         e.preventDefault();
@@ -6705,6 +7028,9 @@ document.addEventListener('keydown', e => {
             return;
         }
     }
+    // Skip single-letter shortcuts when any modifier is held — prevents
+    // Cmd+C/X/V/I/etc. from also firing tool/export shortcuts.
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
     const map = {s:'select',p:'pen',n:'path',e:'eraser',c:'circle',g:'triangle',q:'square',a:'arrow',t:'text'};
     const k = e.key.toLowerCase();
     // Width shortcuts 1/2/3
@@ -7126,6 +7452,35 @@ function renderObjectToCtx(c2, obj) {
             c2.rect(d.x, d.y, d.w, d.h);
             applyFill(); break;
         }
+        case 'sticky': {
+            const fill = d.color || '#FFE873';
+            c2.save();
+            c2.shadowColor   = 'rgba(0,0,0,0.18)';
+            c2.shadowBlur    = 10; c2.shadowOffsetX = 2; c2.shadowOffsetY = 4;
+            c2.fillStyle = fill;
+            c2.fillRect(d.x, d.y, d.w, d.h);
+            c2.shadowColor = 'transparent'; c2.shadowBlur = 0; c2.shadowOffsetX = 0; c2.shadowOffsetY = 0;
+            c2.strokeStyle = 'rgba(0,0,0,0.10)';
+            c2.lineWidth = 1;
+            c2.strokeRect(d.x, d.y, d.w, d.h);
+            if (d.text) {
+                const pad = Math.min(d.w, d.h) * 0.08;
+                const innerW = d.w - pad * 2;
+                const innerH = d.h - pad * 2;
+                const { fs, lines } = stickyAutoFit(c2, d.text, innerW, innerH, STICKY_FONT);
+                c2.fillStyle = '#1a1a1a';
+                c2.font = `600 ${fs}px ${STICKY_FONT}`;
+                c2.textBaseline = 'middle'; c2.textAlign = 'center';
+                const lineH = fs * 1.22;
+                const totalH = lines.length * lineH;
+                const startY = d.y + d.h/2 - totalH/2 + lineH/2;
+                for (let i = 0; i < lines.length; i++) {
+                    c2.fillText(lines[i], d.x + d.w/2, startY + i * lineH);
+                }
+            }
+            c2.restore();
+            break;
+        }
         case 'arrow': {
             if (d.strokeOff) break; // invisible arrow = nothing to draw
             const dx = d.x2 - d.x1, dy = d.y2 - d.y1;
@@ -7286,6 +7641,26 @@ function svgElementFor(obj) {
         case 'square':
             inner = `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" ${fillAttr} ${strokeAttr}/>`;
             break;
+        case 'sticky': {
+            const stickyFill = d.color || '#FFE873';
+            const txt = esc(d.text || '');
+            // Approximate auto-fit using the on-screen canvas ctx for measurement
+            const pad = Math.min(d.w, d.h) * 0.08;
+            const innerW = d.w - pad * 2;
+            const innerH = d.h - pad * 2;
+            const { fs, lines } = stickyAutoFit(ctx, d.text || '', innerW, innerH, STICKY_FONT);
+            const lineH = fs * 1.22;
+            const totalH = lines.length * lineH;
+            const startY = d.y + d.h/2 - totalH/2 + lineH/2;
+            const tspans = lines.map((ln, i) =>
+                `<tspan x="${d.x + d.w/2}" y="${startY + i*lineH}">${esc(ln)}</tspan>`
+            ).join('');
+            inner = `<g>`
+                + `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" fill="${stickyFill}" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>`
+                + (txt ? `<text fill="#1a1a1a" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="${fs}" text-anchor="middle" dominant-baseline="middle">${tspans}</text>` : '')
+                + `</g>`;
+            break;
+        }
         case 'triangle': {
             const p = d.pts || [
                 { x: d.x + d.w / 2, y: d.y },
@@ -7508,7 +7883,7 @@ let _lastUITap = 0;
 // Prevents browser callout / text-selection popup from appearing on buttons/toolbar
 document.addEventListener('contextmenu', e => {
     // Allow right-click only inside text inputs; block everywhere else (buttons, toolbar, canvas)
-    if (!e.target.closest('#ti') && !e.target.closest('#ti2')) {
+    if (!e.target.closest('#ti') && !e.target.closest('#ti2') && !e.target.closest('#stickyEditor')) {
         e.preventDefault();
     }
 });
