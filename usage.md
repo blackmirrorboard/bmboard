@@ -88,6 +88,44 @@ Del / Backspace  → delete all selected.
 Esc              → deselect all.
 ```
 
+### Clipboard / クリップボード
+
+🇯🇵 **コピー & ペースト** は OS 標準どおり。スマホは長押しで複製できる。
+
+🇬🇧 **Copy & paste** is OS-standard. Mobile has a long-press shortcut.
+
+```
+Ctrl/Cmd + A     Select every object on the board / 全オブジェクト選択
+Ctrl/Cmd + C     Copy selected
+Ctrl/Cmd + X     Cut selected (delete + place on clipboard)
+Ctrl/Cmd + V     Paste, offset 20px so duplicates don't stack
+Ctrl/Cmd + D     Duplicate selected in place
+
+Touch:
+  Long-press (≈500ms) on a selected object  →  duplicate
+  (mobile equivalent of Ctrl/Cmd + D)
+```
+
+### Sticky Notes / 付箋
+
+🇯🇵 ターミナルで `sticky` または `sticky <text>` と打つと、Miro 風の黄色い付箋がボード中央に貼られる。
+
+🇬🇧 Type `sticky` or `sticky <text>` in the terminal to drop a Miro-style yellow post-it on the board.
+
+```
+sticky                  empty 200×200 yellow note (double-click to type)
+sticky hello world      pre-filled with "hello world"
+
+Editing:
+  Double-click  (PC)  →  enter edit mode
+  Double-tap    (touch)
+  Enter         →  newline
+  Esc / click outside / Cmd+Enter  →  commit
+
+Font size auto-shrinks as text grows so it always fits the note.
+Resize the note by its handles — the text re-fits automatically.
+```
+
 ---
 
 ## 3. The Terminal Interface / ターミナル
@@ -304,7 +342,12 @@ GLOBAL                              Shift     lock aspect ratio
 ────────────────────────────────    Alt/Opt   scale from center
 Space     Hold to pan               Shift+Alt both at once
 Ctrl+Z    Undo
-Ctrl+Y    Redo
+Ctrl+Y    Redo                      CLIPBOARD
+Ctrl+A    Select all                ────────────────────────────────
+Ctrl+C    Copy                      Long-press (touch) duplicates
+Ctrl+X    Cut                       a selected object — mobile
+Ctrl+V    Paste (offset 20px)       equivalent of Ctrl+D.
+Ctrl+D    Duplicate in place
 Del       Delete selected
 Esc       Dismiss / deselect
 ```

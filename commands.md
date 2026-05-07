@@ -48,8 +48,16 @@ Three palettes, one keystroke each.
 |---|---|
 | `clear` | Clears the terminal output only. |
 | `flush` | Same as `clear` — alias. |
+| `sticky` | Drop a 200×200 yellow post-it at the view center. Empty — double-click to type. |
+| `sticky <text>` | Same, but pre-filled with `<text>`. |
 
-Canvas objects are **not** deleted by these; use `CLEAR` from the header or select-all + Del to wipe the board.
+**Sticky behavior** — Miro-style post-it:
+- **Double-click** (PC) / **double-tap** (touch) the note to enter edit mode.
+- Type freely; **font size auto-shrinks** as the text grows so it always fits.
+- `Enter` = newline, `Esc` or `Cmd+Enter` or click outside = commit.
+- Resize by the corner / edge handles like any other shape — text re-fits automatically.
+
+Canvas objects are **not** deleted by `clear` / `flush`; use `CLEAR` from the header or `Cmd+A` + Del to wipe the board.
 
 ---
 
@@ -243,7 +251,7 @@ Drop these into `register <name> <js>` or paste a JSON spell payload. Prompt an 
 
 **Input / creation**
 - `random-shape [n]` — N random primitives
-- `sticky <text>` — post-it style annotation
+- ~~`sticky <text>` — post-it style annotation~~ — **shipped**, see [§ 2. Canvas Control](#canvas-control)
 - `checkbox <text>` — interactive tickbox object
 - `callout <text>` — arrow + label combo
 
@@ -288,10 +296,25 @@ Every one of these is **a JSON away**. The BM API is tiny — see below.
 | `X` | export selection (or all) as PNG |
 | `Ctrl/Cmd + Z` | undo |
 | `Ctrl/Cmd + Y` / `Ctrl/Cmd + Shift + Z` | redo |
+| `Ctrl/Cmd + A` | select all objects on the board |
+| `Ctrl/Cmd + C` | copy selected object(s) |
+| `Ctrl/Cmd + X` | cut selected object(s) |
+| `Ctrl/Cmd + V` | paste (offset 20px so duplicates don't stack) |
+| `Ctrl/Cmd + D` | duplicate selected object(s) in place |
 | `Del` / `Backspace` | delete selected (not during text edit) |
 | `Shift` (during drag) | aspect-lock resize |
 | `Alt` (during drag) | resize from the opposite anchor |
 | `Esc` | cancel the current gesture / exit text edit |
+
+**Mobile / Touch gestures**
+
+| Gesture | Action |
+|---|---|
+| Tap | select object |
+| Drag selected object | move |
+| Double-tap a `text` or `sticky` | enter edit mode |
+| **Long-press (≈500 ms) on selected object** | duplicate (mobile equivalent of Cmd+D) |
+| Two-finger pinch / drag | zoom & pan |
 
 ---
 
