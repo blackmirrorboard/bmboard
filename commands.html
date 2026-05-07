@@ -79,13 +79,19 @@
     }
 
     html, body { background: var(--void); color: var(--ink); }
+    html { -webkit-text-size-adjust: 100%; }
     body {
         font-family: var(--mono);
         font-size: 14px;
         line-height: 1.75;
         -webkit-font-smoothing: antialiased;
         min-height: 100vh;
+        overflow-x: hidden;       /* prevent horizontal page scroll on mobile */
+        max-width: 100%;
     }
+    /* prevent any descendant from forcing the whole page wider than the viewport */
+    img, table, pre, code { max-width: 100%; }
+    pre { -webkit-overflow-scrolling: touch; }
     ::selection { background: var(--ink); color: var(--void); }
 
     /* CRT scanlines — flip color + blend mode per theme */
@@ -538,6 +544,28 @@
         details.cmd summary code.glyph { font-size: 11.5px; padding: 1px 7px; }
         details.cmd summary .desc { display: block; width: 100%; }
         table.tbl th, table.tbl td { padding: 5px 6px; font-size: 11px; }
+        /* code blocks: shrink + soft-wrap so long lines fit without horizontal scroll */
+        details.cmd .body pre {
+            font-size: 10.5px;
+            padding: 8px 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        /* tap targets: TOC links and command summaries grow taller for fingers */
+        aside.toc.open .toc-list a { padding: 12px 0; }
+        details.cmd summary { min-height: 36px; }
+        /* TOC search input: full-width + readable */
+        .toc-search input { font-size: 13px; padding: 4px 0; }
+        /* theme toggle: smaller pill, anchor bottom-right */
+        .theme-toggle { font-size: 10px; padding: 3px 7px; }
+    }
+    /* very narrow phones (iPhone SE, etc.) — last-mile readability */
+    @media (max-width: 360px) {
+        main.body { padding: 16px 10px 100px; }
+        details.cmd { padding: 8px 10px; }
+        details.cmd summary code.glyph { font-size: 10.5px; padding: 1px 6px; }
+        h1 { font-size: 18px; }
+        section.section > h2 { font-size: 13px; }
     }
 
     /* ── QUICK START GRID ────────────────────────────────────── */
