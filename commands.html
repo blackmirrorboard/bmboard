@@ -664,6 +664,50 @@
         .spell-step { grid-template-columns: 1fr; gap: 8px; }
         .spell-step-num { width: fit-content; }
     }
+
+    /* ════════════════════════════════════════════════════════════
+       MOBILE OVERFLOW HARD-FIX
+       — 横スクロールの根本対策。pre/table/code の長文を必ず折り返す。
+       ════════════════════════════════════════════════════════════ */
+    @media (max-width: 820px) {
+        html, body {
+            overflow-x: hidden !important;
+            max-width: 100% !important;
+        }
+        /* pre / code: 横スクロール禁止、ソフトラップで折り返す */
+        pre, code, kbd, samp {
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+            max-width: 100% !important;
+            box-sizing: border-box;
+            overflow-x: visible !important;
+        }
+        pre {
+            font-size: 11px !important;
+            padding: 10px 12px !important;
+            line-height: 1.5 !important;
+        }
+        /* table: 行内で横スクロール（ページ全体ではなく） */
+        table {
+            display: block;
+            overflow-x: auto !important;
+            max-width: 100% !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        /* grid 系を 1 カラムに統一 */
+        .qs-grid, .spell-step {
+            grid-template-columns: 1fr !important;
+        }
+        /* 画像・動画オーバーフロー対策 */
+        img, video, iframe, svg {
+            max-width: 100% !important;
+            height: auto;
+        }
+        /* main 全体の左右パディング & 余分な要素抑制 */
+        main.body { padding-left: 14px !important; padding-right: 14px !important; }
+        section.section { max-width: 100% !important; overflow: hidden; }
+    }
 </style>
 </head>
 <body>
@@ -832,7 +876,7 @@
         <div class="spell-step-body">
             <b>自作してみる（コピペで OK）</b><br>
             ターミナルに以下を 1 行で打つ：
-            <pre style="background: var(--pre-bg, #050505); color: var(--pre-text, #9a9690); padding: 14px; margin: 10px 0; overflow-x: auto; font-size: 12px;">register paint-red for(const o of BM.all()){BM.setStroke(o,'#FF0000')}BM.redraw();BM.log('painted red!')</pre>
+            <pre style="background: var(--pre-bg, #050505); color: var(--pre-text, #9a9690); padding: 14px; margin: 10px 0; font-size: 12px; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">register paint-red for(const o of BM.all()){BM.setStroke(o,'#FF0000')}BM.redraw();BM.log('painted red!')</pre>
             登録完了。次から <code>$paint-red</code> で全図形が赤線になる。
         </div>
     </div>
