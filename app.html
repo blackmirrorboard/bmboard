@@ -1844,6 +1844,7 @@ Set before drawing, or apply to selected object.</pre>
 <b>$rain</b>                   雨をループで降らせる (toggle)
 <b>$leaf</b>                   茶色の落ち葉をループで降らせる (toggle)
 <b>$snow</b>                   雪をループで降らせる (toggle)
+<b>$powerpoint</b>             16:9 slide frame + title/body プレースホルダ配置
 <b>$biwako-blue</b>            retint every stroke to <code>#0044CC</code>
 <b>$make-img &lt;kw&gt; &lt;n&gt;</b>      summon n images (Lorem Flickr, no key) · alias: $fetch-img
 <b>$monoclo</b>                grayscale the selected image(s)
@@ -1880,6 +1881,7 @@ mirrored to <code>localStorage</code> for portability.</pre>
         <h3>EXPORT (v1.2)</h3>
         <pre><b>export</b>                 selection → transparent PNG (or X key)
 <b>$svg</b>                   selection → editable SVG (Illustrator / Figma)
+<b>export pptx</b> / <b>pptx</b>      selection → editable .pptx (PowerPoint / Keynote)
 <b>export magic</b>           spell picker modal (checkbox-per-spell)
 <b>export data</b>            bundle dialog (canvas / user / preset)
 <b>export-all</b>             non-interactive · project + all spells
@@ -6363,6 +6365,7 @@ function runCommand(val) {
             '  rain                             雨をループで降らせる (toggle)',
             '  leaf                             落ち葉をループで降らせる (toggle)',
             '  snow                             雪をループで降らせる (toggle)',
+            '  powerpoint                       16:9 slide frame + placeholders (PPT 雛形)',
             '  biwako-blue                      retint strokes to #0044CC',
             '  monoclo                          grayscale selected image(s)',
             '  make-img <kw> [n]                summon n images (alias: fetch-img)',
@@ -6404,6 +6407,7 @@ function runCommand(val) {
             '',
             '── EXPORT ──────────────────────────────',
             '  export                           selection → transparent PNG',
+            '  export pptx / pptx               selection → editable .pptx',
             '  export magic                     spell picker',
             '  export data                      bundle dialog',
             '  export-all                       project + spells → 1 JSON',
@@ -6530,7 +6534,17 @@ function runCommand(val) {
             exportPng();
             return;
         }
-        printRaw(`export: unknown subcommand "${sub}" — try: export, export magic, export data`, 't-err');
+        if (sub === 'pptx' || sub === 'powerpoint' || sub === 'ppt') {
+            exportPptx();
+            return;
+        }
+        printRaw(`export: unknown subcommand "${sub}" — try: export, export magic, export data, export pptx`, 't-err');
+        return;
+    }
+
+    // ── export-pptx / pptx ─ PowerPoint .pptx 書き出し ────────────────────
+    if (head === 'export-pptx' || head === 'pptx' || head === 'export-ppt') {
+        exportPptx();
         return;
     }
 

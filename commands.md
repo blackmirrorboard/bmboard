@@ -186,6 +186,18 @@ Toggle: starts an infinite loop of 🍂 brown leaves drifting down with sine-wav
 ### `$snow`
 Toggle: starts an infinite loop of ❄ snowflakes falling slowly with gentle drift. Run `$snow` again to stop.
 
+### `$powerpoint`
+Place a 16:9 slide frame (1280×720) with title + body placeholders at the view center. Design freely inside, then `export pptx` (or `pptx`) to download an editable `.pptx` (PowerPoint / Keynote). Default font: Noto Sans JP.
+
+### `export pptx` / `pptx`
+Export the selected objects (or all) as a `.pptx` file via PptxGenJS (loaded from CDN). Editable shapes in PowerPoint:
+- square / circle / triangle / arrow → editable shapes
+- text / sticky → editable text boxes (Noto Sans JP)
+- image → embedded image (movable)
+- pen strokes → rasterized as images (PPT lacks free-curve support)
+
+If a 16:9 square is in the selection, it's used as the slide frame; otherwise the AABB of the selection is padded to 16:9.
+
 ### `$biwako-blue`
 Retint every object's stroke (and fill where present) to `#0044CC` — "Biwako Silence" palette.
 
