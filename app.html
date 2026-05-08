@@ -7524,6 +7524,31 @@ boot();
 setTimeout(runAmbient, 22000);
 
 // ── Export transparent PNG ─────────────────────────────────────────────────
+// Rotation-aware AABB: rotates the unrotated bbox corners around the object
+// center, then returns the axis-aligned bounding box of those rotated corners.
+// Without this, exporting a rotated text/shape clips because getObjBounds
+// returns the pre-rotation rect.
+function _getRotatedBounds(obj) {
+    const b = getObjBounds(obj);
+    if (!b) return null;
+    const rot = obj.data.rotation || 0;
+    if (rot === 0) return b;
+    const c = getObjCenter(obj);
+    const corners = [
+        { x: b.x,         y: b.y },
+        { x: b.x + b.w,   y: b.y },
+        { x: b.x + b.w,   y: b.y + b.h },
+        { x: b.x,         y: b.y + b.h },
+    ];
+    let mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+    for (const p of corners) {
+        const r = rotPt(p, c, rot);
+        mnX = Math.min(mnX, r.x); mnY = Math.min(mnY, r.y);
+        mxX = Math.max(mxX, r.x); mxY = Math.max(mxY, r.y);
+    }
+    return { x: mnX, y: mnY, w: mxX - mnX, h: mxY - mnY };
+}
+
 function exportPng() {
     // Decide which objects to export
     const selected = S.objects.filter(o => o.selected || S.multiSelected.includes(o.id));
@@ -7543,11 +7568,11 @@ function exportPng() {
         '[IO] asset saved to local storage.',
     ]);
 
-    // Compute tight bounding box across all target objects
+    // Compute tight bounding box across all target objects (rotation-aware)
     const PAD = 20;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const obj of targets) {
-        const b = getObjBounds(obj);
+        const b = _getRotatedBounds(obj);
         if (!b) continue;
         minX = Math.min(minX, b.x - PAD);
         minY = Math.min(minY, b.y - PAD);
@@ -7723,7 +7748,7 @@ function exportSvgNow(explicitObjs) {
     const PAD = 20;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const obj of targets) {
-        const b = getObjBounds(obj);
+        const b = _getRotatedBounds(obj);
         if (!b) continue;
         minX = Math.min(minX, b.x - PAD);
         minY = Math.min(minY, b.y - PAD);
