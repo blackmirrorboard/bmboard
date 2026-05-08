@@ -177,6 +177,9 @@ Place nine 140×140 yellow sticky notes in a 3×3 grid at the current view cente
 ### `$sakura`
 Toggle: starts an infinite loop of 🌸 petals falling on the canvas. Run `$sakura` again to stop. Petals remain after stop — use `clear` or Cmd+A → Del to wipe.
 
+### `$rain`
+Toggle: starts an infinite loop of `|` rain drops falling on the canvas. Faster and denser than `$sakura`. Run `$rain` again to stop. Drops remain after stop.
+
 ### `$biwako-blue`
 Retint every object's stroke (and fill where present) to `#0044CC` — "Biwako Silence" palette.
 

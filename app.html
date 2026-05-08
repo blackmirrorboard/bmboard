@@ -880,6 +880,7 @@
         .hl-hash { color: #6e7681; }   /* GitHub dimmed — sha hashes */
         .hl-flag { color: #d2a8ff; }   /* muted violet — CLI flags */
         .hl-arrow{ color: #ffa657; }   /* orange — → prefix */
+        .hl-cmd  { color: #7fdb7f; font-weight: 600; }   /* green — typeable commands in cmds list */
 
         /* Input row */
         .term-input-row {
@@ -1840,6 +1841,7 @@ Set before drawing, or apply to selected object.</pre>
 <b>$grid-3x3</b>               place a 3×3 square grid
 <b>$sticky-3x3</b>             place a 3×3 yellow sticky-note grid
 <b>$sakura</b>                 桜の花びらをループで降らせる (toggle)
+<b>$rain</b>                   雨をループで降らせる (toggle)
 <b>$biwako-blue</b>            retint every stroke to <code>#0044CC</code>
 <b>$make-img &lt;kw&gt; &lt;n&gt;</b>      summon n images (Lorem Flickr, no key) · alias: $fetch-img
 <b>$monoclo</b>                grayscale the selected image(s)
@@ -4521,6 +4523,9 @@ function highlightLine(text) {
     if (!text || !text.trim()) return esc(text || '');
     let s = esc(text);
     try {
+        // Indented command list rows (e.g., `  clear  ...description`):
+        // first non-space token group up to a 3+ space gap is the typeable command.
+        s = s.replace(/^( {2,4})([^\s][^\n]*?)(\s{3,})/, '$1<span class="hl-cmd">$2</span>$3');
         s = s.replace(/^(→)/, '<span class="hl-arrow">→</span>');
         s = s.replace(/(https?:\/\/[^\s&quot;&lt;&gt;]+)/g, '<span class="hl-url">$1</span>');
         s = s.replace(/((?:\.\/|\/)[^\s&quot;&lt;&gt;:,]+)/g, '<span class="hl-path">$1</span>');
@@ -5460,6 +5465,40 @@ window._sakuraId = setInterval(() => {
 }, 30);
 BM.log('sakura: running infinite loop. $sakura again to stop.');
 `, source: 'preset' },
+    'rain': { action: `
+// Toggle: $rain starts the loop, $rain again stops it.
+if (window._rainId) {
+    clearInterval(window._rainId);
+    window._rainId = null;
+    BM.log('rain: stopped (drops stay — clear で全消去)');
+    return;
+}
+const N = 80, W = 800, H = 600;
+const vc = BM.viewCenter();
+const drops = [];
+for (let i = 0; i < N; i++) {
+    const o = BM.create('text', {
+        x: vc.x - W/2 + Math.random()*W,
+        y: vc.y - H/2 - Math.random()*300,
+        text: '|',
+        fontSize: 10 + Math.random()*8,
+    });
+    drops.push({ o: o, vy: 4 + Math.random()*4 });
+}
+const topY = vc.y - H/2 - 300;
+const botY = vc.y + H/2 + 100;
+window._rainId = setInterval(() => {
+    for (const d of drops) {
+        d.o.data.y += d.vy;
+        if (d.o.data.y > botY) {
+            d.o.data.y = topY;
+            d.o.data.x = vc.x - W/2 + Math.random()*W;
+        }
+    }
+    BM.redraw();
+}, 30);
+BM.log('rain: running infinite loop. $rain again to stop.');
+`, source: 'preset' },
 };
 
 // Backward-compat alias: $fetch-img still works after the rename to $make-img
@@ -6221,6 +6260,7 @@ function runCommand(val) {
             '  grid-3x3                         3×3 square grid',
             '  sticky-3x3                       3×3 sticky-note grid',
             '  sakura                           桜をループで降らせる (toggle)',
+            '  rain                             雨をループで降らせる (toggle)',
             '  biwako-blue                      retint strokes to #0044CC',
             '  monoclo                          grayscale selected image(s)',
             '  make-img <kw> [n]                summon n images (alias: fetch-img)',
@@ -6306,7 +6346,7 @@ function runCommand(val) {
             '  ╰─────────────────────────────────────────────────────────╯',
             '',
             '  ╭── COMMAND ECOSYSTEM ────────────────────────────────────╮',
-            '  │  $scatter / $grid-3x3 / $sticky-3x3 / $sakura / $svg    │',
+            '  │  $scatter / $grid-3x3 / $sticky-3x3 / $sakura / $rain    │',
             '  │  $make-img <kw> <n>    summon images by keyword         │',
             '  │  $monoclo              grayscale the selected image(s) │',
             '  │  register <n> <js>     save a new spell                 │',
