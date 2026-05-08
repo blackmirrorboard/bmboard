@@ -7569,7 +7569,7 @@ function exportPng() {
     ]);
 
     // Compute tight bounding box across all target objects (rotation-aware)
-    const PAD = 20;
+    const PAD = 8;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const obj of targets) {
         const b = _getRotatedBounds(obj);
@@ -7745,7 +7745,7 @@ function exportSvgNow(explicitObjs) {
         return;
     }
 
-    const PAD = 20;
+    const PAD = 8;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const obj of targets) {
         const b = _getRotatedBounds(obj);
