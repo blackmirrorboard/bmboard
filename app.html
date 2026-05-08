@@ -2279,8 +2279,10 @@ function initCanvas() {
         }
         if (ptrs.size === 0) {
             onUp();
-            // Mobile: tap on empty area with a draw tool → auto-revert to select
-            if (e.pointerType === 'touch' && REVERT_TOOLS.has(S.tool) && downXY) {
+            // Tap/click on empty area with a draw tool → auto-revert to select.
+            // Works on both mobile (touch) and PC (mouse). Drag (>6px) is
+            // treated as a real draw action and keeps the current tool.
+            if (REVERT_TOOLS.has(S.tool) && downXY) {
                 const dx = e.clientX - downXY.x, dy = e.clientY - downXY.y;
                 if (Math.hypot(dx, dy) < 6) {
                     const p = getPos(e.clientX, e.clientY);
@@ -8143,7 +8145,26 @@ function _toPptHex(color) {
 
 async function exportPptx() {
     const selected = S.objects.filter(o => o.selected || S.multiSelected.includes(o.id));
-    const targets  = selected.length > 0 ? selected : S.objects;
+    let targets = selected.length > 0 ? selected : S.objects;
+    // If the only selection is the 16:9 slide frame, auto-include objects
+    // whose center lies inside the frame — saves the user from manually
+    // marquee-selecting both the frame and its contents.
+    if (selected.length === 1 &&
+        selected[0].type === 'square' &&
+        selected[0].data.w > 0 &&
+        Math.abs(selected[0].data.w / selected[0].data.h - 16/9) < 0.05) {
+        const f = selected[0];
+        const fx1 = f.data.x, fy1 = f.data.y;
+        const fx2 = f.data.x + f.data.w, fy2 = f.data.y + f.data.h;
+        const inside = S.objects.filter(o => {
+            if (o === f) return false;
+            const b = _getRotatedBounds(o);
+            if (!b) return false;
+            const cx = b.x + b.w/2, cy = b.y + b.h/2;
+            return cx >= fx1 && cx <= fx2 && cy >= fy1 && cy <= fy2;
+        });
+        if (inside.length) targets = [f, ...inside];
+    }
     if (!targets.length) {
         printRaw('pptx: nothing to export — select a slide frame first', 't-err');
         return;
@@ -8189,7 +8210,8 @@ async function exportPptx() {
     const pptx = new Pptx();
     pptx.layout = 'LAYOUT_WIDE';
     const slide = pptx.addSlide();
-    slide.background = { color: 'FAFAF8' };
+    // PptxGenJS v3 expects 'fill' not 'color' for slide background
+    slide.background = { fill: 'FAFAF8' };
 
     let strokeCount = 0, strokesRastered = 0;
     const FONT = 'Noto Sans JP';
