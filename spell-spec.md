@@ -1,14 +1,30 @@
 # BMBoard Spell Format Specification
 
 > Canonical spec for AI agents and humans authoring **Black Mirror Board** spells.
-> URL: <https://bmboard.studio/spell-spec.md>
+> URL: <https://bmboard.studio/spell-spec.md> · HTML mirror: <https://bmboard.studio/spell-spec.html>
 > Last updated: 2026-05-08 (v1.2)
 
 ---
 
-## 1. The format — one line of JSON, two fields
+## 0. ⚡ Lead with a working example — copy this, study it, then read the rest
 
-A spell is **exactly** this:
+A spell that scatters 15 🔥 emoji from view center, animates them outward with shrinking, then auto-clears:
+
+```json
+{"command":"fire","action":"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i<N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=>{if(f++>40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i>=0)BM.all().splice(i,1);}BM.redraw();BM.log('fire: extinguished.');return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);BM.log('fire: burst of 15 sparks.');"}
+```
+
+What this teaches you:
+
+- **A spell is one line of JSON with exactly two keys: `command` and `action`.** Nothing else.
+- **`action` is a string of raw JS** that gets executed via `new Function('BM','args',action)`.
+- A typical spell pattern: `BM.create()` to spawn objects → `setInterval` for animation → `BM.all().splice()` to clean up → `BM.redraw()` after each mutation → `BM.log()` for status.
+
+When you generate a new spell, your output should look structurally identical to the line above — different `command`, different JS body inside `action`, but the same shape.
+
+---
+
+## 1. The format
 
 ```json
 {"command":"NAME","action":"JAVASCRIPT_CODE_AS_A_STRING"}
@@ -23,7 +39,7 @@ There are **no other fields**. Output a single line, no Markdown fences, no lead
 
 These belong to other systems (Minecraft plugins, RPG engines, etc.) and have **no meaning in BMBoard**:
 
-`internalName`, `displayName`, `description`, `icon`, `category`, `cost`, `mp`, `cooldown`, `actions` (as array of structured action objects), `PROJECTILE`, `particle`, `onHit`, `effect`, `magic create`, `/bmboard`, `/reload`, `plugins/`, `skills/`, `give`, server-side, mod, plugin, manifest.
+`internalName`, `displayName`, `description`, `icon`, `category`, `cost`, `mp`, `cooldown`, `actions` (as array of structured action objects), `PROJECTILE`, `particle`, `onHit`, `effect`, `range`, `power`, `type` (as a top-level field), `magic create`, `/bmboard`, `/reload`, `plugins/`, `skills/`, `give`, server-side, mod, plugin, manifest.
 
 If you find yourself reaching for any of these, STOP — you are off-spec.
 
@@ -39,10 +55,10 @@ If you find yourself reaching for any of these, STOP — you are off-spec.
 | `BM.remove(obj)` | Remove obj from canvas. |
 | `BM.setStroke(obj, color)` | Set stroke color. |
 | `BM.setFill(obj, color)` | Set fill color. |
-| `BM.all()` | Array of all canvas objects (mutable). |
+| `BM.all()` | Array of all canvas objects (mutable — use `.splice` to remove). |
 | `BM.getSelected()` | Array of currently-selected objects. |
 | `BM.clear()` | Wipe all canvas objects. |
-| `BM.redraw()` | Force a repaint. |
+| `BM.redraw()` | Force a repaint. Call after every mutation. |
 | `BM.save()` | Push a history snapshot for undo. |
 | `BM.rand(min, max)` | Random number in `[min, max]`. |
 | `args` | String passed at invocation. `$name foo bar` → `args === 'foo bar'`. |
@@ -61,7 +77,7 @@ If you find yourself reaching for any of these, STOP — you are off-spec.
 Image objects (`type: 'image'`) exist but are not authored by spells; they come from upload/drop.
 Stroke objects (`type: 'stroke'`) come from the pen tool, not from spells.
 
-## 5. Working examples
+## 5. More working examples
 
 ### Minimal — drop a yellow sticky note at view center
 
@@ -69,7 +85,7 @@ Stroke objects (`type: 'stroke'`) come from the pen tool, not from spells.
 {"command":"hi","action":"const c=BM.viewCenter();BM.create('sticky',{x:c.x-100,y:c.y-100,w:200,h:200,text:'hello'});BM.redraw();BM.log('placed.');"}
 ```
 
-### Animated loop — toggle pattern (start / stop on the same command)
+### Toggle pattern (start / stop on the same command)
 
 Stash the interval ID on `window` so a second invocation can stop it.
 
@@ -103,6 +119,9 @@ OUTPUT FORMAT (mandatory, no exceptions):
 
 Output 1 line, no Markdown, no explanation, no code fences.
 
+Reference example (study this shape — yours should look the same):
+{"command":"fire","action":"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i<N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=>{if(f++>40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i>=0)BM.all().splice(i,1);}BM.redraw();return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);"}
+
 The action is RAW JS executed via `new Function('BM','args',action)`.
 Available API:
 - BM.log(msg, cls?)
@@ -123,7 +142,8 @@ Object props:
 - sticky:   {x, y, w, h, text, color, rotation}
 
 NEVER use: internalName, displayName, description, icon, category, cost, cooldown,
-mp, projectile, particle, onHit, plugins, skills, magic create, /bmboard, /reload.
+mp, projectile, particle, onHit, range, power, type-as-top-level-field,
+plugins, skills, magic create, /bmboard, /reload.
 Those are not BMBoard.
 
 Now create a spell: <DESCRIBE WHAT YOU WANT>
@@ -133,5 +153,6 @@ Now create a spell: <DESCRIBE WHAT YOU WANT>
 
 - Full docs: <https://bmboard.studio/usage.html>
 - Command reference: <https://bmboard.studio/commands.html>
-- This spec (machine-readable): <https://bmboard.studio/spell-spec.md>
+- This spec (HTML): <https://bmboard.studio/spell-spec.html>
+- This spec (Markdown): <https://bmboard.studio/spell-spec.md>
 - LLM index: <https://bmboard.studio/llms.txt>

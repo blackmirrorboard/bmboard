@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMBoard Spell Format Specification</title>
+<meta name="description" content="Canonical machine-readable specification for authoring Black Mirror Board (BMBoard) spells. Read this before generating any spell JSON.">
+<meta name="robots" content="index, follow">
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 820px; margin: 40px auto; padding: 0 20px; color: #0c0c0c; background: #FAFAF8; line-height: 1.6; }
+    h1 { font-size: 22px; border-bottom: 2px solid #0c0c0c; padding-bottom: 8px; }
+    h2 { font-size: 16px; margin-top: 36px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    h3 { font-size: 13px; letter-spacing: 0.05em; color: #555; margin-top: 24px; }
+    code { background: #f0ede6; padding: 1px 5px; border-radius: 3px; font-size: 90%; }
+    pre { background: #0c0c0c; color: #e8e6e0; padding: 14px 16px; border-radius: 4px; font-size: 12.5px; line-height: 1.55; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+    pre code { background: transparent; padding: 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 10px 0; }
+    th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; vertical-align: top; }
+    th { background: #f0ede6; }
+    .warn { background: #fff5e0; border: 1px solid #f0c000; padding: 12px 14px; margin: 16px 0; font-size: 13px; }
+    .lede { color: #555; font-size: 14px; }
+    .pivot { background: #1a3a1a; color: #d8e8d8; padding: 16px 18px; border-radius: 4px; margin: 16px 0; font-size: 13.5px; }
+    .pivot pre { background: #050a05; margin: 12px 0; }
+    a { color: #0c0c0c; }
+</style>
+</head>
+<body>
+
+<h1>BMBoard Spell Format Specification</h1>
+
+<p class="lede">
+    Canonical specification for authoring <b>Black Mirror Board (BMBoard)</b> spells.
+    Read this before generating any spell JSON. Last updated: 2026-05-08 (v1.2).
+</p>
+
+<p class="lede">
+    Mirror (Markdown): <a href="./spell-spec.md"><code>spell-spec.md</code></a> ·
+    LLM index: <a href="./llms.txt"><code>llms.txt</code></a>
+</p>
+
+<h2>0. ⚡ Lead with a working example — copy this, study it, then read the rest</h2>
+
+<p>A spell that scatters 15 🔥 emoji from view center, animates them outward with shrinking, then auto-clears:</p>
+
+<div class="pivot">
+<b>Reference example — your output should look structurally identical to this:</b>
+<pre><code>{"command":"fire","action":"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i&lt;N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=&gt;{if(f++&gt;40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i&gt;=0)BM.all().splice(i,1);}BM.redraw();BM.log('fire: extinguished.');return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);BM.log('fire: burst of 15 sparks.');"}</code></pre>
+</div>
+
+<p>What this teaches you:</p>
+
+<ul>
+    <li><b>A spell is one line of JSON with exactly two keys: <code>command</code> and <code>action</code>.</b> Nothing else.</li>
+    <li><b><code>action</code> is a string of raw JS</b> that gets executed via <code>new Function('BM','args',action)</code>.</li>
+    <li>Typical pattern: <code>BM.create()</code> to spawn objects → <code>setInterval</code> for animation → <code>BM.all().splice()</code> to clean up → <code>BM.redraw()</code> after each mutation → <code>BM.log()</code> for status.</li>
+</ul>
+
+<p>When you generate a new spell, your output should look <b>structurally identical to the line above</b> — different <code>command</code>, different JS body inside <code>action</code>, but the same shape.</p>
+
+<h2>1. The format</h2>
+
+<pre><code>{"command":"NAME","action":"JAVASCRIPT_CODE_AS_A_STRING"}</code></pre>
+
+<ul>
+    <li><code>"command"</code> — the invocation name. Lowercase letters, digits, hyphens, underscores. 1–31 chars. After registration the user runs <code>$NAME</code> (or <code>NAME</code>) in the BMBoard terminal.</li>
+    <li><code>"action"</code> — <b>raw JavaScript code as a string</b>. BMBoard executes it via <code>new Function('BM','args',action)</code>. The string IS the code body; it is NOT a structured object.</li>
+</ul>
+
+<p>There are <b>no other fields</b>. Output a single line, no Markdown fences, no leading prose.</p>
+
+<h2>2. Forbidden / hallucinated terms — DO NOT USE</h2>
+
+<div class="warn">
+    These belong to other systems (Minecraft plugins, RPG engines, etc.) and have <b>no meaning in BMBoard</b>:
+    <p style="margin: 8px 0 0;">
+        <code>internalName</code>, <code>displayName</code>, <code>description</code>, <code>icon</code>, <code>category</code>, <code>cost</code>, <code>mp</code>, <code>cooldown</code>, <code>actions</code> (as array of structured action objects), <code>PROJECTILE</code>, <code>particle</code>, <code>onHit</code>, <code>effect</code>, <code>range</code>, <code>power</code>, <code>type</code> (as a top-level field), <code>magic create</code>, <code>/bmboard</code>, <code>/reload</code>, <code>plugins/</code>, <code>skills/</code>, <code>give</code>, server-side, mod, plugin, manifest.
+    </p>
+    <p style="margin: 8px 0 0;">If you find yourself reaching for any of these, STOP — you are off-spec.</p>
+</div>
+
+<h2>3. The <code>BM.*</code> API available inside <code>action</code></h2>
+
+<table>
+    <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+    <tbody>
+        <tr><td><code>BM.log(msg, cls?)</code></td><td>Print to terminal. <code>cls</code> is <code>'t-ok'</code> / <code>'t-err'</code> / <code>'t-dim'</code> / undefined.</td></tr>
+        <tr><td><code>BM.viewCenter()</code></td><td>Returns <code>{x, y}</code> — current canvas view center in world coordinates.</td></tr>
+        <tr><td><code>BM.create(type, props)</code></td><td>Adds a new canvas object. Returns the object.</td></tr>
+        <tr><td><code>BM.translate(obj, dx, dy)</code></td><td>Move obj by delta.</td></tr>
+        <tr><td><code>BM.update(idOrObj, patch)</code></td><td>Patch obj's <code>data</code> with given properties.</td></tr>
+        <tr><td><code>BM.remove(obj)</code></td><td>Remove obj from canvas.</td></tr>
+        <tr><td><code>BM.setStroke(obj, color)</code></td><td>Set stroke color.</td></tr>
+        <tr><td><code>BM.setFill(obj, color)</code></td><td>Set fill color.</td></tr>
+        <tr><td><code>BM.all()</code></td><td>Array of all canvas objects (mutable — use <code>.splice</code> to remove).</td></tr>
+        <tr><td><code>BM.getSelected()</code></td><td>Array of currently-selected objects.</td></tr>
+        <tr><td><code>BM.clear()</code></td><td>Wipe all canvas objects.</td></tr>
+        <tr><td><code>BM.redraw()</code></td><td>Force a repaint. Call after every mutation.</td></tr>
+        <tr><td><code>BM.save()</code></td><td>Push a history snapshot for undo.</td></tr>
+        <tr><td><code>BM.rand(min, max)</code></td><td>Random number in <code>[min, max]</code>.</td></tr>
+        <tr><td><code>args</code></td><td>String passed at invocation. <code>$name foo bar</code> → <code>args === 'foo bar'</code>.</td></tr>
+    </tbody>
+</table>
+
+<h2>4. Object types and <code>props</code></h2>
+
+<table>
+    <thead><tr><th><code>type</code></th><th><code>props</code></th></tr></thead>
+    <tbody>
+        <tr><td><code>circle</code></td><td><code>{cx, cy, rx, ry, rotation, fill, strokeOff}</code></td></tr>
+        <tr><td><code>square</code></td><td><code>{x, y, w, h, rotation, fill, strokeOff}</code></td></tr>
+        <tr><td><code>triangle</code></td><td><code>{x, y, w, h, rotation, fill, strokeOff}</code> or <code>{pts:[{x,y},{x,y},{x,y}], rotation, fill}</code></td></tr>
+        <tr><td><code>arrow</code></td><td><code>{x1, y1, x2, y2, rotation}</code></td></tr>
+        <tr><td><code>text</code></td><td><code>{x, y, text, fontSize, rotation}</code></td></tr>
+        <tr><td><code>sticky</code></td><td><code>{x, y, w, h, text, color, rotation}</code> (default <code>color: '#FFE873'</code>)</td></tr>
+    </tbody>
+</table>
+
+<h2>5. More working examples</h2>
+
+<h3>5.1 Minimal — drop a yellow sticky note at view center</h3>
+
+<pre><code>{"command":"hi","action":"const c=BM.viewCenter();BM.create('sticky',{x:c.x-100,y:c.y-100,w:200,h:200,text:'hello'});BM.redraw();BM.log('placed.');"}</code></pre>
+
+<h3>5.2 Toggle pattern (start / stop on the same command)</h3>
+
+<pre><code>{"command":"snowy","action":"if(window._snowyId){clearInterval(window._snowyId);window._snowyId=null;BM.log('stopped.');return;}let i=0;const c=BM.viewCenter();const items=[];for(let k=0;k&lt;40;k++){const o=BM.create('text',{x:c.x+Math.random()*1200-600,y:c.y-400-Math.random()*200,text:'❄',fontSize:14+Math.random()*10});items.push({o,vy:0.5+Math.random()*1.2});}window._snowyId=setInterval(()=&gt;{if(i++&gt;10000){clearInterval(window._snowyId);window._snowyId=null;return;}for(const it of items){it.o.data.y+=it.vy;if(it.o.data.y&gt;c.y+400){it.o.data.y=c.y-400;it.o.data.x=c.x+Math.random()*1200-600;}}BM.redraw();},30);BM.log('snowy: running. $snowy again to stop.');"}</code></pre>
+
+<h3>5.3 Use selection — recolor every selected object</h3>
+
+<pre><code>{"command":"red","action":"const sel=BM.getSelected();if(!sel.length){BM.log('select first','t-err');return;}for(const o of sel){BM.setStroke(o,'#FF0000');}BM.redraw();BM.log('recolored '+sel.length);"}</code></pre>
+
+<h2>6. How a spell is registered</h2>
+
+<ol>
+    <li><b>Paste the JSON into the terminal</b> — auto-detected, registered, no Enter needed.</li>
+    <li><b>Save as <code>.json</code> file and drag-drop onto the canvas</b> — auto-imported.</li>
+    <li><b>Run <code>register &lt;name&gt; &lt;js&gt;</code></b> in terminal — name and raw JS code on one line.</li>
+</ol>
+
+<p>After registration, the user invokes with <code>$name</code> or just <code>name</code>.</p>
+
+<h2>7. AI agent system prompt (copy-paste-ready)</h2>
+
+<pre><code>You are creating a "spell" for BMBoard, a single-page canvas web app.
+
+OUTPUT FORMAT (mandatory, no exceptions):
+{"command":"NAME","action":"JAVASCRIPT_CODE_AS_STRING"}
+
+Output 1 line, no Markdown, no explanation, no code fences.
+
+Reference example (study this shape — yours should look the same):
+{"command":"fire","action":"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i&lt;N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=&gt;{if(f++&gt;40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i&gt;=0)BM.all().splice(i,1);}BM.redraw();return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);"}
+
+The action is RAW JS executed via `new Function('BM','args',action)`.
+Available API:
+- BM.log(msg, cls?)
+- BM.viewCenter() → {x, y}
+- BM.create(type, props)   // type: 'circle'|'square'|'triangle'|'arrow'|'text'|'sticky'
+- BM.translate / update / remove
+- BM.setStroke(obj, color), BM.setFill(obj, color)
+- BM.all() / BM.getSelected() / BM.clear() / BM.redraw() / BM.save()
+- BM.rand(min, max)
+- args                     // string passed at call time
+
+Object props:
+- circle:   {cx, cy, rx, ry, rotation, fill}
+- square:   {x, y, w, h, rotation, fill}
+- triangle: {x, y, w, h, rotation, fill}
+- arrow:    {x1, y1, x2, y2, rotation}
+- text:     {x, y, text, fontSize, rotation}
+- sticky:   {x, y, w, h, text, color, rotation}
+
+NEVER use: internalName, displayName, description, icon, category, cost, cooldown,
+mp, projectile, particle, onHit, range, power, type-as-top-level-field,
+plugins, skills, magic create, /bmboard, /reload.
+Those are not BMBoard.
+
+Now create a spell: &lt;DESCRIBE WHAT YOU WANT&gt;</code></pre>
+
+<h2>8. Reference</h2>
+
+<ul>
+    <li>Full docs: <a href="https://bmboard.studio/usage.html">usage.html</a></li>
+    <li>Command reference: <a href="https://bmboard.studio/commands.html">commands.html</a></li>
+    <li>This spec (HTML): <a href="https://bmboard.studio/spell-spec.html">spell-spec.html</a></li>
+    <li>This spec (Markdown): <a href="https://bmboard.studio/spell-spec.md">spell-spec.md</a></li>
+    <li>LLM index: <a href="https://bmboard.studio/llms.txt">llms.txt</a></li>
+</ul>
+
+</body>
+</html>

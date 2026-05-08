@@ -441,6 +441,7 @@
 <div class="tabs">
     <button class="tab active" data-file="README.md">README</button>
     <button class="tab" data-file="usage.md">USAGE (MD)</button>
+    <button class="tab" data-file="spell-spec.md">魔法の作り方 / Spell Spec</button>
 </div>
 
 <div class="content-area">
@@ -1430,14 +1431,200 @@ instagram  →  @tkinoshita99
 *Draw to Build. — kinoshita studio / 2026-04-16*
 </script>
 
+<script type="text/markdown" id="md-spell-spec">
+# 魔法の作り方 — BMBoard Spell Spec
+
+> AI agent や人が **Black Mirror Board** の魔法 (spell) を作る時の正解仕様。
+> 機械可読 spec: <a href="./spell-spec.md">spell-spec.md</a> / <a href="./spell-spec.html">spell-spec.html</a> · LLM index: <a href="./llms.txt">llms.txt</a>
+
+---
+
+## 0. ⚡ まずはこの 1 行を見て覚える
+
+```json
+{"command":"fire","action":"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i<N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=>{if(f++>40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i>=0)BM.all().splice(i,1);}BM.redraw();BM.log('fire: extinguished.');return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);BM.log('fire: burst of 15 sparks.');"}
+```
+
+学べる原則:
+- 魔法は **`{ "command", "action" }` の 2 キーだけの 1 行 JSON**
+- `action` は **JS の生コード文字列**
+- 典型パターン: `BM.create()` → `setInterval` → 完了時に `BM.all().splice()` で掃除 → `BM.redraw()` 必須
+
+---
+
+## 1. 構造
+
+```
+{"command":"NAME","action":"JAVASCRIPT_CODE_STRING"}
+```
+
+- `command`: 1〜31 文字、英数字 + `-` `_`。`$NAME` で発火
+- `action`: JS コード文字列。`new Function('BM','args',action)` で実行される
+
+**他のフィールドは一切なし**。1 行、Markdown 不要、説明不要。
+
+---
+
+## 2. 登録の 3 通り
+
+| 方法 | 手順 |
+|---|---|
+| A. JSON ペースト | BMBoard ターミナル入力欄に JSON を貼る → 自動検出 → 自動登録 (Enter 不要) |
+| B. ファイルドロップ | `.json` で保存 → ボードにドラッグ&ドロップ |
+| C. register コマンド | `register <name> <JS コード>` を 1 行で打つ |
+
+登録後は `$<name>` または `<name>` で発火。
+
+---
+
+## 3. シェア — `share` コマンド
+
+```
+share <name>
+```
+
+これを打つと:
+
+> **`→ copied to clipboard!` がターミナルに表示される。**
+> **同時に、JSON が自動でクリップボードにコピーされている。**
+
+ターミナル上の JSON テキストを「選択 → Cmd+C」しなくていい。`share` コマンド自体がクリップボードに書き込んでくれる。
+
+つまり:
+
+1. `share fire` → クリップボードに `{"command":"fire","action":"..."}` が入る
+2. SNS / Discord / Slack を開く
+3. **Cmd+V (Mac) / Ctrl+V (Win)** で貼り付ける → 投稿
+
+これで他人が魔法を取り込めるようになる。
+
+---
+
+## 4. 他人の魔法を取り込む
+
+シェアされた JSON を見つけたら:
+
+| 方法 | 手順 |
+|---|---|
+| A. ペースト | JSON を選択 → Cmd+C → BMBoard ターミナル入力欄に Cmd+V → **Enter 不要、自動登録** |
+| B. ファイル | JSON を `.json` で保存 → ボードにドラッグ&ドロップ |
+
+同名の魔法が既にある場合は自動で `<name>_2026-MM-DD` のようにリネーム、preset は上書きされない。
+
+---
+
+## 5. AI に作ってもらう — そのままコピーして使えるプロンプト
+
+```
+You are creating a "spell" for BMBoard, a single-page canvas web app.
+
+OUTPUT FORMAT (mandatory):
+{"command":"NAME","action":"JAVASCRIPT_CODE_AS_STRING"}
+
+Output 1 line, no Markdown, no explanation, no code fences.
+
+Reference example (your output should look the same shape):
+{"command":"fire","action":"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i<N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=>{if(f++>40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i>=0)BM.all().splice(i,1);}BM.redraw();return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);"}
+
+API:
+- BM.log(msg, cls?)
+- BM.viewCenter() → {x, y}
+- BM.create(type, props)   // type: 'circle'|'square'|'triangle'|'arrow'|'text'|'sticky'
+- BM.translate / update / remove / setStroke / setFill
+- BM.all() / BM.getSelected() / BM.clear() / BM.redraw() / BM.save()
+- BM.rand(min, max)
+- args (string)
+
+Object props:
+- circle:   {cx, cy, rx, ry, rotation, fill}
+- square:   {x, y, w, h, rotation, fill}
+- triangle: {x, y, w, h, rotation, fill}
+- arrow:    {x1, y1, x2, y2, rotation}
+- text:     {x, y, text, fontSize, rotation}
+- sticky:   {x, y, w, h, text, color, rotation}
+
+NEVER use: internalName, displayName, description, icon, category, cost, cooldown,
+mp, projectile, particle, onHit, range, power, plugins, skills, magic create,
+/bmboard, /reload. Those are NOT BMBoard.
+
+Always end with BM.redraw().
+
+Now create a spell: <DESCRIBE WHAT YOU WANT>
+```
+
+AI が出した 1 行 JSON を BMBoard ターミナルにペーストするだけ。
+
+---
+
+## 6. BM API リファレンス
+
+| API | 役割 |
+|---|---|
+| `BM.log(msg, cls?)` | ターミナル出力 (`'t-ok'`/`'t-err'`/`'t-dim'`) |
+| `BM.viewCenter()` | `{x, y}` ビュー中心 |
+| `BM.create(type, props)` | キャンバスに新規オブジェクト追加 |
+| `BM.translate(obj, dx, dy)` | 平行移動 |
+| `BM.update(idOrObj, patch)` | data を部分更新 |
+| `BM.remove(obj)` | 削除 |
+| `BM.setStroke(obj, color)` | 線色 |
+| `BM.setFill(obj, color)` | 塗り色 |
+| `BM.all()` | 全オブジェクト配列 |
+| `BM.getSelected()` | 選択中の配列 |
+| `BM.clear()` | 全消去 |
+| `BM.redraw()` | 再描画 (変更後必須) |
+| `BM.save()` | undo 履歴に push |
+| `BM.rand(min, max)` | 乱数 |
+| `args` | `$name foo bar` の `'foo bar'` 部分 |
+
+## 7. オブジェクト型
+
+| `type` | `props` |
+|---|---|
+| `circle` | `{cx, cy, rx, ry, rotation, fill, strokeOff}` |
+| `square` | `{x, y, w, h, rotation, fill, strokeOff}` |
+| `triangle` | `{x, y, w, h, rotation, fill, strokeOff}` |
+| `arrow` | `{x1, y1, x2, y2, rotation}` |
+| `text` | `{x, y, text, fontSize, rotation}` |
+| `sticky` | `{x, y, w, h, text, color, rotation}` (default `'#FFE873'`) |
+
+## 8. 禁止語 (BMBoard には存在しない、絶対使わない)
+
+`internalName`, `displayName`, `description`, `icon`, `category`, `cost`, `mp`, `cooldown`, `PROJECTILE`, `particle`, `onHit`, `range`, `power`, `magic create`, `/bmboard`, `/reload`, `plugins/`, `skills/`
+
+これらは Minecraft プラグインや RPG エンジンの用語であり BMBoard には存在しない。AI が hallucinate して出してきたら無視。
+
+---
+
+## 9. 管理コマンド
+
+| コマンド | 動作 |
+|---|---|
+| `list` | 登録魔法の一覧 (preset / user に分類) |
+| `cmds` | 組込みコマンド全一覧 |
+| `forget <name>` | user 魔法を削除 (preset は保護) |
+| `alias <new>=<old>` | 既存魔法を別名で複製 |
+| `share <name>` | 魔法 JSON をクリップボードにコピー |
+
+---
+
+## 10. 動作確認用の最小例
+
+```json
+{"command":"hi","action":"const c=BM.viewCenter();BM.create('sticky',{x:c.x-100,y:c.y-100,w:200,h:200,text:'hello'});BM.redraw();BM.log('placed.');"}
+```
+
+これをターミナルに貼って `hi` で発火 → 黄色付箋が中央に出ればすべて理解済み。
+</script>
+
 <script>
     const mdBody = document.getElementById('mdBody');
     // README has separate en/ja markdown blocks so the JP/EN toggle can swap
     // the rendered tree wholesale; usage.md is bilingual via .lang-ja/.lang-en spans.
     const currentLang = () => document.documentElement.lang === 'en' ? 'en' : 'ja';
     function resolveId(file) {
-        if (file === 'README.md') return 'md-readme-' + currentLang();
-        if (file === 'usage.md')  return 'md-usage';
+        if (file === 'README.md')      return 'md-readme-' + currentLang();
+        if (file === 'usage.md')       return 'md-usage';
+        if (file === 'spell-spec.md')  return 'md-spell-spec';
         return null;
     }
     let activeFile = 'README.md';
