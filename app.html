@@ -215,7 +215,7 @@
             /* Hide the header FLUSH button on mobile — still reachable via the
                `flush` / `clear` terminal command and the in-terminal flush. */
             .hbtn-flush     { display: none !important; }
-            .hbtn-clear     { display: none !important; }
+            .hbtn-usage     { display: none !important; }
             /* OVERVIEW stays visible on mobile but stacks as "OVER / VIEW"
                so it fits next to the other vertical hbtn icons. */
             .hlink-overview {
@@ -1441,7 +1441,7 @@
         </button>
         <button class="hbtn hbtn-clear" onclick="clearCanvas()">CLEAR</button>
         <button class="hbtn hbtn-flush" onclick="flushTerm()">FLUSH</button>
-        <button class="hbtn" onclick="openUsage()">USAGE</button>
+        <button class="hbtn hbtn-usage" onclick="openUsage()">USAGE</button>
         <a class="hlink hlink-overview" href="overview.html">
             <span class="ov-line1">OVER</span><span class="ov-line2">VIEW</span>
         </a>
