@@ -40,8 +40,9 @@
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Re-enable selection only inside actual text inputs */
-        input, textarea, [contenteditable] {
+        /* Re-enable selection only inside actual text inputs + USAGE overlay
+           (so users can copy snippets from the manual into the terminal) */
+        input, textarea, [contenteditable], #usageOverlay, #usageOverlay * {
             -webkit-user-select: text;
             user-select: text;
         }
@@ -1837,13 +1838,14 @@ Set before drawing, or apply to selected object.</pre>
         <h3>PRESET SPELLS (v1.2)</h3>
         <pre><b>$scatter</b>                scatter selected objects
 <b>$grid-3x3</b>               place a 3×3 square grid
+<b>$sticky-3x3</b>             place a 3×3 yellow sticky-note grid
 <b>$biwako-blue</b>            retint every stroke to <code>#0044CC</code>
-<b>$fetch-img &lt;kw&gt; &lt;n&gt;</b>     summon n images (Lorem Flickr, no key)
+<b>$make-img &lt;kw&gt; &lt;n&gt;</b>      summon n images (Lorem Flickr, no key) · alias: $fetch-img
 <b>$monoclo</b>                grayscale the selected image(s)
 <b>$svg</b>                    export selection as editable vector SVG</pre>
         <h3>IMAGES (v1.2)</h3>
         <pre><b>I</b> key              upload an image from disk (dataURL)
-<b>fetch-img sea 6</b>    6 photos · auto 3×2 grid · color by default
+<b>make-img sea 6</b>     6 photos · auto 3×2 grid · color by default
 <b>monoclo</b>            select image(s) → grayscale · Cmd+Z reverts
   · max 25 per fetch · grid cols = ceil(√n)
   · CORS-safe images are dataURL-persisted into bundles</pre>
@@ -5295,7 +5297,7 @@ for (const obj of images) {
   img.src = obj.data.src;
 }
 `, source: 'preset' },
-    'fetch-img': { action: `
+    'make-img': { action: `
 const rawArgs = (typeof args === 'string') ? args.trim() : '';
 const tokens = rawArgs.length ? rawArgs.split(/\\s+/).filter(Boolean) : [];
 let count = 1;
@@ -5350,7 +5352,21 @@ for (let i = 0; i < count; i++) {
 }
 BM.redraw();
 `, source: 'preset' },
+    'sticky-3x3': { action: `
+const vc = BM.viewCenter();
+const size = 140, gap = 16, step = size + gap;
+for (let r = 0; r < 3; r++) {
+  for (let c = 0; c < 3; c++) {
+    BM.create('sticky', { x: vc.x - step + c*step - size/2, y: vc.y - step + r*step - size/2, w: size, h: size });
+  }
+}
+BM.log('sticky 3x3 placed.');
+BM.redraw();
+`, source: 'preset' },
 };
+
+// Backward-compat alias: $fetch-img still works after the rename to $make-img
+BM_PRESETS['fetch-img'] = BM_PRESETS['make-img'];
 
 function loadCmdsSync() { BM_CMDS = { ...BM_PRESETS }; try { const raw=localStorage.getItem(BM_STORE_KEY); const saved=raw?JSON.parse(raw):{}; for(const[name,v]of Object.entries(saved))BM_CMDS[name]=v; } catch{} }
 async function loadCmds() { loadCmdsSync(); try { const records=await _bmDbGetAll(); if(records.length){for(const r of records)BM_CMDS[r.name]={action:r.action,source:r.source||'user',createdAt:r.createdAt||null};} else { const migrated=Object.entries(BM_CMDS).filter(([,v])=>v.source!=='preset'); if(migrated.length) await _bmDbReplaceAll(migrated.map(([name,v])=>({name,action:v.action,source:v.source||'user',createdAt:v.createdAt||null}))); } } catch{} }
@@ -6074,8 +6090,8 @@ function runCommand(val) {
             '  ╰─────────────────────────────────────────────────────────╯',
             '',
             '  ╭── COMMAND ECOSYSTEM ────────────────────────────────────╮',
-            '  │  $scatter / $grid-3x3 / $biwako-blue / $svg             │',
-            '  │  $fetch-img <kw> <n>   summon images by keyword         │',
+            '  │  $scatter / $grid-3x3 / $sticky-3x3 / $biwako-blue / $svg│',
+            '  │  $make-img <kw> <n>    summon images by keyword         │',
             '  │  $monoclo              grayscale the selected image(s) │',
             '  │  register <n> <js>     save a new spell                 │',
             '  │  alias <new>=<old>     duplicate a spell                │',
@@ -8119,11 +8135,11 @@ document.addEventListener('contextmenu', e => {
 // selectstart fires before any selection range opens — preventing it kills
 // the loupe AND the cross-element selection bleed (canvas → terminal).
 document.addEventListener('selectstart', e => {
-    if (e.target.closest('input, textarea, [contenteditable]')) return;
+    if (e.target.closest('input, textarea, [contenteditable], #usageOverlay')) return;
     e.preventDefault();
 }, { capture: true });
 document.addEventListener('dragstart', e => {
-    if (e.target.closest('input, textarea, [contenteditable]')) return;
+    if (e.target.closest('input, textarea, [contenteditable], #usageOverlay')) return;
     e.preventDefault();
 }, { capture: true });
 // Absorb iOS native touch gestures at the lowest layer + clear stale selections.
@@ -8146,7 +8162,7 @@ document.addEventListener('selectionchange', () => {
     if (!s || s.isCollapsed) return;
     const a = s.anchorNode;
     const host = a && (a.nodeType === 1 ? a : a.parentElement);
-    if (host && host.closest('input, textarea, [contenteditable]')) return;
+    if (host && host.closest('input, textarea, [contenteditable], #usageOverlay')) return;
     s.removeAllRanges();
 });
 </script>

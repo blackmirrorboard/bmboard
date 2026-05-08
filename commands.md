@@ -17,7 +17,7 @@ Enter to fire. History via **↑ / ↓**. `clear` wipes the terminal; `help` pri
 5. [Export (SVG / PNG / Bundles)](#export)
 6. [Spellbook (register / alias / forget / list)](#spellbook)
 7. [Preset Spells](#preset-spells)
-8. [Image Brainstorm (`fetch-img`)](#image-brainstorm)
+8. [Image Brainstorm (`make-img`)](#image-brainstorm)
 9. [Share](#share)
 10. [Help / Usage / Docs](#help)
 11. [Easter Eggs](#easter-eggs)
@@ -167,6 +167,9 @@ select some shapes → $scatter
 ### `$grid-3x3`
 Place nine 80×80 squares in a 3×3 grid at the current view center.
 
+### `$sticky-3x3`
+Place nine 140×140 yellow sticky notes in a 3×3 grid at the current view center. Double-click a note to edit.
+
 ### `$biwako-blue`
 Retint every object's stroke (and fill where present) to `#0044CC` — "Biwako Silence" palette.
 
@@ -176,20 +179,20 @@ Export the selection (or everything) as SVG. See [Export](#export).
 ### `$monoclo`
 Grayscale the selected image(s) via an offscreen canvas filter (`grayscale(100%) contrast(110%) brightness(95%)`). Rewrites the image's `data:` URL in place.
 
-### `$fetch-img <keyword> [count]`
-See [Image Brainstorm](#image-brainstorm).
+### `$make-img <keyword> [count]`
+See [Image Brainstorm](#image-brainstorm). `$fetch-img` is kept as a backward-compat alias.
 
 ---
 
-## <a id="image-brainstorm"></a>8. Image Brainstorm (`$fetch-img`)
+## <a id="image-brainstorm"></a>8. Image Brainstorm (`$make-img`)
 
-Non-stop mood-board builder.
+Non-stop mood-board builder. `$fetch-img` is the legacy alias and still works.
 
 | Form | Effect |
 |---|---|
-| `$fetch-img` | 1 image for keyword `biwako`. |
-| `$fetch-img <keyword>` | 1 image for `<keyword>`. |
-| `$fetch-img <keyword> <n>` | Up to 25 images scattered across the canvas. |
+| `$make-img` | 1 image for keyword `biwako`. |
+| `$make-img <keyword>` | 1 image for `<keyword>`. |
+| `$make-img <keyword> <n>` | Up to 25 images scattered across the canvas. |
 
 Images are placed with random rotation and margin — the canvas becomes a self-writing mood-board. Source is a public image feed; CORS-safe drops are raster-baked, blocked sources return a placeholder.
 
