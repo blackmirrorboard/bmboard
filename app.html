@@ -4235,21 +4235,12 @@ function applyAnchor(obj, anchorId, nx, ny) {
         }
 
         // ── Square / Image / Sticky: 8-handle proportional bbox resize ──────
-        // Images default to aspect-locked on corners so photos never warp.
         case 'square':
         case 'image':
         case 'sticky': {
             if (!ob) break;
             const mods3 = S.modifiers || { shift:false, alt:false };
-            const isCorner = anchorId==='tl'||anchorId==='tr'||anchorId==='bl'||anchorId==='br';
-            // Images: aspect lock by DEFAULT on corner handles — Shift escapes it.
-            const lockAspect = obj.type === 'image' ? (isCorner ? !mods3.shift : mods3.shift)
-                                                    : mods3.shift;
-            // Snap only when the user *actually* held Shift (image's default
-            // aspect-lock should resize smoothly — snap was making small drags
-            // look like nothing happened).
-            const snapEnabled = !!mods3.shift;
-            const r3 = resizeBoxWithMods(anchorId, ob, nx, ny, lockAspect, mods3.alt, snapEnabled);
+            const r3 = resizeBoxWithMods(anchorId, ob, nx, ny, mods3.shift, mods3.alt);
             if (!r3) return;
             obj.data.x = r3.nBx; obj.data.y = r3.nBy; obj.data.w = r3.nBw; obj.data.h = r3.nBh;
             break;
