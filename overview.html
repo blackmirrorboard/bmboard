@@ -689,10 +689,8 @@ Available BM API (action-scoped):
 ```
 BM.getSelected()          selected object(s)
 BM.all()                  all objects
-BM.getById(id)            lookup by id
-BM.find(fn)               filter by predicate
-BM.create(type, props?)   spawn circle | square | triangle | arrow | text
-BM.update(obj|id, patch)  bulk-update data attributes
+BM.create(type, props)    spawn circle | square | triangle | arrow | text | sticky
+BM.update(idOrObj, patch) bulk-update data attributes
 BM.translate(obj, dx, dy) nudge
 BM.setStroke(obj, color)  per-object line color
 BM.setFill(obj, color)    per-object fill
@@ -700,13 +698,17 @@ BM.remove(obj)            delete
 BM.clear()                wipe canvas
 BM.viewCenter()           { x, y }
 BM.rand(min, max)         uniform random
-BM.getMode() / setMode()  read / swap theme
 BM.redraw()               repaint (call after mutations)
 BM.save()                 commit to undo history
-BM.log(msg, cls?)         terminal output
+BM.log(msg, cls?)         terminal output ('t-ok' / 't-err' / 't-dim')
+args                      string passed at invocation
 ```
 
-**Note:** `BM.create('rect', ...)` is not supported — use `'square'`. Only the five types listed above are valid.
+**Note:** `BM.create('rect', ...)` is not supported — use `'square'`. Only the six types listed above are valid.
+
+**Canonical machine-readable spec:** [`spell-spec.md`](./spell-spec.md) · LLM index: [`llms.txt`](./llms.txt)
+
+**Forbidden hallucinated terms** (NOT BMBoard — never use): `internalName`, `displayName`, `description`, `icon`, `category`, `cost`, `mp`, `cooldown`, `PROJECTILE`, `particle`, `onHit`, `magic create`, `/bmboard`, `/reload`, `plugins/`, `skills/`.
 
 ---
 
@@ -956,10 +958,8 @@ register paint-red for(const o of BM.all()){BM.setStroke(o,'#FF0000')}BM.redraw(
 ```
 BM.getSelected()          選択中の物
 BM.all()                  全オブジェクト
-BM.getById(id)            ID で取得
-BM.find(fn)               条件で絞り込み
-BM.create(type, props?)   生成 (circle | square | triangle | arrow | text)
-BM.update(obj|id, patch)  data 属性を一括更新
+BM.create(type, props)    生成 (circle | square | triangle | arrow | text | sticky)
+BM.update(idOrObj, patch) data 属性を一括更新
 BM.translate(obj, dx, dy) 平行移動
 BM.setStroke(obj, color)  線の色を変更
 BM.setFill(obj, color)    塗りの色を変更
@@ -967,11 +967,15 @@ BM.remove(obj)            削除
 BM.clear()                キャンバスをクリア
 BM.viewCenter()           ビューの中心 { x, y }
 BM.rand(min, max)         一様乱数
-BM.getMode() / setMode()  テーマ取得・設定
 BM.redraw()               再描画（変更後に呼ぶ）
 BM.save()                 Undo 履歴にコミット
-BM.log(msg, cls?)         ターミナル出力
+BM.log(msg, cls?)         ターミナル出力 ('t-ok' / 't-err' / 't-dim')
+args                      呼出し時の引数文字列
 ```
+
+**機械可読仕様（AI 用）:** <a href="./spell-spec.md"><code>spell-spec.md</code></a> · LLM index: <a href="./llms.txt"><code>llms.txt</code></a>
+
+**禁止語（BMBoard には存在しない、絶対使わない）:** <code>internalName</code>, <code>displayName</code>, <code>description</code>, <code>icon</code>, <code>category</code>, <code>cost</code>, <code>mp</code>, <code>cooldown</code>, <code>PROJECTILE</code>, <code>particle</code>, <code>onHit</code>, <code>magic create</code>, <code>/bmboard</code>, <code>/reload</code>, <code>plugins/</code>, <code>skills/</code>
 
 **注意:** `BM.create('rect', ...)` はサポートされていません。`'square'` を使ってください。上記 5 種類のみ有効。
 
@@ -1283,15 +1287,18 @@ Inside the action, the **`BM` global** is your interface:
 | ----------------------------- | ---------------------------------------- |
 | `BM.getSelected()`            | selected object(s) as an array           |
 | `BM.all()`                    | every object on the board                |
-| `BM.create(type, props?)`     | spawn `circle` / `square` / `triangle` / `arrow` / `text` |
+| `BM.create(type, props)`      | spawn `circle` / `square` / `triangle` / `arrow` / `text` / `sticky` |
 | `BM.translate(obj, dx, dy)`   | nudge an object                          |
 | `BM.setStroke(obj, color)`    | per-object line color                    |
 | `BM.setFill(obj, color)`      | per-object fill                          |
 | `BM.remove(obj)`              | delete an object                         |
+| `BM.update(idOrObj, patch)`   | patch object data                        |
 | `BM.viewCenter()`             | `{ x, y }` — current view center (world coords) |
 | `BM.rand(min, max)`           | uniform random number                    |
-| `BM.log(msg)`                 | print `[BM] msg` to terminal             |
-| `BM.setMode('light'/'dark'/'gray')` | switch theme programmatically      |
+| `BM.log(msg, cls?)`           | terminal output (`t-ok` / `t-err` / `t-dim`) |
+| `BM.redraw()`                 | force repaint                            |
+| `BM.save()`                   | push to undo history                     |
+| `args`                        | string passed at invocation              |
 
 ### 4.4 Aliasing / 別名
 

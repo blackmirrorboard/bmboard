@@ -255,15 +255,23 @@ Inside the action, the **`BM` global** is your interface:
 | ----------------------------- | ---------------------------------------- |
 | `BM.getSelected()`            | selected object(s) as an array           |
 | `BM.all()`                    | every object on the board                |
-| `BM.create(type, props?)`     | spawn `circle` / `square` / `triangle` / `arrow` / `text` |
+| `BM.clear()`                  | wipe all canvas objects                  |
+| `BM.create(type, props)`      | spawn `circle` / `square` / `triangle` / `arrow` / `text` / `sticky` |
+| `BM.update(idOrObj, patch)`   | patch object data                        |
 | `BM.translate(obj, dx, dy)`   | nudge an object                          |
 | `BM.setStroke(obj, color)`    | per-object line color                    |
 | `BM.setFill(obj, color)`      | per-object fill                          |
 | `BM.remove(obj)`              | delete an object                         |
 | `BM.viewCenter()`             | `{ x, y }` — current view center (world coords) |
 | `BM.rand(min, max)`           | uniform random number                    |
-| `BM.log(msg)`                 | print `[BM] msg` to terminal             |
-| `BM.setMode('light'/'dark'/'gray')` | switch theme programmatically      |
+| `BM.log(msg, cls?)`           | print to terminal (`cls` = `t-ok` / `t-err` / `t-dim`) |
+| `BM.redraw()`                 | force repaint after mutations            |
+| `BM.save()`                   | push to undo history                     |
+| `args`                        | string passed at invocation              |
+
+> Canonical machine-readable spec: [`spell-spec.md`](./spell-spec.md). LLM index: [`llms.txt`](./llms.txt).
+>
+> **Forbidden hallucinated terms** (these are NOT BMBoard, never use): `internalName`, `displayName`, `description`, `icon`, `category`, `cost`, `mp`, `cooldown`, `PROJECTILE`, `particle`, `onHit`, `magic create`, `/bmboard`, `/reload`, `plugins/`, `skills/`.
 
 ### 4.4 Aliasing / 別名
 

@@ -1,0 +1,19 @@
+# BMBoard
+
+Black Mirror Board — a single-page canvas web app where designers draw and a terminal pane responds. Users author "spells" (custom terminal commands) in a strict JSON format.
+
+## Spell format (read this before generating any spell)
+
+- [Spell Format Specification](https://bmboard.studio/spell-spec.md): The canonical schema. A spell is **one line of JSON**: `{"command":"NAME","action":"JAVASCRIPT_CODE_STRING"}`. The action is raw JS executed via `new Function('BM','args',action)`. NO other fields. NO `internalName`, `cooldown`, `magic create`, `plugins`, etc. — those are not BMBoard.
+
+## Docs
+
+- [Usage manual](https://bmboard.studio/usage.html): Bilingual (JP / EN) walkthrough — drawing, terminal, custom commands, share workflow.
+- [Command reference](https://bmboard.studio/commands.html): Every built-in command and preset spell, with examples.
+- [Overview](https://bmboard.studio/overview.html): High-level architecture and design philosophy.
+- [Dev log](https://bmboard.studio/dev-log.html): Changelog.
+
+## Optional
+
+- [App](https://bmboard.studio/app): The live canvas — open this to see the terminal in action.
+- [Index](https://bmboard.studio/): Landing page.

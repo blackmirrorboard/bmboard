@@ -354,20 +354,41 @@ Every one of these is **a JSON away**. The BM API is tiny — see below.
 
 ## <a id="bm-api"></a>14. The BM API (for spell authors)
 
+> **Canonical machine-readable spec:** [`spell-spec.md`](./spell-spec.md) · LLM index: [`llms.txt`](./llms.txt)
+
 Your spell's JavaScript runs with two locals: `args` (the text after the command) and `BM` (this object).
 
 ```js
-BM.all()                 // array of every object on the canvas
-BM.getSelected()         // array of currently-selected objects
-BM.redraw()              // mark dirty, re-render
-BM.save()                // commit to IndexedDB
-BM.log(msg, cls?)        // print to the terminal (cls: 't-ok' | 't-err' | 't-dim')
-BM.create(type, data)    // new object: type = 'circle' | 'square' | 'triangle' | 'arrow' | 'text' | 'image' | 'stroke'
-BM.translate(obj, dx, dy)
-BM.viewCenter()          // { x, y } in world coords
-BM.rand(a, b)            // random float in [a, b)
-BM.exportSvg(targets?)   // same as $svg (default: selection or all)
+BM.all()                  // array of every object on the canvas
+BM.getSelected()          // array of currently-selected objects
+BM.clear()                // wipe all canvas objects
+BM.create(type, props)    // new object: type = 'circle' | 'square' | 'triangle' | 'arrow' | 'text' | 'sticky'
+BM.update(idOrObj, patch) // patch obj.data with given properties
+BM.translate(obj, dx, dy) // move by delta
+BM.remove(obj)            // delete an object
+BM.setStroke(obj, color)  // per-object line color
+BM.setFill(obj, color)    // per-object fill
+BM.viewCenter()           // { x, y } in world coords
+BM.rand(a, b)             // random float in [a, b)
+BM.redraw()               // mark dirty, re-render (call after mutations)
+BM.save()                 // commit to undo history
+BM.log(msg, cls?)         // print to terminal ('t-ok' | 't-err' | 't-dim')
+BM.exportSvg(targets?)    // same as $svg (default: selection or all)
+args                      // string passed at invocation
 ```
+
+**Object types and props:**
+
+```
+circle:   {cx, cy, rx, ry, rotation, fill, strokeOff}
+square:   {x, y, w, h, rotation, fill, strokeOff}
+triangle: {x, y, w, h, rotation, fill, strokeOff}
+arrow:    {x1, y1, x2, y2, rotation}
+text:     {x, y, text, fontSize, rotation}
+sticky:   {x, y, w, h, text, color, rotation}  // default color: '#FFE873'
+```
+
+**Forbidden hallucinated terms** (NOT BMBoard, never use): `internalName`, `displayName`, `description`, `icon`, `category`, `cost`, `mp`, `cooldown`, `PROJECTILE`, `particle`, `onHit`, `magic create`, `/bmboard`, `/reload`, `plugins/`, `skills/`.
 
 A complete spell is simply:
 
@@ -379,6 +400,37 @@ A complete spell is simply:
 ```
 
 Paste that JSON into the terminal and `$spread` is registered forever.
+
+### Asking AI to write a spell
+
+Paste this prompt into ChatGPT / Claude / Gemini, then describe what you want at the bottom:
+
+```
+You are creating a "spell" for BMBoard.
+OUTPUT FORMAT (mandatory): {"command":"NAME","action":"JAVASCRIPT_CODE_AS_STRING"}
+Output 1 line, no Markdown, no explanation.
+
+The action is RAW JS executed via new Function('BM','args',action).
+API: BM.log(msg,cls?) / BM.viewCenter() / BM.create(type,props) /
+BM.translate / BM.update / BM.remove / BM.setStroke / BM.setFill /
+BM.all() / BM.getSelected() / BM.clear() / BM.redraw() / BM.save() /
+BM.rand(min,max) / args (string).
+
+Object types:
+circle{cx,cy,rx,ry,rotation,fill} | square{x,y,w,h,rotation,fill} |
+triangle{x,y,w,h,rotation,fill} | arrow{x1,y1,x2,y2,rotation} |
+text{x,y,text,fontSize,rotation} | sticky{x,y,w,h,text,color,rotation}
+
+NEVER use: internalName, displayName, description, icon, category, cost,
+cooldown, mp, PROJECTILE, particle, onHit, magic create, /bmboard, /reload,
+plugins/, skills/. Those are not BMBoard.
+
+Always end with BM.redraw(). For meaningful changes call BM.save().
+
+Now create a spell: <DESCRIBE WHAT YOU WANT HERE>
+```
+
+The AI returns 1 line of JSON. Paste it into the BMBoard terminal — auto-registered.
 
 ---
 

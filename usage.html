@@ -777,6 +777,8 @@ grayscale(100%) contrast(110%) brightness(95%)
         <div class="en lang-en">Non-coders can still author spells — hand Claude or ChatGPT the BM API spec and it returns working JSON. This section is designed to be <b>copy-pasted directly into an AI chat.</b></div>
     </div>
 
+    <p class="dim"><span class="lang-ja">完全な機械可読仕様: <a href="./spell-spec.md"><code>spell-spec.md</code></a> · LLM index: <a href="./llms.txt"><code>llms.txt</code></a></span><span class="lang-en">Full machine-readable spec: <a href="./spell-spec.md"><code>spell-spec.md</code></a> · LLM index: <a href="./llms.txt"><code>llms.txt</code></a></span></p>
+
     <h3>5.1 Prompt template / プロンプト雛形</h3>
     <p class="dim"><span class="lang-ja">以下のブロックを AI に貼って、最後の「リクエスト」部分だけ書き換えてください。</span><span class="lang-en">Paste the block below into your AI chat and fill in the request at the bottom.</span></p>
 <pre class="code"><span class="k">You are a Black Mirror Board spell author.</span>
@@ -788,16 +790,25 @@ grayscale(100%) contrast(110%) brightness(95%)
 }
 
 <span class="c">── BM API (the only functions available inside action) ──</span>
-BM.getSelected() / BM.all() / BM.getById(id) / BM.find(fn)
-BM.create(type, props?)   <span class="c">// type ∈ {circle, square, triangle, arrow, text}</span>
-BM.update(obj|id, patch) / BM.translate(obj, dx, dy)
+BM.getSelected() / BM.all() / BM.clear()
+BM.create(type, props)   <span class="c">// type ∈ {circle, square, triangle, arrow, text, sticky}</span>
+BM.update(idOrObj, patch) / BM.translate(obj, dx, dy)
 BM.setStroke(obj, color) / BM.setFill(obj, color)
-BM.remove(obj) / BM.clear()
+BM.remove(obj)
 BM.viewCenter()  <span class="c">// {x, y}</span>
-BM.rand(min, max) / BM.getMode() / BM.setMode(mode)
+BM.rand(min, max)
 BM.redraw()      <span class="c">// call after any mutation</span>
 BM.save()        <span class="c">// commits to undo history</span>
 BM.log(msg, cls?) <span class="c">// cls ∈ {t-ok, t-err, t-dim}</span>
+args             <span class="c">// string passed at invocation: "$name foo bar" → args === "foo bar"</span>
+
+<span class="c">── Object types and props ──</span>
+circle:   {cx, cy, rx, ry, rotation, fill, strokeOff}
+square:   {x, y, w, h, rotation, fill, strokeOff}
+triangle: {x, y, w, h, rotation, fill, strokeOff}
+arrow:    {x1, y1, x2, y2, rotation}
+text:     {x, y, text, fontSize, rotation}
+sticky:   {x, y, w, h, text, color, rotation}  <span class="c">// default color '#FFE873'</span>
 
 <span class="c">── Hard rules ──</span>
 1. <span class="k">Rect does not exist.</span> Use 'square', not 'rect'.
@@ -809,17 +820,29 @@ BM.log(msg, cls?) <span class="c">// cls ∈ {t-ok, t-err, t-dim}</span>
 6. If the spell requires a selection, guard it:
      if (!sel.length) { BM.log('select first', 't-err'); return; }
 
+<span class="c">── FORBIDDEN — these are NOT BMBoard ──</span>
+internalName, displayName, description, icon, category, cost, mp, cooldown,
+PROJECTILE, particle, onHit, effect, magic create, /bmboard, /reload,
+plugins/, skills/, give, server-side, mod, plugin, manifest.
+If you reach for any of these, you are off-spec — start over.
+
 <span class="c">── Request ──</span>
 (write what you want in one or two sentences)</pre>
 
     <h3>5.2 Short form / 超短縮版</h3>
     <p class="dim"><span class="lang-ja">上のテンプレが長すぎる場合に。</span><span class="lang-en">When the full template is overkill:</span></p>
-<pre class="code">Make a Black Mirror Board spell as JSON: {"command":"NAME","action":"JS"}.
-BM API: getSelected(), all(), create(type, props), translate(o,dx,dy),
-setStroke/setFill(o, c), remove(o), viewCenter(), rand(min,max),
-log(msg,cls), redraw(), save().
-BM.create types: circle | square | triangle | arrow | text (NO rect).
-No async/await. Always end with BM.redraw().
+<pre class="code">Make a Black Mirror Board spell. Output 1 line of JSON, no Markdown:
+{"command":"NAME","action":"JS"}
+
+BM API (only): getSelected(), all(), clear(), create(type, props),
+update(o,patch), translate(o,dx,dy), setStroke/setFill(o,c), remove(o),
+viewCenter(), rand(min,max), log(msg,cls), redraw(), save(). args = string.
+
+Types: circle | square | triangle | arrow | text | sticky  (NO rect).
+NEVER: internalName, displayName, cooldown, magic create, /bmboard,
+plugins/, skills/. Those are not BMBoard.
+No async/await. End with BM.redraw().
+
 Request: (what you want)</pre>
 
     <h3>5.3 Example round-trip / 応答例</h3>

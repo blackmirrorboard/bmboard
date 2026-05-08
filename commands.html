@@ -913,8 +913,31 @@
         <div class="spell-step-num">05</div>
         <div class="spell-step-body">
             <b>AI に書いてもらう</b><br>
-            ChatGPT や Claude に「BM API（<code>BM.all() / BM.setStroke() / BM.translate()</code>）を使って、選択した全図形をランダム位置に散らす JS スニペットを 1 行で」と頼めば、すぐ出してくれる。<br>
-            出力をそのまま <code>register scatter-mine ...</code> に貼って登録、で完成。
+            ChatGPT / Claude / Gemini に下のプロンプトをそのまま貼れば、エラーなく動く JSON が返ってくる。出力された 1 行の JSON を BMBoard ターミナル入力欄にペーストするだけで自動登録される。<br>
+
+            <pre style="background: var(--pre-bg, #050505); color: var(--pre-text, #9a9690); padding: 14px; margin: 12px 0; font-size: 11.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;">You are creating a "spell" for BMBoard.
+OUTPUT FORMAT (mandatory): {"command":"NAME","action":"JAVASCRIPT_CODE_AS_STRING"}
+Output 1 line, no Markdown, no explanation.
+
+The action is RAW JS executed via new Function('BM','args',action).
+API: BM.log(msg,cls?) / BM.viewCenter() / BM.create(type,props) /
+BM.translate / BM.update / BM.remove / BM.setStroke / BM.setFill /
+BM.all() / BM.getSelected() / BM.clear() / BM.redraw() / BM.save() /
+BM.rand(min,max) / args (string).
+
+Object types: circle{cx,cy,rx,ry,rotation,fill} | square{x,y,w,h,rotation,fill} |
+triangle{x,y,w,h,rotation,fill} | arrow{x1,y1,x2,y2,rotation} |
+text{x,y,text,fontSize,rotation} | sticky{x,y,w,h,text,color,rotation}.
+
+NEVER use: internalName, displayName, description, icon, category, cost,
+cooldown, mp, PROJECTILE, particle, onHit, magic create, /bmboard, /reload,
+plugins/, skills/. Those are not BMBoard.
+
+Always end with BM.redraw(). For meaningful changes call BM.save().
+
+Now create a spell: <DESCRIBE WHAT YOU WANT HERE></pre>
+
+            完全な仕様（AI が直接 fetch する用）: <a href="./spell-spec.md" style="color: var(--ink); border-bottom: 1px solid var(--ink);">spell-spec.md</a> · LLM index: <a href="./llms.txt" style="color: var(--ink); border-bottom: 1px solid var(--ink);">llms.txt</a>
         </div>
     </div>
 
@@ -1449,20 +1472,40 @@
         <span class="lead"><code class="glyph">BM.*</code><span class="desc">spell runtime surface</span></span>
         <span class="tag">API</span><span class="chev">›</span>
     </summary><div class="body">
-        <pre>BM.all()                 // array of every object on the canvas
-BM.getSelected()         // array of currently-selected objects
-BM.redraw()              // mark dirty, re-render
-BM.save()                // commit to IndexedDB
-BM.log(msg, cls?)        // print to the terminal
-                         //   cls: 't-ok' | 't-err' | 't-dim'
-BM.create(type, data)    // new object; type =
-                         //   'circle' | 'square' | 'triangle'
-                         //   | 'arrow' | 'text' | 'image' | 'stroke'
-BM.translate(obj, dx, dy)
-BM.viewCenter()          // { x, y } in world coords
-BM.rand(a, b)            // random float in [a, b)
-BM.exportSvg(targets?)   // same as $svg (default: selection or all)</pre>
-        <p>最小のスペル例:</p>
+        <pre>BM.all()                  // array of every object on the canvas
+BM.getSelected()          // array of currently-selected objects
+BM.clear()                // wipe all canvas objects
+BM.create(type, props)    // new object; type =
+                          //   'circle' | 'square' | 'triangle'
+                          //   | 'arrow' | 'text' | 'sticky'
+BM.update(idOrObj, patch) // patch obj.data with given properties
+BM.translate(obj, dx, dy) // move by delta
+BM.remove(obj)            // delete an object
+BM.setStroke(obj, color)  // per-object line color
+BM.setFill(obj, color)    // per-object fill
+BM.viewCenter()           // { x, y } in world coords
+BM.rand(a, b)             // random float in [a, b)
+BM.redraw()               // mark dirty, re-render (call after mutations)
+BM.save()                 // commit to undo history
+BM.log(msg, cls?)         // print to terminal ('t-ok' | 't-err' | 't-dim')
+BM.exportSvg(targets?)    // same as $svg (default: selection or all)
+args                      // string passed at invocation</pre>
+
+        <p style="margin-top: 14px;">
+            <b>Object types and props:</b>
+        </p>
+        <pre>circle:   {cx, cy, rx, ry, rotation, fill, strokeOff}
+square:   {x, y, w, h, rotation, fill, strokeOff}
+triangle: {x, y, w, h, rotation, fill, strokeOff}
+arrow:    {x1, y1, x2, y2, rotation}
+text:     {x, y, text, fontSize, rotation}
+sticky:   {x, y, w, h, text, color, rotation}  // default color: '#FFE873'</pre>
+
+        <p style="margin-top: 14px;"><b>機械可読仕様（AI 用）:</b> <a href="./spell-spec.md">spell-spec.md</a> · LLM index: <a href="./llms.txt">llms.txt</a></p>
+
+        <p style="margin-top: 14px;"><b>禁止語（NOT BMBoard, never use):</b> <code>internalName</code>, <code>displayName</code>, <code>description</code>, <code>icon</code>, <code>category</code>, <code>cost</code>, <code>mp</code>, <code>cooldown</code>, <code>PROJECTILE</code>, <code>particle</code>, <code>onHit</code>, <code>magic create</code>, <code>/bmboard</code>, <code>/reload</code>, <code>plugins/</code>, <code>skills/</code></p>
+
+        <p style="margin-top: 14px;">最小のスペル例:</p>
         <pre>{
   "command": "spread",
   "action": "const sel = BM.getSelected(); if (!sel.length) { BM.log('select first.', 't-err'); return; } for (const o of sel) BM.translate(o, BM.rand(-600, 600), 0); BM.log('spread ' + sel.length + ' object(s) horizontally.');"

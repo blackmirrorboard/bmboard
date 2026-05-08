@@ -170,10 +170,8 @@ Available BM API (action-scoped):
 ```
 BM.getSelected()          selected object(s)
 BM.all()                  all objects
-BM.getById(id)            lookup by id
-BM.find(fn)               filter by predicate
-BM.create(type, props?)   spawn circle | square | triangle | arrow | text
-BM.update(obj|id, patch)  bulk-update data attributes
+BM.create(type, props)    spawn circle | square | triangle | arrow | text | sticky
+BM.update(idOrObj, patch) bulk-update data attributes
 BM.translate(obj, dx, dy) nudge
 BM.setStroke(obj, color)  per-object line color
 BM.setFill(obj, color)    per-object fill
@@ -181,13 +179,17 @@ BM.remove(obj)            delete
 BM.clear()                wipe canvas
 BM.viewCenter()           { x, y }
 BM.rand(min, max)         uniform random
-BM.getMode() / setMode()  read / swap theme
 BM.redraw()               repaint (call after mutations)
 BM.save()                 commit to undo history
-BM.log(msg, cls?)         terminal output
+BM.log(msg, cls?)         terminal output ('t-ok' / 't-err' / 't-dim')
+args                      string passed at invocation
 ```
 
-**Note:** `BM.create('rect', ...)` is not supported — use `'square'`. Only the five types listed above are valid.
+**Note:** `BM.create('rect', ...)` is not supported — use `'square'`. Only the six types above are valid.
+
+**Canonical machine-readable spec:** [`spell-spec.md`](./spell-spec.md). LLM index: [`llms.txt`](./llms.txt).
+
+**Forbidden hallucinated terms** (NOT BMBoard — never use): `internalName`, `displayName`, `description`, `icon`, `category`, `cost`, `mp`, `cooldown`, `PROJECTILE`, `particle`, `onHit`, `magic create`, `/bmboard`, `/reload`, `plugins/`, `skills/`.
 
 ---
 
@@ -417,10 +419,8 @@ register paint-red for(const o of BM.all()){BM.setStroke(o,'#FF0000')}BM.redraw(
 ```
 BM.getSelected()          選択中の物
 BM.all()                  全オブジェクト
-BM.getById(id)            ID で取得
-BM.find(fn)               条件で絞り込み
-BM.create(type, props?)   生成 (circle | square | triangle | arrow | text)
-BM.update(obj|id, patch)  data 属性を一括更新
+BM.create(type, props)    生成 (circle | square | triangle | arrow | text | sticky)
+BM.update(idOrObj, patch) data 属性を一括更新
 BM.translate(obj, dx, dy) 平行移動
 BM.setStroke(obj, color)  線の色を変更
 BM.setFill(obj, color)    塗りの色を変更
@@ -428,13 +428,17 @@ BM.remove(obj)            削除
 BM.clear()                キャンバスをクリア
 BM.viewCenter()           ビューの中心 { x, y }
 BM.rand(min, max)         一様乱数
-BM.getMode() / setMode()  テーマ取得・設定
 BM.redraw()               再描画（変更後に呼ぶ）
 BM.save()                 Undo 履歴にコミット
-BM.log(msg, cls?)         ターミナル出力
+BM.log(msg, cls?)         ターミナル出力 ('t-ok' / 't-err' / 't-dim')
+args                      呼出し時の引数文字列
 ```
 
-**注意:** `BM.create('rect', ...)` はサポートされていません。`'square'` を使ってください。上記 5 種類のみ有効。
+**注意:** `BM.create('rect', ...)` はサポートされていません。`'square'` を使ってください。上記 6 種類のみ有効。
+
+**機械可読仕様（AI 用）:** [`spell-spec.md`](./spell-spec.md) · LLM index: [`llms.txt`](./llms.txt)
+
+**禁止語（BMBoard には存在しない、絶対使わない）:** `internalName`, `displayName`, `description`, `icon`, `category`, `cost`, `mp`, `cooldown`, `PROJECTILE`, `particle`, `onHit`, `magic create`, `/bmboard`, `/reload`, `plugins/`, `skills/`
 
 ---
 
