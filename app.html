@@ -1439,6 +1439,9 @@
         <button class="hbtn" id="redoBtn" onclick="redo()" title="Redo (Ctrl+Y)" disabled>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px"><path d="M8 3.5 Q8 1 4.5 1 Q1 1 1 5 Q1 9 4.5 9 L7.5 9"/><polyline points="6,7 7.5,9 6,11"/></svg>REDO
         </button>
+        <button class="hbtn" id="dupBtn" onclick="duplicateSelection()" title="Duplicate selection (Ctrl+D)" disabled>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px"><rect x="1" y="3" width="6" height="6"/><rect x="3" y="1" width="6" height="6" fill="none"/></svg>DUP
+        </button>
         <button class="hbtn hbtn-clear" onclick="clearCanvas()">CLEAR</button>
         <button class="hbtn hbtn-flush" onclick="flushTerm()">FLUSH</button>
         <button class="hbtn hbtn-usage" onclick="openUsage()">USAGE</button>
@@ -2940,6 +2943,8 @@ function redrawAll() {
         const mb = getMultiBounds();
         if (mb) drawMultiSelBox(mb);
     }
+    // Sync action button enabled state (DUP depends on selection)
+    updateUndoRedoBtns();
 }
 
 function renderObject(obj) {
@@ -6851,8 +6856,10 @@ function selectAllObjects() {
 function updateUndoRedoBtns() {
     const u = document.getElementById('undoBtn');
     const r = document.getElementById('redoBtn');
+    const d = document.getElementById('dupBtn');
     if (u) u.disabled = _histIdx <= 0;
     if (r) r.disabled = _histIdx >= _history.length - 1;
+    if (d) d.disabled = !S.selectedId && !(S.multiSelected && S.multiSelected.length);
 }
 
 // ── Shape popover ──────────────────────────────────────────────────────────
