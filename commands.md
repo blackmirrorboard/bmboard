@@ -53,6 +53,10 @@ Three palettes, one keystroke each.
 | `volume on` / `volume off` | Toggle audio (click + timer beep + chime). Persisted in localStorage. |
 | `mute` / `unmute` | Shorthand for `volume off` / `volume on`. |
 | `volume` / `volume status` | Show current audio state. |
+| `bgm` / `bgm on` / `bgm 1 on` | Start ambient BGM track 1 (lofi YouTube stream, hidden iframe). |
+| `bgm 2 on` / `bgm 3 on` | Switch to track 2 (synthwave) / track 3 (ambient piano). |
+| `bgm off` | Stop BGM. |
+| `bgm status` | Show current BGM track. |
 
 **Sticky behavior** — Miro-style post-it:
 - **Double-click** (PC) / **double-tap** (touch) the note to enter edit mode.

@@ -156,6 +156,8 @@ list                    →  list every registered command
 forget <name>           →  remove a user-registered command
 volume on / off         →  toggle audio (click + timer beep + chime)
 mute / unmute           →  shorthand for volume off / on
+bgm 1 on / bgm 2 on / bgm 3 on   →  start ambient BGM (hidden YouTube)
+bgm off                          →  stop BGM
 ```
 
 ### Drag-and-drop import / ドラッグ&ドロップで読み込み
