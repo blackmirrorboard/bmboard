@@ -486,6 +486,9 @@
         .tool-btn svg { pointer-events: none; }
         .tool-btn:hover  { border-color: #ccc; color: var(--wb-icon-hover); background: #f8f8f8; }
         .tool-btn.active { border-color: #999; color: var(--wb-icon-active); background: #efefef; }
+        /* Suppress click-induced focus ring; keep keyboard-only focus for a11y */
+        .tool-btn:focus { outline: none; }
+        .tool-btn:focus-visible { outline: 2px solid var(--bm-accent); outline-offset: 1px; }
 
         .tool-sep {
             width: 22px;
