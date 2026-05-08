@@ -3738,9 +3738,12 @@ function getMultiResizeAnchors(mb) {
 }
 
 // Compute new group bbox given anchor being dragged to (nx, ny)
+// Shift is reserved for additive multi-select (Shift+click), so multi-resize
+// ignores it — aspect-lock would clash with the user's Shift-still-held-from-
+// click state. Alt for center-anchored scale still applies.
 function computeNewGroupBounds(origGB, anchorId, nx, ny) {
     const mods = S.modifiers || { shift:false, alt:false };
-    const r = resizeBoxWithMods(anchorId, origGB, nx, ny, mods.shift, mods.alt);
+    const r = resizeBoxWithMods(anchorId, origGB, nx, ny, false, mods.alt);
     if (!r) return origGB;
     return { x:r.nBx, y:r.nBy, w:r.nBw, h:r.nBh };
 }
