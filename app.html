@@ -7281,6 +7281,7 @@ function copySelection() {
     S.clipboard = S.objects
         .filter(o => ids.includes(o.id))
         .map(o => JSON.parse(JSON.stringify(o)));
+    printRaw(`[copy] ${ids.length} object(s) — Cmd+V to paste`, 't-ok');
 }
 function cutSelection() {
     const ids = _selectedIds();
@@ -7291,6 +7292,7 @@ function cutSelection() {
     S.objects = S.objects.filter(o => !ids.includes(o.id));
     S.selectedId = null; S.multiSelected = [];
     saveHistory(); redrawAll();
+    printRaw(`[cut] ${ids.length} object(s) — Cmd+V to paste`, 't-ok');
 }
 function _cloneInto(templates, dx, dy) {
     const newIds = [];
@@ -7657,13 +7659,28 @@ document.addEventListener('keydown', e => {
         }
     }
 
-    if (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
-    // Undo / Redo
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
-    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
-    // Copy / Cut / Paste / Duplicate (canvas objects)
+    // Cmd/Ctrl shortcuts handled BEFORE the input-focus return so canvas
+    // operations (undo, select-all, copy, etc.) work even when terminal input
+    // is focused. Each shortcut returns early if no canvas action applies,
+    // letting the browser handle the input default (text undo / copy / etc.).
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        if (_histIdx <= 0) return;
+        e.preventDefault(); undo(); return;
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+        if (_histIdx >= _history.length - 1) return;
+        e.preventDefault(); redo(); return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && !e.shiftKey && !e.altKey) {
+        // Only override input's "select all text" if focus isn't on a non-empty input
+        const t = e.target;
+        const inputHasText = (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') && t.value && t.value.length > 0;
+        if (inputHasText) return;
+        if (!S.objects.length) return;
+        e.preventDefault(); selectAllObjects(); return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && !e.shiftKey && !e.altKey) {
-        if (!S.selectedId && !S.multiSelected.length) return; // let browser handle
+        if (!S.selectedId && !S.multiSelected.length) return; // let browser handle text copy
         e.preventDefault(); copySelection(); return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'x' && !e.shiftKey && !e.altKey) {
@@ -7678,11 +7695,8 @@ document.addEventListener('keydown', e => {
         if (!S.selectedId && !S.multiSelected.length) return;
         e.preventDefault(); duplicateSelection(); return;
     }
-    // Select all canvas objects
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && !e.shiftKey && !e.altKey) {
-        if (!S.objects.length) return; // nothing on the board
-        e.preventDefault(); selectAllObjects(); return;
-    }
+
+    if (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
     // Path tool: Enter commits (open), Backspace removes last anchor
     if (S.tool === 'path' && S.pathPts.length > 0) {
         if (e.key === 'Enter') { e.preventDefault(); commitPath(false); return; }
