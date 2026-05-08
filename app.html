@@ -7698,7 +7698,7 @@ function renderObjectToCtx(c2, obj) {
             const fs = d.fontSize || 16;
             c2.font         = `${fs}px 'Courier New', monospace`;
             c2.fillStyle    = getStrokeColor();
-            c2.textBaseline = 'top';
+            c2.textBaseline = 'alphabetic';  // matches main canvas + getObjBounds (y - ascent)
             c2.fillText(d.text, d.x, d.y); break;
         }
         case 'stroke': {
