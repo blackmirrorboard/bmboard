@@ -8034,12 +8034,15 @@ document.addEventListener('dragstart', e => {
     if (e.target.closest('input, textarea, [contenteditable]')) return;
     e.preventDefault();
 }, { capture: true });
-// Clear stale selections when finger touches canvas (loupe re-trigger guard)
+// Absorb iOS native touch gestures at the lowest layer + clear stale selections.
+// Pointer Events fire independently from touch event default action, so
+// preventDefault here doesn't break the drawing pipeline.
 (() => {
     const c = document.getElementById('c');
     if (!c) return;
     const clearSel = () => { const s = window.getSelection(); if (s && s.removeAllRanges) s.removeAllRanges(); };
-    c.addEventListener('touchstart',  clearSel, { passive: true });
+    c.addEventListener('touchstart', e => { clearSel(); e.preventDefault(); }, { passive: false });
+    c.addEventListener('touchmove',  e => { e.preventDefault(); },              { passive: false });
     c.addEventListener('pointerdown', clearSel);
 })();
 
