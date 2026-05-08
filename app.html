@@ -7171,6 +7171,20 @@ document.addEventListener('keydown', e => {
         }
     }
 
+    // Space → pan mode (handled BEFORE input-focus return so it works
+    // even when the terminal input is focused but empty)
+    if (e.code === 'Space' && !e.repeat) {
+        const t = e.target;
+        const typingNonEmpty = (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+                               && typeof t.value === 'string' && t.value.length > 0;
+        if (!typingNonEmpty) {
+            e.preventDefault();
+            S.spaceDown = true;
+            canvas.style.cursor = 'grab';
+            return;
+        }
+    }
+
     if (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
     // Undo / Redo
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
@@ -7196,11 +7210,6 @@ document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && !e.shiftKey && !e.altKey) {
         if (!S.objects.length) return; // nothing on the board
         e.preventDefault(); selectAllObjects(); return;
-    }
-    // Space → pan mode
-    if (e.code==='Space' && !e.repeat) {
-        e.preventDefault();
-        S.spaceDown=true; canvas.style.cursor='grab'; return;
     }
     // Path tool: Enter commits (open), Backspace removes last anchor
     if (S.tool === 'path' && S.pathPts.length > 0) {
