@@ -1842,6 +1842,8 @@ Set before drawing, or apply to selected object.</pre>
 <b>$sticky-3x3</b>             place a 3×3 yellow sticky-note grid
 <b>$sakura</b>                 桜の花びらをループで降らせる (toggle)
 <b>$rain</b>                   雨をループで降らせる (toggle)
+<b>$leaf</b>                   茶色の落ち葉をループで降らせる (toggle)
+<b>$snow</b>                   雪をループで降らせる (toggle)
 <b>$biwako-blue</b>            retint every stroke to <code>#0044CC</code>
 <b>$make-img &lt;kw&gt; &lt;n&gt;</b>      summon n images (Lorem Flickr, no key) · alias: $fetch-img
 <b>$monoclo</b>                grayscale the selected image(s)
@@ -5499,6 +5501,78 @@ window._rainId = setInterval(() => {
 }, 30);
 BM.log('rain: running infinite loop. $rain again to stop.');
 `, source: 'preset' },
+    'leaf': { action: `
+// Toggle: $leaf starts the loop, $leaf again stops it.
+if (window._leafId) {
+    clearInterval(window._leafId);
+    window._leafId = null;
+    BM.log('leaf: stopped (leaves stay — clear で全消去)');
+    return;
+}
+const N = 40, W = 800, H = 600;
+const vc = BM.viewCenter();
+const leaves = [];
+for (let i = 0; i < N; i++) {
+    const o = BM.create('text', {
+        x: vc.x - W/2 + Math.random()*W,
+        y: vc.y - H/2 - Math.random()*200,
+        text: '🍂',
+        fontSize: 18 + Math.random()*14,
+    });
+    leaves.push({ o: o, vy: 0.8 + Math.random()*1.4, dx: (Math.random()-0.5)*1.2, sw: Math.random()*Math.PI*2, swSpeed: 0.05 + Math.random()*0.05 });
+}
+const topY = vc.y - H/2 - 200;
+const botY = vc.y + H/2 + 100;
+window._leafId = setInterval(() => {
+    for (const l of leaves) {
+        l.sw += l.swSpeed;
+        l.o.data.y += l.vy;
+        l.o.data.x += l.dx + Math.sin(l.sw) * 0.8;
+        if (l.o.data.y > botY) {
+            l.o.data.y = topY;
+            l.o.data.x = vc.x - W/2 + Math.random()*W;
+        }
+    }
+    BM.redraw();
+}, 30);
+BM.log('leaf: running infinite loop. $leaf again to stop.');
+`, source: 'preset' },
+    'snow': { action: `
+// Toggle: $snow starts the loop, $snow again stops it.
+if (window._snowId) {
+    clearInterval(window._snowId);
+    window._snowId = null;
+    BM.log('snow: stopped (flakes stay — clear で全消去)');
+    return;
+}
+const N = 50, W = 800, H = 600;
+const vc = BM.viewCenter();
+const flakes = [];
+for (let i = 0; i < N; i++) {
+    const o = BM.create('text', {
+        x: vc.x - W/2 + Math.random()*W,
+        y: vc.y - H/2 - Math.random()*200,
+        text: '❄',
+        fontSize: 12 + Math.random()*16,
+    });
+    flakes.push({ o: o, vy: 0.5 + Math.random()*1.2, sw: Math.random()*Math.PI*2, swSpeed: 0.03 + Math.random()*0.04 });
+}
+const topY = vc.y - H/2 - 200;
+const botY = vc.y + H/2 + 100;
+window._snowId = setInterval(() => {
+    for (const f of flakes) {
+        f.sw += f.swSpeed;
+        f.o.data.y += f.vy;
+        f.o.data.x += Math.sin(f.sw) * 1.0;
+        if (f.o.data.y > botY) {
+            f.o.data.y = topY;
+            f.o.data.x = vc.x - W/2 + Math.random()*W;
+        }
+    }
+    BM.redraw();
+}, 30);
+BM.log('snow: running infinite loop. $snow again to stop.');
+`, source: 'preset' },
 };
 
 // Backward-compat alias: $fetch-img still works after the rename to $make-img
@@ -6261,6 +6335,8 @@ function runCommand(val) {
             '  sticky-3x3                       3×3 sticky-note grid',
             '  sakura                           桜をループで降らせる (toggle)',
             '  rain                             雨をループで降らせる (toggle)',
+            '  leaf                             落ち葉をループで降らせる (toggle)',
+            '  snow                             雪をループで降らせる (toggle)',
             '  biwako-blue                      retint strokes to #0044CC',
             '  monoclo                          grayscale selected image(s)',
             '  make-img <kw> [n]                summon n images (alias: fetch-img)',

@@ -180,6 +180,12 @@ Toggle: starts an infinite loop of 🌸 petals falling on the canvas. Run `$saku
 ### `$rain`
 Toggle: starts an infinite loop of `|` rain drops falling on the canvas. Faster and denser than `$sakura`. Run `$rain` again to stop. Drops remain after stop.
 
+### `$leaf`
+Toggle: starts an infinite loop of 🍂 brown leaves drifting down with sine-wave swing. Run `$leaf` again to stop.
+
+### `$snow`
+Toggle: starts an infinite loop of ❄ snowflakes falling slowly with gentle drift. Run `$snow` again to stop.
+
 ### `$biwako-blue`
 Retint every object's stroke (and fill where present) to `#0044CC` — "Biwako Silence" palette.
 
