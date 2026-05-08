@@ -2133,6 +2133,7 @@ function initCanvas() {
     const ptrs = new Map();   // pointerId → {x, y}
     let pinch = null;         // {mid:{x,y}, dist} snapshot, updated per move
     let lastTapMs = 0, lastTapXY = null, lastTapCount = 0;
+    let downXY = null;        // first-pointer screen coords for tap-to-revert detection
 
     function pinchSnapshot() {
         const vs = [...ptrs.values()];
@@ -2148,6 +2149,7 @@ function initCanvas() {
         ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
         canvas.setPointerCapture(e.pointerId);
         S.lastPointerType = e.pointerType;
+        if (ptrs.size === 1) downXY = { x: e.clientX, y: e.clientY };
 
         if (ptrs.size >= 2) {
             // Two pointers → cancel single-op, enter pinch/pan
@@ -2223,6 +2225,7 @@ function initCanvas() {
         }
     });
 
+    const REVERT_TOOLS = new Set(['pen','circle','triangle','square','arrow']);
     const endPtr = e => {
         ptrs.delete(e.pointerId);
         if (ptrs.size < 2) pinch = null;
@@ -2230,7 +2233,19 @@ function initCanvas() {
             S.panning = false;
             canvas.style.cursor = S.spaceDown ? 'grab' : toolCursor(S.tool); return;
         }
-        if (ptrs.size === 0) onUp();
+        if (ptrs.size === 0) {
+            onUp();
+            // Mobile: tap on empty area with a draw tool → auto-revert to select
+            if (e.pointerType === 'touch' && REVERT_TOOLS.has(S.tool) && downXY) {
+                const dx = e.clientX - downXY.x, dy = e.clientY - downXY.y;
+                if (Math.hypot(dx, dy) < 6) {
+                    const p = getPos(e.clientX, e.clientY);
+                    const hit = S.objects.find(o => hitTest(o, p.x, p.y, 14));
+                    if (!hit) setTool('select');
+                }
+            }
+            downXY = null;
+        }
     };
     canvas.addEventListener('pointerup',     endPtr, { passive:false });
     canvas.addEventListener('pointercancel', endPtr, { passive:false });
