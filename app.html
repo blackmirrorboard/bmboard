@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" translate="no">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -29,8 +29,23 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BMboard">
+    <meta name="format-detection" content="telephone=no">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ── Global: block iOS loupe / selection / drag preview at body level ── */
+        html, body {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Re-enable selection only inside actual text inputs */
+        input, textarea, [contenteditable] {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        ::selection { background: rgba(0, 0, 0, 0.15); color: inherit; }
 
         /* ── Global: block text selection on all UI chrome ── */
         header, aside, .tool-popover, .logo-btn, .hbtn, .hlink,
@@ -537,6 +552,21 @@
             background: var(--paper);
             overflow: hidden;
             min-width: 0;
+        }
+
+        /* iOS: kill loupe / selection handles / Apple Intelligence on canvas tree */
+        .canvas-panel,
+        .canvas-panel * {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .canvas-panel input,
+        .canvas-panel textarea,
+        .canvas-panel [contenteditable] {
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         .canvas-panel::before {
@@ -1504,8 +1534,14 @@
     </aside>
 
     <!-- Canvas — white drawing surface -->
-    <section class="canvas-panel" id="cp">
-        <canvas id="c"></canvas>
+    <section class="canvas-panel" id="cp"
+             translate="no"
+             draggable="false"
+             spellcheck="false"
+             autocorrect="off"
+             autocapitalize="off"
+             autocomplete="off">
+        <canvas id="c" draggable="false"></canvas>
         <div id="textOverlay">
             <input id="ti2" type="text" autocomplete="off" spellcheck="false" placeholder="type…">
         </div>
@@ -7883,6 +7919,26 @@ document.addEventListener('contextmenu', e => {
         e.preventDefault();
     }
 });
+
+// iOS: kill native selection / loupe / drag preview document-wide (tldraw pattern)
+// selectstart fires before any selection range opens — preventing it kills
+// the loupe AND the cross-element selection bleed (canvas → terminal).
+document.addEventListener('selectstart', e => {
+    if (e.target.closest('input, textarea, [contenteditable]')) return;
+    e.preventDefault();
+}, { capture: true });
+document.addEventListener('dragstart', e => {
+    if (e.target.closest('input, textarea, [contenteditable]')) return;
+    e.preventDefault();
+}, { capture: true });
+// Clear stale selections when finger touches canvas (loupe re-trigger guard)
+(() => {
+    const c = document.getElementById('c');
+    if (!c) return;
+    const clearSel = () => { const s = window.getSelection(); if (s && s.removeAllRanges) s.removeAllRanges(); };
+    c.addEventListener('touchstart',  clearSel, { passive: true });
+    c.addEventListener('pointerdown', clearSel);
+})();
 </script>
 </body>
 </html>
