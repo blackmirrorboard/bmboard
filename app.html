@@ -7200,17 +7200,18 @@ document.addEventListener('keydown', e => {
     if (k === '1') { setLineWidth(1.5); return; }
     if (k === '2') { setLineWidth(2.5); return; }
     if (k === '3') { setLineWidth(4);   return; }
+    // Visual feedback helper for one-shot keyboard shortcuts
+    const _flash = (btn, ms = 180) => {
+        if (!btn) return;
+        btn.classList.add('active');
+        setTimeout(() => btn.classList.remove('active'), ms);
+    };
     // Export shortcut
-    if (k === 'x') { exportPng(); return; }
+    if (k === 'x') { _flash(document.getElementById('exportPngBtn')); exportPng(); return; }
     // Image upload shortcut
-    if (k === 'i') { document.getElementById('uploadImgBtn').click(); return; }
-    // Fill cycle: none → black → grey → white → none
-    if (k === 'f') {
-        const cycle = ['none', 'black', 'grey', 'white'];
-        const cur = cycle.indexOf(S.fillMode);
-        setFill(cycle[(cur + 1) % cycle.length]);
-        return;
-    }
+    if (k === 'i') { const b = document.getElementById('uploadImgBtn'); _flash(b); b.click(); return; }
+    // Fill — open popover (matches click)
+    if (k === 'f') { document.getElementById('fillBtn').click(); return; }
     if (map[k]) setTool(map[k]);
     if (e.key==='Delete' || e.key==='Backspace') {
         if (S.multiSelected.length > 0) {
