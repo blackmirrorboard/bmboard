@@ -6163,9 +6163,82 @@ function runCommand(val) {
     }
 
     // Open the personal spellbook (commands.html) in a new tab
-    if (head==='commands'||head==='cmds'||head==='spellbook') {
+    if (head==='commands'||head==='spellbook') {
         enqueue(`$ ${head}`, ['→ opening spellbook...', '[SYSTEM] commands.html — new tab'], 't-dim');
         setTimeout(() => { try { window.open('./commands.html', '_blank', 'noopener'); } catch(_) { location.href = './commands.html'; } }, 220);
+        return;
+    }
+
+    // ── cmds — in-terminal listing of all built-in commands ──
+    if (head === 'cmds') {
+        enqueue('$ cmds', [
+            'TERMINAL COMMANDS — built-in',
+            '',
+            'THEMES',
+            '  light / dark / gray              switch canvas theme',
+            '',
+            'CANVAS',
+            '  clear                            wipe all canvas objects',
+            '  sticky [text]                    place a yellow post-it',
+            '  scatter                          scatter selected objects',
+            '  grid-3x3                         3×3 square grid',
+            '  sticky-3x3                       3×3 sticky-note grid',
+            '  biwako-blue                      retint strokes to #0044CC',
+            '  monoclo                          grayscale selected image(s)',
+            '  make-img <kw> [n]                summon n images (alias: fetch-img)',
+            '  svg                              export selection as SVG',
+            '',
+            'TERMINAL',
+            '  flush                            clear terminal output',
+            '',
+            'CAMERA / WIPE',
+            '  Black Mirror                     start webcam wipe',
+            '  Black Mirror off                 stop wipe',
+            '',
+            'BGM',
+            '  bgm / bgm on                     start track 1 (lofi)',
+            '  bgm 2 on / bgm 3 on              switch track',
+            '  bgm off                          stop bgm',
+            '  bgm status                       show current',
+            '',
+            'AUDIO',
+            '  volume on / off                  toggle click + beep + chime',
+            '  mute / unmute                    shorthand',
+            '  volume status                    show state',
+            '',
+            'TIMER',
+            '  timer [mm:ss | 5m | 90s | 1h]    start countdown',
+            '  timer off                        hide timer',
+            '',
+            'PROJECT (IndexedDB)',
+            '  save <name>                      commit canvas to local DB',
+            '  ls                               list saved snapshots',
+            '  load <name>                      restore a snapshot',
+            '',
+            'EXPORT',
+            '  export                           selection → transparent PNG',
+            '  export magic                     spell picker',
+            '  export data                      bundle dialog',
+            '  export-all                       project + spells → 1 JSON',
+            '',
+            'SPELLS / CUSTOM',
+            '  list                             registered spells inventory',
+            '  register <name> <js>             save a JS action as $name',
+            '  alias <new>=<old>                duplicate a spell',
+            '  forget <name>                    remove a user spell',
+            '  share <name>                     spell JSON → clipboard',
+            '  share                            canvas → shareable URL',
+            '',
+            'IMPORT',
+            '  paste {command, action} JSON     auto-register',
+            '  drop .json / image on board      auto-import',
+            '',
+            'DOCS',
+            '  help / ?                         compact cheat sheet',
+            '  usage / man / docs               USAGE overlay',
+            '  commands / spellbook             open commands.html',
+            '  cmds                             this list',
+        ]);
         return;
     }
 
@@ -6213,7 +6286,24 @@ function runCommand(val) {
     if (head==='load') { const name=rest.trim(); if(!name){printRaw('load: usage → load <name>','t-err');return;} bmProjectsGet(name).then(p=>{if(!p){printRaw(`load: '${name}' not found`,'t-err');return;} S.objects=p.objects||[];S.selectedId=null;S.multiSelected=[];S.objects.forEach(o=>o.selected=false);if(p.view){VIEW.scale=p.view.scale||1;VIEW.tx=p.view.tx||0;VIEW.ty=p.view.ty||0;updateZoomLabel();}redrawAll();saveHistory();enqueue(`load ${name}`,['→ restored '+(p.objectCount??p.objects.length)+' object(s)',`[SUCCESS] Snapshot '${name}' restored.`])}).catch(err=>{printRaw('load: '+err.message,'t-err')}); return; }
 
     // ── list ──────────────────────────────────────────────────────────────
-    if (head==='list') { const names=Object.keys(BM_CMDS).sort(); if(!names.length){enqueue('list',['no commands registered.']);return;} const rows=names.map(n=>{const c=BM_CMDS[n];return`  ${(c.source==='preset'?'[preset]':'[ user ]')}  $${n}`}); enqueue('list',['registered commands:',...rows]); return; }
+    if (head==='list') {
+        const names = Object.keys(BM_CMDS).sort();
+        if (!names.length) { enqueue('list', ['no commands registered.']); return; }
+        const presets = names.filter(n => BM_CMDS[n].source === 'preset');
+        const users   = names.filter(n => BM_CMDS[n].source !== 'preset');
+        const lines = ['registered spells — ' + names.length + ' total'];
+        if (presets.length) {
+            lines.push('', 'PRESETS (' + presets.length + ')');
+            for (const n of presets) lines.push('  $' + n);
+        }
+        if (users.length) {
+            lines.push('', 'USER (' + users.length + ')');
+            for (const n of users) lines.push('  $' + n);
+        }
+        lines.push('', 'tip: $cmds — built-in terminal commands list');
+        enqueue('list', lines);
+        return;
+    }
 
     // ── export-all ────────────────────────────────────────────────────────
     if (head==='export-all'||head==='exportall') {
