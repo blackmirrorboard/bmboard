@@ -5440,21 +5440,24 @@ if (window._sakuraId) {
     BM.log('sakura: stopped (petals stay — clear で全消去)');
     return;
 }
-const N = 30, W = 800, H = 600;
+const N = 60, W = 2400, H = 1800;
 const vc = BM.viewCenter();
 const pets = [];
 for (let i = 0; i < N; i++) {
     const o = BM.create('text', {
         x: vc.x - W/2 + Math.random()*W,
-        y: vc.y - H/2 - Math.random()*200,
+        y: vc.y - H/2 - Math.random()*600,
         text: '🌸',
         fontSize: 16 + Math.random()*14,
     });
     pets.push({ o: o, vy: 1 + Math.random()*2, dx: (Math.random()-0.5)*0.6 });
 }
-const topY = vc.y - H/2 - 200;
-const botY = vc.y + H/2 + 100;
+const topY = vc.y - H/2 - 600;
+const botY = vc.y + H/2 + 200;
+let frame = 0;
+const MAX = 10000; // ~5 min @ 30ms
 window._sakuraId = setInterval(() => {
+    if (frame++ > MAX) { clearInterval(window._sakuraId); window._sakuraId = null; BM.log('sakura: auto-stopped after ~5 min.'); return; }
     for (const p of pets) {
         p.o.data.y += p.vy;
         p.o.data.x += p.dx;
@@ -5465,7 +5468,7 @@ window._sakuraId = setInterval(() => {
     }
     BM.redraw();
 }, 30);
-BM.log('sakura: running infinite loop. $sakura again to stop.');
+BM.log('sakura: running for ~5 min. $sakura again to stop.');
 `, source: 'preset' },
     'rain': { action: `
 // Toggle: $rain starts the loop, $rain again stops it.
@@ -5475,21 +5478,24 @@ if (window._rainId) {
     BM.log('rain: stopped (drops stay — clear で全消去)');
     return;
 }
-const N = 80, W = 800, H = 600;
+const N = 160, W = 2400, H = 1800;
 const vc = BM.viewCenter();
 const drops = [];
 for (let i = 0; i < N; i++) {
     const o = BM.create('text', {
         x: vc.x - W/2 + Math.random()*W,
-        y: vc.y - H/2 - Math.random()*300,
+        y: vc.y - H/2 - Math.random()*700,
         text: '|',
         fontSize: 10 + Math.random()*8,
     });
     drops.push({ o: o, vy: 4 + Math.random()*4 });
 }
-const topY = vc.y - H/2 - 300;
-const botY = vc.y + H/2 + 100;
+const topY = vc.y - H/2 - 700;
+const botY = vc.y + H/2 + 200;
+let frame = 0;
+const MAX = 10000;
 window._rainId = setInterval(() => {
+    if (frame++ > MAX) { clearInterval(window._rainId); window._rainId = null; BM.log('rain: auto-stopped after ~5 min.'); return; }
     for (const d of drops) {
         d.o.data.y += d.vy;
         if (d.o.data.y > botY) {
@@ -5499,7 +5505,7 @@ window._rainId = setInterval(() => {
     }
     BM.redraw();
 }, 30);
-BM.log('rain: running infinite loop. $rain again to stop.');
+BM.log('rain: running for ~5 min. $rain again to stop.');
 `, source: 'preset' },
     'leaf': { action: `
 // Toggle: $leaf starts the loop, $leaf again stops it.
@@ -5509,21 +5515,24 @@ if (window._leafId) {
     BM.log('leaf: stopped (leaves stay — clear で全消去)');
     return;
 }
-const N = 40, W = 800, H = 600;
+const N = 80, W = 2400, H = 1800;
 const vc = BM.viewCenter();
 const leaves = [];
 for (let i = 0; i < N; i++) {
     const o = BM.create('text', {
         x: vc.x - W/2 + Math.random()*W,
-        y: vc.y - H/2 - Math.random()*200,
+        y: vc.y - H/2 - Math.random()*600,
         text: '🍂',
         fontSize: 18 + Math.random()*14,
     });
     leaves.push({ o: o, vy: 0.8 + Math.random()*1.4, dx: (Math.random()-0.5)*1.2, sw: Math.random()*Math.PI*2, swSpeed: 0.05 + Math.random()*0.05 });
 }
-const topY = vc.y - H/2 - 200;
-const botY = vc.y + H/2 + 100;
+const topY = vc.y - H/2 - 600;
+const botY = vc.y + H/2 + 200;
+let frame = 0;
+const MAX = 10000;
 window._leafId = setInterval(() => {
+    if (frame++ > MAX) { clearInterval(window._leafId); window._leafId = null; BM.log('leaf: auto-stopped after ~5 min.'); return; }
     for (const l of leaves) {
         l.sw += l.swSpeed;
         l.o.data.y += l.vy;
@@ -5535,7 +5544,7 @@ window._leafId = setInterval(() => {
     }
     BM.redraw();
 }, 30);
-BM.log('leaf: running infinite loop. $leaf again to stop.');
+BM.log('leaf: running for ~5 min. $leaf again to stop.');
 `, source: 'preset' },
     'snow': { action: `
 // Toggle: $snow starts the loop, $snow again stops it.
@@ -5545,21 +5554,24 @@ if (window._snowId) {
     BM.log('snow: stopped (flakes stay — clear で全消去)');
     return;
 }
-const N = 50, W = 800, H = 600;
+const N = 100, W = 2400, H = 1800;
 const vc = BM.viewCenter();
 const flakes = [];
 for (let i = 0; i < N; i++) {
     const o = BM.create('text', {
         x: vc.x - W/2 + Math.random()*W,
-        y: vc.y - H/2 - Math.random()*200,
+        y: vc.y - H/2 - Math.random()*600,
         text: '❄',
         fontSize: 12 + Math.random()*16,
     });
     flakes.push({ o: o, vy: 0.5 + Math.random()*1.2, sw: Math.random()*Math.PI*2, swSpeed: 0.03 + Math.random()*0.04 });
 }
-const topY = vc.y - H/2 - 200;
-const botY = vc.y + H/2 + 100;
+const topY = vc.y - H/2 - 600;
+const botY = vc.y + H/2 + 200;
+let frame = 0;
+const MAX = 10000;
 window._snowId = setInterval(() => {
+    if (frame++ > MAX) { clearInterval(window._snowId); window._snowId = null; BM.log('snow: auto-stopped after ~5 min.'); return; }
     for (const f of flakes) {
         f.sw += f.swSpeed;
         f.o.data.y += f.vy;
@@ -5571,7 +5583,7 @@ window._snowId = setInterval(() => {
     }
     BM.redraw();
 }, 30);
-BM.log('snow: running infinite loop. $snow again to stop.');
+BM.log('snow: running for ~5 min. $snow again to stop.');
 `, source: 'preset' },
 };
 
