@@ -50,6 +50,9 @@ Three palettes, one keystroke each.
 | `flush` | Same as `clear` — alias. |
 | `sticky` | Drop a 200×200 yellow post-it at the view center. Empty — double-click to type. |
 | `sticky <text>` | Same, but pre-filled with `<text>`. |
+| `volume on` / `volume off` | Toggle audio (click + timer beep + chime). Persisted in localStorage. |
+| `mute` / `unmute` | Shorthand for `volume off` / `volume on`. |
+| `volume` / `volume status` | Show current audio state. |
 
 **Sticky behavior** — Miro-style post-it:
 - **Double-click** (PC) / **double-tap** (touch) the note to enter edit mode.

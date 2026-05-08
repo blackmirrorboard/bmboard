@@ -100,10 +100,6 @@ Ctrl/Cmd + C     Copy selected
 Ctrl/Cmd + X     Cut selected (delete + place on clipboard)
 Ctrl/Cmd + V     Paste, offset 20px so duplicates don't stack
 Ctrl/Cmd + D     Duplicate selected in place
-
-Touch:
-  Long-press (≈500ms) on a selected object  →  duplicate
-  (mobile equivalent of Ctrl/Cmd + D)
 ```
 
 ### Sticky Notes / 付箋
@@ -158,6 +154,24 @@ clear / flush           →  wipe terminal output
 light / dark / gray     →  switch canvas theme
 list                    →  list every registered command
 forget <name>           →  remove a user-registered command
+volume on / off         →  toggle audio (click + timer beep + chime)
+mute / unmute           →  shorthand for volume off / on
+```
+
+### Drag-and-drop import / ドラッグ&ドロップで読み込み
+
+🇯🇵 ボードに **画像ファイル** または **JSON ファイル** をドラッグ&ドロップすると自動で取り込まれる。
+画像はキャンバス上に配置、JSON は内容に応じて bundle (canvas + spells) / spells / 単一 spell として import される。
+
+🇬🇧 Drag-and-drop an **image** or a **JSON file** onto the board to import it.
+Images are placed on the canvas; JSON is auto-detected as a bundle (canvas + spells), spells package, or a single spell, and routed accordingly.
+
+```
+*.png / *.jpg / *.svg / *.webp   →  placed on the canvas at the drop point
+*.json (blackmirror.bundle)      →  dialog: OVERWRITE / ADD / CANCEL
+*.json (blackmirror.spells)      →  spells imported in batch
+*.json [{command, action}, ...]  →  same as spells package
+*.json {command, action}         →  single spell registered
 ```
 
 ---
