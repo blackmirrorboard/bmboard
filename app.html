@@ -7204,6 +7204,13 @@ document.addEventListener('keydown', e => {
     if (k === 'x') { exportPng(); return; }
     // Image upload shortcut
     if (k === 'i') { document.getElementById('uploadImgBtn').click(); return; }
+    // Fill cycle: none → black → grey → white → none
+    if (k === 'f') {
+        const cycle = ['none', 'black', 'grey', 'white'];
+        const cur = cycle.indexOf(S.fillMode);
+        setFill(cycle[(cur + 1) % cycle.length]);
+        return;
+    }
     if (map[k]) setTool(map[k]);
     if (e.key==='Delete' || e.key==='Backspace') {
         if (S.multiSelected.length > 0) {
