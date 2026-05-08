@@ -2504,20 +2504,24 @@ function onDown(cx, cy, isTouch = false) {
                     S.isDown = true;
                     return;
                 }
-                // 3. Hit any selected obj → group drag
-                const hitSel = [...S.objects].filter(o => S.multiSelected.includes(o.id))
-                                             .reverse()
-                                             .find(o => hitTest(o, p.x, p.y, touchPad));
-                if (hitSel) {
-                    S.multiDragOff = { x: p.x, y: p.y };
-                    S.isDown = true;
-                    return;
+                // 3. Hit any selected obj → group drag (skip when Shift held → fall through to toggle)
+                if (!S.modifiers.shift) {
+                    const hitSel = [...S.objects].filter(o => S.multiSelected.includes(o.id))
+                                                 .reverse()
+                                                 .find(o => hitTest(o, p.x, p.y, touchPad));
+                    if (hitSel) {
+                        S.multiDragOff = { x: p.x, y: p.y };
+                        S.isDown = true;
+                        return;
+                    }
                 }
             }
-            // Clicked outside group → clear multi-select, fall through to fresh hit-test
-            S.multiSelected = [];
-            S.objects.forEach(o => o.selected = false);
-            S.selectedId = null;
+            // Clicked outside group — clear multi-select unless Shift held
+            if (!S.modifiers.shift) {
+                S.multiSelected = [];
+                S.objects.forEach(o => o.selected = false);
+                S.selectedId = null;
+            }
         }
 
         S.isDown = true; S.startPt = { ...p }; S.curPt = { ...p };
@@ -2568,6 +2572,28 @@ function onDown(cx, cy, isTouch = false) {
                 return;
             }
             S.lastTapInfo = (hit.type === 'text' || hit.type === 'sticky') ? { id: hit.id, time: now } : null;
+
+            // Shift+click → toggle membership in multi-select (PC additive selection)
+            if (S.modifiers.shift) {
+                const inMulti  = S.multiSelected.includes(hit.id);
+                const isPrim   = S.selectedId === hit.id;
+                if (inMulti || isPrim) {
+                    hit.selected = false;
+                    S.multiSelected = S.multiSelected.filter(id => id !== hit.id);
+                    if (isPrim) S.selectedId = null;
+                } else {
+                    if (S.selectedId && !S.multiSelected.length) S.multiSelected.push(S.selectedId);
+                    hit.selected = true;
+                    S.multiSelected.push(hit.id);
+                    S.selectedId = null;
+                }
+                if (S.multiSelected.length === 1) {
+                    S.selectedId = S.multiSelected[0];
+                    S.multiSelected = [];
+                }
+                redrawAll();
+                return;
+            }
 
             if (prevSel && hit.id === prevSel.id) {
                 // Same object body → move
