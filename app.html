@@ -1892,6 +1892,7 @@ Full guide → <b>usage.html §5</b></pre>
 
 const S = {
     tool:            'select',
+    drawMode:        (typeof localStorage !== 'undefined' && localStorage.getItem('bm_drawMode') === 'tldraw') ? 'tldraw' : 'classic',
     lineWidth:       1.5,
     fillMode:        'none',    // 'none' | 'black' | 'grey' | 'white'
     strokeOff:       false,     // true = no outline on shapes
@@ -2858,7 +2859,7 @@ function onUp() {
             const eps = 1.4 / VIEW.scale;
             let pts = rdpSimplify(raw, eps);
             if (closed && pts.length > 1) pts[pts.length - 1] = { ...pts[0] };
-            const obj = { id, type: 'stroke', data: { pts, lw: S.lineWidth, rotation: 0, fill: null, closed }, selected: false };
+            const obj = { id, type: 'stroke', data: { pts, lw: S.lineWidth, rotation: 0, fill: null, closed, mode: S.drawMode }, selected: false };
             S.objects.push(obj);
             if (!closed) {
                 clearTimeout(detectTimer);
@@ -3035,7 +3036,66 @@ function renderText(obj) {
     ctx.restore();
 }
 
+// ── tldraw mode: smooth tapered stroke (perfect-freehand inspired) ──
+// Builds a polygon outline by offsetting each point perpendicular to the
+// local tangent by a per-vertex half-width, then mirrors it to close.
+// Width is tapered at start/end via sqrt easing for a brush-pen look.
+function _buildTldrawOutline(pts, baseW) {
+    if (!pts || pts.length < 2) return [];
+    // Drop coincident neighbours so tangents are well-defined
+    const P = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+        const last = P[P.length - 1];
+        if (Math.hypot(pts[i].x - last.x, pts[i].y - last.y) > 0.4) P.push(pts[i]);
+    }
+    const m = P.length;
+    if (m < 2) return [];
+    const half = Math.max(0.6, baseW * 0.85);
+    const taper = Math.max(2, Math.min(10, Math.floor(m / 5)));
+    const left = [], right = [];
+    for (let i = 0; i < m; i++) {
+        let tx, ty;
+        if (i === 0) { tx = P[1].x - P[0].x; ty = P[1].y - P[0].y; }
+        else if (i === m - 1) { tx = P[i].x - P[i-1].x; ty = P[i].y - P[i-1].y; }
+        else { tx = P[i+1].x - P[i-1].x; ty = P[i+1].y - P[i-1].y; }
+        const len = Math.hypot(tx, ty);
+        if (len < 1e-6) continue;
+        const nx = -ty / len, ny = tx / len;
+        let w = half;
+        if (i < taper)        w *= Math.sqrt((i + 1) / taper);
+        if (i > m - 1 - taper) w *= Math.sqrt((m - i) / taper);
+        left.push({ x: P[i].x + nx * w, y: P[i].y + ny * w });
+        right.push({ x: P[i].x - nx * w, y: P[i].y - ny * w });
+    }
+    return left.concat(right.reverse());
+}
+
+function renderStrokeTldraw(obj) {
+    const { pts, lw } = obj.data;
+    if (!pts || pts.length < 2) return;
+    const outline = _buildTldrawOutline(pts, lw || 1.5);
+    if (outline.length < 3) return;
+    ctx.save();
+    ctx.fillStyle = obj.data.stroke || getStrokeColor();
+    ctx.beginPath();
+    ctx.moveTo(outline[0].x, outline[0].y);
+    for (let i = 1; i < outline.length; i++) {
+        const pp = outline[i-1], p = outline[i];
+        const mx = (pp.x + p.x) / 2, my = (pp.y + p.y) / 2;
+        ctx.quadraticCurveTo(pp.x, pp.y, mx, my);
+    }
+    ctx.closePath();
+    ctx.fill();
+    if (obj.selected) {
+        const bb = strokeBBox(pts);
+        selBox(bb.x, bb.y, bb.w, bb.h);
+        drawAnchors(obj);
+    }
+    ctx.restore();
+}
+
 function renderStroke(obj) {
+    if ((obj.data.mode || 'classic') === 'tldraw') return renderStrokeTldraw(obj);
     const { pts, lw, closed, fill, strokeOff } = obj.data;
     if (pts.length < 2) return;
     ctx.save();
@@ -3202,6 +3262,33 @@ function renderPenInProgress() {
     if (S.tool !== 'pen' || S.penPts.length < 2) return;
     const pts = S.penPts;
     ctx.save();
+    if (S.drawMode === 'tldraw') {
+        const outline = _buildTldrawOutline(pts, S.lineWidth);
+        if (outline.length >= 3) {
+            ctx.fillStyle = getStrokeColor();
+            ctx.beginPath();
+            ctx.moveTo(outline[0].x, outline[0].y);
+            for (let i = 1; i < outline.length; i++) {
+                const pp = outline[i-1], p = outline[i];
+                const mx = (pp.x+p.x)/2, my = (pp.y+p.y)/2;
+                ctx.quadraticCurveTo(pp.x, pp.y, mx, my);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+        if (S.penSnapClose) {
+            const last = pts[pts.length - 1];
+            ctx.strokeStyle = 'rgba(30,111,224,0.5)';
+            ctx.lineWidth   = S.lineWidth;
+            ctx.setLineDash([4 / VIEW.scale, 3 / VIEW.scale]);
+            ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(pts[0].x, pts[0].y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        ctx.restore();
+        renderPenSnapIndicator();
+        return;
+    }
     ctx.strokeStyle = getStrokeColor(); ctx.lineWidth = S.lineWidth;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
@@ -3376,7 +3463,7 @@ function commitPath(closed) {
         const id = genId();
         const obj = {
             id, type: 'stroke',
-            data: { pts: flat, lw: S.lineWidth, rotation: 0, fill: null, closed: !!closed },
+            data: { pts: flat, lw: S.lineWidth, rotation: 0, fill: null, closed: !!closed, mode: S.drawMode },
             selected: false,
         };
         S.objects.push(obj);
@@ -5872,6 +5959,22 @@ function runCommand(val) {
     if (head==='light'||low==='light mode') { if(MODE==='light'){printRaw('[SYSTEM] already in light mode.','t-dim');return;} enqueue('[SYSTEM] Switching to LIGHT MODE...',['[SYSTEM] restoring color matrix...','[SYSTEM] canvas: #FAFAF8  stroke: #0c0c0c','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('light'),220); return; }
     if (head==='gray'||head==='grey'||low==='gray mode'||low==='grey mode') { if(MODE==='gray'){printRaw('[SYSTEM] already in gray mode.','t-dim');return;} enqueue('[SYSTEM] Initializing Studio Environment...',['[SYSTEM] canvas: #DCDBD5  accent: #1600A2','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('gray'),220); return; }
     if (head==='usage'||head==='man'||head==='docs') { enqueue(`$ ${head}`,['→ loading manual...','[SYSTEM] USAGE summoned — Esc to dismiss.'],'t-dim'); setTimeout(openUsage,260); return; }
+
+    // ── stroke render mode ─ classic (master) / tldraw (smooth tapered) ──
+    if (head==='tldraw'||head==='smooth') {
+        if (S.drawMode==='tldraw') { printRaw('[SYSTEM] already in tldraw mode.','t-dim'); return; }
+        S.drawMode='tldraw'; try{localStorage.setItem('bm_drawMode','tldraw');}catch{}
+        redrawAll();
+        enqueue(`$ ${head}`,['→ stroke render: tldraw','→ next strokes use smooth tapered fill','→ classic で master に戻る']);
+        return;
+    }
+    if (head==='classic'||head==='pencil'||head==='master') {
+        if (S.drawMode==='classic') { printRaw('[SYSTEM] already in classic mode.','t-dim'); return; }
+        S.drawMode='classic'; try{localStorage.setItem('bm_drawMode','classic');}catch{}
+        redrawAll();
+        enqueue(`$ ${head}`,['→ stroke render: classic (master)','→ next strokes use the original pencil renderer']);
+        return;
+    }
 
     // ── timer ─ board overlay with start/stop + last-10s countdown + time-up chime
     //   timer            → default 5:00
