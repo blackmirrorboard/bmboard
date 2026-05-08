@@ -1839,6 +1839,7 @@ Set before drawing, or apply to selected object.</pre>
         <pre><b>$scatter</b>                scatter selected objects
 <b>$grid-3x3</b>               place a 3×3 square grid
 <b>$sticky-3x3</b>             place a 3×3 yellow sticky-note grid
+<b>$sakura</b>                 桜の花びらをループで降らせる (toggle)
 <b>$biwako-blue</b>            retint every stroke to <code>#0044CC</code>
 <b>$make-img &lt;kw&gt; &lt;n&gt;</b>      summon n images (Lorem Flickr, no key) · alias: $fetch-img
 <b>$monoclo</b>                grayscale the selected image(s)
@@ -5424,6 +5425,41 @@ for (let r = 0; r < 3; r++) {
 BM.log('sticky 3x3 placed.');
 BM.redraw();
 `, source: 'preset' },
+    'sakura': { action: `
+// Toggle: $sakura starts the loop, $sakura again stops it.
+if (window._sakuraId) {
+    clearInterval(window._sakuraId);
+    window._sakuraId = null;
+    BM.log('sakura: stopped (petals stay — clear で全消去)');
+    return;
+}
+const N = 30, W = 800, H = 600;
+const vc = BM.viewCenter();
+const pets = [];
+for (let i = 0; i < N; i++) {
+    const o = BM.create('text', {
+        x: vc.x - W/2 + Math.random()*W,
+        y: vc.y - H/2 - Math.random()*200,
+        text: '🌸',
+        fontSize: 16 + Math.random()*14,
+    });
+    pets.push({ o: o, vy: 1 + Math.random()*2, dx: (Math.random()-0.5)*0.6 });
+}
+const topY = vc.y - H/2 - 200;
+const botY = vc.y + H/2 + 100;
+window._sakuraId = setInterval(() => {
+    for (const p of pets) {
+        p.o.data.y += p.vy;
+        p.o.data.x += p.dx;
+        if (p.o.data.y > botY) {
+            p.o.data.y = topY;
+            p.o.data.x = vc.x - W/2 + Math.random()*W;
+        }
+    }
+    BM.redraw();
+}, 30);
+BM.log('sakura: running infinite loop. $sakura again to stop.');
+`, source: 'preset' },
 };
 
 // Backward-compat alias: $fetch-img still works after the rename to $make-img
@@ -6184,6 +6220,7 @@ function runCommand(val) {
             '  scatter                          scatter selected objects',
             '  grid-3x3                         3×3 square grid',
             '  sticky-3x3                       3×3 sticky-note grid',
+            '  sakura                           桜をループで降らせる (toggle)',
             '  biwako-blue                      retint strokes to #0044CC',
             '  monoclo                          grayscale selected image(s)',
             '  make-img <kw> [n]                summon n images (alias: fetch-img)',
@@ -6269,7 +6306,7 @@ function runCommand(val) {
             '  ╰─────────────────────────────────────────────────────────╯',
             '',
             '  ╭── COMMAND ECOSYSTEM ────────────────────────────────────╮',
-            '  │  $scatter / $grid-3x3 / $sticky-3x3 / $biwako-blue / $svg│',
+            '  │  $scatter / $grid-3x3 / $sticky-3x3 / $sakura / $svg    │',
             '  │  $make-img <kw> <n>    summon images by keyword         │',
             '  │  $monoclo              grayscale the selected image(s) │',
             '  │  register <n> <js>     save a new spell                 │',

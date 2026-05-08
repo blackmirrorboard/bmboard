@@ -174,6 +174,9 @@ Place nine 80×80 squares in a 3×3 grid at the current view center.
 ### `$sticky-3x3`
 Place nine 140×140 yellow sticky notes in a 3×3 grid at the current view center. Double-click a note to edit.
 
+### `$sakura`
+Toggle: starts an infinite loop of 🌸 petals falling on the canvas. Run `$sakura` again to stop. Petals remain after stop — use `clear` or Cmd+A → Del to wipe.
+
 ### `$biwako-blue`
 Retint every object's stroke (and fill where present) to `#0044CC` — "Biwako Silence" palette.
 
