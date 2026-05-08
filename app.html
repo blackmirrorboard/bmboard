@@ -7939,6 +7939,18 @@ document.addEventListener('dragstart', e => {
     c.addEventListener('touchstart',  clearSel, { passive: true });
     c.addEventListener('pointerdown', clearSel);
 })();
+
+// Last line of defense: any time a selection materialises outside an input,
+// nuke it on the next tick. Loupe needs an active range to display, so
+// destroying the range immediately starves the loupe of state.
+document.addEventListener('selectionchange', () => {
+    const s = window.getSelection();
+    if (!s || s.isCollapsed) return;
+    const a = s.anchorNode;
+    const host = a && (a.nodeType === 1 ? a : a.parentElement);
+    if (host && host.closest('input, textarea, [contenteditable]')) return;
+    s.removeAllRanges();
+});
 </script>
 </body>
 </html>
