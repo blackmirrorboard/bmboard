@@ -3803,6 +3803,10 @@ function scaleObjToGroupBounds(obj, origData, origGB, newGB) {
         case 'stroke':
             obj.data.pts = od.pts.map(p => ({ x: sX(p.x), y: sY(p.y) }));
             break;
+        case 'image':
+            obj.data.x = sX(od.x); obj.data.y = sY(od.y);
+            obj.data.w = Math.max(8, od.w * sx); obj.data.h = Math.max(8, od.h * sy);
+            break;
     }
 }
 
@@ -4094,7 +4098,7 @@ const RESIZE_CURSORS = {
 // Compute a constrained resize box given the raw pointer position + modifier keys.
 // shift = lock aspect ratio. alt = anchor to the original center (symmetric scale).
 // Returns null for unknown anchors so callers can fall through.
-function resizeBoxWithMods(anchorId, ob, nx, ny, shift, alt) {
+function resizeBoxWithMods(anchorId, ob, nx, ny, shift, alt, snapEnabled = true) {
     const { x: ox, y: oy, w: ow, h: oh } = ob;
     const MIN = 4, fx = ox + ow, fy = oy + oh;
     const cx = ox + ow / 2, cy = oy + oh / 2;
@@ -4121,7 +4125,7 @@ function resizeBoxWithMods(anchorId, ob, nx, ny, shift, alt) {
             // Dominant axis wins — use the bigger scale magnitude
             const sx = nBw / ow, sy = nBh / oh;
             const s  = Math.abs(sx - 1) >= Math.abs(sy - 1) ? sx : sy;
-            const snapped = snapScale(s);
+            const snapped = snapEnabled ? snapScale(s) : s;
             nBw = Math.max(MIN, ow * snapped);
             nBh = Math.max(MIN, oh * snapped);
             switch (anchorId) {
@@ -4241,7 +4245,11 @@ function applyAnchor(obj, anchorId, nx, ny) {
             // Images: aspect lock by DEFAULT on corner handles — Shift escapes it.
             const lockAspect = obj.type === 'image' ? (isCorner ? !mods3.shift : mods3.shift)
                                                     : mods3.shift;
-            const r3 = resizeBoxWithMods(anchorId, ob, nx, ny, lockAspect, mods3.alt);
+            // Snap only when the user *actually* held Shift (image's default
+            // aspect-lock should resize smoothly — snap was making small drags
+            // look like nothing happened).
+            const snapEnabled = !!mods3.shift;
+            const r3 = resizeBoxWithMods(anchorId, ob, nx, ny, lockAspect, mods3.alt, snapEnabled);
             if (!r3) return;
             obj.data.x = r3.nBx; obj.data.y = r3.nBy; obj.data.w = r3.nBw; obj.data.h = r3.nBh;
             break;
@@ -5438,11 +5446,20 @@ BM.log('sticky 3x3 placed.');
 BM.redraw();
 `, source: 'preset' },
     'sakura': { action: `
-// Toggle: $sakura starts the loop, $sakura again stops it.
+// Toggle: $sakura starts the loop, $sakura again stops it (petals removed).
 if (window._sakuraId) {
     clearInterval(window._sakuraId);
     window._sakuraId = null;
-    BM.log('sakura: stopped (petals stay — clear で全消去)');
+    if (window._sakuraPets) {
+        const all = BM.all();
+        for (const p of window._sakuraPets) {
+            const i = all.indexOf(p.o);
+            if (i >= 0) all.splice(i, 1);
+        }
+        window._sakuraPets = null;
+        BM.redraw();
+    }
+    BM.log('sakura: stopped & cleared.');
     return;
 }
 const N = 60, W = 2400, H = 1800;
@@ -5457,12 +5474,22 @@ for (let i = 0; i < N; i++) {
     });
     pets.push({ o: o, vy: 1 + Math.random()*2, dx: (Math.random()-0.5)*0.6 });
 }
+window._sakuraPets = pets;
 const topY = vc.y - H/2 - 600;
 const botY = vc.y + H/2 + 200;
 let frame = 0;
 const MAX = 10000; // ~5 min @ 30ms
 window._sakuraId = setInterval(() => {
-    if (frame++ > MAX) { clearInterval(window._sakuraId); window._sakuraId = null; BM.log('sakura: auto-stopped after ~5 min.'); return; }
+    if (frame++ > MAX) {
+        clearInterval(window._sakuraId); window._sakuraId = null;
+        if (window._sakuraPets) {
+            const all = BM.all();
+            for (const p of window._sakuraPets) { const i = all.indexOf(p.o); if (i >= 0) all.splice(i, 1); }
+            window._sakuraPets = null; BM.redraw();
+        }
+        BM.log('sakura: auto-stopped & cleared after ~5 min.');
+        return;
+    }
     for (const p of pets) {
         p.o.data.y += p.vy;
         p.o.data.x += p.dx;
@@ -5476,11 +5503,16 @@ window._sakuraId = setInterval(() => {
 BM.log('sakura: running for ~5 min. $sakura again to stop.');
 `, source: 'preset' },
     'rain': { action: `
-// Toggle: $rain starts the loop, $rain again stops it.
+// Toggle: $rain starts the loop, $rain again stops it (drops removed).
 if (window._rainId) {
     clearInterval(window._rainId);
     window._rainId = null;
-    BM.log('rain: stopped (drops stay — clear で全消去)');
+    if (window._rainDrops) {
+        const all = BM.all();
+        for (const d of window._rainDrops) { const i = all.indexOf(d.o); if (i >= 0) all.splice(i, 1); }
+        window._rainDrops = null; BM.redraw();
+    }
+    BM.log('rain: stopped & cleared.');
     return;
 }
 const N = 160, W = 2400, H = 1800;
@@ -5495,12 +5527,22 @@ for (let i = 0; i < N; i++) {
     });
     drops.push({ o: o, vy: 4 + Math.random()*4 });
 }
+window._rainDrops = drops;
 const topY = vc.y - H/2 - 700;
 const botY = vc.y + H/2 + 200;
 let frame = 0;
 const MAX = 10000;
 window._rainId = setInterval(() => {
-    if (frame++ > MAX) { clearInterval(window._rainId); window._rainId = null; BM.log('rain: auto-stopped after ~5 min.'); return; }
+    if (frame++ > MAX) {
+        clearInterval(window._rainId); window._rainId = null;
+        if (window._rainDrops) {
+            const all = BM.all();
+            for (const d of window._rainDrops) { const i = all.indexOf(d.o); if (i >= 0) all.splice(i, 1); }
+            window._rainDrops = null; BM.redraw();
+        }
+        BM.log('rain: auto-stopped & cleared after ~5 min.');
+        return;
+    }
     for (const d of drops) {
         d.o.data.y += d.vy;
         if (d.o.data.y > botY) {
@@ -5513,11 +5555,16 @@ window._rainId = setInterval(() => {
 BM.log('rain: running for ~5 min. $rain again to stop.');
 `, source: 'preset' },
     'leaf': { action: `
-// Toggle: $leaf starts the loop, $leaf again stops it.
+// Toggle: $leaf starts the loop, $leaf again stops it (leaves removed).
 if (window._leafId) {
     clearInterval(window._leafId);
     window._leafId = null;
-    BM.log('leaf: stopped (leaves stay — clear で全消去)');
+    if (window._leafItems) {
+        const all = BM.all();
+        for (const l of window._leafItems) { const i = all.indexOf(l.o); if (i >= 0) all.splice(i, 1); }
+        window._leafItems = null; BM.redraw();
+    }
+    BM.log('leaf: stopped & cleared.');
     return;
 }
 const N = 80, W = 2400, H = 1800;
@@ -5532,12 +5579,22 @@ for (let i = 0; i < N; i++) {
     });
     leaves.push({ o: o, vy: 0.8 + Math.random()*1.4, dx: (Math.random()-0.5)*1.2, sw: Math.random()*Math.PI*2, swSpeed: 0.05 + Math.random()*0.05 });
 }
+window._leafItems = leaves;
 const topY = vc.y - H/2 - 600;
 const botY = vc.y + H/2 + 200;
 let frame = 0;
 const MAX = 10000;
 window._leafId = setInterval(() => {
-    if (frame++ > MAX) { clearInterval(window._leafId); window._leafId = null; BM.log('leaf: auto-stopped after ~5 min.'); return; }
+    if (frame++ > MAX) {
+        clearInterval(window._leafId); window._leafId = null;
+        if (window._leafItems) {
+            const all = BM.all();
+            for (const l of window._leafItems) { const i = all.indexOf(l.o); if (i >= 0) all.splice(i, 1); }
+            window._leafItems = null; BM.redraw();
+        }
+        BM.log('leaf: auto-stopped & cleared after ~5 min.');
+        return;
+    }
     for (const l of leaves) {
         l.sw += l.swSpeed;
         l.o.data.y += l.vy;
@@ -5563,11 +5620,16 @@ BM.log('powerpoint: 16:9 slide frame placed. design 中身 → export-pptx で .
 BM.redraw();
 `, source: 'preset' },
     'snow': { action: `
-// Toggle: $snow starts the loop, $snow again stops it.
+// Toggle: $snow starts the loop, $snow again stops it (flakes removed).
 if (window._snowId) {
     clearInterval(window._snowId);
     window._snowId = null;
-    BM.log('snow: stopped (flakes stay — clear で全消去)');
+    if (window._snowFlakes) {
+        const all = BM.all();
+        for (const f of window._snowFlakes) { const i = all.indexOf(f.o); if (i >= 0) all.splice(i, 1); }
+        window._snowFlakes = null; BM.redraw();
+    }
+    BM.log('snow: stopped & cleared.');
     return;
 }
 const N = 100, W = 2400, H = 1800;
@@ -5582,12 +5644,22 @@ for (let i = 0; i < N; i++) {
     });
     flakes.push({ o: o, vy: 0.5 + Math.random()*1.2, sw: Math.random()*Math.PI*2, swSpeed: 0.03 + Math.random()*0.04 });
 }
+window._snowFlakes = flakes;
 const topY = vc.y - H/2 - 600;
 const botY = vc.y + H/2 + 200;
 let frame = 0;
 const MAX = 10000;
 window._snowId = setInterval(() => {
-    if (frame++ > MAX) { clearInterval(window._snowId); window._snowId = null; BM.log('snow: auto-stopped after ~5 min.'); return; }
+    if (frame++ > MAX) {
+        clearInterval(window._snowId); window._snowId = null;
+        if (window._snowFlakes) {
+            const all = BM.all();
+            for (const f of window._snowFlakes) { const i = all.indexOf(f.o); if (i >= 0) all.splice(i, 1); }
+            window._snowFlakes = null; BM.redraw();
+        }
+        BM.log('snow: auto-stopped & cleared after ~5 min.');
+        return;
+    }
     for (const f of flakes) {
         f.sw += f.swSpeed;
         f.o.data.y += f.vy;
