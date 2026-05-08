@@ -5546,6 +5546,17 @@ window._leafId = setInterval(() => {
 }, 30);
 BM.log('leaf: running for ~5 min. $leaf again to stop.');
 `, source: 'preset' },
+    'powerpoint': { action: `
+// Place a 16:9 PPT slide frame at view center, with title + body placeholders.
+const vc = BM.viewCenter();
+const W = 1280, H = 720;  // 16:9 standard widescreen (1280×720 = 13.33×7.5 inches @ 96dpi)
+const x = vc.x - W/2, y = vc.y - H/2;
+BM.create('square', { x: x, y: y, w: W, h: H, fill: '#FAFAF8', strokeOff: false });
+BM.create('text', { x: x + 80, y: y + 130, text: 'タイトル', fontSize: 56 });
+BM.create('text', { x: x + 80, y: y + 280, text: '本文', fontSize: 28 });
+BM.log('powerpoint: 16:9 slide frame placed. design 中身 → export-pptx で .pptx 化');
+BM.redraw();
+`, source: 'preset' },
     'snow': { action: `
 // Toggle: $snow starts the loop, $snow again stops it.
 if (window._snowId) {
@@ -8020,6 +8031,208 @@ function exportPng() {
     link.download = `blackmirror-${Date.now()}.png`;
     link.href = oc.toDataURL('image/png');
     link.click();
+}
+
+// ── PowerPoint .pptx export ─────────────────────────────────────────────
+// Lazy-loads PptxGenJS from CDN, maps canvas objects to editable PPT shapes.
+// Strokes are rasterized as images (PPT lacks free-curve support).
+let _pptxLib = null;
+function loadPptxGenJs() {
+    if (_pptxLib) return Promise.resolve(_pptxLib);
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.min.js';
+        s.onload = () => { _pptxLib = window.PptxGenJS; resolve(_pptxLib); };
+        s.onerror = () => reject(new Error('CDN load failed'));
+        document.head.appendChild(s);
+    });
+}
+
+function _toPptHex(color) {
+    if (!color || color === 'none') return null;
+    if (typeof color !== 'string') return null;
+    if (color.startsWith('#')) return color.slice(1).toUpperCase().padEnd(6, '0').slice(0, 6);
+    const m = color.match(/rgba?\(([^)]+)\)/);
+    if (m) {
+        const parts = m[1].split(',').map(s => parseFloat(s.trim()));
+        const [r, g, b] = parts;
+        return [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+    return null;
+}
+
+async function exportPptx() {
+    const selected = S.objects.filter(o => o.selected || S.multiSelected.includes(o.id));
+    const targets  = selected.length > 0 ? selected : S.objects;
+    if (!targets.length) {
+        printRaw('pptx: nothing to export — select a slide frame first', 't-err');
+        return;
+    }
+    enqueue(`pptx > exporting...`, ['→ loading PptxGenJS from CDN...']);
+    let Pptx;
+    try {
+        Pptx = await loadPptxGenJs();
+    } catch (e) {
+        printRaw('[pptx] failed to load library — check internet connection', 't-err');
+        return;
+    }
+
+    // Pick slide frame: a 16:9 square in the selection wins; else AABB of all targets
+    const frame = targets.find(o =>
+        o.type === 'square' && o.data.w > 0 && Math.abs((o.data.w / o.data.h) - 16/9) < 0.05);
+    let sx, sy, sw, sh;
+    if (frame) { sx = frame.data.x; sy = frame.data.y; sw = frame.data.w; sh = frame.data.h; }
+    else {
+        let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+        for (const o of targets) {
+            const b = _getRotatedBounds(o); if (!b) continue;
+            minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+            maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h);
+        }
+        // Pad to 16:9
+        let aw = maxX - minX, ah = maxY - minY;
+        const target = 16/9;
+        if (aw / ah < target) { const nw = ah * target; minX -= (nw - aw)/2; aw = nw; }
+        else { const nh = aw / target; minY -= (nh - ah)/2; ah = nh; }
+        sx = minX; sy = minY; sw = aw; sh = ah;
+    }
+
+    const DPI = 96;
+    const SLIDE_W_IN = 13.333, SLIDE_H_IN = 7.5;
+    const xScale = SLIDE_W_IN / (sw / DPI);  // map slide world width → PPT inches
+    const yScale = SLIDE_H_IN / (sh / DPI);
+    const relX = (px) => Math.max(0, ((px - sx) / DPI) * xScale);
+    const relY = (py) => Math.max(0, ((py - sy) / DPI) * yScale);
+    const wIn  = (px) => (px / DPI) * xScale;
+    const hIn  = (px) => (px / DPI) * yScale;
+
+    const pptx = new Pptx();
+    pptx.layout = 'LAYOUT_WIDE';
+    const slide = pptx.addSlide();
+    slide.background = { color: 'FAFAF8' };
+
+    let strokeCount = 0, strokesRastered = 0;
+    const FONT = 'Noto Sans JP';
+
+    for (const obj of targets) {
+        if (obj === frame) continue;
+        const d = obj.data;
+        const rotDeg = d.rotation ? d.rotation * 180 / Math.PI : 0;
+        try {
+            switch (obj.type) {
+                case 'square': {
+                    const fillHex = _toPptHex(d.fill);
+                    slide.addShape('rect', {
+                        x: relX(d.x), y: relY(d.y), w: wIn(d.w), h: hIn(d.h),
+                        fill: fillHex ? { color: fillHex } : { type: 'none' },
+                        line: d.strokeOff ? { type: 'none' } : { color: '000000', width: 1 },
+                        rotate: rotDeg,
+                    });
+                    break;
+                }
+                case 'circle': {
+                    const fillHex = _toPptHex(d.fill);
+                    slide.addShape('ellipse', {
+                        x: relX(d.cx - d.rx), y: relY(d.cy - d.ry), w: wIn(d.rx*2), h: hIn(d.ry*2),
+                        fill: fillHex ? { color: fillHex } : { type: 'none' },
+                        line: d.strokeOff ? { type: 'none' } : { color: '000000', width: 1 },
+                        rotate: rotDeg,
+                    });
+                    break;
+                }
+                case 'triangle': {
+                    const fillHex = _toPptHex(d.fill);
+                    slide.addShape('triangle', {
+                        x: relX(d.x), y: relY(d.y), w: wIn(d.w), h: hIn(d.h),
+                        fill: fillHex ? { color: fillHex } : { type: 'none' },
+                        line: d.strokeOff ? { type: 'none' } : { color: '000000', width: 1 },
+                        rotate: rotDeg,
+                    });
+                    break;
+                }
+                case 'arrow': {
+                    slide.addShape('line', {
+                        x: relX(d.x1), y: relY(d.y1), w: wIn(d.x2 - d.x1), h: hIn(d.y2 - d.y1),
+                        line: { color: '000000', width: 1.5, endArrowType: 'triangle' },
+                        rotate: rotDeg,
+                    });
+                    break;
+                }
+                case 'text': {
+                    const fs = d.fontSize || 16;
+                    const m = measureTextMetrics(d.text || '', fs);
+                    slide.addText(d.text || '', {
+                        x: relX(d.x), y: relY(d.y - m.ascent),
+                        w: Math.max(wIn(m.width) + 0.5, 1), h: Math.max(hIn(m.height) + 0.2, 0.5),
+                        fontFace: FONT, fontSize: fs * 0.75, color: '0C0C0C',
+                        valign: 'top', align: 'left', rotate: rotDeg,
+                    });
+                    break;
+                }
+                case 'sticky': {
+                    slide.addShape('rect', {
+                        x: relX(d.x), y: relY(d.y), w: wIn(d.w), h: hIn(d.h),
+                        fill: { color: 'FFE873' },
+                        line: { color: 'CCCCCC', width: 0.5 },
+                        rotate: rotDeg,
+                    });
+                    if (d.text) {
+                        slide.addText(d.text, {
+                            x: relX(d.x) + 0.05, y: relY(d.y) + 0.05,
+                            w: wIn(d.w) - 0.1, h: hIn(d.h) - 0.1,
+                            fontFace: FONT, fontSize: 14, bold: true,
+                            align: 'center', valign: 'middle', color: '1A1A1A',
+                            rotate: rotDeg,
+                        });
+                    }
+                    break;
+                }
+                case 'image': {
+                    slide.addImage({
+                        data: d.src, x: relX(d.x), y: relY(d.y), w: wIn(d.w), h: hIn(d.h),
+                        rotate: rotDeg,
+                    });
+                    break;
+                }
+                case 'stroke': {
+                    // Rasterize this stroke as a small offscreen PNG and embed
+                    strokeCount++;
+                    const bb = _getRotatedBounds(obj); if (!bb) break;
+                    const dpr = 2;
+                    const oc = document.createElement('canvas');
+                    oc.width  = Math.max(1, Math.ceil(bb.w * dpr));
+                    oc.height = Math.max(1, Math.ceil(bb.h * dpr));
+                    const oc2 = oc.getContext('2d');
+                    oc2.scale(dpr, dpr); oc2.translate(-bb.x, -bb.y);
+                    const c = getObjCenter(obj);
+                    if (rotDeg) { oc2.translate(c.x, c.y); oc2.rotate(d.rotation); oc2.translate(-c.x, -c.y); }
+                    renderObjectToCtx(oc2, obj);
+                    slide.addImage({
+                        data: oc.toDataURL('image/png'),
+                        x: relX(bb.x), y: relY(bb.y), w: wIn(bb.w), h: hIn(bb.h),
+                    });
+                    strokesRastered++;
+                    break;
+                }
+            }
+        } catch (e) {
+            printRaw(`[pptx] skipped ${obj.type}: ${e.message}`, 't-dim');
+        }
+    }
+
+    const fname = `blackmirror-${Date.now()}.pptx`;
+    try {
+        await pptx.writeFile({ fileName: fname });
+        const lines = [
+            `→ slide: ${(sw/DPI).toFixed(2)}×${(sh/DPI).toFixed(2)} in (16:9 mapped)`,
+            `→ objects exported: ${targets.length - (frame ? 1 : 0)}`,
+        ];
+        if (strokeCount) lines.push(`→ strokes rasterized: ${strokesRastered}/${strokeCount} (PPT 内では画像扱い)`);
+        lines.push(`[OK] ${fname} downloaded — open in PowerPoint / Keynote`);
+        enqueue(`pptx > ${fname}`, lines);
+    } catch (e) {
+        printRaw('[pptx] write failed: ' + e.message, 't-err');
+    }
 }
 
 // Renders a single object to an arbitrary 2d context (used by export)
