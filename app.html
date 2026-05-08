@@ -2064,6 +2064,7 @@ let prevShapeTs = 0;
 // ══════════════════════════════════════════════════
 
 let _ac = null;
+let _muted = (typeof localStorage !== 'undefined' && localStorage.getItem('bm_muted') === '1');
 
 function getAC() {
     if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -2072,6 +2073,7 @@ function getAC() {
 }
 
 function playClick(hard) {
+    if (_muted) return;
     try {
         const ac  = getAC();
         const now = ac.currentTime;
@@ -5848,6 +5850,7 @@ function bmTimerEditSeg(seg) {
 }
 
 function bmTimerBeep(freq, dur, gain) {
+    if (_muted) return;
     try {
         const ac = getAC();
         const o = ac.createOscillator(), g = ac.createGain();
@@ -5862,6 +5865,7 @@ function bmTimerBeep(freq, dur, gain) {
 }
 
 function bmTimerAlert() {
+    if (_muted) return;
     try {
         const ac = getAC();
         const now = ac.currentTime;
@@ -5973,6 +5977,27 @@ function runCommand(val) {
         S.drawMode='classic'; try{localStorage.setItem('bm_drawMode','classic');}catch{}
         redrawAll();
         enqueue(`$ ${head}`,['→ stroke render: classic (master)','→ next strokes use the original pencil renderer']);
+        return;
+    }
+
+    // ── volume on/off — mute click + timer beep + chime ──
+    if (head==='volume'||head==='mute'||head==='unmute') {
+        const sub = (head==='mute') ? 'off' : (head==='unmute') ? 'on' : rest.trim().toLowerCase();
+        if (sub==='off'||sub==='0'||sub==='mute') {
+            _muted = true; try{localStorage.setItem('bm_muted','1');}catch{}
+            enqueue(`$ ${head}${rest?' '+rest:''}`, ['→ audio muted']);
+            return;
+        }
+        if (sub==='on'||sub==='1'||sub==='unmute') {
+            _muted = false; try{localStorage.removeItem('bm_muted');}catch{}
+            enqueue(`$ ${head}${rest?' '+rest:''}`, ['→ audio unmuted']);
+            return;
+        }
+        if (sub===''||sub==='status') {
+            enqueue('$ volume', ['→ audio: ' + (_muted ? 'OFF (muted)' : 'ON')]);
+            return;
+        }
+        printRaw('volume: usage → volume on / volume off / volume', 't-err');
         return;
     }
 
