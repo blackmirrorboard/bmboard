@@ -620,7 +620,6 @@
 
         #textOverlay textarea {
             min-width: 100px;
-            box-sizing: border-box;
             background: transparent;
             border: none;
             border-bottom: 1.5px solid #0c0c0c;
@@ -632,8 +631,6 @@
             padding: 2px 2px 3px;
             letter-spacing: 0.02em;
             resize: none;
-            overflow: hidden;
-            white-space: pre;
         }
 
         #stickyEditor {
@@ -5187,12 +5184,13 @@ textInput.addEventListener('keydown', e => {
 // tracks the widest line (wrap=off), height tracks the line count. Also nudge the
 // overlay left if the wider box runs off-screen.
 function _sizeTextInput() {
+    // Width: collapse → measure widest line → grow. Height: 'auto' → scrollHeight
+    // (the canonical auto-grow pattern; safer on iOS than collapsing to 0px).
     textInput.style.width  = '0px';
-    textInput.style.height = '0px';
-    const w = textInput.scrollWidth, h = textInput.scrollHeight;
-    const fsPx = parseFloat(textInput.style.fontSize) || 16;
+    const w = textInput.scrollWidth;
     textInput.style.width  = Math.max(80, w + 8) + 'px';
-    textInput.style.height = Math.max(Math.round(fsPx * 1.4), h + 4) + 'px';
+    textInput.style.height = 'auto';
+    textInput.style.height = (textInput.scrollHeight + 2) + 'px';
     // If the now-wider box runs off the right edge, slide the overlay left to keep it on-screen.
     requestAnimationFrame(() => {
         const r = textOverlay.getBoundingClientRect();
