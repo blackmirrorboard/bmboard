@@ -6656,6 +6656,13 @@ function runCommand(val) {
     //   export              → 選択オブジェクトを透過 PNG で書き出し（X キーと同じ）
     //   export magic        → 魔法ピッカー（個別選択）
     //   export data         → バンドル書き出しダイアログ（粒度調整）
+    // ── copy-image ─ copy selection (or whole canvas) to the OS clipboard as PNG ──
+    //   then ⌘V it into Figma / Miro / Slack / anywhere
+    if (head === 'copy-image' || head === 'copyimg' || head === 'clip' || head === 'copy-png') {
+        copyImageToClipboard();
+        return;
+    }
+
     if (head==='export') {
         const sub = rest.trim().toLowerCase();
         if (sub === 'magic' || sub === 'spells') {
@@ -8377,6 +8384,57 @@ function exportPng() {
     link.download = `blackmirror-${Date.now()}.png`;
     link.href = oc.toDataURL('image/png');
     link.click();
+}
+
+// ── Copy as image to the OS clipboard — paste into Figma / Miro / Slack with ⌘V ──
+// Same offscreen render as exportPng() (selection, or all objects), but writes a PNG
+// blob to the clipboard instead of downloading.
+function _dataUrlToBlob(dataUrl) {
+    const parts = dataUrl.split(',');
+    const mime = (parts[0].match(/:(.*?);/) || [, 'image/png'])[1];
+    const bin = atob(parts[1]);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+}
+function copyImageToClipboard() {
+    if (!navigator.clipboard || typeof window.ClipboardItem === 'undefined') {
+        try { printRaw('copy-image: clipboard image API unavailable in this browser.', 't-err'); } catch (_) {}
+        return;
+    }
+    const selected = S.objects.filter(o => o.selected || S.multiSelected.includes(o.id));
+    const targets  = selected.length > 0 ? selected : S.objects;
+    if (targets.length === 0) { try { printRaw('copy-image: canvas is empty.', 't-err'); } catch (_) {} return; }
+    const PAD = 8;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const obj of targets) {
+        const b = _getRotatedBounds(obj);
+        if (!b) continue;
+        minX = Math.min(minX, b.x - PAD); minY = Math.min(minY, b.y - PAD);
+        maxX = Math.max(maxX, b.x + b.w + PAD); maxY = Math.max(maxY, b.y + b.h + PAD);
+    }
+    const W = Math.max(1, Math.ceil(maxX - minX)), H = Math.max(1, Math.ceil(maxY - minY));
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const oc = document.createElement('canvas');
+    oc.width = W * dpr; oc.height = H * dpr;
+    const oc2 = oc.getContext('2d');
+    oc2.scale(dpr, dpr); oc2.translate(-minX, -minY);
+    for (const obj of targets) {
+        const c = getObjCenter(obj), rot = obj.data.rotation || 0;
+        oc2.save();
+        if (rot !== 0) { oc2.translate(c.x, c.y); oc2.rotate(rot); oc2.translate(-c.x, -c.y); }
+        renderObjectToCtx(oc2, obj);
+        oc2.restore();
+    }
+    let blob;
+    try { blob = _dataUrlToBlob(oc.toDataURL('image/png')); }
+    catch (e) { try { printRaw('copy-image: encode failed — ' + (e && e.message ? e.message : e), 't-err'); } catch (_) {} return; }
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+        .then(() => enqueue('copy-image', [
+            `→ ${selected.length > 0 ? targets.length + ' object(s)' : 'whole canvas'} (${W}×${H}) copied as PNG`,
+            '→ paste into Figma / Miro / Slack / anywhere with ⌘V',
+        ]))
+        .catch(err => { try { printRaw('copy-image: clipboard write failed — ' + (err && err.message ? err.message : err), 't-err'); } catch (_) {} });
 }
 
 // ── PowerPoint .pptx export ─────────────────────────────────────────────
