@@ -7748,8 +7748,25 @@ function applyTextStyle(patch) {
     saveHistory(); redrawAll();
 }
 function closeTextStylePopover() { if (textStylePopover) textStylePopover.style.display = 'none'; textStylePopoverOpen = false; }
+function _refreshTextStyleActive() {
+    if (!textStylePopover) return;
+    const t = _textStyleTargets();
+    let curKey = null, bold = false;
+    if (t.length) {
+        const fams = t.map(o => o.data.fontFamily || null);
+        const f0 = fams[0];
+        if (fams.every(f => f === f0)) {
+            curKey = Object.keys(TEXT_STYLE_FONTS).find(k => TEXT_STYLE_FONTS[k] === f0) || null;
+        }
+        bold = t.every(o => !!o.data.bold);
+    }
+    textStylePopover.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', !!curKey && b.dataset.font === curKey));
+    const bBtn = textStylePopover.querySelector('[data-bold]');
+    if (bBtn) bBtn.classList.toggle('active', bold);
+}
 function openTextStylePopover() {
     if (!textStyleBtn || !textStylePopover) return;
+    _refreshTextStyleActive();
     const r = textStyleBtn.getBoundingClientRect();
     const mobile = window.innerWidth <= 700;
     textStylePopover.style.bottom = 'auto';
