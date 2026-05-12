@@ -10,6 +10,18 @@ const APPS = {
   studio:  'https://99letters.github.io/',
 };
 
+// ── theme (light / dark — applied ASAP to minimise flash) ──
+const THEME_KEY = 'bm-browser.theme.v1';
+let theme = (localStorage.getItem(THEME_KEY) === 'light') ? 'light' : 'dark';
+function applyTheme() {
+  document.body.classList.toggle('light', theme === 'light');
+  const b = document.getElementById('th-btn');
+  if (b) b.textContent = (theme === 'light') ? '☾' : '☀';   // shows the mode you'd switch TO
+}
+function setTheme(t) { theme = (t === 'light') ? 'light' : 'dark'; try { localStorage.setItem(THEME_KEY, theme); } catch (_) {} applyTheme(); }
+function toggleTheme() { setTheme(theme === 'light' ? 'dark' : 'light'); }
+applyTheme();
+
 // ── side panel ────────────────────────────────────────────
 // Works both as the extension's new tab (real side panel) AND as a plain web
 // page (e.g. served at bmboard.studio/browser/ — mobile, any browser). When
@@ -61,10 +73,11 @@ const WIDGET_DEFS = {
   memo:      { title: 'memo',       icon: '✎', desc: '自動保存のスクラッチパッド' },
   prompt:    { title: 'command',    icon: '›', desc: 'コマンド / URL / 検索' },
   news:      { title: 'news',       icon: '◷', desc: 'ニュース（HN / Yahoo / NHK · 1行 / 一覧）' },
+  weather:   { title: 'weather',    icon: '☁', desc: '天気（ASCII アイコン + 気温 + 最高/最低）' },
   markets:   { title: 'markets',    icon: '₿', desc: '相場ティッカー（BTC/ETH/SOL · 24h% + 7日 ASCII チャート）' },
   clock:     { title: 'clock',      icon: '⏱', desc: '時計（クリックで small / large / ascii）' },
 };
-const WIDGET_ORDER_DEFAULT = ['cta', 'bookmarks', 'memo', 'prompt', 'news', 'markets', 'clock'];
+const WIDGET_ORDER_DEFAULT = ['cta', 'bookmarks', 'memo', 'prompt', 'news', 'weather', 'markets', 'clock'];
 const WIDGETS_KEY = 'bm-browser.widgets.v1';
 function loadWidgets() {
   const w = lsGet(WIDGETS_KEY) || {};
@@ -185,6 +198,7 @@ stackEl.querySelectorAll('.widget').forEach((w) => {
 let draggedWid = null;
 editBtn.addEventListener('click', toggleEdit);
 document.getElementById('wg-btn')?.addEventListener('click', openWidgetModal);
+document.getElementById('th-btn')?.addEventListener('click', toggleTheme);
 
 // ── ASCII art (5-row block font A–Z/0–9 + the BMBoard smiley) ─────────────
 const ASCII_FONT = {
@@ -294,6 +308,9 @@ function runCommand(raw) {
     case 'add': case 'bookmark': addBookmark(); return;
     case 'edit': toggleEdit(); return;
     case 'widgets': case 'wg': openWidgetModal(); return;
+    case 'light': setTheme('light'); return;
+    case 'dark': setTheme('dark'); return;
+    case 'theme': toggleTheme(); return;
     case 'ascii': case 'chips': setView(v); return;
     case 'view': setView(bmView === 'ascii' ? 'chips' : 'ascii'); return;
     case 'help': case '?': case 'h': document.getElementById('help').classList.toggle('show'); return;
@@ -326,11 +343,11 @@ if (memoTa) {
 // In the extension, host_permissions:<all_urls> lets us fetch any feed directly.
 // On the standalone web page, RSS feeds aren't CORS-friendly → go via a proxy.
 const IS_EXTENSION = (typeof chrome !== 'undefined' && chrome.runtime && !!chrome.runtime.id);
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+const CORS_PROXY = 'https://api.codetabs.com/v1/proxy/?quest=';   // reliable free CORS proxy for the standalone web build
 const NEWS_SOURCES = {
-  hn:    { label: 'HN',    type: 'hn',  url: 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=20' },
-  yahoo: { label: 'Yahoo', type: 'rss', url: 'https://news.yahoo.co.jp/rss/topics/top-picks.xml' },
-  nhk:   { label: 'NHK',   type: 'rss', url: 'https://www3.nhk.or.jp/rss/news/cat0.xml' },
+  hn:     { label: 'HN',     type: 'hn',  url: 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=20' },
+  google: { label: 'Google', type: 'rss', url: 'https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja' },
+  nhk:    { label: 'NHK',    type: 'rss', url: 'https://www3.nhk.or.jp/rss/news/cat0.xml' },
 };
 const NEWS_VIEW_KEY = 'bm-browser.newsView.v1', NEWS_SOURCE_KEY = 'bm-browser.newsSource.v1';
 let newsItems = [];
@@ -402,6 +419,67 @@ async function fetchNews() {
   document.querySelectorAll('#news-view [data-nv]').forEach((s) => s.addEventListener('click', () => setNewsView(s.dataset.nv)));
   document.querySelectorAll('#news-src [data-ns]').forEach((s) => s.addEventListener('click', () => setNewsSource(s.dataset.ns)));
   setInterval(fetchNews, 20 * 60 * 1000);                        // and periodically while the tab stays open
+}
+
+// ── widget: weather (Open-Meteo — CORS-friendly, free, no key) ──────────
+// Default location = 大津・滋賀. (Configurable later — for now hardcoded.)
+const WX_KEY = 'bm-browser.weather.v1';
+const WX_LOC = { lat: 35.0045, lon: 135.8686, name: '大津・滋賀' };
+const WX_URL = `https://api.open-meteo.com/v1/forecast?latitude=${WX_LOC.lat}&longitude=${WX_LOC.lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Asia%2FTokyo&forecast_days=1`;
+const WX_ART = {
+  clear:  ['  \\|/  ', '--(o)--', '  /|\\  '],
+  partly: [' \\|/.-.', '-o-(  )', '   (__)'],
+  cloudy: ['  .-.  ', ' (   ) ', '(_____)'],
+  fog:    [' ~~~~~ ', '  ~~~  ', ' ~~~~~ '],
+  rain:   ['  .-.  ', ' (   ) ', " '  '  "],
+  snow:   ['  .-.  ', ' (   ) ', ' * * * '],
+  storm:  ['  .-.  ', ' (   ) ', "  /'/  "],
+};
+const WX_LABEL = { clear: '☀ 晴れ', partly: '⛅ 晴れときどき曇り', cloudy: '☁ くもり', fog: '🌫 霧', rain: '☂ 雨', snow: '❄ 雪', storm: '⚡ 雷雨' };
+function wxCat(code) {
+  if (code === 0) return 'clear';
+  if (code <= 2) return 'partly';
+  if (code === 3) return 'cloudy';
+  if (code >= 45 && code <= 48) return 'fog';
+  if (code >= 71 && code <= 77) return 'snow';
+  if (code >= 95) return 'storm';
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 86)) return 'rain';
+  return 'cloudy';
+}
+let wxData = null;
+function loadWxCache() { const c = lsGet(WX_KEY); if (c && c.data) { wxData = c.data; return c.fetchedAt || 0; } return 0; }
+function saveWxCache() { lsSet(WX_KEY, { data: wxData, fetchedAt: Date.now() }); }
+function renderWeather(msg) {
+  const body = document.getElementById('wx-body'); if (!body) return;
+  if (msg || !wxData) { body.innerHTML = `<div class="wx-msg">${esc(msg || 'no data yet — ↻')}</div>`; return; }
+  const cat = wxCat(wxData.code);
+  const r = (n) => Math.round(Number(n));
+  body.innerHTML =
+    `<div class="wx-row"><pre class="wx-art">${esc((WX_ART[cat] || WX_ART.cloudy).join('\n'))}</pre>` +
+    `<div class="wx-tx"><span class="wx-now">${r(wxData.temp)}°</span> <span class="wx-lbl">${esc(WX_LABEL[cat] || '')}</span><br>` +
+    `<span class="wx-hl">H ${r(wxData.max)}° / L ${r(wxData.min)}°</span> <span class="wx-loc">· ${esc(WX_LOC.name)}</span></div></div>`;
+}
+async function fetchWeather() {
+  if (!wxData) renderWeather('loading weather…');
+  try {
+    const res = await fetch(WX_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    const cur = d.current || {}, dly = d.daily || {};
+    if (cur.temperature_2m == null) throw new Error('no data');
+    wxData = { temp: cur.temperature_2m, code: (cur.weather_code != null ? cur.weather_code : (dly.weather_code && dly.weather_code[0]) || 3), max: (dly.temperature_2m_max && dly.temperature_2m_max[0]), min: (dly.temperature_2m_min && dly.temperature_2m_min[0]) };
+    saveWxCache(); renderWeather();
+  } catch (e) {
+    console.warn('[bmbrowser] weather fetch:', e);
+    if (!wxData) renderWeather('天気を取得できませんでした — ↻'); else renderWeather();
+  }
+}
+{
+  const at = loadWxCache();
+  renderWeather();
+  if (Date.now() - at > 30 * 60 * 1000) fetchWeather();
+  document.getElementById('wx-refresh')?.addEventListener('click', fetchWeather);
+  setInterval(fetchWeather, 30 * 60 * 1000);
 }
 
 // ── widget: markets (crypto ticker via CoinGecko — CORS-friendly, free, no key) ──

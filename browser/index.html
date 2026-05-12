@@ -15,28 +15,37 @@
 <title>BMBrowser — new tab</title>
 <style>
   :root {
-    --bg:#000; --bg-1:#0a0a0a; --bg-2:#161616; --bg-cta:#0e1a0c;
+    --bg:#000; --bg-1:#0a0a0a; --bg-2:#141a14; --bg-cta:#08200a;
     --line:#2a2826; --line-soft:#1c1b1a;
-    --green:#58dc44; --green-bright:#84ff64; --green-dim:#3da028; --green-faint:#1f6a18;
-    --aqua:#8ec07c; --gray:#6b6b66; --red:#cc4444;
+    /* classic terminal-phosphor green — less yellow, more "screen" */
+    --green:#28d428; --green-bright:#33ff33; --green-dim:#1d9e1d; --green-faint:#1a6e1a;
+    --aqua:#4fda7a; --gray:#6b6b66; --red:#cc4444;
     --font-term: "DotGothic16", ui-monospace, "SF Mono", Menlo, Consolas, monospace;  /* hacker terminal type — handles 日本語 */
     --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "JetBrains Mono", monospace; /* clean mono — top header + ASCII art */
   }
+  body.light {   /* light theme — for visibility. same "base = key colour, cut-outs = page bg" rule still holds */
+    --bg:#faf9f4; --bg-1:#f0eee6; --bg-2:#e6e3d8; --bg-cta:#ecf3e6;
+    --line:#d6d2c4; --line-soft:#e3e0d4;
+    --green:#2f7a1c; --green-bright:#1c6e10; --green-dim:#6a9a52; --green-faint:#a6bb96;
+    --aqua:#3f8a2e; --gray:#8a8778; --red:#b03028;
+  }
   * { box-sizing:border-box; margin:0; padding:0; }
-  html { height:100%; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  html { height:100%; -webkit-text-size-adjust:100%; text-size-adjust:100%; overflow-x:hidden; overscroll-behavior:none; }
   body {
     background:var(--bg); color:var(--green);
     font-family:var(--font-term); font-size:13px; line-height:1.6;
     -webkit-font-smoothing:antialiased;
     min-height:100vh; display:flex; align-items:center; justify-content:center;
     padding:48px 32px;   /* breathing room — and min-height (not height) so tall stacks scroll, never clip */
-    touch-action:manipulation;   /* no double-tap-to-zoom on mobile */
+    touch-action:manipulation;            /* no double-tap-to-zoom on mobile */
+    overflow-x:hidden; overscroll-behavior-x:none;   /* no left-right wobble / horizontal scroll */
   }
-  .wrap { width:100%; max-width:640px; }
+  .wrap { width:100%; max-width:640px; overflow-x:hidden; }
   /* mobile: inputs at 16px so iOS doesn't auto-zoom on focus (zoom is also locked via the viewport meta) */
   @media (pointer: coarse) {
     .prompt input, .memo-ta { font-size:16px; }
   }
+  @media (max-width: 480px) { body { padding:36px 16px; } }
 
   /* ── header (the one place that keeps the clean font) ── */
   .head { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
@@ -50,12 +59,12 @@
   .head .mark { width:19px; height:19px; flex:0 0 auto; display:block; }
   .head .mark .ring { fill:var(--green-bright); }   /* base = key colour */
   .head .mark .face { fill:var(--bg); }             /* cut-outs = page bg */
-  .head .wg-btn, .head .edit-btn {
+  .head .th-btn, .head .wg-btn, .head .edit-btn {
     font-size:10px; letter-spacing:0.06em; color:var(--green-faint);
     cursor:pointer; border:1px solid var(--line); border-radius:2px; padding:2px 9px;
   }
-  .head .wg-btn { margin-left:auto; }
-  .head .wg-btn:hover, .head .edit-btn:hover { color:var(--green); border-color:var(--green); }
+  .head .th-btn { margin-left:auto; font-size:12px; line-height:1; padding:2px 8px; }
+  .head .th-btn:hover, .head .wg-btn:hover, .head .edit-btn:hover { color:var(--green); border-color:var(--green); }
   .head .edit-btn.active { color:var(--green-bright); border-color:var(--green); background:var(--bg-1); }
   /* widgets modal */
   .wg-ov { position:fixed; inset:0; z-index:99998; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.82); padding:24px; }
@@ -111,7 +120,7 @@
     color:var(--green-bright); font:inherit; text-align:left; cursor:pointer;
     padding:16px 18px; border-radius:3px; transition:border-color .12s, box-shadow .12s;
   }
-  .cta:hover { border-color:var(--green); box-shadow:inset 0 0 0 100px rgba(88,220,68,0.04); }
+  .cta:hover { border-color:var(--green); box-shadow:inset 0 0 0 100px rgba(51,255,51,0.05); }
   .cta .ico { font-size:18px; line-height:1; }
   .cta .txt { flex:1; }
   .cta .txt .t1 { display:block; font-size:14px; letter-spacing:0.04em; }
@@ -153,7 +162,7 @@
   }
   .aa-card:hover { border-color:var(--line); background:var(--bg-1); }
   .aa { margin:0; font-family:var(--font-mono); font-size:10px; line-height:1; letter-spacing:0; color:var(--green-bright); white-space:pre; }
-  .aa-card:hover .aa { text-shadow:0 0 6px rgba(132,255,100,0.35); }
+  .aa-card:hover .aa { text-shadow:0 0 6px rgba(51,255,51,0.4); }
   .aa-name { font-size:10px; color:var(--gray); letter-spacing:0.1em; }
   .aa-ctls { display:flex; gap:4px; }
   .aa-ctls .ctl { background:transparent; border:0; color:var(--gray); font:inherit; font-size:12px; line-height:1; cursor:pointer; padding:0 2px; }
@@ -199,7 +208,7 @@
   .ticker:hover .ticker-track { animation-play-state:paused; }
   @keyframes ticker-scroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
   .ticker .tk-item { display:inline-block; padding:0 18px; color:var(--green-bright); text-decoration:none; font-size:13px; }
-  .ticker .tk-item:hover { color:var(--green); text-shadow:0 0 6px rgba(132,255,100,0.3); }
+  .ticker .tk-item:hover { color:var(--green); text-shadow:0 0 6px rgba(51,255,51,0.35); }
   .ticker .tk-item .pt { color:var(--green-faint); font-size:11px; margin-left:6px; }
   .ticker .tk-sep { display:inline-block; padding:0 4px; color:var(--line); }
   /* list (taller, scrollable) */
@@ -219,12 +228,26 @@
   .clock-w.s-ascii .ca { display:block; font-family:var(--font-mono); white-space:pre; font-size:10px; line-height:1; color:var(--green-bright); }
   .clock-w.s-ascii .cd { display:block; font-size:10px; color:var(--green-faint); letter-spacing:0.18em; margin-top:7px; }
 
+  /* ── widget: weather ── */
+  .wx-hd { display:flex; align-items:center; gap:12px; margin:0 2px 7px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gray); }
+  .wx-hd .wx-r { margin-left:auto; cursor:pointer; color:var(--green-faint); border:1px solid var(--line); border-radius:2px; padding:1px 7px; font-size:11px; text-transform:none; letter-spacing:0; }
+  .wx-hd .wx-r:hover { color:var(--green); border-color:var(--green); }
+  .wx-body { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:12px 16px; overflow:hidden; }
+  .wx-row { display:flex; align-items:center; gap:18px; }
+  .wx-art { margin:0; font-family:var(--font-mono); font-size:11px; line-height:1.05; color:var(--green-bright); white-space:pre; flex:0 0 auto; }
+  .wx-tx { font-size:13px; line-height:1.65; min-width:0; }
+  .wx-tx .wx-now { font-size:24px; color:var(--green-bright); letter-spacing:0.02em; }
+  .wx-tx .wx-lbl { color:var(--green); }
+  .wx-tx .wx-hl  { color:var(--green-dim); font-size:12px; }
+  .wx-tx .wx-loc { color:var(--gray); font-size:11px; }
+  .wx-msg { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:10px 16px; color:var(--green-faint); font-size:11px; letter-spacing:0.06em; }
+
   /* ── widget: markets (crypto ticker + ASCII sparkline) ── */
   .mk-hd { display:flex; align-items:center; gap:12px; margin:0 2px 7px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gray); }
   .mk-hd .mk-r { margin-left:auto; cursor:pointer; color:var(--green-faint); border:1px solid var(--line); border-radius:2px; padding:1px 7px; font-size:11px; text-transform:none; letter-spacing:0; }
   .mk-hd .mk-r:hover { color:var(--green); border-color:var(--green); }
-  .mk-body { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:5px 0; }
-  .mk-row { display:flex; align-items:center; gap:12px; padding:7px 14px; font-size:13px; }
+  .mk-body { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:5px 0; overflow:hidden; }
+  .mk-row { display:flex; align-items:center; gap:12px; padding:7px 14px; font-size:13px; overflow:hidden; }
   .mk-row .mk-sym { width:42px; flex:0 0 auto; color:var(--aqua); }
   .mk-row .mk-px { width:118px; flex:0 0 auto; text-align:right; color:var(--green-bright); }
   .mk-row .mk-ch { width:62px; flex:0 0 auto; text-align:right; font-size:12px; }
@@ -269,6 +292,7 @@
         </svg>
         black mirror browser
       </span>
+      <span class="th-btn" id="th-btn" title="ライト / ダーク 切替">☀</span>
       <span class="wg-btn" id="wg-btn" title="ウィジェットの表示を選ぶ">⊞ widgets</span>
       <span class="edit-btn" id="edit-btn" title="edit / rearrange widgets">✎ edit</span>
       <span class="ver">v0.2</span>
@@ -329,11 +353,19 @@
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">news</span><button class="w-hide" title="hide widget">✕</button></div>
         <div class="w-body">
           <div class="news-hd">
-            <span class="news-src" id="news-src"><span data-ns="hn">HN</span><span class="sep">·</span><span data-ns="yahoo">Yahoo</span><span class="sep">·</span><span data-ns="nhk">NHK</span></span>
+            <span class="news-src" id="news-src"><span data-ns="hn">HN</span><span class="sep">·</span><span data-ns="google">Google</span><span class="sep">·</span><span data-ns="nhk">NHK</span></span>
             <span class="news-view" id="news-view"><span data-nv="ticker">1行</span><span class="sep">·</span><span data-nv="list">一覧</span></span>
             <span class="news-r" id="news-refresh" title="refresh">↻</span>
           </div>
           <div id="news-body"></div>
+        </div>
+      </div>
+
+      <div class="widget" data-wid="weather">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">weather</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body">
+          <div class="wx-hd"><span>weather · 滋賀</span><span class="wx-r" id="wx-refresh" title="refresh">↻</span></div>
+          <div id="wx-body"></div>
         </div>
       </div>
 
@@ -363,6 +395,7 @@
       <div><span class="k">add / bookmark</span><span class="c">ブックマーク追加（＋ add と同じ）</span></div>
       <div><span class="k">ascii / chips</span><span class="c">ブックマークの表示を ASCII アート ⇄ チップ で切替</span></div>
       <div><span class="k">widgets / wg</span><span class="c">ウィジェット選択モーダル（⊞ widgets ボタンと同じ）</span></div>
+      <div><span class="k">theme / light / dark</span><span class="c">ライト / ダーク 切替（☀/☾ ボタンと同じ）</span></div>
       <div><span class="k">edit</span><span class="c">編集モード — ウィジェットのドラッグ並べ替え・表示/非表示、ブックマークの編集</span></div>
       <div><span class="k">? / help</span><span class="c">このリスト</span></div>
       <div><span class="k">Ctrl + .</span><span class="c">「仕事してますモード」— 画面いっぱいにコードを流す（Ctrl + ` でも可。任意のキー / クリックで戻る）</span></div>
