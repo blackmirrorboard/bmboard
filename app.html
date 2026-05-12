@@ -2062,6 +2062,185 @@ function resolveFill(fill) {
     return fill;
 }
 
+// ══════════════════════════════════════════════════
+// FRAME — Figma-style export frames (A4 / A3 / banner / custom px)
+// ══════════════════════════════════════════════════
+// A frame is just a `square` object carrying a `data.frame = { label }` marker.
+// It renders with a name tag at its top-left; select one and press X (or run
+// `export frame`) to render the objects whose center is inside it, at the
+// frame's exact pixel size, clipped, with the frame's fill as the background.
+const FRAME_PRESETS = {
+    'a4':           { w: 794,  h: 1123, label: 'A4'        },   // 210×297mm @ 96dpi
+    'a4-landscape': { w: 1123, h: 794,  label: 'A4 横'      },
+    'a3':           { w: 1123, h: 1587, label: 'A3'        },   // 297×420mm @ 96dpi
+    'a3-landscape': { w: 1587, h: 1123, label: 'A3 横'      },
+    'a5':           { w: 559,  h: 794,  label: 'A5'        },
+    'b5':           { w: 689,  h: 974,  label: 'B5'        },
+    'a4-print':     { w: 2480, h: 3508, label: 'A4 300dpi' },   // 210×297mm @ 300dpi
+    'a3-print':     { w: 3508, h: 4961, label: 'A3 300dpi' },
+    'square':       { w: 1080, h: 1080, label: '1080²'     },   // IG post
+    'story':        { w: 1080, h: 1920, label: 'Story 9:16'},   // IG / TikTok story
+    'og':           { w: 1200, h: 630,  label: 'OG 1200×630'},  // X / OGP card
+    'banner':       { w: 1500, h: 500,  label: 'X header'  },
+    'slide':        { w: 1920, h: 1080, label: '16:9 1080p'},
+};
+const FRAME_PRESET_ORDER = ['a4','a4-landscape','a3','a3-landscape','a5','b5','a4-print','a3-print','square','story','og','banner','slide'];
+
+function _isFrame(o) { return !!(o && o.type === 'square' && o.data && o.data.frame); }
+
+// Place a frame square centered in the current view, and select it.
+function placeFrame(w, h, label) {
+    w = Math.max(8, Math.round(w)); h = Math.max(8, Math.round(h));
+    const vc = BM.viewCenter();
+    const id = genId();
+    const obj = {
+        id, type: 'square',
+        data: {
+            x: Math.round(vc.x - w / 2), y: Math.round(vc.y - h / 2), w, h,
+            rotation: 0, fill: '#FFFFFF', strokeOff: false,
+            frame: { label: label || `${w}×${h}` },
+        },
+        selected: false,
+    };
+    S.objects.push(obj);
+    S.objects.forEach(o => o.selected = false);
+    S.multiSelected = [];
+    obj.selected = true; S.selectedId = id;
+    saveHistory(); redrawAll();
+    return obj;
+}
+
+// Parse a `frame …` argument → { w, h, label } or null.
+//   "a4" / "a3 landscape" / "og" / "story" / "1080x1080" / "1200x630"
+function parseFrameArg(arg) {
+    const parts = String(arg || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!parts.length) return null;
+    const dim = parts[0].match(/^(\d{2,5})\s*[x×*]\s*(\d{2,5})$/);
+    if (dim) { const w = +dim[1], h = +dim[2]; return { w, h, label: `${w}×${h}` }; }
+    let key = parts[0];
+    const land = parts.slice(1).some(p => ['landscape','land','l','横','よこ'].includes(p));
+    if (land && FRAME_PRESETS[key + '-landscape']) key += '-landscape';
+    return FRAME_PRESETS[key] ? { ...FRAME_PRESETS[key] } : null;
+}
+
+// Render a frame's contents onto a fresh canvas: contents = objects whose
+// center lies inside the frame (frame itself + other frames excluded), drawn
+// at the frame's exact pixel size, clipped, on the frame's fill colour.
+function renderFrameToCanvas(frame, dprCap) {
+    const fx = frame.data.x, fy = frame.data.y, fw = frame.data.w, fh = frame.data.h;
+    const inside = S.objects.filter(o => {
+        if (o === frame || _isFrame(o)) return false;
+        const b = _getRotatedBounds(o); if (!b) return false;
+        const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+        return cx >= fx && cx <= fx + fw && cy >= fy && cy <= fy + fh;
+    });
+    const dpr = Math.min(window.devicePixelRatio || 1, dprCap || 3);
+    const oc  = document.createElement('canvas');
+    oc.width  = Math.max(1, Math.round(fw * dpr));
+    oc.height = Math.max(1, Math.round(fh * dpr));
+    const oc2 = oc.getContext('2d');
+    oc2.scale(dpr, dpr);
+    const bg = resolveFill(frame.data.fill);
+    if (bg) { oc2.fillStyle = bg; oc2.fillRect(0, 0, fw, fh); }
+    oc2.translate(-fx, -fy);
+    oc2.beginPath(); oc2.rect(fx, fy, fw, fh); oc2.clip();
+    let skipped = 0;
+    for (const obj of inside) {
+        const c = getObjCenter(obj), rot = obj.data.rotation || 0;
+        oc2.save();
+        if (rot !== 0) { oc2.translate(c.x, c.y); oc2.rotate(rot); oc2.translate(-c.x, -c.y); }
+        try { renderObjectToCtx(oc2, obj); } catch (e) { skipped++; }
+        oc2.restore();
+    }
+    return { canvas: oc, w: fw, h: fh, count: inside.length, skipped };
+}
+
+function _frameSafeName(frame) {
+    const lbl = (frame.data.frame && frame.data.frame.label) || `${frame.data.w}x${frame.data.h}`;
+    return String(lbl).replace(/[^\w×x_-]+/g, '_').replace(/^_+|_+$/g, '') || `${frame.data.w}x${frame.data.h}`;
+}
+
+// X-key / `export frame` → download one frame's contents as PNG.
+function exportFramePng(frame) {
+    if (!_isFrame(frame)) { printRaw('export frame: not a frame object.', 't-err'); return; }
+    const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const { canvas, w, h, count, skipped } = renderFrameToCanvas(frame, 3);
+    enqueue(`[SYSTEM] ${ts}`, [
+        `→ exporting frame "${(frame.data.frame && frame.data.frame.label) || w + '×' + h}"  (${w}×${h}px)`,
+        `→ contents: ${count} object(s) inside the frame` + (skipped ? `  (${skipped} skipped)` : ''),
+        '→ rendering offscreen canvas...', '→ encoding image/png...', '[IO] asset saved.',
+    ]);
+    const link = document.createElement('a');
+    link.download = `bmframe-${_frameSafeName(frame)}-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+// `export frames` → every frame on the canvas, each as its own PNG.
+function exportAllFramesPng() {
+    const frames = S.objects.filter(_isFrame);
+    if (!frames.length) { printRaw('export frames: no frames on the canvas — run `frame` first.', 't-err'); return; }
+    enqueue('export frames', [`→ ${frames.length} frame(s) → ${frames.length} PNG file(s)...`]);
+    frames.forEach((f, i) => {
+        setTimeout(() => {
+            const { canvas } = renderFrameToCanvas(f, 3);
+            const link = document.createElement('a');
+            link.download = `bmframe-${_frameSafeName(f)}-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }, i * 350);   // stagger so browsers don't block the batch
+    });
+}
+
+// Resolve which frame `export frame` should act on: the selected one, else
+// the only frame on the canvas, else null.
+function _frameForExport() {
+    const sel = S.objects.filter(o => (o.selected || S.multiSelected.includes(o.id)) && _isFrame(o));
+    if (sel.length === 1) return sel[0];
+    const all = S.objects.filter(_isFrame);
+    return all.length === 1 ? all[0] : null;
+}
+
+function showFramePicker() {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);display:flex;align-items:center;justify-content:center;z-index:99999;font:13px/1.5 monospace;color:#e8e6e0;';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#0c0c0c;border:1px solid #333;padding:24px 28px;min-width:400px;max-width:580px;';
+    const btns = FRAME_PRESET_ORDER.map(k => {
+        const p = FRAME_PRESETS[k];
+        return `<button data-k="${k}" style="background:#1a1a1a;border:1px solid #333;color:#e8e6e0;padding:9px 8px;font:inherit;cursor:pointer;text-align:left;line-height:1.3;">
+          <div>${p.label}</div><div style="color:#666;font-size:11px;">${p.w} × ${p.h}</div>
+        </button>`;
+    }).join('');
+    card.innerHTML = `
+        <div style="font-size:11px;letter-spacing:.3em;color:#666;margin-bottom:14px;">◼ NEW FRAME</div>
+        <div style="color:#888;font-size:12px;margin-bottom:14px;">テンプレートを選ぶ、または px で指定。<br>ボードに枠が置かれる → 中身をデザイン → その枠を選択して <b style="color:#e8e6e0;">X</b>(または <code>export frame</code>)で書き出し。</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:16px;">${btns}</div>
+        <div style="display:flex;align-items:center;gap:8px;border-top:1px solid #1a1a1a;padding-top:14px;margin-bottom:16px;">
+            <span style="color:#888;font-size:12px;">custom</span>
+            <input data-role="w" type="number" min="8" max="20000" placeholder="W" value="1200" style="width:84px;background:#1a1a1a;border:1px solid #333;color:#e8e6e0;padding:6px 8px;font:inherit;">
+            <span style="color:#666;">×</span>
+            <input data-role="h" type="number" min="8" max="20000" placeholder="H" value="630" style="width:84px;background:#1a1a1a;border:1px solid #333;color:#e8e6e0;padding:6px 8px;font:inherit;">
+            <span style="color:#666;font-size:11px;">px</span>
+            <button data-a="custom" style="margin-left:auto;background:#1a1a1a;border:1px solid #7fdb7f;color:#7fdb7f;padding:6px 16px;font:inherit;cursor:pointer;">PLACE</button>
+        </div>
+        <div style="display:flex;justify-content:flex-end;">
+            <button data-a="cancel" style="background:transparent;border:1px solid #333;color:#888;padding:8px 14px;font:inherit;cursor:pointer;">CANCEL</button>
+        </div>`;
+    ov.appendChild(card); document.body.appendChild(ov);
+    const close = () => { try { document.body.removeChild(ov); } catch (_) {} };
+    const place = (w, h, label) => { close(); const o = placeFrame(w, h, label); enqueue('frame', [`→ ${o.data.frame.label} frame placed (${o.data.w}×${o.data.h}px). 中身をデザイン → 選択して X で書き出し`]); };
+    card.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { const p = FRAME_PRESETS[b.dataset.k]; place(p.w, p.h, p.label); }));
+    card.querySelector('[data-a=custom]').addEventListener('click', () => {
+        const w = Math.round(+card.querySelector('[data-role=w]').value || 0);
+        const h = Math.round(+card.querySelector('[data-role=h]').value || 0);
+        if (!(w >= 8 && h >= 8 && w <= 20000 && h <= 20000)) { card.querySelector('[data-a=custom]').textContent = '8–20000 px'; return; }
+        place(w, h, `${w}×${h}`);
+    });
+    card.querySelector('[data-a=cancel]').addEventListener('click', () => { close(); enqueue('frame', ['→ cancelled.']); });
+    ov.addEventListener('click', e => { if (e.target === ov) { close(); enqueue('frame', ['→ cancelled.']); } });
+}
+
 // Tab branding — title + favicon swap to reflect active mode.
 // Light:  ⬛ black mark on light ground
 // Dark:   ⬜ white mark on void ground
@@ -2226,6 +2405,11 @@ function initCanvas() {
     }
 
     canvas.addEventListener('pointerdown', e => {
+        // When embedded in an iframe (e.g. the BM Suite side panel), the iframe's
+        // window doesn't get keyboard focus from a canvas click on its own — so
+        // ⌘A / Delete / etc. never reach our document-level keydown handler. Pull
+        // focus to this window on every board interaction. (No-op when standalone.)
+        try { if (window.top !== window) window.focus(); } catch (_) {}
         // Commit any in-progress sticky edit when the user touches the board.
         // (canvas isn't focusable, so blur won't fire on its own — do it here.)
         if (S.editingStickyId) commitStickyEdit();
@@ -3209,7 +3393,25 @@ function renderSquare(obj) {
     ctx.save(); baseStyle();
     const _sf = resolveFill(obj.data.fill); if (_sf) { ctx.fillStyle = _sf; ctx.fillRect(x, y, w, h); }
     if (!obj.data.strokeOff) ctx.strokeRect(x, y, w, h);
+    if (obj.data.frame) drawFrameLabel(obj);
     if (obj.selected) { selBox(x, y, w, h); drawAnchors(obj); }
+    ctx.restore();
+}
+
+// Figma-style name tag above a frame's top-left corner. Kept ~constant in
+// screen pixels regardless of zoom (like the selection chrome).
+function drawFrameLabel(obj) {
+    const { x, y, w, h } = obj.data;
+    const fr = obj.data.frame || {};
+    const label = fr.label || `${w}×${h}`;
+    const s = 1 / VIEW.scale;
+    ctx.save();
+    ctx.font = `${Math.round(11 * s)}px ui-sans-serif, -apple-system, "Helvetica Neue", Arial, sans-serif`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = MODE === 'dark' ? 'rgba(240,237,230,0.5)'
+                  : MODE === 'gray' ? 'rgba(22,0,162,0.55)'
+                                    : 'rgba(12,12,12,0.42)';
+    ctx.fillText(label, x, y - 6 * s);
     ctx.restore();
 }
 
@@ -6807,7 +7009,14 @@ function runCommand(val) {
             exportPptx();
             return;
         }
-        printRaw(`export: unknown subcommand "${sub}" — try: export, export magic, export data, export pptx`, 't-err');
+        if (sub === 'frame') {
+            const f = _frameForExport();
+            if (!f) { printRaw('export frame: select a frame first (or have exactly one on the canvas). run `frame` to make one.', 't-err'); return; }
+            exportFramePng(f);
+            return;
+        }
+        if (sub === 'frames') { exportAllFramesPng(); return; }
+        printRaw(`export: unknown subcommand "${sub}" — try: export, export magic, export data, export pptx, export frame`, 't-err');
         return;
     }
 
@@ -6848,6 +7057,24 @@ function runCommand(val) {
         const pl=JSON.stringify({command:target3,action:BM_CMDS[target3].action},null,2);
         const ship=()=>enqueue(`share ${target3}`,['→ copied to clipboard!','───────────────────',...pl.split('\n').slice(0,10),'───────────────────']);
         if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(pl).then(ship,ship)}else{ship()}
+        return;
+    }
+
+    // ── frame ─ Figma-style export frame (A4 / A3 / banner / custom px) ──
+    //   frame                  → size picker modal
+    //   frame a4 / a3 / a5 / b5 / og / story / square / banner / slide
+    //   frame a4 landscape / a3 横                  → landscape variant
+    //   frame 1080x1080 / frame 1200x630           → custom px
+    if (head === 'frame' || head === 'artboard') {
+        const spec = parseFrameArg(rest);
+        if (spec) {
+            const o = placeFrame(spec.w, spec.h, spec.label);
+            enqueue(`frame ${rest.trim()}`, [`→ ${o.data.frame.label} frame placed (${o.data.w}×${o.data.h}px). 中身をデザイン → その枠を選択して X で書き出し`]);
+            return;
+        }
+        if (rest.trim()) { printRaw(`frame: unknown size "${rest.trim()}" — try a4, a3, a4 landscape, 1080x1080, og, story … or just "frame" for the picker`, 't-err'); return; }
+        showFramePicker();
+        enqueue('frame', ['→ opening size picker...']);
         return;
     }
 
@@ -8495,6 +8722,9 @@ function _getRotatedBounds(obj) {
 function exportPng() {
     // Decide which objects to export
     const selected = S.objects.filter(o => o.selected || S.multiSelected.includes(o.id));
+    // Frame export: a single selected frame → render its contents at the
+    // frame's exact pixel size, clipped, on the frame fill (like Figma).
+    if (selected.length === 1 && _isFrame(selected[0])) { exportFramePng(selected[0]); return; }
     const targets  = selected.length > 0 ? selected : S.objects;
     if (targets.length === 0) {
         enqueue('png > blackmirror.png', ['→ canvas is empty — nothing to export'], 't-err');
@@ -8576,31 +8806,38 @@ function copyImageToClipboard() {
         const selected = S.objects.filter(o => o.selected || S.multiSelected.includes(o.id));
         const targets  = selected.length > 0 ? selected : S.objects;
         if (targets.length === 0) { _msg('copy-image: canvas is empty — add or select something first.', 't-err'); return; }
-        _msg(`[copy-image] rendering ${targets.length} object(s)…`);
-        const PAD = 8;
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        for (const obj of targets) {
-            const b = _getRotatedBounds(obj);
-            if (!b) continue;
-            minX = Math.min(minX, b.x - PAD); minY = Math.min(minY, b.y - PAD);
-            maxX = Math.max(maxX, b.x + b.w + PAD); maxY = Math.max(maxY, b.y + b.h + PAD);
-        }
-        if (!isFinite(minX)) { _msg('copy-image: could not compute bounds.', 't-err'); return; }
-        const W = Math.max(1, Math.ceil(maxX - minX)), H = Math.max(1, Math.ceil(maxY - minY));
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const oc = document.createElement('canvas');
-        oc.width = W * dpr; oc.height = H * dpr;
-        const oc2 = oc.getContext('2d');
-        oc2.scale(dpr, dpr); oc2.translate(-minX, -minY);
-        let skipped = 0;
-        for (const obj of targets) {
-            try {
-                const c = getObjCenter(obj), rot = obj.data.rotation || 0;
-                oc2.save();
-                if (rot !== 0) { oc2.translate(c.x, c.y); oc2.rotate(rot); oc2.translate(-c.x, -c.y); }
-                renderObjectToCtx(oc2, obj);
-                oc2.restore();
-            } catch (e) { skipped++; try { oc2.restore(); } catch (_) {} }
+        let oc, W, H, skipped = 0;
+        if (selected.length === 1 && _isFrame(selected[0])) {
+            // Frame copy: render its contents at the frame's exact size, clipped.
+            const r = renderFrameToCanvas(selected[0], 2);
+            oc = r.canvas; W = r.w; H = r.h; skipped = r.skipped;
+            _msg(`[copy-image] rendering frame "${(selected[0].data.frame && selected[0].data.frame.label) || W + '×' + H}" — ${r.count} object(s) inside…`);
+        } else {
+            _msg(`[copy-image] rendering ${targets.length} object(s)…`);
+            const PAD = 8;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const obj of targets) {
+                const b = _getRotatedBounds(obj);
+                if (!b) continue;
+                minX = Math.min(minX, b.x - PAD); minY = Math.min(minY, b.y - PAD);
+                maxX = Math.max(maxX, b.x + b.w + PAD); maxY = Math.max(maxY, b.y + b.h + PAD);
+            }
+            if (!isFinite(minX)) { _msg('copy-image: could not compute bounds.', 't-err'); return; }
+            W = Math.max(1, Math.ceil(maxX - minX)); H = Math.max(1, Math.ceil(maxY - minY));
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            oc = document.createElement('canvas');
+            oc.width = W * dpr; oc.height = H * dpr;
+            const oc2 = oc.getContext('2d');
+            oc2.scale(dpr, dpr); oc2.translate(-minX, -minY);
+            for (const obj of targets) {
+                try {
+                    const c = getObjCenter(obj), rot = obj.data.rotation || 0;
+                    oc2.save();
+                    if (rot !== 0) { oc2.translate(c.x, c.y); oc2.rotate(rot); oc2.translate(-c.x, -c.y); }
+                    renderObjectToCtx(oc2, obj);
+                    oc2.restore();
+                } catch (e) { skipped++; try { oc2.restore(); } catch (_) {} }
+            }
         }
         _msg(`[copy-image] encoding ${W}×${H} PNG…` + (skipped ? ` (${skipped} object(s) skipped)` : ''));
         // Pass a Blob *promise* to ClipboardItem — keeps clipboard.write() inside the user
