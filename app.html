@@ -2397,8 +2397,8 @@ function updateZoomLabel() {
 // — including wide Japanese / emoji runs where a length×0.6 approximation
 // over- or under-shoots badly.
 const _textMeasureCtx = (document.createElement('canvas')).getContext('2d');
-function measureTextMetrics(text, fs) {
-    _textMeasureCtx.font = `${fs}px "Courier New", monospace`;
+function measureTextMetrics(text, fs, fontFamily) {
+    _textMeasureCtx.font = `${fs}px ${fontFamily || `"Courier New", monospace`}`;
     const m = _textMeasureCtx.measureText(text || '');
     const ascent  = (m.actualBoundingBoxAscent  || fs * 0.8);
     const descent = (m.actualBoundingBoxDescent || fs * 0.22);
@@ -2454,7 +2454,7 @@ function getObjBounds(obj) {
         }
         case 'text': {
             const fs = obj.data.fontSize || 16;
-            const m  = measureTextMetrics(obj.data.text, fs);
+            const m  = measureTextMetrics(obj.data.text, fs, obj.data.fontFamily);
             return { x: obj.data.x, y: obj.data.y - m.ascent, w: m.width, h: m.height };
         }
         case 'stroke': return strokeBBox(obj.data.pts);
@@ -3117,16 +3117,17 @@ function renderArrow(obj) {
 
 function renderText(obj) {
     if (obj.id === S.editingTextId) return; // hidden while overlay is active
-    const {x, y, text, fontSize} = obj.data;
+    const {x, y, text, fontSize, fontFamily} = obj.data;
     const fs = fontSize || 16;
+    const ff = fontFamily || `"Courier New", monospace`;
     ctx.save();
-    ctx.font = `${fs}px "Courier New", monospace`;
+    ctx.font = `${fs}px ${ff}`;
     ctx.fillStyle = getStrokeColor();
     ctx.fillText(text, x, y);
     if (obj.selected) {
         // Tight bbox via shared metrics — the blue chrome now actually
         // hugs the glyph run regardless of char width (ASCII / CJK / emoji).
-        const m = measureTextMetrics(text, fs);
+        const m = measureTextMetrics(text, fs, fontFamily);
         selBox(x, y - m.ascent, m.width, m.height);
         drawAnchors(obj);
     }
@@ -3324,9 +3325,10 @@ function renderSticky(obj) {
         const pad = Math.min(w, h) * 0.08;
         const innerW = w - pad * 2;
         const innerH = h - pad * 2;
-        const { fs, lines } = stickyAutoFit(ctx, text, innerW, innerH, STICKY_FONT);
+        const sf = obj.data.fontFamily || STICKY_FONT;
+        const { fs, lines } = stickyAutoFit(ctx, text, innerW, innerH, sf);
         ctx.fillStyle = '#1a1a1a';
-        ctx.font = `600 ${fs}px ${STICKY_FONT}`;
+        ctx.font = `600 ${fs}px ${sf}`;
         ctx.textBaseline = 'middle';
         ctx.textAlign    = 'center';
         const lineH = fs * 1.22;
@@ -6668,6 +6670,42 @@ function runCommand(val) {
             `→ size: ${W} × ${H}  ·  ${initial ? `text: "${initial}"` : 'empty (double-click to edit)'}`,
             '[OK] sticky note placed.',
         ]);
+        return;
+    }
+
+    // ── font ─ set the font of the selected text / sticky object(s) ──────
+    //   font <key>   key ∈ mincho|serif | gothic|sans | round|maru | mono | hand | default|reset
+    //   (select a text or sticky first; Cmd+A then `font …` applies to all)
+    if (head === 'font') {
+        const FONTS = {
+            mincho: `"Hiragino Mincho ProN","Yu Mincho","YuMincho","MS PMincho",serif`,
+            serif:  `"Hiragino Mincho ProN","Yu Mincho","YuMincho","MS PMincho",serif`,
+            gothic: `"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif`,
+            sans:   `"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif`,
+            round:  `"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","M PLUS Rounded 1c",sans-serif`,
+            maru:   `"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","M PLUS Rounded 1c",sans-serif`,
+            mono:   `"Courier New","SF Mono",Menlo,monospace`,
+            hand:   `"Comic Sans MS","Chalkboard SE","Hiragino Maru Gothic ProN",cursive`,
+            marker: `"Comic Sans MS","Chalkboard SE","Hiragino Maru Gothic ProN",cursive`,
+        };
+        const key = rest.trim().toLowerCase();
+        if (!key || key === '?' || key === 'list') {
+            enqueue('font', ['usage: font <key>  — applies to selected text/sticky', 'keys: mincho | gothic | round | mono | hand | default', '(select an object first; Cmd+A then `font …` for all)']);
+            return;
+        }
+        const targets = S.objects.filter(o => (o.selected || S.multiSelected.includes(o.id)) && (o.type === 'text' || o.type === 'sticky'));
+        if (!targets.length) { printRaw('font: select a text or sticky object first.', 't-err'); return; }
+        if (key === 'default' || key === 'reset') {
+            targets.forEach(o => { delete o.data.fontFamily; });
+            saveHistory(); redrawAll();
+            enqueue('font default', [`→ reset ${targets.length} object(s) to default font`]);
+            return;
+        }
+        const ff = FONTS[key];
+        if (!ff) { printRaw(`font: unknown key "${key}". try: mincho | gothic | round | mono | hand | default`, 't-err'); return; }
+        targets.forEach(o => { o.data.fontFamily = ff; });
+        saveHistory(); redrawAll();
+        enqueue(`font ${key}`, [`→ ${key} applied to ${targets.length} text/sticky object(s)`]);
         return;
     }
 
