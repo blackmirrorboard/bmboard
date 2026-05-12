@@ -2397,8 +2397,8 @@ function updateZoomLabel() {
 // — including wide Japanese / emoji runs where a length×0.6 approximation
 // over- or under-shoots badly.
 const _textMeasureCtx = (document.createElement('canvas')).getContext('2d');
-function measureTextMetrics(text, fs, fontFamily) {
-    _textMeasureCtx.font = `${fs}px ${fontFamily || `"Courier New", monospace`}`;
+function measureTextMetrics(text, fs, fontFamily, bold) {
+    _textMeasureCtx.font = `${bold ? 'bold ' : ''}${fs}px ${fontFamily || `"Courier New", monospace`}`;
     const m = _textMeasureCtx.measureText(text || '');
     const ascent  = (m.actualBoundingBoxAscent  || fs * 0.8);
     const descent = (m.actualBoundingBoxDescent || fs * 0.22);
@@ -2454,7 +2454,7 @@ function getObjBounds(obj) {
         }
         case 'text': {
             const fs = obj.data.fontSize || 16;
-            const m  = measureTextMetrics(obj.data.text, fs, obj.data.fontFamily);
+            const m  = measureTextMetrics(obj.data.text, fs, obj.data.fontFamily, obj.data.bold);
             return { x: obj.data.x, y: obj.data.y - m.ascent, w: m.width, h: m.height };
         }
         case 'stroke': return strokeBBox(obj.data.pts);
@@ -3117,17 +3117,17 @@ function renderArrow(obj) {
 
 function renderText(obj) {
     if (obj.id === S.editingTextId) return; // hidden while overlay is active
-    const {x, y, text, fontSize, fontFamily} = obj.data;
+    const {x, y, text, fontSize, fontFamily, bold} = obj.data;
     const fs = fontSize || 16;
     const ff = fontFamily || `"Courier New", monospace`;
     ctx.save();
-    ctx.font = `${fs}px ${ff}`;
+    ctx.font = `${bold ? 'bold ' : ''}${fs}px ${ff}`;
     ctx.fillStyle = getStrokeColor();
     ctx.fillText(text, x, y);
     if (obj.selected) {
         // Tight bbox via shared metrics — the blue chrome now actually
         // hugs the glyph run regardless of char width (ASCII / CJK / emoji).
-        const m = measureTextMetrics(text, fs, fontFamily);
+        const m = measureTextMetrics(text, fs, fontFamily, bold);
         selBox(x, y - m.ascent, m.width, m.height);
         drawAnchors(obj);
     }
@@ -3288,17 +3288,18 @@ function stickyWrapText(c2, text, maxW) {
     }
     return out;
 }
-function stickyAutoFit(c2, text, w, h, fontFamily) {
+function stickyAutoFit(c2, text, w, h, fontFamily, weight) {
+    const wt = weight || 600;
     if (!text) return { fs: Math.floor(Math.min(w, h) * 0.25), lines: [] };
     const maxFs = Math.max(10, Math.floor(Math.min(w, h) * 0.45));
     const minFs = 8;
     for (let fs = maxFs; fs >= minFs; fs -= 1) {
-        c2.font = `600 ${fs}px ${fontFamily}`;
+        c2.font = `${wt} ${fs}px ${fontFamily}`;
         const lines = stickyWrapText(c2, text, w);
         const totalH = lines.length * fs * 1.22;
         if (totalH <= h) return { fs, lines };
     }
-    c2.font = `600 ${minFs}px ${fontFamily}`;
+    c2.font = `${wt} ${minFs}px ${fontFamily}`;
     return { fs: minFs, lines: stickyWrapText(c2, text, w) };
 }
 const STICKY_FONT = `"Helvetica Neue", "Hiragino Kaku Gothic ProN", -apple-system, system-ui, sans-serif`;
@@ -3326,9 +3327,10 @@ function renderSticky(obj) {
         const innerW = w - pad * 2;
         const innerH = h - pad * 2;
         const sf = obj.data.fontFamily || STICKY_FONT;
-        const { fs, lines } = stickyAutoFit(ctx, text, innerW, innerH, sf);
+        const sw = obj.data.bold ? 800 : 600;
+        const { fs, lines } = stickyAutoFit(ctx, text, innerW, innerH, sf, sw);
         ctx.fillStyle = '#1a1a1a';
-        ctx.font = `600 ${fs}px ${sf}`;
+        ctx.font = `${sw} ${fs}px ${sf}`;
         ctx.textBaseline = 'middle';
         const noteMode = !!obj.data.bullet;          // left-aligned, top-anchored bullet list
         ctx.textAlign = noteMode ? 'left' : 'center';
@@ -6741,6 +6743,23 @@ function runCommand(val) {
         });
         saveHistory(); redrawAll();
         enqueue(`bullet${arg ? ' ' + arg : ''}`, [`→ ${numbered ? 'numbered' : 'bulleted'} ${targets.length} sticky note(s) — left-aligned`]);
+        return;
+    }
+
+    // ── bold ─ toggle bold on selected text / sticky object(s) ───────────
+    //   bold        → toggle (bold all unless all already bold)
+    //   bold on / bold off
+    if (head === 'bold') {
+        const arg = rest.trim().toLowerCase();
+        const targets = S.objects.filter(o => (o.selected || S.multiSelected.includes(o.id)) && (o.type === 'text' || o.type === 'sticky'));
+        if (!targets.length) { printRaw('bold: select a text or sticky object first.', 't-err'); return; }
+        let on;
+        if (arg === 'on' || arg === '1') on = true;
+        else if (arg === 'off' || arg === '0') on = false;
+        else on = !targets.every(o => o.data.bold);
+        targets.forEach(o => { if (on) o.data.bold = true; else delete o.data.bold; });
+        saveHistory(); redrawAll();
+        enqueue(`bold ${on ? 'on' : 'off'}`, [`→ bold ${on ? 'ON' : 'OFF'} for ${targets.length} text/sticky object(s)`]);
         return;
     }
 
