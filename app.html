@@ -5126,15 +5126,19 @@ function showTextInput(p, editObj = null) {
     textOverlay.style.top     = (_isVert ? sy : sy - fs * VIEW.scale) + 'px';
     textInput.style.fontSize  = Math.max(10, Math.round(fs * VIEW.scale)) + 'px';
     textInput.value = editObj ? editObj.data.text : '';
-    if (typeof _sizeTextInput === 'function') _sizeTextInput();
-    // The click's default handling (mousedown focus-move + setPointerCapture on the
-    // canvas) bounces focus away on desktop — re-grab it a few times so the user can
-    // type immediately on the first click. (touch devices don't have this problem.)
+    if (typeof _sizeTextInput === 'function') _sizeTextInput(true);
+    // Desktop: the canvas pointerdown's setPointerCapture/preventDefault bounces
+    // focus away — re-grab it a few times so the user can type on the first click.
+    // Touch: we must NOT call focus() again outside the original tap gesture —
+    // iOS dismisses / freezes the soft keyboard if you do, which made the text
+    // tool feel "typing does nothing". So on touch, focus once and leave it.
     const _grab = () => { try { textInput.focus(); if (editObj) textInput.select(); } catch (_) {} };
     _grab();
-    requestAnimationFrame(_grab);
-    setTimeout(_grab, 0);
-    setTimeout(_grab, 80);
+    if (S.lastPointerType !== 'touch') {
+        requestAnimationFrame(_grab);
+        setTimeout(_grab, 0);
+        setTimeout(_grab, 80);
+    }
     redrawAll(); // hide the original text while editing
 }
 
@@ -5183,12 +5187,17 @@ textInput.addEventListener('keydown', e => {
 // Grow the textarea with its content so what you're typing stays visible — width
 // tracks the widest line (wrap=off), height tracks the line count. Also nudge the
 // overlay left if the wider box runs off-screen.
-function _sizeTextInput() {
-    // Width: collapse → measure widest line → grow. Height: 'auto' → scrollHeight
-    // (the canonical auto-grow pattern; safer on iOS than collapsing to 0px).
-    textInput.style.width  = '0px';
-    const w = textInput.scrollWidth;
-    textInput.style.width  = Math.max(80, w + 8) + 'px';
+function _sizeTextInput(initial) {
+    // On the initial open we may collapse → measure widest line → fit. On every
+    // keystroke (input event) we only ever GROW — never collapse the focused
+    // field, which is iOS-unfriendly (caret jumps / input gets dropped).
+    if (initial) {
+        textInput.style.width = '0px';
+        textInput.style.width = Math.max(80, textInput.scrollWidth + 8) + 'px';
+    } else {
+        const need = textInput.scrollWidth + 8;
+        if (need > (parseFloat(textInput.style.width) || 80)) textInput.style.width = need + 'px';
+    }
     textInput.style.height = 'auto';
     textInput.style.height = (textInput.scrollHeight + 2) + 'px';
     // If the now-wider box runs off the right edge, slide the overlay left to keep it on-screen.
