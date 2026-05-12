@@ -3330,12 +3330,14 @@ function renderSticky(obj) {
         ctx.fillStyle = '#1a1a1a';
         ctx.font = `600 ${fs}px ${sf}`;
         ctx.textBaseline = 'middle';
-        ctx.textAlign    = 'center';
+        const noteMode = !!obj.data.bullet;          // left-aligned, top-anchored bullet list
+        ctx.textAlign = noteMode ? 'left' : 'center';
         const lineH = fs * 1.22;
         const totalH = lines.length * lineH;
-        const startY = y + h/2 - totalH/2 + lineH/2;
+        const lineX  = noteMode ? (x + pad) : (x + w/2);
+        const startY = noteMode ? (y + pad + lineH/2) : (y + h/2 - totalH/2 + lineH/2);
         for (let i = 0; i < lines.length; i++) {
-            ctx.fillText(lines[i], x + w/2, startY + i * lineH);
+            ctx.fillText(lines[i], lineX, startY + i * lineH);
         }
     }
     if (obj.selected) { selBox(x, y, w, h); drawAnchors(obj); }
@@ -6706,6 +6708,39 @@ function runCommand(val) {
         targets.forEach(o => { o.data.fontFamily = ff; });
         saveHistory(); redrawAll();
         enqueue(`font ${key}`, [`→ ${key} applied to ${targets.length} text/sticky object(s)`]);
+        return;
+    }
+
+    // ── bullet ─ turn a selected sticky into a left-aligned bullet-list note ─
+    //   bullet            → "• " in front of each line, left-aligned, top-anchored
+    //   bullet -  /  bullet *   → use "– " / "* " instead
+    //   bullet 1          → numbered (1.  2.  3. …)
+    //   bullet off        → strip the markers, back to centred sticky
+    if (head === 'bullet') {
+        const arg = rest.trim().toLowerCase();
+        if (arg === '?' || arg === 'help') {
+            enqueue('bullet', ['usage: bullet [- | * | 1 | off]  — applies to selected sticky note', 'bullet → •   bullet - → –   bullet * → *   bullet 1 → numbered   bullet off → remove']);
+            return;
+        }
+        const targets = S.objects.filter(o => (o.selected || S.multiSelected.includes(o.id)) && o.type === 'sticky');
+        if (!targets.length) { printRaw('bullet: select a sticky note first.', 't-err'); return; }
+        const strip = (line) => line.replace(/^\s*(?:[•·‣◦\-–—*]|\d+[.)])\s+/, '');
+        if (arg === 'off' || arg === 'none') {
+            targets.forEach(o => { o.data.text = String(o.data.text || '').split('\n').map(strip).join('\n'); delete o.data.bullet; });
+            saveHistory(); redrawAll();
+            enqueue('bullet off', [`→ removed bullets from ${targets.length} sticky note(s)`]);
+            return;
+        }
+        const mark = (arg === '-' || arg === 'dash') ? '– ' : (arg === '*' ? '* ' : '• ');
+        const numbered = (arg === '1' || arg === 'num' || arg === 'number' || arg === 'ol');
+        targets.forEach(o => {
+            const lines = String(o.data.text || '').split('\n').map(strip);
+            let n = 0;
+            o.data.text = lines.map(l => { if (!l.trim()) return l; n++; return numbered ? (n + '. ' + l) : (mark + l); }).join('\n');
+            o.data.bullet = true;
+        });
+        saveHistory(); redrawAll();
+        enqueue(`bullet${arg ? ' ' + arg : ''}`, [`→ ${numbered ? 'numbered' : 'bulleted'} ${targets.length} sticky note(s) — left-aligned`]);
         return;
     }
 
