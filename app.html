@@ -3284,11 +3284,16 @@ function getCachedImg(src) {
 }
 
 function renderImage(obj) {
-    const { x, y, w, h } = obj.data;
+    const { x, y, w, h, crop } = obj.data;
     const img = getCachedImg(obj.data.src);
     ctx.save();
     if (img.complete && img.naturalWidth > 0) {
-        ctx.drawImage(img, x, y, w, h);
+        if (crop && crop.w > 0 && crop.h > 0) {
+            // Non-destructive crop: draw only the crop region of the source image
+            ctx.drawImage(img, crop.x, crop.y, crop.w, crop.h, x, y, w, h);
+        } else {
+            ctx.drawImage(img, x, y, w, h);
+        }
     } else {
         // Placeholder while loading
         ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1 / VIEW.scale;
@@ -4775,6 +4780,7 @@ function showTextInput(p, editObj = null) {
     textOverlay.style.top     = (sy - fs * VIEW.scale) + 'px';
     textInput.style.fontSize  = Math.max(10, Math.round(fs * VIEW.scale)) + 'px';
     textInput.value = editObj ? editObj.data.text : '';
+    if (typeof _sizeTextInput === 'function') _sizeTextInput();
     // The click's default handling (mousedown focus-move + setPointerCapture on the
     // canvas) bounces focus away on desktop — re-grab it a few times so the user can
     // type immediately on the first click. (touch devices don't have this problem.)
@@ -4823,6 +4829,16 @@ textInput.addEventListener('keydown', e => {
     if (e.key==='Escape') { textOverlay.style.display='none'; }
     e.stopPropagation();
 });
+// Grow the input with the text so what you're typing stays visible (single-line text
+// objects can get long). Also nudge the overlay left if the wider input runs off-screen.
+function _sizeTextInput() {
+    textInput.size = Math.max(8, (textInput.value || '').length + 3);
+    requestAnimationFrame(() => {
+        const r = textOverlay.getBoundingClientRect();
+        if (r.right > window.innerWidth - 8) textOverlay.style.left = Math.max(8, window.innerWidth - r.width - 8) + 'px';
+    });
+}
+textInput.addEventListener('input', _sizeTextInput);
 
 // ── Sticky editor (textarea) ─ Miro-style in-place editing ──────────────
 const stickyEditor = document.getElementById('stickyEditor');
