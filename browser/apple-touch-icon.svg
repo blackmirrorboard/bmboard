@@ -1,0 +1,11 @@
+<!-- Source for browser/apple-touch-icon.png (180×180). Rasterise this SVG to PNG
+     (Figma / rsvg-convert / sips / online SVG→PNG) and save next to it.
+     iOS "Add to Home Screen" needs a PNG; it ignores SVG apple-touch-icons. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180" role="img" aria-label="BMBrowser">
+  <title>BMBrowser</title>
+  <rect width="180" height="180" fill="#000000"/>
+  <circle cx="90" cy="90" r="66" fill="#84ff64"/>
+  <path fill="#000000" d="M62 92 L73 60 Q75.7 54 78.4 60 L89.4 92 Q91 97.5 84 97.5 L67 97.5 Q60 97.5 62 92 Z"/>
+  <path fill="#000000" d="M101.6 92 L112.6 60 Q115.3 54 118 60 L129 92 Q130.6 97.5 123.6 97.5 L106.6 97.5 Q99.6 97.5 101.6 92 Z"/>
+  <path fill="#000000" d="M53.4 106.6 Q90 156 126.6 106.6 Q90 128 53.4 106.6 Z"/>
+</svg>
