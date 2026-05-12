@@ -1963,6 +1963,7 @@ const S = {
     curPt:           null,
     penPts:          [],
     dragOff:         null,      // { x, y }
+    frameDragChildren: null,    // objects carried while a frame is dragged (Figma-style)
     textPos:         null,
     rotateId:        null,      // object being rotated
     rotateCenter:    null,      // { x, y }
@@ -2123,17 +2124,36 @@ function parseFrameArg(arg) {
     return FRAME_PRESETS[key] ? { ...FRAME_PRESETS[key] } : null;
 }
 
-// Render a frame's contents onto a fresh canvas: contents = objects whose
-// center lies inside the frame (frame itself + other frames excluded), drawn
-// at the frame's exact pixel size, clipped, on the frame's fill colour.
+// Resolve which objects "belong to" a frame — z-order aware. An object belongs
+// to frame F iff F is the highest-stacked frame *below* it whose rect contains
+// the object's centre. So: place a frame, then draw on top of it → that's the
+// frame's contents. Stuff sitting behind the frame (drawn earlier) is excluded,
+// as is anything claimed by another frame stacked on top of F. Returns objects
+// in z-order (bottom → top).
+function frameContents(frame) {
+    const fi = S.objects.indexOf(frame);
+    if (fi < 0) return [];
+    const rectOf   = o => ({ x: o.data.x, y: o.data.y, w: o.data.w, h: o.data.h });
+    const centerIn = (b, r) => { const cx = b.x + b.w/2, cy = b.y + b.h/2; return cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h; };
+    const fRect = rectOf(frame);
+    const upper = [];          // rects of frames stacked above `frame`
+    const out   = [];
+    for (let i = fi + 1; i < S.objects.length; i++) {
+        const o = S.objects[i];
+        if (_isFrame(o)) { upper.push(rectOf(o)); continue; }
+        const b = _getRotatedBounds(o); if (!b) continue;
+        if (!centerIn(b, fRect)) continue;             // not inside this frame
+        if (upper.some(r => centerIn(b, r))) continue; // claimed by a frame above us
+        out.push(o);
+    }
+    return out;
+}
+
+// Render a frame's contents onto a fresh canvas, at the frame's exact pixel
+// size, clipped to the frame, on the frame's fill colour.
 function renderFrameToCanvas(frame, dprCap) {
     const fx = frame.data.x, fy = frame.data.y, fw = frame.data.w, fh = frame.data.h;
-    const inside = S.objects.filter(o => {
-        if (o === frame || _isFrame(o)) return false;
-        const b = _getRotatedBounds(o); if (!b) return false;
-        const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
-        return cx >= fx && cx <= fx + fw && cy >= fy && cy <= fy + fh;
-    });
+    const inside = frameContents(frame);
     const dpr = Math.min(window.devicePixelRatio || 1, dprCap || 3);
     const oc  = document.createElement('canvas');
     oc.width  = Math.max(1, Math.round(fw * dpr));
@@ -2421,7 +2441,7 @@ function initCanvas() {
 
         if (ptrs.size >= 2) {
             // Two pointers → cancel single-op, enter pinch/pan
-            S.isDown=false; S.penPts=[]; S.dragOff=null;
+            S.isDown=false; S.penPts=[]; S.dragOff=null; S.frameDragChildren=null;
             S.rotateId=null; S.anchorDrag=null; S.panning=false;
             pinch = pinchSnapshot();
             return;
@@ -2898,6 +2918,7 @@ function onDown(cx, cy, isTouch = false) {
             if (prevSel && hit.id === prevSel.id) {
                 // Same object body → move
                 S.dragOff = { x: p.x, y: p.y };
+                S.frameDragChildren = _isFrame(hit) ? frameContents(hit) : null;
                 redrawAll();
                 return;
             }
@@ -2906,6 +2927,7 @@ function onDown(cx, cy, isTouch = false) {
             hit.selected = true;
             S.selectedId = hit.id;
             S.dragOff    = { x: p.x, y: p.y };
+            S.frameDragChildren = _isFrame(hit) ? frameContents(hit) : null;
             syncStrokeBtnToObj(hit);
             redrawAll();
             return;
@@ -3265,7 +3287,7 @@ function onUp() {
     } else if (S.dragOff) {
         saveHistory(); // object was moved
     }
-    S.dragOff = null;
+    S.dragOff = null; S.frameDragChildren = null;
 }
 
 // ══════════════════════════════════════════════════
@@ -4246,6 +4268,19 @@ function hitTest(obj, x, y, extraPad = 0) {
 }
 
 function moveObj(obj, dx, dy) {
+    // Figma-style: dragging a frame carries the objects inside it. While a drag
+    // is active we use the children snapshot taken at drag-start (so the frame
+    // doesn't "pick up" things it passes over); otherwise (spells, DUP) resolve
+    // them fresh. Children that are themselves selected are skipped — the
+    // caller's drag loop already moves those.
+    if ((dx || dy) && _isFrame(obj)) {
+        const kids = (S.frameDragChildren && S.selectedId === obj.id)
+            ? S.frameDragChildren : frameContents(obj);
+        for (const child of kids) {
+            if (!child || child.selected || (S.multiSelected || []).includes(child.id)) continue;
+            moveObj(child, dx, dy);   // children are never frames → no infinite recursion
+        }
+    }
     switch (obj.type) {
         case 'circle':  obj.data.cx+=dx; obj.data.cy+=dy; break;
         case 'triangle':
@@ -7651,7 +7686,7 @@ const SHAPE_DEFAULT_SVG = `<svg id="shapeBtnIcon" width="14" height="14" viewBox
 function setTool(tool) {
     commitText();
     // Reset all interaction state so switching tools never leaves stuck flags
-    S.isDown = false; S.penPts = []; S.dragOff = null; S.rotateId = null;
+    S.isDown = false; S.penPts = []; S.dragOff = null; S.frameDragChildren = null; S.rotateId = null;
     S.anchorDrag = null; S.panning = false; S.marquee = null;
     S.multiDragOff = null; S.multiRotId = false;
     S.multiResizeId = null; S.multiResizeOrig = null;
@@ -9225,6 +9260,10 @@ function exportSvgNow(explicitObjs) {
         printRaw('[svg] canvas is empty — nothing to export', 't-err');
         return;
     }
+    // Frame mode: a single selected frame → emit just its contents, clipped to
+    // the frame, on the frame fill. Imports into Figma / Illustrator as editable
+    // vector layers (shapes stay vectors, text stays editable text).
+    if (targets.length === 1 && _isFrame(targets[0])) { exportFrameSvg(targets[0]); return; }
 
     const PAD = 8;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -9289,6 +9328,41 @@ function exportSvgNow(explicitObjs) {
         if (r === 'share')       printRaw(`[svg] ${fname} shared ✓`, 't-ok');
         else if (r !== 'cancelled') printRaw(`[svg] ${fname} — ${(svg.length/1024).toFixed(1)} KB ✓`, 't-ok');
     }).catch(err => printRaw(`[svg] delivery failed: ${err.message}`, 't-err'));
+}
+
+// Vector export of one frame's contents → .svg sized to the frame, clipped,
+// on the frame fill. Drops into Figma / Illustrator as editable layers.
+function exportFrameSvg(frame) {
+    const fx = frame.data.x, fy = frame.data.y, fw = frame.data.w, fh = frame.data.h;
+    const contents = frameContents(frame);
+    const label = (frame.data.frame && frame.data.frame.label) || `${fw}×${fh}`;
+    const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    enqueue(`[SYSTEM] ${ts}`, [
+        `→ generating vector SVG of frame "${label}"  (${fw}×${fh})`,
+        `→ contents: ${contents.length} object(s) — editable layers`,
+        '→ serializing XML...', '[IO] vector asset prepared.',
+    ]);
+    const parts = contents.map(o => svgElementFor(o)).filter(Boolean);
+    const bg = resolveFill(frame.data.fill);
+    const header = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<!-- Black Mirror Board — frame "${label}" ${ts} -->\n`;
+    const svg = header
+        + `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"\n`
+        + `     width="${fw}" height="${fh}" viewBox="0 0 ${fw} ${fh}">\n`
+        + `  <title>Black Mirror Board — frame ${label} (${fw}×${fh})</title>\n`
+        + `  <defs><clipPath id="bmFrameClip"><rect x="0" y="0" width="${fw}" height="${fh}"/></clipPath></defs>\n`
+        + (bg ? `  <rect x="0" y="0" width="${fw}" height="${fh}" fill="${bg}"/>\n` : '')
+        + `  <g clip-path="url(#bmFrameClip)"><g transform="translate(${-fx} ${-fy})">\n`
+        + `    ${parts.join('\n    ')}\n`
+        + `  </g></g>\n`
+        + `</svg>\n`;
+    const dt = new Date(), p = n => String(n).padStart(2, '0');
+    const fname = `BM_FRAME_${_frameSafeName(frame)}_${dt.getFullYear()}${p(dt.getMonth()+1)}${p(dt.getDate())}_${p(dt.getHours())}${p(dt.getMinutes())}.svg`;
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    printRaw(`[svg] ${fname} — ${(svg.length/1024).toFixed(1)} KB ✓  (Figma / Illustrator で編集可)`, 't-ok');
 }
 
 // Serialize a single canvas object into an SVG fragment.
