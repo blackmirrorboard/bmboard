@@ -1789,6 +1789,11 @@
     <div class="pop-row">
         <button class="tool-btn" data-bold="toggle" title="太字 ON / OFF" style="font-weight:900;font-size:15px">B</button>
     </div>
+    <div class="pop-sep-line"></div>
+    <span class="pop-label">FLOW</span>
+    <div class="pop-row">
+        <button class="tool-btn" data-vert="toggle" title="縦書き ON / OFF" style="font-weight:700;font-size:15px">縦</button>
+    </div>
 </div>
 
 <!-- Usage overlay -->
@@ -2435,6 +2440,62 @@ function measureTextMetrics(text, fs, fontFamily, bold) {
     return { width, ascent, descent, height: ascent + descent };
 }
 
+// ── 縦書き (vertical text) ──────────────────────────────────────────────
+// A text object with data.vertical === true stacks each glyph downward.
+// Newlines start a new column; columns flow right → left (Japanese tategaki).
+// For vertical text objects, (data.x, data.y) is the bbox TOP-LEFT corner
+// (whereas for horizontal text (x, y) is the baseline-left point).
+function vTextLayout(text, fs) {
+    const raw  = (text == null ? '' : String(text));
+    const cols = raw.split('\n').map(s => Array.from(s));   // [[char,…], …]
+    const charAdv = fs * 1.08;     // vertical advance between stacked glyphs
+    const colAdv  = fs * 1.5;      // horizontal advance between columns
+    let maxLen = 1;
+    for (const c of cols) maxLen = Math.max(maxLen, c.length || 1);
+    return {
+        cols, charAdv, colAdv, maxLen,
+        w: Math.max(colAdv, cols.length * colAdv),
+        h: Math.max(charAdv, maxLen * charAdv),
+    };
+}
+
+// Visual bounding box of a text object in world coords: { x, y, w, h }.
+function textVisualBounds(obj) {
+    const d = obj.data, fs = d.fontSize || 16;
+    if (d.vertical) {
+        const L = vTextLayout(d.text, fs);
+        return { x: d.x, y: d.y, w: L.w, h: L.h };
+    }
+    const m = measureTextMetrics(d.text, fs, d.fontFamily, d.bold);
+    return { x: d.x, y: d.y - m.ascent, w: m.width, h: m.height };
+}
+
+// Draw a vertical-text object's glyphs onto any 2D context, using `color`
+// for fill (and faux-bold stroke). Shared by the on-screen canvas and the
+// off-screen PNG export renderer.
+function drawVerticalGlyphs(c2, d, color) {
+    const fs = d.fontSize || 16;
+    const ff = d.fontFamily || `"Courier New", monospace`;
+    const L  = vTextLayout(d.text, fs);
+    c2.save();
+    c2.font         = `${d.bold ? 'bold ' : ''}${fs}px ${ff}`;
+    c2.fillStyle    = color;
+    c2.strokeStyle  = color;
+    c2.textAlign    = 'center';
+    c2.textBaseline = 'alphabetic';
+    if (d.bold) { c2.lineWidth = Math.max(0.5, fs * 0.055); c2.lineJoin = 'round'; }
+    for (let i = 0; i < L.cols.length; i++) {
+        const cx = d.x + L.w - L.colAdv * (i + 0.5);   // first column on the right
+        const chars = L.cols[i];
+        for (let j = 0; j < chars.length; j++) {
+            const cy = d.y + L.charAdv * j + fs * 0.82;
+            c2.fillText(chars[j], cx, cy);
+            if (d.bold) c2.strokeText(chars[j], cx, cy);
+        }
+    }
+    c2.restore();
+}
+
 function getObjCenter(obj) {
     switch (obj.type) {
         case 'circle':   return { x: obj.data.cx, y: obj.data.cy };
@@ -2448,9 +2509,8 @@ function getObjCenter(obj) {
         case 'square':   return { x: obj.data.x + obj.data.w/2, y: obj.data.y + obj.data.h/2 };
         case 'arrow':    return { x: (obj.data.x1+obj.data.x2)/2, y: (obj.data.y1+obj.data.y2)/2 };
         case 'text': {
-            const fs = obj.data.fontSize || 16;
-            const m  = measureTextMetrics(obj.data.text, fs);
-            return { x: obj.data.x + m.width/2, y: obj.data.y - m.ascent + m.height/2 };
+            const b = textVisualBounds(obj);
+            return { x: b.x + b.w/2, y: b.y + b.h/2 };
         }
         case 'stroke': {
             const bb = strokeBBox(obj.data.pts);
@@ -2481,11 +2541,7 @@ function getObjBounds(obj) {
             const x = Math.min(obj.data.x1,obj.data.x2), y = Math.min(obj.data.y1,obj.data.y2);
             return { x, y, w: Math.abs(obj.data.x2-obj.data.x1), h: Math.abs(obj.data.y2-obj.data.y1) };
         }
-        case 'text': {
-            const fs = obj.data.fontSize || 16;
-            const m  = measureTextMetrics(obj.data.text, fs, obj.data.fontFamily, obj.data.bold);
-            return { x: obj.data.x, y: obj.data.y - m.ascent, w: m.width, h: m.height };
-        }
+        case 'text': return textVisualBounds(obj);
         case 'stroke': return strokeBBox(obj.data.pts);
         case 'image':  return { x: obj.data.x, y: obj.data.y, w: obj.data.w, h: obj.data.h };
         case 'sticky': return { x: obj.data.x, y: obj.data.y, w: obj.data.w, h: obj.data.h };
@@ -3152,6 +3208,15 @@ function renderArrow(obj) {
 
 function renderText(obj) {
     if (obj.id === S.editingTextId) return; // hidden while overlay is active
+    if (obj.data.vertical) {
+        drawVerticalGlyphs(ctx, obj.data, getStrokeColor());
+        if (obj.selected) {
+            const b = textVisualBounds(obj);
+            selBox(b.x, b.y, b.w, b.h);
+            drawAnchors(obj);
+        }
+        return;
+    }
     const {x, y, text, fontSize, fontFamily, bold} = obj.data;
     const fs = fontSize || 16;
     const ff = fontFamily || `"Courier New", monospace`;
@@ -3850,6 +3915,12 @@ function scaleObjToGroupBounds(obj, origData, origGB, newGB) {
             const fsW = (od.fontSize || 16) * sx;
             const newFs = Math.max(8, Math.min(200, Math.round(Math.min(fsH, fsW))));
             obj.data.fontSize = newFs;
+            if (od.vertical) {
+                // (x, y) is the bbox top-left for vertical text — no baseline re-anchor.
+                obj.data.x = sX(od.x);
+                obj.data.y = sY(od.y);
+                break;
+            }
             obj.data.x = sX(od.x);
             // text y is baseline; re-anchor using measured ascent so the
             // visual bbox top tracks the scale correctly.
@@ -3919,11 +3990,9 @@ function hitTest(obj, x, y, extraPad = 0) {
             return pointToSegDist(px, py, x1, y1, x2, y2) < (8 + extraPad);
         }
         case 'text': {
-            const {x: ox, y: oy, text, fontSize} = obj.data;
-            const fs = fontSize || 16;
-            const m  = measureTextMetrics(text, fs);
-            return px >= ox - pad && px <= ox + m.width + pad
-                && py >= oy - m.ascent - pad && py <= oy + m.descent + pad;
+            const b = textVisualBounds(obj);
+            return px >= b.x - pad && px <= b.x + b.w + pad
+                && py >= b.y - pad && py <= b.y + b.h + pad;
         }
         case 'stroke': {
             const pts = obj.data.pts;
@@ -4330,6 +4399,17 @@ function applyAnchor(obj, anchorId, nx, ny) {
             const rt = resizeBoxWithMods(anchorId, ob, nx, ny, mods5.shift, mods5.alt);
             if (!rt) return;
             const { nBx, nBy, nBw, nBh } = rt;
+            if (od.vertical) {
+                const oL = vTextLayout(od.text, od.fontSize || 16);
+                const fsW = (od.fontSize || 16) * (nBw / Math.max(1, oL.w));
+                const fsH = (od.fontSize || 16) * (nBh / Math.max(1, oL.h));
+                let vFs = (anchorId === 'tm' || anchorId === 'bm') ? fsH : Math.min(fsH, fsW);
+                vFs = Math.max(8, Math.min(200, Math.round(vFs)));
+                obj.data.fontSize = vFs;
+                obj.data.x = nBx;
+                obj.data.y = nBy;
+                break;
+            }
             // Scale relative to the *measured* pre-resize metrics — not a
             // constant 0.6×length guess — so Japanese / emoji text resizes
             // proportionally instead of stretching or squishing.
@@ -4784,9 +4864,12 @@ function showTextInput(p, editObj = null) {
     const fs  = editObj ? (editObj.data.fontSize || 16) : _newFs;
     const sx  = p.x * VIEW.scale + VIEW.tx;
     const sy  = p.y * VIEW.scale + VIEW.ty;
+    // Vertical text anchors on the bbox top-left; horizontal text on the
+    // baseline — so only the latter needs the one-line upward nudge.
+    const _isVert = !!(editObj && editObj.data.vertical);
     textOverlay.style.display = 'block';
     textOverlay.style.left    = sx + 'px';
-    textOverlay.style.top     = (sy - fs * VIEW.scale) + 'px';
+    textOverlay.style.top     = (_isVert ? sy : sy - fs * VIEW.scale) + 'px';
     textInput.style.fontSize  = Math.max(10, Math.round(fs * VIEW.scale)) + 'px';
     textInput.value = editObj ? editObj.data.text : '';
     if (typeof _sizeTextInput === 'function') _sizeTextInput();
@@ -6858,6 +6941,20 @@ function runCommand(val) {
         return;
     }
 
+    // ── vertical / tategaki ─ toggle 縦書き on selected text object(s) ────
+    //   vertical          → toggle
+    //   vertical on / off
+    if (head === 'vertical' || head === 'tategaki' || head === '縦書き' || head === 'tate') {
+        const arg = rest.trim().toLowerCase();
+        const targets = S.objects.filter(o => (o.selected || S.multiSelected.includes(o.id)) && o.type === 'text');
+        if (!targets.length) { printRaw('vertical: select a text object first.', 't-err'); return; }
+        const force = (arg === 'on' || arg === '1') ? true : (arg === 'off' || arg === '0') ? false : undefined;
+        toggleVerticalText(force);
+        const nowOn = targets.every(o => o.data.vertical);
+        enqueue(`vertical ${nowOn ? 'on' : 'off'}`, [`→ 縦書き ${nowOn ? 'ON' : 'OFF'} for ${targets.length} text object(s)`]);
+        return;
+    }
+
     // ── Debug: objects ────────────────────────────────────────────────────
     if (head==='objects') {
         if (!S.objects.length) { enqueue('objects',['(canvas empty)']); return; }
@@ -7791,6 +7888,25 @@ function applyTextStyle(patch) {
     });
     saveHistory(); redrawAll();
 }
+// Toggle 縦書き (vertical text) on the selected text object(s). Sticky notes are
+// skipped. The visual bbox top edge is kept stable across the horizontal↔vertical
+// switch (horizontal text anchors on the baseline, vertical on the bbox top-left).
+function toggleVerticalText(force) {
+    const t = _textStyleTargets().filter(o => o.type === 'text');
+    if (!t.length) { try { printRaw('縦書き: select a text object first.', 't-err'); } catch (_) {} return; }
+    const turnOn = (force === true) ? true : (force === false) ? false : !t.every(o => o.data.vertical);
+    let changed = 0;
+    t.forEach(o => {
+        if (!!o.data.vertical === turnOn) return;
+        const fs  = o.data.fontSize || 16;
+        const asc = measureTextMetrics(o.data.text, fs, o.data.fontFamily, o.data.bold).ascent;
+        if (turnOn) { o.data.y -= asc; o.data.vertical = true; }
+        else        { delete o.data.vertical; o.data.y += asc; }
+        changed++;
+    });
+    if (changed) { saveHistory(); redrawAll(); }
+    try { _refreshTextStyleActive(); } catch (_) {}
+}
 function closeTextStylePopover() { if (textStylePopover) textStylePopover.style.display = 'none'; textStylePopoverOpen = false; }
 function _refreshTextStyleActive() {
     if (!textStylePopover) return;
@@ -7807,6 +7923,11 @@ function _refreshTextStyleActive() {
     textStylePopover.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', !!curKey && b.dataset.font === curKey));
     const bBtn = textStylePopover.querySelector('[data-bold]');
     if (bBtn) bBtn.classList.toggle('active', bold);
+    const vBtn = textStylePopover.querySelector('[data-vert]');
+    if (vBtn) {
+        const txt = t.filter(o => o.type === 'text');
+        vBtn.classList.toggle('active', txt.length > 0 && txt.every(o => o.data.vertical));
+    }
 }
 function openTextStylePopover() {
     if (!textStyleBtn || !textStylePopover) return;
@@ -7847,6 +7968,8 @@ if (textStyleBtn && textStylePopover) {
         applyTextStyle({ bold: !allBold });
         closeTextStylePopover();
     });
+    const vBtn = textStylePopover.querySelector('[data-vert]');
+    if (vBtn) vBtn.addEventListener('click', () => { toggleVerticalText(); closeTextStylePopover(); });
 }
 
 document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
@@ -8618,10 +8741,17 @@ async function exportPptx() {
                 }
                 case 'text': {
                     const fs = d.fontSize || 16;
-                    const m = measureTextMetrics(d.text || '', fs);
+                    let tbx, tby, tbw, tbh;
+                    if (d.vertical) {
+                        const L = vTextLayout(d.text, fs);
+                        tbx = d.x; tby = d.y; tbw = L.w; tbh = L.h;
+                    } else {
+                        const m = measureTextMetrics(d.text || '', fs);
+                        tbx = d.x; tby = d.y - m.ascent; tbw = m.width; tbh = m.height;
+                    }
                     slide.addText(d.text || '', {
-                        x: relX(d.x), y: relY(d.y - m.ascent),
-                        w: Math.max(wIn(m.width) + 0.5, 1), h: Math.max(hIn(m.height) + 0.2, 0.5),
+                        x: relX(tbx), y: relY(tby),
+                        w: Math.max(wIn(tbw) + 0.5, 1), h: Math.max(hIn(tbh) + 0.2, 0.5),
                         fontFace: FONT, fontSize: fs * 0.75, color: '0C0C0C',
                         valign: 'top', align: 'left', rotate: rotDeg,
                     });
@@ -8776,6 +8906,7 @@ function renderObjectToCtx(c2, obj) {
             c2.closePath(); c2.fillStyle = getStrokeColor(); c2.fill(); break;
         }
         case 'text': {
+            if (d.vertical) { drawVerticalGlyphs(c2, d, getStrokeColor()); break; }
             const fs = d.fontSize || 16;
             c2.font         = `${fs}px 'Courier New', monospace`;
             c2.fillStyle    = getStrokeColor();
@@ -8969,6 +9100,19 @@ function svgElementFor(obj) {
         }
         case 'text': {
             const fs = d.fontSize || 16;
+            if (d.vertical) {
+                const L = vTextLayout(d.text, fs);
+                let parts = '';
+                for (let i = 0; i < L.cols.length; i++) {
+                    const cx = d.x + L.w - L.colAdv * (i + 0.5);
+                    for (let j = 0; j < L.cols[i].length; j++) {
+                        const cy = d.y + L.charAdv * j + fs * 0.82;
+                        parts += `<text x="${cx}" y="${cy}" fill="${strokeCol}" font-family="'Courier New', Courier, monospace" font-size="${fs}" text-anchor="middle">${esc(L.cols[i][j])}</text>`;
+                    }
+                }
+                inner = `<g>${parts}</g>`;
+                break;
+            }
             const tx = esc(d.text || '');
             inner = `<text x="${d.x}" y="${d.y}" fill="${strokeCol}" font-family="'Courier New', Courier, monospace" font-size="${fs}" dominant-baseline="hanging">${tx}</text>`;
             break;
