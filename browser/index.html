@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BMBrowser">
@@ -56,9 +56,7 @@
     animation:bm-breathe 5.5s ease-in-out infinite;
   }
   @media (prefers-reduced-motion: reduce) { .head .logo { animation:none; } }
-  .head .mark { width:19px; height:19px; flex:0 0 auto; display:block; }
-  .head .mark .ring { fill:#88d878; }   /* BMBoard smiley, recoloured (matches bmbrowserlogo) */
-  .head .mark .face { fill:#ffffff; }
+  .head .mark { width:19px; height:19px; flex:0 0 auto; display:block; object-fit:contain; }
   .head .th-btn, .head .wg-btn, .head .edit-btn {
     font-size:10px; letter-spacing:0.06em; color:var(--green-faint);
     cursor:pointer; border:1px solid var(--line); border-radius:2px; padding:2px 9px;
@@ -212,7 +210,7 @@
   .ticker .tk-item .pt { color:var(--green-faint); font-size:11px; margin-left:6px; }
   .ticker .tk-sep { display:inline-block; padding:0 4px; color:var(--line); }
   /* list (taller, scrollable) */
-  .news-list { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:5px 0; max-height:148px; overflow-y:auto; }
+  .news-list { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:5px 0; max-height:320px; overflow-y:auto; }
   .nl-item { display:flex; align-items:baseline; gap:10px; padding:5px 14px; color:var(--green-bright); text-decoration:none; font-size:13px; }
   .nl-item:hover { background:var(--bg-2); color:var(--green); }
   .nl-item .nl-t { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -309,12 +307,7 @@
   <div class="wrap">
     <div class="head">
       <span class="logo">
-        <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
-          <circle class="ring" cx="50" cy="50" r="50"/>
-          <path class="face" d="M31 50 L38 33 Q39.5 30 41 33 L48 50 Q49 53 45 53 L34 53 Q30 53 31 50 Z"/>
-          <path class="face" d="M52 50 L59 33 Q60.5 30 62 33 L69 50 Q70 53 66 53 L55 53 Q51 53 52 50 Z"/>
-          <path class="face" d="M27 58 Q50 86 73 58 Q50 70 27 58 Z"/>
-        </svg>
+        <img class="mark" src="icon.png" alt="">
         black mirror browser
       </span>
       <span class="th-btn" id="th-btn" title="ライト / ダーク 切替">☀</span>
