@@ -618,17 +618,22 @@
             z-index: 30;
         }
 
-        #textOverlay input {
+        #textOverlay textarea {
             min-width: 100px;
+            box-sizing: border-box;
             background: transparent;
             border: none;
             border-bottom: 1.5px solid #0c0c0c;
             font-family: 'Courier New', monospace;
             font-size: 14px;
+            line-height: 1.32;
             color: #0c0c0c;
             outline: none;
             padding: 2px 2px 3px;
             letter-spacing: 0.02em;
+            resize: none;
+            overflow: hidden;
+            white-space: pre;
         }
 
         #stickyEditor {
@@ -1296,12 +1301,12 @@
         }
         body.bm-dark .shape-hint   { color: rgba(255,255,255,0.22); }
         body.bm-gray .shape-hint   { color: rgba(22,0,162,0.35); }
-        body.bm-dark #textOverlay input {
+        body.bm-dark #textOverlay textarea {
             border-bottom-color: #F0EDE6;
             color: #F0EDE6;
             caret-color: #F0EDE6;
         }
-        body.bm-gray #textOverlay input {
+        body.bm-gray #textOverlay textarea {
             border-bottom-color: #1600A2;
             color: #1600A2;
             caret-color: #1600A2;
@@ -1565,7 +1570,7 @@
              autocomplete="off">
         <canvas id="c" draggable="false"></canvas>
         <div id="textOverlay">
-            <input id="ti2" type="text" autocomplete="off" spellcheck="false" placeholder="type…">
+            <textarea id="ti2" rows="1" wrap="off" autocomplete="off" spellcheck="false" placeholder="type…  ⇧⏎=改行"></textarea>
         </div>
         <textarea id="stickyEditor" spellcheck="false" placeholder="type…"></textarea>
         <div id="bmTimer" class="bm-timer" style="display:none">
@@ -1792,7 +1797,8 @@
     <div class="pop-sep-line"></div>
     <span class="pop-label">FLOW</span>
     <div class="pop-row">
-        <button class="tool-btn" data-vert="toggle" title="縦書き ON / OFF" style="font-weight:700;font-size:15px">縦</button>
+        <button class="tool-btn" data-vert="off" title="横書き" style="font-weight:700;font-size:15px">横</button>
+        <button class="tool-btn" data-vert="on"  title="縦書き" style="font-weight:700;font-size:15px">縦</button>
     </div>
 </div>
 
@@ -2440,6 +2446,22 @@ function measureTextMetrics(text, fs, fontFamily, bold) {
     return { width, ascent, descent, height: ascent + descent };
 }
 
+// ── Horizontal multi-line text layout ──────────────────────────────────
+// (data.x, data.y) is the FIRST line's baseline-left point. Line i's
+// baseline is data.y + i*lineH. Single-line text → unchanged bbox.
+const TEXT_LINE_FACTOR = 1.32;     // line height as a multiple of fontSize
+function hTextLayout(text, fs, ff, bold) {
+    const lines = (text == null ? '' : String(text)).split('\n');
+    const m0 = measureTextMetrics('国Mg', fs, ff, bold);   // representative line metrics
+    let w = 8;
+    for (const ln of lines) w = Math.max(w, measureTextMetrics(ln, fs, ff, bold).width);
+    const lineH = Math.max(m0.ascent + m0.descent, fs * TEXT_LINE_FACTOR);
+    return {
+        lines, w, lineH, ascent: m0.ascent, descent: m0.descent,
+        h: m0.ascent + (lines.length - 1) * lineH + m0.descent,
+    };
+}
+
 // ── 縦書き (vertical text) ──────────────────────────────────────────────
 // A text object with data.vertical === true stacks each glyph downward.
 // Newlines start a new column; columns flow right → left (Japanese tategaki).
@@ -2466,8 +2488,8 @@ function textVisualBounds(obj) {
         const L = vTextLayout(d.text, fs);
         return { x: d.x, y: d.y, w: L.w, h: L.h };
     }
-    const m = measureTextMetrics(d.text, fs, d.fontFamily, d.bold);
-    return { x: d.x, y: d.y - m.ascent, w: m.width, h: m.height };
+    const L = hTextLayout(d.text, fs, d.fontFamily, d.bold);
+    return { x: d.x, y: d.y - L.ascent, w: L.w, h: L.h };
 }
 
 // Draw a vertical-text object's glyphs onto any 2D context, using `color`
@@ -3220,21 +3242,19 @@ function renderText(obj) {
     const {x, y, text, fontSize, fontFamily, bold} = obj.data;
     const fs = fontSize || 16;
     const ff = fontFamily || `"Courier New", monospace`;
+    const L  = hTextLayout(text, fs, fontFamily, bold);
     ctx.save();
     ctx.font = `${bold ? 'bold ' : ''}${fs}px ${ff}`;
     ctx.fillStyle = getStrokeColor();
-    ctx.fillText(text, x, y);
-    if (bold) {                                   // faux-bold stroke so it shows even on fonts without a bold cut
-        ctx.lineWidth = Math.max(0.5, fs * 0.055);
-        ctx.lineJoin  = 'round';
-        ctx.strokeStyle = getStrokeColor();
-        ctx.strokeText(text, x, y);
+    if (bold) { ctx.lineWidth = Math.max(0.5, fs * 0.055); ctx.lineJoin = 'round'; ctx.strokeStyle = getStrokeColor(); }
+    for (let i = 0; i < L.lines.length; i++) {
+        const yy = y + i * L.lineH;
+        ctx.fillText(L.lines[i], x, yy);
+        if (bold) ctx.strokeText(L.lines[i], x, yy);   // faux-bold for fonts without a bold cut
     }
     if (obj.selected) {
-        // Tight bbox via shared metrics — the blue chrome now actually
-        // hugs the glyph run regardless of char width (ASCII / CJK / emoji).
-        const m = measureTextMetrics(text, fs, fontFamily, bold);
-        selBox(x, y - m.ascent, m.width, m.height);
+        // Tight bbox via shared layout — hugs the glyph run (ASCII / CJK / emoji / multi-line).
+        selBox(x, y - L.ascent, L.w, L.h);
         drawAnchors(obj);
     }
     ctx.restore();
@@ -3924,8 +3944,8 @@ function scaleObjToGroupBounds(obj, origData, origGB, newGB) {
             obj.data.x = sX(od.x);
             // text y is baseline; re-anchor using measured ascent so the
             // visual bbox top tracks the scale correctly.
-            const origAsc = measureTextMetrics(od.text, od.fontSize || 16).ascent;
-            const newAsc  = measureTextMetrics(od.text, newFs).ascent;
+            const origAsc = hTextLayout(od.text, od.fontSize || 16, od.fontFamily, od.bold).ascent;
+            const newAsc  = hTextLayout(od.text, newFs, od.fontFamily, od.bold).ascent;
             obj.data.y = sY(od.y - origAsc) + newAsc;
             break;
         }
@@ -4414,15 +4434,15 @@ function applyAnchor(obj, anchorId, nx, ny) {
             // constant 0.6×length guess — so Japanese / emoji text resizes
             // proportionally instead of stretching or squishing.
             const origFs   = od.fontSize || 16;
-            const origMetr = measureTextMetrics(od.text, origFs);
-            const fsH = origFs * (nBh / Math.max(1, origMetr.height));
-            const fsW = origFs * (nBw / Math.max(1, origMetr.width));
+            const origMetr = hTextLayout(od.text, origFs, od.fontFamily, od.bold);
+            const fsH = origFs * (nBh / Math.max(1, origMetr.h));
+            const fsW = origFs * (nBw / Math.max(1, origMetr.w));
             let newFs = (anchorId==='tm'||anchorId==='bm') ? fsH
                       : (anchorId==='bl'||anchorId==='br') ? Math.min(fsH, fsW)
                       : fsW;
             newFs = Math.max(8, Math.min(200, Math.round(newFs)));
             obj.data.fontSize = newFs;
-            const newMetr = measureTextMetrics(od.text, newFs);
+            const newMetr = hTextLayout(od.text, newFs, od.fontFamily, od.bold);
             obj.data.x = nBx;
             obj.data.y = nBy + newMetr.ascent;
             break;
@@ -4915,21 +4935,28 @@ function commitText() {
 }
 
 textInput.addEventListener('keydown', e => {
-    // Enter while an IME is converting (漢字変換の確定 Enter) must NOT commit/close —
-    // let the IME consume it. Only a "real" Enter (or click-away / Esc) commits.
-    if (e.key==='Enter' && !e.isComposing && e.keyCode!==229) { e.preventDefault(); commitText(); if (typeof setTool==='function') setTool('select'); }
-    if (e.key==='Escape') { textOverlay.style.display='none'; }
+    // Enter commits (then returns to the select tool). Shift+Enter inserts a
+    // line break — for multi-line text / 縦書きの段落 / prose. IME-conversion
+    // Enter (keyCode 229 / isComposing) is left to the IME so 漢字変換の確定 Enter
+    // doesn't fire a commit; Esc also commits.
+    if (e.key === 'Escape') { e.preventDefault(); commitText(); if (typeof setTool === 'function') setTool('select'); }
+    else if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+        e.preventDefault(); commitText(); if (typeof setTool === 'function') setTool('select');
+    }
+    // Shift+Enter falls through → the textarea inserts a newline.
     e.stopPropagation();
 });
-// Grow the input with the text so what you're typing stays visible (single-line text
-// objects can get long). Also nudge the overlay left if the wider input runs off-screen.
+// Grow the textarea with its content so what you're typing stays visible — width
+// tracks the widest line (wrap=off), height tracks the line count. Also nudge the
+// overlay left if the wider box runs off-screen.
 function _sizeTextInput() {
-    // Grow the input to the actual pixel width of the text (works for CJK / proportional
-    // fonts where a char-count `size` undershoots), so the whole line stays visible.
-    textInput.style.width = '0px';
-    const w = textInput.scrollWidth;
-    textInput.style.width = Math.max(80, w + 8) + 'px';
-    // If the now-wider input runs off the right edge, slide the overlay left to keep it on-screen.
+    textInput.style.width  = '0px';
+    textInput.style.height = '0px';
+    const w = textInput.scrollWidth, h = textInput.scrollHeight;
+    const fsPx = parseFloat(textInput.style.fontSize) || 16;
+    textInput.style.width  = Math.max(80, w + 8) + 'px';
+    textInput.style.height = Math.max(Math.round(fsPx * 1.4), h + 4) + 'px';
+    // If the now-wider box runs off the right edge, slide the overlay left to keep it on-screen.
     requestAnimationFrame(() => {
         const r = textOverlay.getBoundingClientRect();
         if (r.right > window.innerWidth - 6) textOverlay.style.left = Math.max(6, window.innerWidth - r.width - 6) + 'px';
@@ -7923,10 +7950,12 @@ function _refreshTextStyleActive() {
     textStylePopover.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', !!curKey && b.dataset.font === curKey));
     const bBtn = textStylePopover.querySelector('[data-bold]');
     if (bBtn) bBtn.classList.toggle('active', bold);
-    const vBtn = textStylePopover.querySelector('[data-vert]');
-    if (vBtn) {
-        const txt = t.filter(o => o.type === 'text');
-        vBtn.classList.toggle('active', txt.length > 0 && txt.every(o => o.data.vertical));
+    const vBtns = textStylePopover.querySelectorAll('[data-vert]');
+    if (vBtns.length) {
+        const txt  = t.filter(o => o.type === 'text');
+        const allV = txt.length > 0 && txt.every(o => o.data.vertical);
+        const allH = txt.length > 0 && txt.every(o => !o.data.vertical);
+        vBtns.forEach(b => b.classList.toggle('active', b.dataset.vert === 'on' ? allV : allH));
     }
 }
 function openTextStylePopover() {
@@ -7968,8 +7997,9 @@ if (textStyleBtn && textStylePopover) {
         applyTextStyle({ bold: !allBold });
         closeTextStylePopover();
     });
-    const vBtn = textStylePopover.querySelector('[data-vert]');
-    if (vBtn) vBtn.addEventListener('click', () => { toggleVerticalText(); closeTextStylePopover(); });
+    textStylePopover.querySelectorAll('[data-vert]').forEach(b => {
+        b.addEventListener('click', () => { toggleVerticalText(b.dataset.vert === 'on'); closeTextStylePopover(); });
+    });
 }
 
 document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
@@ -8746,8 +8776,8 @@ async function exportPptx() {
                         const L = vTextLayout(d.text, fs);
                         tbx = d.x; tby = d.y; tbw = L.w; tbh = L.h;
                     } else {
-                        const m = measureTextMetrics(d.text || '', fs);
-                        tbx = d.x; tby = d.y - m.ascent; tbw = m.width; tbh = m.height;
+                        const L = hTextLayout(d.text, fs);
+                        tbx = d.x; tby = d.y - L.ascent; tbw = L.w; tbh = L.h;
                     }
                     slide.addText(d.text || '', {
                         x: relX(tbx), y: relY(tby),
@@ -8908,10 +8938,12 @@ function renderObjectToCtx(c2, obj) {
         case 'text': {
             if (d.vertical) { drawVerticalGlyphs(c2, d, getStrokeColor()); break; }
             const fs = d.fontSize || 16;
+            const L  = hTextLayout(d.text, fs);
             c2.font         = `${fs}px 'Courier New', monospace`;
             c2.fillStyle    = getStrokeColor();
             c2.textBaseline = 'alphabetic';  // matches main canvas + getObjBounds (y - ascent)
-            c2.fillText(d.text, d.x, d.y); break;
+            for (let i = 0; i < L.lines.length; i++) c2.fillText(L.lines[i], d.x, d.y + i * L.lineH);
+            break;
         }
         case 'stroke': {
             if (!d.pts || d.pts.length < 2) break;
@@ -9113,8 +9145,10 @@ function svgElementFor(obj) {
                 inner = `<g>${parts}</g>`;
                 break;
             }
-            const tx = esc(d.text || '');
-            inner = `<text x="${d.x}" y="${d.y}" fill="${strokeCol}" font-family="'Courier New', Courier, monospace" font-size="${fs}" dominant-baseline="hanging">${tx}</text>`;
+            const L = hTextLayout(d.text, fs);
+            const tspans = L.lines.map((ln, i) =>
+                `<tspan x="${d.x}" y="${d.y + i * L.lineH}">${esc(ln)}</tspan>`).join('');
+            inner = `<text fill="${strokeCol}" font-family="'Courier New', Courier, monospace" font-size="${fs}" dominant-baseline="hanging">${tspans}</text>`;
             break;
         }
         case 'stroke': {
