@@ -25,6 +25,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="manifest" href="manifest.json">
+    <!-- web fonts for the `font` command (Noto) — display=swap so they never block -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&display=swap">
     <meta name="theme-color" content="#0c0c0c">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -4785,7 +4789,9 @@ function commitText() {
 }
 
 textInput.addEventListener('keydown', e => {
-    if (e.key==='Enter')  { e.preventDefault(); commitText(); }
+    // Enter while an IME is converting (漢字変換の確定 Enter) must NOT commit/close —
+    // let the IME consume it. Only a "real" Enter (or click-away / Esc) commits.
+    if (e.key==='Enter' && !e.isComposing && e.keyCode!==229) { e.preventDefault(); commitText(); }
     if (e.key==='Escape') { textOverlay.style.display='none'; }
     e.stopPropagation();
 });
@@ -6701,10 +6707,17 @@ function runCommand(val) {
             mono:   `"Courier New","SF Mono",Menlo,monospace`,
             hand:   `"Comic Sans MS","Chalkboard SE","Hiragino Maru Gothic ProN",cursive`,
             marker: `"Comic Sans MS","Chalkboard SE","Hiragino Maru Gothic ProN",cursive`,
+            noto:       `"Noto Sans JP","Hiragino Sans",sans-serif`,
+            notosans:   `"Noto Sans JP","Hiragino Sans",sans-serif`,
+            notoserif:  `"Noto Serif JP","Hiragino Mincho ProN",serif`,
+            notomincho: `"Noto Serif JP","Hiragino Mincho ProN",serif`,
+            yugo:       `"Yu Gothic","YuGothic","Hiragino Sans",sans-serif`,
+            yugothic:   `"Yu Gothic","YuGothic","Hiragino Sans",sans-serif`,
+            yumincho:   `"Yu Mincho","YuMincho","Hiragino Mincho ProN",serif`,
         };
         const key = rest.trim().toLowerCase();
         if (!key || key === '?' || key === 'list') {
-            enqueue('font', ['usage: font <key>  — applies to selected text/sticky', 'keys: mincho | gothic | round | mono | hand | default', '(select an object first; Cmd+A then `font …` for all)']);
+            enqueue('font', ['usage: font <key>  — applies to selected text/sticky', 'keys: mincho | gothic | round | mono | hand | noto | notoserif | yugo | yumincho | default', '(select an object first; Cmd+A then `font …` for all)']);
             return;
         }
         const targets = S.objects.filter(o => (o.selected || S.multiSelected.includes(o.id)) && (o.type === 'text' || o.type === 'sticky'));
