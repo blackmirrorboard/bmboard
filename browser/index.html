@@ -18,12 +18,13 @@
     --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "JetBrains Mono", monospace; /* clean mono — top header + ASCII art */
   }
   * { box-sizing:border-box; margin:0; padding:0; }
-  html, body { height:100%; }
+  html { height:100%; }
   body {
     background:var(--bg); color:var(--green);
     font-family:var(--font-term); font-size:13px; line-height:1.6;
     -webkit-font-smoothing:antialiased;
-    display:flex; align-items:center; justify-content:center; padding:32px;
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:48px 32px;   /* breathing room — and min-height (not height) so tall stacks scroll, never clip */
   }
   .wrap { width:100%; max-width:640px; }
 
