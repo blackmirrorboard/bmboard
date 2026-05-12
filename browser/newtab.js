@@ -346,4 +346,84 @@ function tick() {
 }
 tick(); setInterval(tick, 15_000);
 
+// ── "boss mode" easter egg — Ctrl+` fills the screen with fake work ──────
+const bossEl = document.getElementById('boss');
+let bossTimer = null, bossLines = [];
+const FAKE_LINES = [
+  '$ npm run build',
+  'webpack 5.91.0 compiled successfully in 1342 ms',
+  '  ├─ src/widgets/news.ts        4.2 kB',
+  '  ├─ src/widgets/clock.ts       2.8 kB',
+  '  └─ src/core/stack.ts          7.1 kB',
+  '[hmr] updated modules: ./src/widgets/news.ts',
+  'const items = hits.filter(h => h.title).map(h => ({ title: h.title, url: h.url ?? itemUrl(h.objectID) }));',
+  'if (!cache.has(key)) cache.set(key, await compute(key, { signal: ctrl.signal }));',
+  'export function applyOrder(order) { for (const id of order) container.appendChild(byId(id)); }',
+  '// TODO: debounce the resize observer — fires ~40x/s during drag',
+  '$ git add -p && git commit -m "feat(widgets): drag-to-reorder + persist"',
+  '[main 9f3a2c1] feat(widgets): drag-to-reorder + persist',
+  ' 4 files changed, 218 insertions(+), 31 deletions(-)',
+  '$ npm test -- --watch=false',
+  'PASS  tests/stack.spec.ts  (1.2 s)',
+  'PASS  tests/bookmarks.spec.ts  (0.8 s)',
+  'PASS  tests/news.spec.ts  (1.4 s)',
+  'Test Suites: 6 passed, 6 total',
+  'Tests:       54 passed, 54 total',
+  'Coverage:    91.3% statements · 88.7% branches · 90.1% functions',
+  'const reduced = data.reduce((acc, x) => ((acc[x.k] ??= []).push(x), acc), {});',
+  'await Promise.allSettled(urls.map(u => fetch(u).then(r => r.json())));',
+  'console.debug(`[render] ${order.length} widgets in ${(performance.now()-t0).toFixed(1)}ms`);',
+  '$ tsc --noEmit',
+  'Found 0 errors. Watching for file changes.',
+  '$ docker compose up -d',
+  ' ✔ Container app-1    Started',
+  ' ✔ Container redis-1  Started',
+  '$ curl -s https://api.internal/health | jq .status',
+  '"ok"',
+  '$ rsync -avz --delete ./dist/ deploy@host:/srv/app/',
+  'sending incremental file list',
+  'sent 1,204,882 bytes  received 91 bytes  802,648.67 bytes/sec  total size 4,981,210',
+  '$ git push origin main',
+  'To github.com:internal/app.git',
+  '   9f3a2c1..a71b3e0  main -> main',
+  'const memo = useMemo(() => heavyTransform(input), [input]);',
+  'return <Stack onReorder={persist}>{widgets.map(renderWidget)}</Stack>;',
+  'eslint --fix src/  →  ✔ no problems',
+];
+function bossPick() {
+  const s = FAKE_LINES[(Math.random() * FAKE_LINES.length) | 0];
+  let cls = '';
+  if (/(PASS\b|✔|✓|compiled successfully|Found 0 errors|passed,|Coverage:|"ok"|no problems|->\s*main)/.test(s)) cls = 'ok';
+  else if (/^(\$ |\[hmr\]|\s{2}[├└]|sending |sent |To github)/.test(s)) cls = 'dim';
+  return cls ? `<span class="${cls}">${esc(s)}</span>` : esc(s);
+}
+function bossRender() {
+  const pre = bossEl && bossEl.querySelector('pre');
+  if (pre) pre.innerHTML = bossLines.join('\n') + '\n<span class="cur">▌</span>';
+}
+function bossTick() {
+  bossLines.push(bossPick());
+  if (bossLines.length > 600) bossLines.splice(0, bossLines.length - 600);
+  bossRender();
+}
+function bossActive() { return bossEl && bossEl.classList.contains('on'); }
+function bossOn() {
+  if (!bossEl) return;
+  if (!bossEl.querySelector('pre')) bossEl.innerHTML = '<pre></pre><span class="hint2">press any key to dismiss</span>';
+  bossEl.classList.add('on'); bossEl.setAttribute('aria-hidden', 'false');
+  bossLines = []; for (let i = 0; i < 70; i++) bossLines.push(bossPick());   // prefill — "already in progress"
+  bossRender();
+  clearInterval(bossTimer); bossTimer = setInterval(bossTick, 75);
+}
+function bossOff() {
+  if (!bossEl) return;
+  bossEl.classList.remove('on'); bossEl.setAttribute('aria-hidden', 'true');
+  clearInterval(bossTimer); bossTimer = null;
+}
+document.addEventListener('keydown', (e) => {
+  if (bossActive()) { e.preventDefault(); e.stopPropagation(); bossOff(); return; }
+  if (e.ctrlKey && !e.metaKey && !e.altKey && (e.code === 'Backquote' || e.key === '`')) { e.preventDefault(); bossOn(); }
+}, true);   // capture — works even when an input/textarea has focus
+if (bossEl) bossEl.addEventListener('click', bossOff);
+
 try { cmd.focus({ preventScroll: true }); } catch (_) { try { cmd.focus(); } catch (__) {} }

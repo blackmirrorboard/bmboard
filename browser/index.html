@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BMBrowser">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap">
-<title>BMBrowser</title>
+<title>BMBrowser — new tab</title>
 <style>
   :root {
     --bg:#000; --bg-1:#0a0a0a; --bg-2:#161616; --bg-cta:#0e1a0c;
@@ -188,6 +187,18 @@
   .foot a { color:var(--green-faint); text-decoration:none; }
   .foot a:hover { color:var(--green-dim); }
 
+  /* ── "boss mode" — Ctrl+` fills the screen with fake work-in-progress ── */
+  .boss {
+    position:fixed; inset:0; z-index:99999; display:none; overflow:hidden; cursor:pointer;
+    background:#000; color:#22dd22; font-family:var(--font-mono); font-size:12.5px; line-height:1.5;
+  }
+  .boss.on { display:block; }
+  .boss pre { position:absolute; left:18px; right:18px; bottom:26px; margin:0; white-space:pre-wrap; word-break:break-word; }
+  .boss pre .ok  { color:#7fff7f; }
+  .boss pre .dim { color:#0c9a0c; }
+  .boss .cur { background:#22dd22; color:#22dd22; }
+  .boss .hint2 { position:absolute; right:18px; bottom:10px; color:#0a6a0a; font-size:10px; letter-spacing:0.12em; }
+
   ::selection { background:var(--green); color:var(--bg); }
 </style>
 </head>
@@ -285,6 +296,7 @@
       <div><span class="k">ascii / chips</span><span class="c">ブックマークの表示を ASCII アート ⇄ チップ で切替</span></div>
       <div><span class="k">edit</span><span class="c">編集モード — ウィジェットの並べ替え・表示/非表示、ブックマークの編集</span></div>
       <div><span class="k">? / help</span><span class="c">このリスト</span></div>
+      <div><span class="k">Ctrl + `</span><span class="c">「仕事してますモード」— 画面いっぱいにコードを流す（任意のキー / クリックで戻る）</span></div>
       <div style="margin-top:6px;color:var(--green-faint)">編集モード: ✎ edit → ⠿ でウィジェットをドラッグ並べ替え · ✕ で非表示 · ブックマークに ↑↓✎✕</div>
     </div>
 
@@ -292,6 +304,9 @@
       <a href="https://99letters.github.io/">99letters / kinoshita studio</a>
     </div>
   </div>
+
+  <div id="boss" class="boss" aria-hidden="true"></div>
+
   <script src="newtab.js"></script>
 </body>
 </html>
