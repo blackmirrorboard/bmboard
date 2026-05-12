@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap">
+<title>BMBrowser — new tab</title>
+<style>
+  :root {
+    --bg:#000; --bg-1:#0a0a0a; --bg-2:#161616; --bg-cta:#0e1a0c;
+    --line:#2a2826; --line-soft:#1c1b1a;
+    --green:#58dc44; --green-bright:#84ff64; --green-dim:#3da028; --green-faint:#1f6a18;
+    --aqua:#8ec07c; --gray:#6b6b66; --red:#cc4444;
+    --font-term: "DotGothic16", ui-monospace, "SF Mono", Menlo, Consolas, monospace;  /* hacker terminal type — handles 日本語 */
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "JetBrains Mono", monospace; /* clean mono — top header + ASCII art */
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; }
+  body {
+    background:var(--bg); color:var(--green);
+    font-family:var(--font-term); font-size:13px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    display:flex; align-items:center; justify-content:center; padding:32px;
+  }
+  .wrap { width:100%; max-width:640px; }
+
+  /* ── header (the one place that keeps the clean font) ── */
+  .head { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  @keyframes bm-breathe { 0%, 100% { opacity:1; } 50% { opacity:0.18; } }
+  .head .logo {
+    display:flex; align-items:center; gap:9px; font-size:16px; letter-spacing:0.18em;
+    color:var(--green-bright); text-transform:uppercase; font-family:var(--font-mono);
+    animation:bm-breathe 5.5s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { .head .logo { animation:none; } }
+  .head .mark { width:19px; height:19px; flex:0 0 auto; display:block; }
+  .head .mark .ring { fill:var(--green-bright); }   /* base = key colour */
+  .head .mark .face { fill:var(--bg); }             /* cut-outs = page bg */
+  .head .edit-btn {
+    margin-left:auto; font-size:10px; letter-spacing:0.06em; color:var(--green-faint);
+    cursor:pointer; border:1px solid var(--line); border-radius:2px; padding:2px 9px;
+  }
+  .head .edit-btn:hover { color:var(--green); border-color:var(--green); }
+  .head .edit-btn.active { color:var(--green-bright); border-color:var(--green); background:var(--bg-1); }
+  .head .ver { font-family:var(--font-mono); font-size:10px; letter-spacing:0.24em; color:var(--green-faint); text-transform:uppercase; }
+
+  /* ── add-bar (edit mode: re-add hidden widgets) ── */
+  .add-bar { display:none; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:18px; }
+  body.editing .add-bar { display:flex; }
+  .add-bar .ab-label { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--gray); }
+  .add-bar .add-w { font-size:11px; color:var(--green-dim); cursor:pointer; border:1px solid var(--line); border-radius:2px; padding:3px 9px; }
+  .add-bar .add-w:hover { color:var(--green); border-color:var(--green); }
+  .add-bar .ab-empty { font-size:10px; color:var(--green-faint); letter-spacing:0.06em; }
+
+  /* ── widget stack ── */
+  .stack { display:flex; flex-direction:column; }
+  .widget { position:relative; }
+  .widget + .widget { margin-top:22px; }
+  body.editing .widget { outline:1px dashed var(--line); outline-offset:7px; }
+  .widget.dragging { opacity:0.35; }
+  .widget.drop-before::before, .widget.drop-after::after {
+    content:''; position:absolute; left:0; right:0; height:2px; background:var(--green-bright); pointer-events:none;
+  }
+  .widget.drop-before::before { top:-12px; }
+  .widget.drop-after::after  { bottom:-12px; }
+
+  .w-bar { display:none; align-items:center; gap:8px; margin-bottom:6px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gray); }
+  body.editing .w-bar { display:flex; }
+  .w-bar .w-handle { cursor:grab; color:var(--green-faint); user-select:none; font-size:14px; line-height:1; padding:0 2px; }
+  .w-bar .w-handle:active { cursor:grabbing; }
+  .w-bar .w-title { flex:1; }
+  .w-bar .w-hide { background:transparent; border:0; color:var(--gray); font:inherit; font-size:14px; line-height:1; cursor:pointer; padding:0 2px; }
+  .w-bar .w-hide:hover { color:var(--red); }
+
+  /* ── widget: CTA ── */
+  .cta {
+    display:flex; align-items:center; gap:14px; width:100%;
+    background:var(--bg-cta); border:1px solid var(--green-faint);
+    color:var(--green-bright); font:inherit; text-align:left; cursor:pointer;
+    padding:16px 18px; border-radius:3px; transition:border-color .12s, box-shadow .12s;
+  }
+  .cta:hover { border-color:var(--green); box-shadow:inset 0 0 0 100px rgba(88,220,68,0.04); }
+  .cta .ico { font-size:18px; line-height:1; }
+  .cta .txt { flex:1; }
+  .cta .txt .t1 { display:block; font-size:14px; letter-spacing:0.04em; }
+  .cta .txt .t2 { display:block; font-size:10px; color:var(--gray); letter-spacing:0.04em; margin-top:4px; }
+  .cta .kbd { font-size:11px; color:var(--green-dim); border:1px solid var(--line); padding:2px 7px; border-radius:2px; letter-spacing:0.08em; white-space:nowrap; }
+
+  /* ── widget: bookmarks ── */
+  .bm-hd { display:flex; align-items:center; gap:14px; margin:0 2px 8px; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gray); }
+  .bm-hd .bm-view { font-size:10px; letter-spacing:0.06em; text-transform:none; }
+  .bm-hd .bm-view [data-view] { cursor:pointer; color:var(--green-faint); }
+  .bm-hd .bm-view [data-view]:hover { color:var(--green); }
+  .bm-hd .bm-view [data-view].active { color:var(--green-bright); }
+  .bm-hd .bm-view .sep { color:var(--line); padding:0 5px; cursor:default; }
+  .bm-hd .add { margin-left:auto; color:var(--green-dim); cursor:pointer; border:1px solid var(--line); border-radius:2px; padding:2px 8px; letter-spacing:0.06em; text-transform:none; font-size:10px; }
+  .bm-hd .add:hover { color:var(--green); border-color:var(--green); }
+  .bm { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-start; }
+  .bk {
+    position:relative; display:inline-flex; align-items:center; gap:8px;
+    background:var(--bg-1); border:1px solid var(--line);
+    padding:9px 13px; border-radius:3px; cursor:pointer; text-decoration:none;
+    color:var(--green-bright); transition:border-color .12s, background .12s;
+  }
+  .bk:hover { border-color:var(--green); background:var(--bg-2); }
+  .bk .i { font-size:13px; line-height:1; color:var(--aqua); }
+  .bk .l { font-size:13px; letter-spacing:0.03em; }
+  .bk .ctl { background:transparent; border:0; color:var(--gray); font:inherit; font-size:13px; line-height:1; cursor:pointer; padding:0 2px; }
+  .bk .ctl:hover { color:var(--green); }
+  .bk .ctl.x:hover { color:var(--red); }
+  .bk .x.solo { display:none; }
+  .bk:hover .x.solo { display:inline; }
+  .bm-empty { font-size:11px; color:var(--green-faint); letter-spacing:0.06em; padding:4px 2px; }
+
+  .bm.ascii { gap:16px; }
+  @keyframes aa-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+  .aa-card {
+    position:relative; display:flex; flex-direction:column; align-items:center; gap:7px;
+    padding:9px 12px; border:1px solid transparent; border-radius:3px;
+    cursor:pointer; text-decoration:none; animation:aa-in .42s ease both;
+  }
+  .aa-card:hover { border-color:var(--line); background:var(--bg-1); }
+  .aa { margin:0; font-family:var(--font-mono); font-size:10px; line-height:1; letter-spacing:0; color:var(--green-bright); white-space:pre; }
+  .aa-card:hover .aa { text-shadow:0 0 6px rgba(132,255,100,0.35); }
+  .aa-name { font-size:10px; color:var(--gray); letter-spacing:0.1em; }
+  .aa-ctls { display:flex; gap:4px; }
+  .aa-ctls .ctl { background:transparent; border:0; color:var(--gray); font:inherit; font-size:12px; line-height:1; cursor:pointer; padding:0 2px; }
+  .aa-ctls .ctl:hover { color:var(--green); }
+  .aa-ctls .ctl.x:hover { color:var(--red); }
+  .aa-card .x.solo { position:absolute; top:1px; right:3px; display:none; background:transparent; border:0; color:var(--gray); font:inherit; font-size:13px; line-height:1; cursor:pointer; padding:0; }
+  .aa-card:hover .x.solo { display:block; }
+  .aa-card .x.solo:hover { color:var(--red); }
+
+  /* ── widget: memo (scratchpad) ── */
+  .memo-ta {
+    display:block; width:100%; min-height:100px; resize:vertical;
+    background:var(--bg-1); border:1px solid var(--line); border-radius:3px;
+    padding:11px 14px; color:var(--green-bright); font:inherit; font-size:13px; line-height:1.6;
+    outline:0; white-space:pre-wrap; overflow:auto;
+  }
+  .memo-ta::placeholder { color:var(--green-faint); }
+  .memo-ta:focus { border-color:var(--green-faint); }
+
+  /* ── widget: command prompt ── */
+  .prompt {
+    display:flex; align-items:center; gap:10px;
+    background:var(--bg-1); border:1px solid var(--line); padding:11px 14px; border-radius:3px;
+  }
+  .prompt .mark { color:var(--green); font-weight:700; }
+  .prompt input { flex:1; background:transparent; border:0; outline:0; color:var(--green-bright); font:inherit; font-size:14px; letter-spacing:0.02em; }
+  .prompt input::placeholder { color:var(--green-faint); }
+  .hint { margin-top:8px; font-size:10px; color:var(--gray); letter-spacing:0.08em; }
+  .hint b { color:var(--green-dim); font-weight:400; }
+
+  /* ── widget: news ticker ── */
+  .news-hd { display:flex; align-items:center; gap:10px; margin:0 2px 7px; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gray); }
+  .news-hd .news-r { margin-left:auto; cursor:pointer; color:var(--green-faint); border:1px solid var(--line); border-radius:2px; padding:1px 7px; font-size:11px; text-transform:none; letter-spacing:0; }
+  .news-hd .news-r:hover { color:var(--green); border-color:var(--green); }
+  .ticker { overflow:hidden; background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:9px 0; white-space:nowrap; }
+  .ticker-track { display:inline-block; white-space:nowrap; animation:ticker-scroll 64s linear infinite; will-change:transform; }
+  .ticker:hover .ticker-track { animation-play-state:paused; }
+  @keyframes ticker-scroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+  .ticker .tk-item { display:inline-block; padding:0 18px; color:var(--green-bright); text-decoration:none; font-size:13px; }
+  .ticker .tk-item:hover { color:var(--green); text-shadow:0 0 6px rgba(132,255,100,0.3); }
+  .ticker .tk-item .pt { color:var(--green-faint); font-size:11px; margin-left:6px; }
+  .ticker .tk-sep { display:inline-block; padding:0 4px; color:var(--line); }
+  .ticker .tk-msg { display:inline-block; padding:0 18px; color:var(--green-faint); font-size:11px; letter-spacing:0.06em; }
+
+  /* ── widget: clock ── */
+  .clock-w { font-size:12px; color:var(--green-dim); letter-spacing:0.16em; }
+
+  /* ── help overlay + footer (outside the stack) ── */
+  .help { display:none; margin-top:18px; background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:14px 16px; font-size:11px; line-height:1.95; }
+  .help.show { display:block; }
+  .help .k { color:var(--green); display:inline-block; min-width:130px; }
+  .help .c { color:var(--gray); }
+  .foot { margin-top:26px; display:flex; justify-content:flex-end; align-items:center; font-size:10px; color:var(--green-faint); letter-spacing:0.1em; }
+  .foot a { color:var(--green-faint); text-decoration:none; }
+  .foot a:hover { color:var(--green-dim); }
+
+  ::selection { background:var(--green); color:var(--bg); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <span class="logo">
+        <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="ring" cx="50" cy="50" r="50"/>
+          <path class="face" d="M31 50 L38 33 Q39.5 30 41 33 L48 50 Q49 53 45 53 L34 53 Q30 53 31 50 Z"/>
+          <path class="face" d="M52 50 L59 33 Q60.5 30 62 33 L69 50 Q70 53 66 53 L55 53 Q51 53 52 50 Z"/>
+          <path class="face" d="M27 58 Q50 86 73 58 Q50 70 27 58 Z"/>
+        </svg>
+        black mirror browser
+      </span>
+      <span class="edit-btn" id="edit-btn" title="edit / rearrange widgets">✎ edit</span>
+      <span class="ver">v0.2</span>
+    </div>
+
+    <div class="add-bar" id="add-bar"></div>
+
+    <div class="stack" id="stack">
+
+      <div class="widget" data-wid="cta">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">side panel</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body">
+          <button class="cta" id="open-panel" title="open BMBoard in the side panel (⌘⇧Y)">
+            <span class="ico">▤</span>
+            <span class="txt">
+              <span class="t1">open BMBoard in the side panel</span>
+              <span class="t2">見てるページの横に、いつでも黒板を</span>
+            </span>
+            <span class="kbd">⌘⇧Y</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="widget" data-wid="bookmarks">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">bookmarks</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body">
+          <div class="bm-hd">
+            <span>bookmarks</span>
+            <span class="bm-view" id="bm-view"><span data-view="chips">chips</span><span class="sep">·</span><span data-view="ascii">ascii</span></span>
+            <span class="add" id="bm-add">＋ add</span>
+          </div>
+          <div class="bm" id="bm"></div>
+        </div>
+      </div>
+
+      <div class="widget" data-wid="memo">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">memo</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body">
+          <textarea class="memo-ta" id="memo-ta" spellcheck="false" placeholder="scratch · notes · ascii …  （自動保存）"></textarea>
+        </div>
+      </div>
+
+      <div class="widget" data-wid="prompt">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">command</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body">
+          <div class="prompt">
+            <span class="mark">›</span>
+            <input id="cmd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off"
+                   spellcheck="false" placeholder="command · url · search …">
+          </div>
+          <div class="hint">
+            <b>board</b> side panel · <b>bm</b> bmboard · <b>at</b> atelier · <b>ko</b> kodoco · <b>g …</b> search · <b>?</b> help
+          </div>
+        </div>
+      </div>
+
+      <div class="widget" data-wid="news">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">news</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body">
+          <div class="news-hd"><span>news · hacker news</span><span class="news-r" id="news-refresh" title="refresh">↻</span></div>
+          <div class="ticker" id="ticker"><div class="ticker-track" id="ticker-track"></div></div>
+        </div>
+      </div>
+
+      <div class="widget" data-wid="clock">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">clock</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body"><span class="clock-w" id="clock">— · —</span></div>
+      </div>
+
+    </div>
+
+    <div class="help" id="help">
+      <div><span class="k">board / panel</span><span class="c">BMBoard をサイドパネルに開く（⌘⇧Y）</span></div>
+      <div><span class="k">bm / bmboard</span><span class="c">bmboard.studio を開く</span></div>
+      <div><span class="k">at / atelier</span><span class="c">atelistudio.com を開く</span></div>
+      <div><span class="k">ko / kodoco</span><span class="c">kodoco.jp を開く</span></div>
+      <div><span class="k">studio / home</span><span class="c">kinoshita studio index を開く</span></div>
+      <div><span class="k">g &lt;words&gt;</span><span class="c">Google 検索</span></div>
+      <div><span class="k">&lt;url&gt;</span><span class="c">そのまま開く（http なしでも可）</span></div>
+      <div><span class="k">add / bookmark</span><span class="c">ブックマーク追加（＋ add と同じ）</span></div>
+      <div><span class="k">ascii / chips</span><span class="c">ブックマークの表示を ASCII アート ⇄ チップ で切替</span></div>
+      <div><span class="k">edit</span><span class="c">編集モード — ウィジェットの並べ替え・表示/非表示、ブックマークの編集</span></div>
+      <div><span class="k">? / help</span><span class="c">このリスト</span></div>
+      <div style="margin-top:6px;color:var(--green-faint)">編集モード: ✎ edit → ⠿ でウィジェットをドラッグ並べ替え · ✕ で非表示 · ブックマークに ↑↓✎✕</div>
+    </div>
+
+    <div class="foot">
+      <a href="https://99letters.github.io/">99letters / kinoshita studio</a>
+    </div>
+  </div>
+  <script src="newtab.js"></script>
+</body>
+</html>

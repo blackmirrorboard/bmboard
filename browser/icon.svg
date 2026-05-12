@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="BMBrowser">
+  <title>BMBrowser</title>
+  <circle cx="50" cy="50" r="50" fill="#84ff64"/>
+  <path fill="#000000" d="M31 50 L38 33 Q39.5 30 41 33 L48 50 Q49 53 45 53 L34 53 Q30 53 31 50 Z"/>
+  <path fill="#000000" d="M52 50 L59 33 Q60.5 30 62 33 L69 50 Q70 53 66 53 L55 53 Q51 53 52 50 Z"/>
+  <path fill="#000000" d="M27 58 Q50 86 73 58 Q50 70 27 58 Z"/>
+</svg>
