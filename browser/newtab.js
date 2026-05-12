@@ -61,9 +61,10 @@ const WIDGET_DEFS = {
   memo:      { title: 'memo',       icon: '✎', desc: '自動保存のスクラッチパッド' },
   prompt:    { title: 'command',    icon: '›', desc: 'コマンド / URL / 検索' },
   news:      { title: 'news',       icon: '◷', desc: 'ニュース（HN / Yahoo / NHK · 1行 / 一覧）' },
+  markets:   { title: 'markets',    icon: '₿', desc: '相場ティッカー（BTC/ETH/SOL · 24h% + 7日 ASCII チャート）' },
   clock:     { title: 'clock',      icon: '⏱', desc: '時計（クリックで small / large / ascii）' },
 };
-const WIDGET_ORDER_DEFAULT = ['cta', 'bookmarks', 'memo', 'prompt', 'news', 'clock'];
+const WIDGET_ORDER_DEFAULT = ['cta', 'bookmarks', 'memo', 'prompt', 'news', 'markets', 'clock'];
 const WIDGETS_KEY = 'bm-browser.widgets.v1';
 function loadWidgets() {
   const w = lsGet(WIDGETS_KEY) || {};
@@ -401,6 +402,62 @@ async function fetchNews() {
   document.querySelectorAll('#news-view [data-nv]').forEach((s) => s.addEventListener('click', () => setNewsView(s.dataset.nv)));
   document.querySelectorAll('#news-src [data-ns]').forEach((s) => s.addEventListener('click', () => setNewsSource(s.dataset.ns)));
   setInterval(fetchNews, 20 * 60 * 1000);                        // and periodically while the tab stays open
+}
+
+// ── widget: markets (crypto ticker via CoinGecko — CORS-friendly, free, no key) ──
+const MK_KEY = 'bm-browser.markets.v1';
+const MK_URL = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=jpy&ids=bitcoin,ethereum,solana&sparkline=true&price_change_percentage=24h';
+const SPARK_CHARS = '▁▂▃▄▅▆▇█';
+let mkItems = [];
+function loadMkCache() { const c = lsGet(MK_KEY); if (c && Array.isArray(c.items) && c.items.length) { mkItems = c.items; return c.fetchedAt || 0; } return 0; }
+function saveMkCache() { lsSet(MK_KEY, { items: mkItems, fetchedAt: Date.now() }); }
+function sparkline(arr, width) {
+  if (!Array.isArray(arr) || arr.length < 2) return '';
+  width = width || 32;
+  const out = [];
+  for (let i = 0; i < width; i++) {
+    const a = Math.floor(i * arr.length / width), b = Math.max(a + 1, Math.floor((i + 1) * arr.length / width));
+    let s = 0, n = 0; for (let j = a; j < b && j < arr.length; j++) { s += arr[j]; n++; }
+    out.push(n ? s / n : arr[Math.min(a, arr.length - 1)]);
+  }
+  const lo = Math.min(...out), hi = Math.max(...out), range = (hi - lo) || 1;
+  return out.map((v) => SPARK_CHARS[Math.min(7, Math.max(0, Math.round((v - lo) / range * 7)))]).join('');
+}
+function fmtJPY(n) { return '¥' + Math.round(Number(n) || 0).toLocaleString('ja-JP'); }
+function renderMarkets(msg) {
+  const body = document.getElementById('mk-body'); if (!body) return;
+  if (msg || !mkItems.length) { body.innerHTML = `<div class="mk-msg">${esc(msg || 'no data yet — ↻')}</div>`; return; }
+  body.innerHTML = mkItems.map((it) => {
+    const ch = (typeof it.ch === 'number') ? it.ch : 0;
+    const chStr = (ch >= 0 ? '▲' : '▼') + Math.abs(ch).toFixed(1) + '%';
+    return `<div class="mk-row"><span class="mk-sym">${esc(String(it.sym || '').toUpperCase())}</span><span class="mk-px">${esc(fmtJPY(it.px))}</span><span class="mk-ch ${ch >= 0 ? 'up' : 'down'}">${esc(chStr)}</span><span class="mk-spark" title="7日">${esc(sparkline(it.spark, 28))}</span></div>`;
+  }).join('');
+}
+async function fetchMarkets() {
+  if (!mkItems.length) renderMarkets('loading markets…');
+  try {
+    const res = await fetch(MK_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!Array.isArray(data) || !data.length) throw new Error('empty');
+    mkItems = data.map((c) => ({
+      sym: c.symbol,
+      px: c.current_price,
+      ch: (c.price_change_percentage_24h_in_currency != null ? c.price_change_percentage_24h_in_currency : c.price_change_percentage_24h) || 0,
+      spark: (c.sparkline_in_7d && Array.isArray(c.sparkline_in_7d.price)) ? c.sparkline_in_7d.price : [],
+    }));
+    saveMkCache(); renderMarkets();
+  } catch (e) {
+    console.warn('[bmbrowser] markets fetch:', e);
+    if (!mkItems.length) renderMarkets('markets を取得できませんでした — ↻'); else renderMarkets();
+  }
+}
+{
+  const at = loadMkCache();
+  renderMarkets();
+  if (Date.now() - at > 10 * 60 * 1000) fetchMarkets();
+  document.getElementById('mk-refresh')?.addEventListener('click', fetchMarkets);
+  setInterval(fetchMarkets, 12 * 60 * 1000);
 }
 
 // standalone web page (no side panel): re-label the CTA accordingly
