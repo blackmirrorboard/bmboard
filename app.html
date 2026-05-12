@@ -4759,11 +4759,14 @@ function showTextInput(p, editObj = null) {
     textOverlay.style.top     = (sy - fs * VIEW.scale) + 'px';
     textInput.style.fontSize  = Math.max(10, Math.round(fs * VIEW.scale)) + 'px';
     textInput.value = editObj ? editObj.data.text : '';
-    textInput.focus();
-    if (editObj) textInput.select(); // select all for easy replacement
-    // The click's default handling can bounce focus back to the canvas — re-grab it
-    // on the next frame so the user can type immediately on the first click.
-    requestAnimationFrame(() => { try { textInput.focus(); if (editObj) textInput.select(); } catch (_) {} });
+    // The click's default handling (mousedown focus-move + setPointerCapture on the
+    // canvas) bounces focus away on desktop — re-grab it a few times so the user can
+    // type immediately on the first click. (touch devices don't have this problem.)
+    const _grab = () => { try { textInput.focus(); if (editObj) textInput.select(); } catch (_) {} };
+    _grab();
+    requestAnimationFrame(_grab);
+    setTimeout(_grab, 0);
+    setTimeout(_grab, 80);
     redrawAll(); // hide the original text while editing
 }
 
