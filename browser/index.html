@@ -57,8 +57,8 @@
   }
   @media (prefers-reduced-motion: reduce) { .head .logo { animation:none; } }
   .head .mark { width:19px; height:19px; flex:0 0 auto; display:block; }
-  .head .mark .ring { fill:var(--green-bright); }   /* base = key colour */
-  .head .mark .face { fill:var(--bg); }             /* cut-outs = page bg */
+  .head .mark .ring { fill:#88d878; }   /* BMBoard smiley, recoloured (matches bmbrowserlogo) */
+  .head .mark .face { fill:#ffffff; }
   .head .th-btn, .head .wg-btn, .head .edit-btn {
     font-size:10px; letter-spacing:0.06em; color:var(--green-faint);
     cursor:pointer; border:1px solid var(--line); border-radius:2px; padding:2px 9px;
@@ -153,15 +153,15 @@
   .bk:hover .x.solo { display:inline; }
   .bm-empty { font-size:11px; color:var(--green-faint); letter-spacing:0.06em; padding:4px 2px; }
 
-  .bm.ascii { gap:16px; }
+  .bm.ascii { gap:20px; }
   @keyframes aa-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
   .aa-card {
-    position:relative; display:flex; flex-direction:column; align-items:center; gap:7px;
-    padding:9px 12px; border:1px solid transparent; border-radius:3px;
+    position:relative; display:flex; flex-direction:column; align-items:center; gap:10px;
+    padding:13px 17px; border:1px solid transparent; border-radius:3px;
     cursor:pointer; text-decoration:none; animation:aa-in .42s ease both;
   }
   .aa-card:hover { border-color:var(--line); background:var(--bg-1); }
-  .aa { margin:0; font-family:var(--font-mono); font-size:10px; line-height:1; letter-spacing:0; color:var(--green-bright); white-space:pre; }
+  .aa { margin:0; font-family:var(--font-mono); font-size:15px; line-height:1; letter-spacing:0; color:var(--green-bright); white-space:pre; }
   .aa-card:hover .aa { text-shadow:0 0 6px rgba(51,255,51,0.4); }
   .aa-name { font-size:10px; color:var(--gray); letter-spacing:0.1em; }
   .aa-ctls { display:flex; gap:4px; }
@@ -219,14 +219,21 @@
   .nl-item .nl-pt { flex-shrink:0; color:var(--green-faint); font-size:11px; }
   .news-msg { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:10px 14px; color:var(--green-faint); font-size:11px; letter-spacing:0.06em; }
 
-  /* ── widget: clock (click to cycle: small → large → ascii) ── */
+  /* ── widget: clock (click to cycle: small → large → ascii — ascii = the big one) ── */
   .clock-w { cursor:pointer; }
   .clock-w.s-small { font-size:12px; color:var(--green-dim); letter-spacing:0.16em; }
   .clock-w.s-large { color:var(--green-bright); }
-  .clock-w.s-large .ct { display:block; font-size:34px; letter-spacing:0.06em; line-height:1.05; }
-  .clock-w.s-large .cd { display:block; font-size:11px; color:var(--green-faint); letter-spacing:0.18em; margin-top:3px; }
-  .clock-w.s-ascii .ca { display:block; font-family:var(--font-mono); white-space:pre; font-size:10px; line-height:1; color:var(--green-bright); }
-  .clock-w.s-ascii .cd { display:block; font-size:10px; color:var(--green-faint); letter-spacing:0.18em; margin-top:7px; }
+  .clock-w.s-large .ct { display:block; font-size:38px; letter-spacing:0.06em; line-height:1.05; }
+  .clock-w.s-large .cd { display:block; font-size:11px; color:var(--green-faint); letter-spacing:0.18em; margin-top:4px; }
+  .clock-w.s-ascii .ca { display:block; font-family:var(--font-mono); white-space:pre; font-size:16px; line-height:1; color:var(--green-bright); }
+  .clock-w.s-ascii .cd { display:block; font-size:11px; color:var(--green-faint); letter-spacing:0.2em; margin-top:10px; }
+
+  /* shared size toggle (小 · 中 · 大) used by weather + markets headers */
+  .wx-hd .sz-tg, .mk-hd .sz-tg { font-size:10px; letter-spacing:0; text-transform:none; }
+  .wx-hd [data-sz], .mk-hd [data-sz] { cursor:pointer; color:var(--green-faint); }
+  .wx-hd [data-sz]:hover, .mk-hd [data-sz]:hover { color:var(--green); }
+  .wx-hd [data-sz].active, .mk-hd [data-sz].active { color:var(--green-bright); }
+  .wx-hd .sz-tg .sep, .mk-hd .sz-tg .sep { color:var(--line); padding:0 4px; cursor:default; }
 
   /* ── widget: weather ── */
   .wx-hd { display:flex; align-items:center; gap:12px; margin:0 2px 7px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gray); }
@@ -241,6 +248,19 @@
   .wx-tx .wx-hl  { color:var(--green-dim); font-size:12px; }
   .wx-tx .wx-loc { color:var(--gray); font-size:11px; }
   .wx-msg { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:10px 16px; color:var(--green-faint); font-size:11px; letter-spacing:0.06em; }
+  /* weather sizes — sz-m = default */
+  .wx-body.sz-s { padding:8px 14px; }
+  .wx-body.sz-s .wx-row { gap:12px; }
+  .wx-body.sz-s .wx-art { font-size:8px; }
+  .wx-body.sz-s .wx-tx { font-size:11px; line-height:1.5; }
+  .wx-body.sz-s .wx-tx .wx-now { font-size:16px; }
+  .wx-body.sz-l { padding:20px 22px; }
+  .wx-body.sz-l .wx-row { gap:28px; }
+  .wx-body.sz-l .wx-art { font-size:20px; line-height:1.05; }
+  .wx-body.sz-l .wx-tx { font-size:15px; line-height:1.85; }
+  .wx-body.sz-l .wx-tx .wx-now { font-size:46px; }
+  .wx-body.sz-l .wx-tx .wx-lbl { font-size:18px; }
+  .wx-body.sz-l .wx-tx .wx-hl { font-size:14px; }
 
   /* ── widget: markets (crypto ticker + ASCII sparkline) ── */
   .mk-hd { display:flex; align-items:center; gap:12px; margin:0 2px 7px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gray); }
@@ -255,6 +275,11 @@
   .mk-row .mk-ch.down { color:var(--red); }
   .mk-row .mk-spark { flex:1; min-width:0; overflow:hidden; font-family:var(--font-mono); font-size:13px; letter-spacing:0; white-space:nowrap; color:var(--green-dim); }
   .mk-msg { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:10px 14px; color:var(--green-faint); font-size:11px; letter-spacing:0.06em; }
+  /* markets sizes — sz-m = default */
+  .mk-body.sz-s .mk-row { padding:5px 12px; font-size:11px; gap:10px; }
+  .mk-body.sz-s .mk-row .mk-sym { width:36px; } .mk-body.sz-s .mk-row .mk-px { width:96px; } .mk-body.sz-s .mk-row .mk-ch { width:54px; font-size:11px; } .mk-body.sz-s .mk-row .mk-spark { font-size:11px; }
+  .mk-body.sz-l .mk-row { padding:12px 18px; font-size:17px; gap:14px; }
+  .mk-body.sz-l .mk-row .mk-sym { width:52px; } .mk-body.sz-l .mk-row .mk-px { width:150px; font-size:17px; } .mk-body.sz-l .mk-row .mk-ch { width:80px; font-size:14px; } .mk-body.sz-l .mk-row .mk-spark { font-size:18px; }
 
   /* ── help overlay + footer (outside the stack) ── */
   .help { display:none; margin-top:18px; background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:14px 16px; font-size:11px; line-height:1.95; }
@@ -364,7 +389,11 @@
       <div class="widget" data-wid="weather">
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">weather</span><button class="w-hide" title="hide widget">✕</button></div>
         <div class="w-body">
-          <div class="wx-hd"><span>weather · 滋賀</span><span class="wx-r" id="wx-refresh" title="refresh">↻</span></div>
+          <div class="wx-hd">
+            <span>weather · 滋賀</span>
+            <span class="sz-tg" id="wx-size"><span data-sz="s">小</span><span class="sep">·</span><span data-sz="m">中</span><span class="sep">·</span><span data-sz="l">大</span></span>
+            <span class="wx-r" id="wx-refresh" title="refresh">↻</span>
+          </div>
           <div id="wx-body"></div>
         </div>
       </div>
@@ -372,7 +401,11 @@
       <div class="widget" data-wid="markets">
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">markets</span><button class="w-hide" title="hide widget">✕</button></div>
         <div class="w-body">
-          <div class="mk-hd"><span>markets · crypto (JPY)</span><span class="mk-r" id="mk-refresh" title="refresh">↻</span></div>
+          <div class="mk-hd">
+            <span>markets · crypto (JPY)</span>
+            <span class="sz-tg" id="mk-size"><span data-sz="s">小</span><span class="sep">·</span><span data-sz="m">中</span><span class="sep">·</span><span data-sz="l">大</span></span>
+            <span class="mk-r" id="mk-refresh" title="refresh">↻</span>
+          </div>
           <div id="mk-body"></div>
         </div>
       </div>
@@ -403,7 +436,7 @@
     </div>
 
     <div class="foot">
-      <a href="https://99letters.github.io/">99letters / kinoshita studio</a>
+      <a href="https://tkinoshita99.github.io/">99letters / kinoshita studio</a>
     </div>
   </div>
 

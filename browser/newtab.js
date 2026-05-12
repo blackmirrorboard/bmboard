@@ -446,12 +446,17 @@ function wxCat(code) {
   if ((code >= 51 && code <= 67) || (code >= 80 && code <= 86)) return 'rain';
   return 'cloudy';
 }
+const WX_SIZE_KEY = 'bm-browser.weatherSize.v1';
+let weatherSize = ['s', 'm', 'l'].includes(localStorage.getItem(WX_SIZE_KEY)) ? localStorage.getItem(WX_SIZE_KEY) : 'm';
+function setWeatherSize(s) { if (!['s', 'm', 'l'].includes(s)) return; weatherSize = s; try { localStorage.setItem(WX_SIZE_KEY, s); } catch (_) {} renderWeather(); }
 let wxData = null;
 function loadWxCache() { const c = lsGet(WX_KEY); if (c && c.data) { wxData = c.data; return c.fetchedAt || 0; } return 0; }
 function saveWxCache() { lsSet(WX_KEY, { data: wxData, fetchedAt: Date.now() }); }
 function renderWeather(msg) {
   const body = document.getElementById('wx-body'); if (!body) return;
-  if (msg || !wxData) { body.innerHTML = `<div class="wx-msg">${esc(msg || 'no data yet — ↻')}</div>`; return; }
+  document.querySelectorAll('#wx-size [data-sz]').forEach((s) => s.classList.toggle('active', s.dataset.sz === weatherSize));
+  if (msg || !wxData) { body.className = ''; body.innerHTML = `<div class="wx-msg">${esc(msg || 'no data yet — ↻')}</div>`; return; }
+  body.className = 'wx-body sz-' + weatherSize;
   const cat = wxCat(wxData.code);
   const r = (n) => Math.round(Number(n));
   body.innerHTML =
@@ -479,6 +484,7 @@ async function fetchWeather() {
   renderWeather();
   if (Date.now() - at > 30 * 60 * 1000) fetchWeather();
   document.getElementById('wx-refresh')?.addEventListener('click', fetchWeather);
+  document.querySelectorAll('#wx-size [data-sz]').forEach((s) => s.addEventListener('click', () => setWeatherSize(s.dataset.sz)));
   setInterval(fetchWeather, 30 * 60 * 1000);
 }
 
@@ -502,9 +508,14 @@ function sparkline(arr, width) {
   return out.map((v) => SPARK_CHARS[Math.min(7, Math.max(0, Math.round((v - lo) / range * 7)))]).join('');
 }
 function fmtJPY(n) { return '¥' + Math.round(Number(n) || 0).toLocaleString('ja-JP'); }
+const MK_SIZE_KEY = 'bm-browser.marketsSize.v1';
+let marketsSize = ['s', 'm', 'l'].includes(localStorage.getItem(MK_SIZE_KEY)) ? localStorage.getItem(MK_SIZE_KEY) : 'm';
+function setMarketsSize(s) { if (!['s', 'm', 'l'].includes(s)) return; marketsSize = s; try { localStorage.setItem(MK_SIZE_KEY, s); } catch (_) {} renderMarkets(); }
 function renderMarkets(msg) {
   const body = document.getElementById('mk-body'); if (!body) return;
-  if (msg || !mkItems.length) { body.innerHTML = `<div class="mk-msg">${esc(msg || 'no data yet — ↻')}</div>`; return; }
+  document.querySelectorAll('#mk-size [data-sz]').forEach((s) => s.classList.toggle('active', s.dataset.sz === marketsSize));
+  if (msg || !mkItems.length) { body.className = ''; body.innerHTML = `<div class="mk-msg">${esc(msg || 'no data yet — ↻')}</div>`; return; }
+  body.className = 'mk-body sz-' + marketsSize;
   body.innerHTML = mkItems.map((it) => {
     const ch = (typeof it.ch === 'number') ? it.ch : 0;
     const chStr = (ch >= 0 ? '▲' : '▼') + Math.abs(ch).toFixed(1) + '%';
@@ -535,6 +546,7 @@ async function fetchMarkets() {
   renderMarkets();
   if (Date.now() - at > 10 * 60 * 1000) fetchMarkets();
   document.getElementById('mk-refresh')?.addEventListener('click', fetchMarkets);
+  document.querySelectorAll('#mk-size [data-sz]').forEach((s) => s.addEventListener('click', () => setMarketsSize(s.dataset.sz)));
   setInterval(fetchMarkets, 12 * 60 * 1000);
 }
 
