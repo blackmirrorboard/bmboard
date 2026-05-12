@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BMBrowser">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,6 +23,12 @@
     --aqua:#4fda7a; --gray:#6b6b66; --red:#cc4444;
     --font-term: "DotGothic16", ui-monospace, "SF Mono", Menlo, Consolas, monospace;  /* hacker terminal type — handles 日本語 */
     --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "JetBrains Mono", monospace; /* clean mono — top header + ASCII art */
+    /* selectable background patterns ("old web" vibes) — reused by the picker previews */
+    --pat-grid: linear-gradient(rgba(51,255,51,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(51,255,51,.05) 1px, transparent 1px);
+    --pat-dots: radial-gradient(rgba(51,255,51,.08) 1.1px, transparent 1.5px);
+    --pat-scanlines: repeating-linear-gradient(0deg, transparent 0 2px, rgba(255,255,255,.03) 2px 3px);
+    --pat-stars: radial-gradient(1.3px 1.3px at 22px 34px, rgba(255,255,255,.8), transparent), radial-gradient(1px 1px at 108px 90px, rgba(255,255,255,.55), transparent), radial-gradient(1.5px 1.5px at 168px 28px, rgba(255,255,255,.85), transparent), radial-gradient(1px 1px at 60px 152px, rgba(255,255,255,.6), transparent), radial-gradient(1px 1px at 192px 132px, rgba(255,255,255,.5), transparent), radial-gradient(1.2px 1.2px at 132px 178px, rgba(255,255,255,.65), transparent), radial-gradient(1px 1px at 36px 112px, rgba(255,255,255,.45), transparent);
+    --pat-glow: radial-gradient(ellipse 75% 55% at 50% -5%, rgba(51,255,51,.08), transparent 72%);
   }
   body.light {   /* light theme — for visibility. same "base = key colour, cut-outs = page bg" rule still holds */
     --bg:#faf9f4; --bg-1:#f0eee6; --bg-2:#e6e3d8; --bg-cta:#ecf3e6;
@@ -41,6 +48,35 @@
     overflow-x:hidden; overscroll-behavior-x:none;   /* no left-right wobble / horizontal scroll */
   }
   .wrap { width:100%; max-width:640px; overflow-x:hidden; }
+
+  /* ── selectable backgrounds ── */
+  body.bg-grid      { background-image:var(--pat-grid); background-size:28px 28px; }
+  body.bg-dots      { background-image:var(--pat-dots); background-size:16px 16px; }
+  body.bg-scanlines { background-image:var(--pat-scanlines); }
+  body.bg-stars     { background-image:var(--pat-stars); background-size:210px 210px; }
+  body.bg-glow      { background-image:var(--pat-glow); background-attachment:fixed; }
+  body.bg-custom    { background-size:cover; background-position:center; background-attachment:fixed; }
+  body.bg-custom::before { content:''; position:fixed; inset:0; background:rgba(0,0,0,.55); pointer-events:none; z-index:-1; }
+  /* bg picker modal */
+  .bg-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  .bg-tile { cursor:pointer; text-align:center; }
+  .bg-tile .bg-pv { height:46px; border:1px solid var(--line); border-radius:3px; background:#000; }
+  .bg-tile.on .bg-pv { border-color:var(--green-bright); box-shadow:inset 0 0 0 1px var(--green-bright); }
+  .bg-tile .bg-lbl { display:block; font-size:9px; color:var(--gray); margin-top:4px; letter-spacing:0.04em; }
+  .bg-tile.on .bg-lbl { color:var(--green-bright); }
+  .bg-pv.pv-grid { background-image:var(--pat-grid); background-size:14px 14px; }
+  .bg-pv.pv-dots { background-image:var(--pat-dots); background-size:9px 9px; }
+  .bg-pv.pv-scanlines { background-image:var(--pat-scanlines); }
+  .bg-pv.pv-stars { background-image:var(--pat-stars); background-size:105px 105px; }
+  .bg-pv.pv-glow { background-image:radial-gradient(ellipse 90% 90% at 50% 0%, rgba(51,255,51,.18), transparent 75%); }
+  .bg-pv.pv-custom { background:linear-gradient(135deg, #2a2826, #4fda7a 80%); }
+  .bg-pv.pv-none { background:#000; }
+  .bg-custom-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .bg-custom-row .bg-cl { font-size:10px; color:var(--gray); white-space:nowrap; }
+  .bg-custom-row .bg-url { flex:1; min-width:0; background:#000; border:1px solid var(--line); border-radius:2px; color:var(--green-bright); font:inherit; font-size:11px; padding:5px 8px; outline:0; }
+  .bg-custom-row .bg-set { background:var(--bg-1); border:1px solid var(--green-faint); color:var(--green-bright); font:inherit; font-size:11px; padding:5px 10px; border-radius:2px; cursor:pointer; }
+  .bg-custom-row .bg-set:hover { border-color:var(--green); }
+
   /* mobile: inputs at 16px so iOS doesn't auto-zoom on focus (zoom is also locked via the viewport meta) */
   @media (pointer: coarse) {
     .prompt input, .memo-ta { font-size:16px; }
@@ -48,7 +84,7 @@
   @media (max-width: 480px) { body { padding:36px 16px; } }
 
   /* ── header (the one place that keeps the clean font) ── */
-  .head { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .head { display:flex; flex-wrap:wrap; align-items:center; gap:12px; row-gap:7px; margin-bottom:20px; }
   @keyframes bm-breathe { 0%, 100% { opacity:1; } 50% { opacity:0.18; } }
   .head .logo {
     display:flex; align-items:center; gap:9px; font-size:16px; letter-spacing:0.18em;
@@ -57,12 +93,13 @@
   }
   @media (prefers-reduced-motion: reduce) { .head .logo { animation:none; } }
   .head .mark { width:19px; height:19px; flex:0 0 auto; display:block; object-fit:contain; }
-  .head .th-btn, .head .wg-btn, .head .edit-btn {
+  .head .th-btn, .head .bg-btn, .head .wg-btn, .head .edit-btn {
     font-size:10px; letter-spacing:0.06em; color:var(--green-faint);
     cursor:pointer; border:1px solid var(--line); border-radius:2px; padding:2px 9px;
   }
   .head .th-btn { margin-left:auto; font-size:12px; line-height:1; padding:2px 8px; }
-  .head .th-btn:hover, .head .wg-btn:hover, .head .edit-btn:hover { color:var(--green); border-color:var(--green); }
+  .head .bg-btn { font-size:13px; line-height:1; padding:2px 8px; }
+  .head .th-btn:hover, .head .bg-btn:hover, .head .wg-btn:hover, .head .edit-btn:hover { color:var(--green); border-color:var(--green); }
   .head .edit-btn.active { color:var(--green-bright); border-color:var(--green); background:var(--bg-1); }
   /* widgets modal */
   .wg-ov { position:fixed; inset:0; z-index:99998; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.82); padding:24px; }
@@ -311,6 +348,7 @@
         black mirror browser
       </span>
       <span class="th-btn" id="th-btn" title="ライト / ダーク 切替">☀</span>
+      <span class="bg-btn" id="bg-btn" title="背景を選ぶ">◳</span>
       <span class="wg-btn" id="wg-btn" title="ウィジェットの表示を選ぶ">⊞ widgets</span>
       <span class="edit-btn" id="edit-btn" title="edit / rearrange widgets">✎ edit</span>
       <span class="ver">v0.2</span>
@@ -422,6 +460,7 @@
       <div><span class="k">ascii / chips</span><span class="c">ブックマークの表示を ASCII アート ⇄ チップ で切替</span></div>
       <div><span class="k">widgets / wg</span><span class="c">ウィジェット選択モーダル（⊞ widgets ボタンと同じ）</span></div>
       <div><span class="k">theme / light / dark</span><span class="c">ライト / ダーク 切替（☀/☾ ボタンと同じ）</span></div>
+      <div><span class="k">bg / background</span><span class="c">背景を選ぶ（◳ ボタンと同じ — グリッド / ドット / 走査線 / 星空 / グロウ / 画像URL）</span></div>
       <div><span class="k">edit</span><span class="c">編集モード — ウィジェットのドラッグ並べ替え・表示/非表示、ブックマークの編集</span></div>
       <div><span class="k">? / help</span><span class="c">このリスト</span></div>
       <div><span class="k">Ctrl + .</span><span class="c">「仕事してますモード」— 画面いっぱいにコードを流す（Ctrl + ` でも可。任意のキー / クリックで戻る）</span></div>

@@ -22,6 +22,57 @@ function setTheme(t) { theme = (t === 'light') ? 'light' : 'dark'; try { localSt
 function toggleTheme() { setTheme(theme === 'light' ? 'dark' : 'light'); }
 applyTheme();
 
+// ── background picker (selectable patterns + custom image URL) ──
+const BG_KEY = 'bm-browser.bg.v1';
+const BG_OPTIONS = [
+  { id: 'none', label: 'なし' }, { id: 'grid', label: 'グリッド' }, { id: 'dots', label: 'ドット' },
+  { id: 'scanlines', label: '走査線' }, { id: 'stars', label: '星空' }, { id: 'glow', label: 'グロウ' },
+  { id: 'custom', label: '画像' },
+];
+const BG_PATTERNS = ['grid', 'dots', 'scanlines', 'stars', 'glow'];
+let bgSetting = localStorage.getItem(BG_KEY) || 'none';
+function applyBg() {
+  Array.from(document.body.classList).forEach((c) => { if (c.indexOf('bg-') === 0) document.body.classList.remove(c); });
+  document.body.style.backgroundImage = '';
+  if (bgSetting && bgSetting.indexOf('custom:') === 0) {
+    document.body.classList.add('bg-custom');
+    document.body.style.backgroundImage = 'url("' + bgSetting.slice(7).replace(/["\\\n]/g, '') + '")';
+  } else if (BG_PATTERNS.includes(bgSetting)) {
+    document.body.classList.add('bg-' + bgSetting);
+  }
+}
+function setBg(v) { bgSetting = v || 'none'; try { localStorage.setItem(BG_KEY, bgSetting); } catch (_) {} applyBg(); }
+applyBg();
+function openBgModal() {
+  const ov = document.createElement('div'); ov.className = 'wg-ov';
+  const card = document.createElement('div'); card.className = 'wg-card';
+  const isCustom = bgSetting.indexOf('custom:') === 0;
+  const tiles = () => BG_OPTIONS.map((o) => {
+    const active = (o.id === 'custom') ? isCustom : (bgSetting === o.id);
+    const pv = (o.id === 'none') ? 'pv-none' : (o.id === 'custom') ? 'pv-custom' : 'pv-' + o.id;
+    return `<div class="bg-tile${active ? ' on' : ''}" data-bg="${o.id}"><div class="bg-pv ${pv}"></div><span class="bg-lbl">${esc(o.label)}</span></div>`;
+  }).join('');
+  card.innerHTML =
+    `<div class="wg-h">◼ BACKGROUND</div>` +
+    `<div class="wg-sub">背景を選ぶ。昔のサイトみたいに。</div>` +
+    `<div class="bg-tiles">${tiles()}</div>` +
+    `<div class="bg-custom-row"><span class="bg-cl">画像URL</span><input class="bg-url" id="bg-url" type="text" placeholder="https://… の画像URL" value="${esc(isCustom ? bgSetting.slice(7) : '')}"><button class="bg-set" id="bg-set">使う</button></div>` +
+    `<div class="wg-foot"><button class="wg-done">done</button></div>`;
+  ov.appendChild(card); document.body.appendChild(ov);
+  const close = () => { try { document.body.removeChild(ov); } catch (_) {} };
+  const useUrl = () => { const u = (card.querySelector('#bg-url').value || '').trim(); if (u) { setBg('custom:' + u); close(); } };
+  const wireTiles = () => card.querySelectorAll('.bg-tile').forEach((t) => t.addEventListener('click', () => {
+    if (t.dataset.bg === 'custom') { card.querySelector('#bg-url').focus(); return; }
+    setBg(t.dataset.bg);
+    card.querySelector('.bg-tiles').innerHTML = tiles(); wireTiles();
+  }));
+  wireTiles();
+  card.querySelector('#bg-set').addEventListener('click', useUrl);
+  card.querySelector('#bg-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); useUrl(); } });
+  card.querySelector('.wg-done').addEventListener('click', close);
+  ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+}
+
 // ── side panel ────────────────────────────────────────────
 // Works both as the extension's new tab (real side panel) AND as a plain web
 // page (e.g. served at bmboard.studio/browser/ — mobile, any browser). When
@@ -199,6 +250,7 @@ let draggedWid = null;
 editBtn.addEventListener('click', toggleEdit);
 document.getElementById('wg-btn')?.addEventListener('click', openWidgetModal);
 document.getElementById('th-btn')?.addEventListener('click', toggleTheme);
+document.getElementById('bg-btn')?.addEventListener('click', openBgModal);
 
 // ── ASCII art (5-row block font A–Z/0–9 + the BMBoard smiley) ─────────────
 const ASCII_FONT = {
@@ -311,6 +363,7 @@ function runCommand(raw) {
     case 'light': setTheme('light'); return;
     case 'dark': setTheme('dark'); return;
     case 'theme': toggleTheme(); return;
+    case 'bg': case 'background': openBgModal(); return;
     case 'ascii': case 'chips': setView(v); return;
     case 'view': setView(bmView === 'ascii' ? 'chips' : 'ascii'); return;
     case 'help': case '?': case 'h': document.getElementById('help').classList.toggle('show'); return;
