@@ -2722,7 +2722,8 @@ function onDown(cx, cy, isTouch = false) {
     } else if (S.tool === 'text') {
         // First click → open the input. A click while an input is open → commit it and
         // drop back to the select tool (Miro-style) instead of re-arming a new input.
-        const hadOpen = textOverlay.style.display !== 'none';
+        // (display is '' until the overlay is first shown — only 'block' means "open".)
+        const hadOpen = (textOverlay.style.display === 'block');
         commitText();
         if (hadOpen) { if (typeof setTool === 'function') setTool('select'); }
         else showTextInput(p);
