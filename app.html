@@ -5121,6 +5121,12 @@ function showTextInput(p, editObj = null) {
     // Vertical text anchors on the bbox top-left; horizontal text on the
     // baseline — so only the latter needs the one-line upward nudge.
     const _isVert = !!(editObj && editObj.data.vertical);
+    // Disable the terminal input while the board-text overlay is open. Otherwise
+    // there are two visible text fields on the page, and iOS shows the keyboard's
+    // prev/next field arrows — tapping them hops focus into the terminal, which
+    // felt like "the text tool does nothing / typing goes nowhere".
+    const _termIn = document.getElementById('ti');
+    if (_termIn) { try { _termIn.blur(); } catch (_) {} _termIn.disabled = true; }
     textOverlay.style.display = 'block';
     textOverlay.style.left    = sx + 'px';
     textOverlay.style.top     = (_isVert ? sy : sy - fs * VIEW.scale) + 'px';
@@ -5143,6 +5149,9 @@ function showTextInput(p, editObj = null) {
 }
 
 function commitText() {
+    // Always re-enable the terminal input (it was disabled while the overlay was open).
+    const _termIn = document.getElementById('ti');
+    if (_termIn) _termIn.disabled = false;
     if (textOverlay.style.display === 'none') return;
     const text = textInput.value.trim();
     textOverlay.style.display = 'none';
