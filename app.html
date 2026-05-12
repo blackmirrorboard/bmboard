@@ -1544,6 +1544,15 @@
                 <line x1="7" y1="2" x2="7" y2="10"/>
             </svg>
         </button>
+        <button class="tool-btn" id="copyImgBtn" title="Copy as image to clipboard (⌘⇧C) — paste into Figma / Miro / Slack">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1.5" y="2" width="8.5" height="9.5" rx="1"/>
+                <path d="M4.5 2 V1.2 H7 V2"/>
+                <circle cx="4" cy="6" r="1"/>
+                <polyline points="2.5,9.5 4.5,7.5 6,9 8,9.5"/>
+                <rect x="9" y="6" width="3.5" height="5" rx="0.6" fill="currentColor" fill-opacity="0.18"/>
+            </svg>
+        </button>
     </aside>
 
     <!-- Canvas — white drawing surface -->
@@ -7936,6 +7945,11 @@ document.addEventListener('keydown', e => {
         if (!S.objects.length) return;
         e.preventDefault(); selectAllObjects(); return;
     }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c' && !e.altKey) {
+        // ⌘⇧C — copy selection (or whole canvas) to the OS clipboard as a PNG image
+        // (same as the `copy-image` terminal command). Mnemonic: matches Figma's "Copy as PNG".
+        e.preventDefault(); copyImageToClipboard(); return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && !e.shiftKey && !e.altKey) {
         if (!S.selectedId && !S.multiSelected.length) return; // let browser handle text copy
         e.preventDefault(); copySelection(); return;
@@ -8973,6 +8987,10 @@ document.getElementById('exportPngBtn').addEventListener('click', () => {
     playClick(false);
     exportPng();
 });
+{
+    const _ci = document.getElementById('copyImgBtn');
+    if (_ci) _ci.addEventListener('click', () => { playClick(false); copyImageToClipboard(); });
+}
 
 // ── Image placement (shared by file-upload and clipboard-paste) ─────────────
 // Extracted so both the I-key file picker and Cmd/Ctrl+V paste route through
