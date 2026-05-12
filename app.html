@@ -618,19 +618,17 @@
             z-index: 30;
         }
 
-        #textOverlay textarea {
+        #textOverlay input {
             min-width: 100px;
             background: transparent;
             border: none;
             border-bottom: 1.5px solid #0c0c0c;
             font-family: 'Courier New', monospace;
             font-size: 14px;
-            line-height: 1.32;
             color: #0c0c0c;
             outline: none;
             padding: 2px 2px 3px;
             letter-spacing: 0.02em;
-            resize: none;
         }
 
         #stickyEditor {
@@ -1298,12 +1296,12 @@
         }
         body.bm-dark .shape-hint   { color: rgba(255,255,255,0.22); }
         body.bm-gray .shape-hint   { color: rgba(22,0,162,0.35); }
-        body.bm-dark #textOverlay textarea {
+        body.bm-dark #textOverlay input {
             border-bottom-color: #F0EDE6;
             color: #F0EDE6;
             caret-color: #F0EDE6;
         }
-        body.bm-gray #textOverlay textarea {
+        body.bm-gray #textOverlay input {
             border-bottom-color: #1600A2;
             color: #1600A2;
             caret-color: #1600A2;
@@ -1567,7 +1565,7 @@
              autocomplete="off">
         <canvas id="c" draggable="false"></canvas>
         <div id="textOverlay">
-            <textarea id="ti2" rows="1" wrap="off" autocomplete="off" spellcheck="false" placeholder="type…  ⇧⏎=改行"></textarea>
+            <input id="ti2" type="text" autocomplete="off" spellcheck="false" placeholder="type…">
         </div>
         <textarea id="stickyEditor" spellcheck="false" placeholder="type…"></textarea>
         <div id="bmTimer" class="bm-timer" style="display:none">
@@ -5132,19 +5130,15 @@ function showTextInput(p, editObj = null) {
     textOverlay.style.top     = (_isVert ? sy : sy - fs * VIEW.scale) + 'px';
     textInput.style.fontSize  = Math.max(10, Math.round(fs * VIEW.scale)) + 'px';
     textInput.value = editObj ? editObj.data.text : '';
-    if (typeof _sizeTextInput === 'function') _sizeTextInput(true);
-    // Desktop: the canvas pointerdown's setPointerCapture/preventDefault bounces
-    // focus away — re-grab it a few times so the user can type on the first click.
-    // Touch: we must NOT call focus() again outside the original tap gesture —
-    // iOS dismisses / freezes the soft keyboard if you do, which made the text
-    // tool feel "typing does nothing". So on touch, focus once and leave it.
+    if (typeof _sizeTextInput === 'function') _sizeTextInput();
+    // The click's default handling (mousedown focus-move + setPointerCapture on the
+    // canvas) bounces focus away on desktop — re-grab it a few times so the user can
+    // type immediately on the first click. (touch devices don't have this problem.)
     const _grab = () => { try { textInput.focus(); if (editObj) textInput.select(); } catch (_) {} };
     _grab();
-    if (S.lastPointerType !== 'touch') {
-        requestAnimationFrame(_grab);
-        setTimeout(_grab, 0);
-        setTimeout(_grab, 80);
-    }
+    requestAnimationFrame(_grab);
+    setTimeout(_grab, 0);
+    setTimeout(_grab, 80);
     redrawAll(); // hide the original text while editing
 }
 
@@ -5182,34 +5176,25 @@ function commitText() {
 }
 
 textInput.addEventListener('keydown', e => {
-    // Enter commits (then returns to the select tool). Shift+Enter inserts a
-    // line break — for multi-line text / 縦書きの段落 / prose. IME-conversion
-    // Enter (keyCode 229 / isComposing) is left to the IME so 漢字変換の確定 Enter
-    // doesn't fire a commit; Esc also commits.
+    // Enter (or Esc, or click-away) commits and drops back to the select tool.
+    // IME-conversion Enter (keyCode 229 / isComposing) is left to the IME so
+    // 漢字変換の確定 Enter doesn't fire a commit.
     if (e.key === 'Escape') { e.preventDefault(); commitText(); if (typeof setTool === 'function') setTool('select'); }
-    else if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+    else if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
         e.preventDefault(); commitText(); if (typeof setTool === 'function') setTool('select');
     }
-    // Shift+Enter falls through → the textarea inserts a newline.
     e.stopPropagation();
 });
 // Grow the textarea with its content so what you're typing stays visible — width
 // tracks the widest line (wrap=off), height tracks the line count. Also nudge the
 // overlay left if the wider box runs off-screen.
-function _sizeTextInput(initial) {
-    // On the initial open we may collapse → measure widest line → fit. On every
-    // keystroke (input event) we only ever GROW — never collapse the focused
-    // field, which is iOS-unfriendly (caret jumps / input gets dropped).
-    if (initial) {
-        textInput.style.width = '0px';
-        textInput.style.width = Math.max(80, textInput.scrollWidth + 8) + 'px';
-    } else {
-        const need = textInput.scrollWidth + 8;
-        if (need > (parseFloat(textInput.style.width) || 80)) textInput.style.width = need + 'px';
-    }
-    textInput.style.height = 'auto';
-    textInput.style.height = (textInput.scrollHeight + 2) + 'px';
-    // If the now-wider box runs off the right edge, slide the overlay left to keep it on-screen.
+function _sizeTextInput() {
+    // Grow the input to the actual pixel width of the text (works for CJK / proportional
+    // fonts where a char-count `size` undershoots), so the whole line stays visible.
+    textInput.style.width = '0px';
+    const w = textInput.scrollWidth;
+    textInput.style.width = Math.max(80, w + 8) + 'px';
+    // If the now-wider input runs off the right edge, slide the overlay left to keep it on-screen.
     requestAnimationFrame(() => {
         const r = textOverlay.getBoundingClientRect();
         if (r.right > window.innerWidth - 6) textOverlay.style.left = Math.max(6, window.innerWidth - r.width - 6) + 'px';
