@@ -1522,6 +1522,7 @@
 
         <!-- Text -->
         <button class="tool-btn" data-tool="text" title="Text (T)">T</button>
+        <button class="tool-btn" id="textStyleBtn" title="Text style — font / bold (selected text or sticky)">Aa</button>
         <div class="tool-sep"></div>
 
         <!-- Upload Image -->
@@ -1763,6 +1764,21 @@
                 <line x1="2" y1="10" x2="10" y2="2" stroke="#e03" stroke-width="2" stroke-linecap="round"/>
             </svg>
         </button>
+    </div>
+</div>
+
+<!-- Text Style Popover — font + bold for the selected text / sticky -->
+<div id="textStylePopover" class="tool-popover">
+    <span class="pop-label">FONT</span>
+    <div class="pop-row">
+        <button class="tool-btn" data-font="default" title="標準（等幅）" style="font-family:'Courier New',monospace;font-weight:600;font-size:13px">Aa</button>
+        <button class="tool-btn" data-font="mincho"  title="明朝" style="font-family:'Hiragino Mincho ProN','Yu Mincho','MS PMincho',serif;font-weight:600;font-size:15px">明</button>
+        <button class="tool-btn" data-font="noto"    title="Noto Sans JP" style="font-family:'Noto Sans JP','Hiragino Sans',sans-serif;font-weight:700;font-size:14px">あ</button>
+    </div>
+    <div class="pop-sep-line"></div>
+    <span class="pop-label">WEIGHT</span>
+    <div class="pop-row">
+        <button class="tool-btn" data-bold="toggle" title="太字 ON / OFF" style="font-weight:900;font-size:15px">B</button>
     </div>
 </div>
 
@@ -7708,7 +7724,69 @@ shapePopover.querySelectorAll('[data-stroke]').forEach(btn => {
 });
 
 // Close all popovers on any outside click
-document.addEventListener('click', () => { closeFillPopover(); closeShapePopover(); closePenPopover(); });
+document.addEventListener('click', () => { closeFillPopover(); closeShapePopover(); closePenPopover(); closeTextStylePopover(); });
+
+// ── Text style popover (font / bold) — applies to the selected text / sticky ──
+const textStyleBtn = document.getElementById('textStyleBtn');
+const textStylePopover = document.getElementById('textStylePopover');
+let textStylePopoverOpen = false;
+const TEXT_STYLE_FONTS = {
+    default: null,
+    mincho:  `"Hiragino Mincho ProN","Yu Mincho","YuMincho","MS PMincho",serif`,
+    noto:    `"Noto Sans JP","Hiragino Sans",sans-serif`,
+};
+function _textStyleTargets() {
+    return S.objects.filter(o => (o.selected || (S.multiSelected || []).includes(o.id)) && (o.type === 'text' || o.type === 'sticky'));
+}
+function applyTextStyle(patch) {
+    const t = _textStyleTargets();
+    if (!t.length) { try { printRaw('text style: select a text or sticky object first.', 't-err'); } catch (_) {} return; }
+    t.forEach(o => {
+        if ('fontFamily' in patch) { if (patch.fontFamily == null) delete o.data.fontFamily; else o.data.fontFamily = patch.fontFamily; }
+        if ('bold' in patch) { if (patch.bold) o.data.bold = true; else delete o.data.bold; }
+    });
+    saveHistory(); redrawAll();
+}
+function closeTextStylePopover() { if (textStylePopover) textStylePopover.style.display = 'none'; textStylePopoverOpen = false; }
+function openTextStylePopover() {
+    if (!textStyleBtn || !textStylePopover) return;
+    const r = textStyleBtn.getBoundingClientRect();
+    const mobile = window.innerWidth <= 700;
+    textStylePopover.style.bottom = 'auto';
+    textStylePopover.style.display = 'flex';
+    if (mobile) {
+        const pw = textStylePopover.offsetWidth || 130;
+        let left = r.left;
+        if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+        if (left < 8) left = 8;
+        textStylePopover.style.left = left + 'px';
+        textStylePopover.style.top  = (r.bottom + 4) + 'px';
+    } else {
+        textStylePopover.style.left = (r.right + 4) + 'px';
+        textStylePopover.style.top  = r.top + 'px';
+    }
+    textStylePopoverOpen = true;
+}
+if (textStyleBtn && textStylePopover) {
+    textStyleBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        try { playClick(false); } catch (_) {}
+        closeFillPopover(); closeShapePopover(); closePenPopover();
+        if (textStylePopoverOpen) { closeTextStylePopover(); return; }
+        openTextStylePopover();
+    });
+    textStylePopover.addEventListener('click', e => e.stopPropagation());
+    textStylePopover.querySelectorAll('[data-font]').forEach(b => {
+        b.addEventListener('click', () => { applyTextStyle({ fontFamily: TEXT_STYLE_FONTS[b.dataset.font] }); closeTextStylePopover(); });
+    });
+    const bBtn = textStylePopover.querySelector('[data-bold]');
+    if (bBtn) bBtn.addEventListener('click', () => {
+        const t = _textStyleTargets();
+        const allBold = t.length > 0 && t.every(o => o.data.bold);
+        applyTextStyle({ bold: !allBold });
+        closeTextStylePopover();
+    });
+}
 
 document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
     // Skip buttons inside popovers — they have their own dedicated listeners
