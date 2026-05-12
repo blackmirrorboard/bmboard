@@ -3124,6 +3124,12 @@ function renderText(obj) {
     ctx.font = `${bold ? 'bold ' : ''}${fs}px ${ff}`;
     ctx.fillStyle = getStrokeColor();
     ctx.fillText(text, x, y);
+    if (bold) {                                   // faux-bold stroke so it shows even on fonts without a bold cut
+        ctx.lineWidth = Math.max(0.5, fs * 0.055);
+        ctx.lineJoin  = 'round';
+        ctx.strokeStyle = getStrokeColor();
+        ctx.strokeText(text, x, y);
+    }
     if (obj.selected) {
         // Tight bbox via shared metrics — the blue chrome now actually
         // hugs the glyph run regardless of char width (ASCII / CJK / emoji).
@@ -3338,8 +3344,12 @@ function renderSticky(obj) {
         const totalH = lines.length * lineH;
         const lineX  = noteMode ? (x + pad) : (x + w/2);
         const startY = noteMode ? (y + pad + lineH/2) : (y + h/2 - totalH/2 + lineH/2);
+        const boldStroke = !!obj.data.bold;       // faux-bold stroke (Hiragino Kaku has no 800 cut)
+        if (boldStroke) { ctx.lineWidth = Math.max(0.5, fs * 0.05); ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a1a1a'; }
         for (let i = 0; i < lines.length; i++) {
-            ctx.fillText(lines[i], lineX, startY + i * lineH);
+            const ly = startY + i * lineH;
+            ctx.fillText(lines[i], lineX, ly);
+            if (boldStroke) ctx.strokeText(lines[i], lineX, ly);
         }
     }
     if (obj.selected) { selBox(x, y, w, h); drawAnchors(obj); }
