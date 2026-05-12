@@ -4832,10 +4832,20 @@ textInput.addEventListener('keydown', e => {
 // Grow the input with the text so what you're typing stays visible (single-line text
 // objects can get long). Also nudge the overlay left if the wider input runs off-screen.
 function _sizeTextInput() {
-    textInput.size = Math.max(8, (textInput.value || '').length + 3);
+    // Grow the input to the actual pixel width of the text (works for CJK / proportional
+    // fonts where a char-count `size` undershoots), so the whole line stays visible.
+    textInput.style.width = '0px';
+    const w = textInput.scrollWidth;
+    textInput.style.width = Math.max(80, w + 8) + 'px';
+    // If the now-wider input runs off the right edge, slide the overlay left to keep it on-screen.
     requestAnimationFrame(() => {
         const r = textOverlay.getBoundingClientRect();
-        if (r.right > window.innerWidth - 8) textOverlay.style.left = Math.max(8, window.innerWidth - r.width - 8) + 'px';
+        if (r.right > window.innerWidth - 6) textOverlay.style.left = Math.max(6, window.innerWidth - r.width - 6) + 'px';
+        else {
+            // also re-anchor right-ish if it had drifted and now fits at the click point again
+            const want = (S.textPos ? (S.textPos.x * VIEW.scale + VIEW.tx) : r.left);
+            if (want >= 6 && want + r.width <= window.innerWidth - 6 && Math.abs(want - r.left) > 1) textOverlay.style.left = want + 'px';
+        }
     });
 }
 textInput.addEventListener('input', _sizeTextInput);
