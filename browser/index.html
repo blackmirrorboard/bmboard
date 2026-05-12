@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,15 +23,20 @@
     --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "JetBrains Mono", monospace; /* clean mono — top header + ASCII art */
   }
   * { box-sizing:border-box; margin:0; padding:0; }
-  html { height:100%; }
+  html { height:100%; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
   body {
     background:var(--bg); color:var(--green);
     font-family:var(--font-term); font-size:13px; line-height:1.6;
     -webkit-font-smoothing:antialiased;
     min-height:100vh; display:flex; align-items:center; justify-content:center;
     padding:48px 32px;   /* breathing room — and min-height (not height) so tall stacks scroll, never clip */
+    touch-action:manipulation;   /* no double-tap-to-zoom on mobile */
   }
   .wrap { width:100%; max-width:640px; }
+  /* mobile: inputs at 16px so iOS doesn't auto-zoom on focus (zoom is also locked via the viewport meta) */
+  @media (pointer: coarse) {
+    .prompt input, .memo-ta { font-size:16px; }
+  }
 
   /* ── header (the one place that keeps the clean font) ── */
   .head { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
@@ -45,12 +50,30 @@
   .head .mark { width:19px; height:19px; flex:0 0 auto; display:block; }
   .head .mark .ring { fill:var(--green-bright); }   /* base = key colour */
   .head .mark .face { fill:var(--bg); }             /* cut-outs = page bg */
-  .head .edit-btn {
-    margin-left:auto; font-size:10px; letter-spacing:0.06em; color:var(--green-faint);
+  .head .wg-btn, .head .edit-btn {
+    font-size:10px; letter-spacing:0.06em; color:var(--green-faint);
     cursor:pointer; border:1px solid var(--line); border-radius:2px; padding:2px 9px;
   }
-  .head .edit-btn:hover { color:var(--green); border-color:var(--green); }
+  .head .wg-btn { margin-left:auto; }
+  .head .wg-btn:hover, .head .edit-btn:hover { color:var(--green); border-color:var(--green); }
   .head .edit-btn.active { color:var(--green-bright); border-color:var(--green); background:var(--bg-1); }
+  /* widgets modal */
+  .wg-ov { position:fixed; inset:0; z-index:99998; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.82); padding:24px; }
+  .wg-card { background:#0a0a0a; border:1px solid var(--line); border-radius:3px; padding:22px 24px; width:100%; max-width:440px; }
+  .wg-card .wg-h { font-size:11px; letter-spacing:0.3em; color:var(--gray); margin-bottom:6px; }
+  .wg-card .wg-sub { font-size:11px; color:var(--gray); margin-bottom:14px; line-height:1.6; }
+  .wg-row { display:flex; align-items:flex-start; gap:11px; padding:8px 6px; cursor:pointer; border-top:1px solid #1a1a1a; }
+  .wg-row:hover { background:var(--bg-1); }
+  .wg-row .wg-ck { width:14px; text-align:center; font-size:13px; color:var(--green-faint); flex:0 0 auto; }
+  .wg-row.on .wg-ck { color:var(--green-bright); }
+  .wg-row .wg-ic { width:16px; text-align:center; color:var(--aqua); flex:0 0 auto; }
+  .wg-row .wg-tx { flex:1; min-width:0; }
+  .wg-row .wg-tt { color:var(--gray); }
+  .wg-row.on .wg-tt { color:var(--green-bright); }
+  .wg-row .wg-de { display:block; color:var(--gray); font-size:11px; margin-top:1px; }
+  .wg-card .wg-foot { display:flex; justify-content:flex-end; margin-top:16px; }
+  .wg-card .wg-done { background:var(--bg-1); border:1px solid var(--green-faint); color:var(--green-bright); padding:7px 16px; font:inherit; cursor:pointer; border-radius:2px; }
+  .wg-card .wg-done:hover { border-color:var(--green); }
   .head .ver { font-family:var(--font-mono); font-size:10px; letter-spacing:0.24em; color:var(--green-faint); text-transform:uppercase; }
 
   /* ── add-bar (edit mode: re-add hidden widgets) ── */
@@ -161,10 +184,16 @@
   .hint { margin-top:8px; font-size:10px; color:var(--gray); letter-spacing:0.08em; }
   .hint b { color:var(--green-dim); font-weight:400; }
 
-  /* ── widget: news ticker ── */
-  .news-hd { display:flex; align-items:center; gap:10px; margin:0 2px 7px; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gray); }
+  /* ── widget: news ── */
+  .news-hd { display:flex; align-items:center; gap:12px; margin:0 2px 7px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gray); }
+  .news-hd .news-src, .news-hd .news-view { font-size:10px; letter-spacing:0; text-transform:none; }
+  .news-hd [data-ns], .news-hd [data-nv] { cursor:pointer; color:var(--green-faint); }
+  .news-hd [data-ns]:hover, .news-hd [data-nv]:hover { color:var(--green); }
+  .news-hd [data-ns].active, .news-hd [data-nv].active { color:var(--green-bright); }
+  .news-hd .sep { color:var(--line); padding:0 4px; cursor:default; }
   .news-hd .news-r { margin-left:auto; cursor:pointer; color:var(--green-faint); border:1px solid var(--line); border-radius:2px; padding:1px 7px; font-size:11px; text-transform:none; letter-spacing:0; }
   .news-hd .news-r:hover { color:var(--green); border-color:var(--green); }
+  /* ticker (1-line scrolling) */
   .ticker { overflow:hidden; background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:9px 0; white-space:nowrap; }
   .ticker-track { display:inline-block; white-space:nowrap; animation:ticker-scroll 64s linear infinite; will-change:transform; }
   .ticker:hover .ticker-track { animation-play-state:paused; }
@@ -173,10 +202,22 @@
   .ticker .tk-item:hover { color:var(--green); text-shadow:0 0 6px rgba(132,255,100,0.3); }
   .ticker .tk-item .pt { color:var(--green-faint); font-size:11px; margin-left:6px; }
   .ticker .tk-sep { display:inline-block; padding:0 4px; color:var(--line); }
-  .ticker .tk-msg { display:inline-block; padding:0 18px; color:var(--green-faint); font-size:11px; letter-spacing:0.06em; }
+  /* list (taller, scrollable) */
+  .news-list { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:5px 0; max-height:148px; overflow-y:auto; }
+  .nl-item { display:flex; align-items:baseline; gap:10px; padding:5px 14px; color:var(--green-bright); text-decoration:none; font-size:13px; }
+  .nl-item:hover { background:var(--bg-2); color:var(--green); }
+  .nl-item .nl-t { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nl-item .nl-pt { flex-shrink:0; color:var(--green-faint); font-size:11px; }
+  .news-msg { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:10px 14px; color:var(--green-faint); font-size:11px; letter-spacing:0.06em; }
 
-  /* ── widget: clock ── */
-  .clock-w { font-size:12px; color:var(--green-dim); letter-spacing:0.16em; }
+  /* ── widget: clock (click to cycle: small → large → ascii) ── */
+  .clock-w { cursor:pointer; }
+  .clock-w.s-small { font-size:12px; color:var(--green-dim); letter-spacing:0.16em; }
+  .clock-w.s-large { color:var(--green-bright); }
+  .clock-w.s-large .ct { display:block; font-size:34px; letter-spacing:0.06em; line-height:1.05; }
+  .clock-w.s-large .cd { display:block; font-size:11px; color:var(--green-faint); letter-spacing:0.18em; margin-top:3px; }
+  .clock-w.s-ascii .ca { display:block; font-family:var(--font-mono); white-space:pre; font-size:10px; line-height:1; color:var(--green-bright); }
+  .clock-w.s-ascii .cd { display:block; font-size:10px; color:var(--green-faint); letter-spacing:0.18em; margin-top:7px; }
 
   /* ── help overlay + footer (outside the stack) ── */
   .help { display:none; margin-top:18px; background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:14px 16px; font-size:11px; line-height:1.95; }
@@ -214,6 +255,7 @@
         </svg>
         black mirror browser
       </span>
+      <span class="wg-btn" id="wg-btn" title="ウィジェットの表示を選ぶ">⊞ widgets</span>
       <span class="edit-btn" id="edit-btn" title="edit / rearrange widgets">✎ edit</span>
       <span class="ver">v0.2</span>
     </div>
@@ -272,14 +314,18 @@
       <div class="widget" data-wid="news">
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">news</span><button class="w-hide" title="hide widget">✕</button></div>
         <div class="w-body">
-          <div class="news-hd"><span>news · hacker news</span><span class="news-r" id="news-refresh" title="refresh">↻</span></div>
-          <div class="ticker" id="ticker"><div class="ticker-track" id="ticker-track"></div></div>
+          <div class="news-hd">
+            <span class="news-src" id="news-src"><span data-ns="hn">HN</span><span class="sep">·</span><span data-ns="yahoo">Yahoo</span><span class="sep">·</span><span data-ns="nhk">NHK</span></span>
+            <span class="news-view" id="news-view"><span data-nv="ticker">1行</span><span class="sep">·</span><span data-nv="list">一覧</span></span>
+            <span class="news-r" id="news-refresh" title="refresh">↻</span>
+          </div>
+          <div id="news-body"></div>
         </div>
       </div>
 
       <div class="widget" data-wid="clock">
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">clock</span><button class="w-hide" title="hide widget">✕</button></div>
-        <div class="w-body"><span class="clock-w" id="clock">— · —</span></div>
+        <div class="w-body"><div class="clock-w s-small" id="clock" title="クリックで表示切替（small → large → ascii）">— · —</div></div>
       </div>
 
     </div>
@@ -294,9 +340,10 @@
       <div><span class="k">&lt;url&gt;</span><span class="c">そのまま開く（http なしでも可）</span></div>
       <div><span class="k">add / bookmark</span><span class="c">ブックマーク追加（＋ add と同じ）</span></div>
       <div><span class="k">ascii / chips</span><span class="c">ブックマークの表示を ASCII アート ⇄ チップ で切替</span></div>
-      <div><span class="k">edit</span><span class="c">編集モード — ウィジェットの並べ替え・表示/非表示、ブックマークの編集</span></div>
+      <div><span class="k">widgets / wg</span><span class="c">ウィジェット選択モーダル（⊞ widgets ボタンと同じ）</span></div>
+      <div><span class="k">edit</span><span class="c">編集モード — ウィジェットのドラッグ並べ替え・表示/非表示、ブックマークの編集</span></div>
       <div><span class="k">? / help</span><span class="c">このリスト</span></div>
-      <div><span class="k">Ctrl + `</span><span class="c">「仕事してますモード」— 画面いっぱいにコードを流す（任意のキー / クリックで戻る）</span></div>
+      <div><span class="k">Ctrl + .</span><span class="c">「仕事してますモード」— 画面いっぱいにコードを流す（Ctrl + ` でも可。任意のキー / クリックで戻る）</span></div>
       <div style="margin-top:6px;color:var(--green-faint)">編集モード: ✎ edit → ⠿ でウィジェットをドラッグ並べ替え · ✕ で非表示 · ブックマークに ↑↓✎✕</div>
     </div>
 

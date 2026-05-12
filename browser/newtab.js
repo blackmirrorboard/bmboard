@@ -55,7 +55,14 @@ function saveBookmarks() { lsSet(BM_KEY, bookmarks); }
 function saveView() { try { localStorage.setItem(VIEW_KEY, bmView); } catch (_) {} }
 
 // ── widget state ──────────────────────────────────────────
-const WIDGET_DEFS = { cta: { title: 'side panel' }, bookmarks: { title: 'bookmarks' }, memo: { title: 'memo' }, prompt: { title: 'command' }, news: { title: 'news' }, clock: { title: 'clock' } };
+const WIDGET_DEFS = {
+  cta:       { title: 'side panel', icon: '▤', desc: 'BMBoard をサイドパネルで開く（⌘⇧Y）' },
+  bookmarks: { title: 'bookmarks',  icon: '▦', desc: '編集できるブックマーク（chips / ascii）' },
+  memo:      { title: 'memo',       icon: '✎', desc: '自動保存のスクラッチパッド' },
+  prompt:    { title: 'command',    icon: '›', desc: 'コマンド / URL / 検索' },
+  news:      { title: 'news',       icon: '◷', desc: 'ニュース（HN / Yahoo / NHK · 1行 / 一覧）' },
+  clock:     { title: 'clock',      icon: '⏱', desc: '時計（クリックで small / large / ascii）' },
+};
 const WIDGET_ORDER_DEFAULT = ['cta', 'bookmarks', 'memo', 'prompt', 'news', 'clock'];
 const WIDGETS_KEY = 'bm-browser.widgets.v1';
 function loadWidgets() {
@@ -103,6 +110,37 @@ function renderAddBar() {
 
 function toggleEdit() { editMode = !editMode; applyWidgets(); }
 
+// ── widgets modal: pick which widgets to show ──
+function openWidgetModal() {
+  const ov = document.createElement('div'); ov.className = 'wg-ov';
+  const card = document.createElement('div'); card.className = 'wg-card';
+  const rowsHTML = () => widgetState.order.map((id) => {
+    const d = WIDGET_DEFS[id]; if (!d) return '';
+    const on = !widgetState.hidden.has(id);
+    return `<div class="wg-row${on ? ' on' : ''}" data-id="${id}">
+      <span class="wg-ck">${on ? '☑' : '☐'}</span>
+      <span class="wg-ic">${esc(d.icon || '◦')}</span>
+      <span class="wg-tx"><span class="wg-tt">${esc(d.title)}</span><span class="wg-de">${esc(d.desc || '')}</span></span>
+    </div>`;
+  }).join('');
+  card.innerHTML =
+    `<div class="wg-h">◼ WIDGETS</div>` +
+    `<div class="wg-sub">表示するウィジェットを選ぶ。<br>並べ替えは <b style="color:var(--green-bright)">✎ edit</b> に入って ⠿ をドラッグ。</div>` +
+    `<div class="wg-rows">${rowsHTML()}</div>` +
+    `<div class="wg-foot"><button class="wg-done">done</button></div>`;
+  ov.appendChild(card); document.body.appendChild(ov);
+  const close = () => { try { document.body.removeChild(ov); } catch (_) {} };
+  const wireRows = () => card.querySelectorAll('.wg-row').forEach((r) => r.addEventListener('click', () => {
+    const id = r.dataset.id;
+    if (widgetState.hidden.has(id)) widgetState.hidden.delete(id); else widgetState.hidden.add(id);
+    saveWidgets(); applyWidgets();
+    card.querySelector('.wg-rows').innerHTML = rowsHTML(); wireRows();
+  }));
+  wireRows();
+  card.querySelector('.wg-done').addEventListener('click', close);
+  ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+}
+
 // hide buttons + drag wiring (once — widgets are static, edit mode just moves them)
 stackEl.querySelectorAll('.widget').forEach((w) => {
   const id = w.dataset.wid;
@@ -145,6 +183,7 @@ stackEl.querySelectorAll('.widget').forEach((w) => {
 });
 let draggedWid = null;
 editBtn.addEventListener('click', toggleEdit);
+document.getElementById('wg-btn')?.addEventListener('click', openWidgetModal);
 
 // ── ASCII art (5-row block font A–Z/0–9 + the BMBoard smiley) ─────────────
 const ASCII_FONT = {
@@ -166,6 +205,7 @@ const ASCII_FONT = {
   4:['   █ ','  ██ ',' █ █ ','█████','   █ '], 5:['█████','█    ','████ ','    █','████ '],
   6:[' ████','█    ','████ ','█   █',' ███ '], 7:['█████','   █ ','  █  ',' █   ','█    '],
   8:[' ███ ','█   █',' ███ ','█   █',' ███ '], 9:[' ███ ','█   █',' ████','    █','███  '],
+  ':':['     ','  █  ','     ','  █  ','     '], '.':['     ','     ','     ','     ','  █  '], ' ':['     ','     ','     ','     ','     '],
 };
 const SMILEY_ART = ['╭─────────╮', '│  ▲   ▲  │', '│         │', '│ ╲     ╱ │', '│  ╲___╱  │', '╰─────────╯'].join('\n');
 function letterArt(ch) {
@@ -252,6 +292,7 @@ function runCommand(raw) {
     case 'studio': case 'home': case 'index': case '99letters': go(APPS.studio); return;
     case 'add': case 'bookmark': addBookmark(); return;
     case 'edit': toggleEdit(); return;
+    case 'widgets': case 'wg': openWidgetModal(); return;
     case 'ascii': case 'chips': setView(v); return;
     case 'view': setView(bmView === 'ascii' ? 'chips' : 'ascii'); return;
     case 'help': case '?': case 'h': document.getElementById('help').classList.toggle('show'); return;
@@ -280,36 +321,76 @@ if (memoTa) {
   memoTa.addEventListener('input', () => { try { localStorage.setItem(MEMO_KEY, memoTa.value); } catch (_) {} });
 }
 
-// ── widget: news ticker (Hacker News front page — CORS-friendly, hacker vibe) ──
-const NEWS_KEY = 'bm-browser.news.v1';
-const NEWS_URL = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=18';
+// ── widget: news (selectable source — HN / Yahoo!ニュース / NHK) ──────────
+// In the extension, host_permissions:<all_urls> lets us fetch any feed directly.
+// On the standalone web page, RSS feeds aren't CORS-friendly → go via a proxy.
+const IS_EXTENSION = (typeof chrome !== 'undefined' && chrome.runtime && !!chrome.runtime.id);
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+const NEWS_SOURCES = {
+  hn:    { label: 'HN',    type: 'hn',  url: 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=20' },
+  yahoo: { label: 'Yahoo', type: 'rss', url: 'https://news.yahoo.co.jp/rss/topics/top-picks.xml' },
+  nhk:   { label: 'NHK',   type: 'rss', url: 'https://www3.nhk.or.jp/rss/news/cat0.xml' },
+};
+const NEWS_VIEW_KEY = 'bm-browser.newsView.v1', NEWS_SOURCE_KEY = 'bm-browser.newsSource.v1';
 let newsItems = [];
-function loadNewsCache() { const c = lsGet(NEWS_KEY); if (c && Array.isArray(c.items) && c.items.length) { newsItems = c.items; return c.fetchedAt || 0; } return 0; }
-function saveNewsCache() { lsSet(NEWS_KEY, { items: newsItems, fetchedAt: Date.now() }); }
+let newsView   = (localStorage.getItem(NEWS_VIEW_KEY) === 'list') ? 'list' : 'ticker';
+let newsSource = NEWS_SOURCES[localStorage.getItem(NEWS_SOURCE_KEY)] ? localStorage.getItem(NEWS_SOURCE_KEY) : 'hn';
+function newsCacheKey() { return 'bm-browser.news.v1.' + newsSource; }
+function loadNewsCache() { const c = lsGet(newsCacheKey()); if (c && Array.isArray(c.items) && c.items.length) { newsItems = c.items; return c.fetchedAt || 0; } newsItems = []; return 0; }
+function saveNewsCache() { lsSet(newsCacheKey(), { items: newsItems, fetchedAt: Date.now() }); }
+function newsUrl(it) { return it.url || (it.objectID ? `https://news.ycombinator.com/item?id=${it.objectID}` : '#'); }
+function parseRss(xmlText) {
+  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+  let nodes = Array.from(doc.querySelectorAll('item'));
+  if (!nodes.length) nodes = Array.from(doc.querySelectorAll('entry'));   // Atom
+  return nodes.slice(0, 26).map((n) => {
+    const t = (n.querySelector('title')?.textContent || '').trim();
+    const lEl = n.querySelector('link');
+    const u = (lEl && (lEl.getAttribute('href') || lEl.textContent || '')).trim();
+    return { title: t, url: u, points: 0 };
+  }).filter((x) => x.title && x.url);
+}
 function renderNews(msg) {
-  const track = document.getElementById('ticker-track'); if (!track) return;
-  if (msg) { track.style.animation = 'none'; track.innerHTML = `<span class="tk-msg">${esc(msg)}</span>`; return; }
-  if (!newsItems.length) { track.style.animation = 'none'; track.innerHTML = `<span class="tk-msg">no news yet — ↻</span>`; return; }
-  const seq = newsItems.map((it) => {
-    const url = it.url || `https://news.ycombinator.com/item?id=${it.objectID || ''}`;
-    return `<a class="tk-item" href="${esc(url)}" title="${esc(it.title || '')}">${esc(it.title || '?')}${it.points ? `<span class="pt">▲${it.points}</span>` : ''}</a><span class="tk-sep">·</span>`;
-  }).join('');
-  track.style.animation = '';        // back to the CSS-defined scroll
-  track.innerHTML = seq + seq;       // doubled → seamless loop with translateX(-50%)
+  const body = document.getElementById('news-body'); if (!body) return;
+  document.querySelectorAll('#news-view [data-nv]').forEach((s) => s.classList.toggle('active', s.dataset.nv === newsView));
+  document.querySelectorAll('#news-src [data-ns]').forEach((s) => s.classList.toggle('active', s.dataset.ns === newsSource));
+  if (msg || !newsItems.length) { body.innerHTML = `<div class="news-msg">${esc(msg || 'no news yet — ↻')}</div>`; return; }
+  if (newsView === 'list') {
+    body.innerHTML = `<div class="news-list">` + newsItems.map((it) =>
+      `<a class="nl-item" href="${esc(newsUrl(it))}" title="${esc(it.title || '')}"><span class="nl-t">${esc(it.title || '?')}</span>${it.points ? `<span class="nl-pt">▲${it.points}</span>` : ''}</a>`
+    ).join('') + `</div>`;
+  } else {
+    const seq = newsItems.map((it) =>
+      `<a class="tk-item" href="${esc(newsUrl(it))}" title="${esc(it.title || '')}">${esc(it.title || '?')}${it.points ? `<span class="pt">▲${it.points}</span>` : ''}</a><span class="tk-sep">·</span>`
+    ).join('');
+    body.innerHTML = `<div class="ticker"><div class="ticker-track">${seq + seq}</div></div>`;   // doubled → seamless loop
+  }
+}
+function setNewsView(v) { newsView = (v === 'list') ? 'list' : 'ticker'; try { localStorage.setItem(NEWS_VIEW_KEY, newsView); } catch (_) {} renderNews(); }
+function setNewsSource(s) {
+  if (!NEWS_SOURCES[s] || s === newsSource) return;
+  newsSource = s; try { localStorage.setItem(NEWS_SOURCE_KEY, s); } catch (_) {}
+  loadNewsCache(); renderNews(); fetchNews();   // show that source's cache, then refresh
 }
 async function fetchNews() {
-  if (!newsItems.length) renderNews('loading news…');
+  const src = NEWS_SOURCES[newsSource] || NEWS_SOURCES.hn;
+  if (!newsItems.length) renderNews('loading ' + src.label + ' …');
   try {
-    const res = await fetch(NEWS_URL, { cache: 'no-store' });
+    const target = (src.type === 'rss' && !IS_EXTENSION) ? CORS_PROXY + encodeURIComponent(src.url) : src.url;
+    const res = await fetch(target, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const hits = Array.isArray(data.hits) ? data.hits : [];
-    const items = hits.filter((h) => h.title).map((h) => ({ title: h.title, url: h.url || `https://news.ycombinator.com/item?id=${h.objectID}`, points: h.points || 0, objectID: h.objectID }));
+    let items;
+    if (src.type === 'hn') {
+      const data = await res.json();
+      items = (Array.isArray(data.hits) ? data.hits : []).filter((h) => h.title).map((h) => ({ title: h.title, url: h.url || `https://news.ycombinator.com/item?id=${h.objectID}`, points: h.points || 0, objectID: h.objectID }));
+    } else {
+      items = parseRss(await res.text());
+    }
     if (!items.length) throw new Error('empty feed');
     newsItems = items; saveNewsCache(); renderNews();
   } catch (e) {
     console.warn('[bmbrowser] news fetch:', e);
-    if (!newsItems.length) renderNews('news unavailable — ↻ で再試行'); else renderNews();
+    if (!newsItems.length) renderNews(src.label + ' を取得できませんでした — ↻'); else renderNews();
   }
 }
 {
@@ -317,6 +398,8 @@ async function fetchNews() {
   renderNews();                                                  // show cached headlines instantly
   if (Date.now() - cachedAt > 15 * 60 * 1000) fetchNews();       // refresh in background if stale (>15 min)
   document.getElementById('news-refresh')?.addEventListener('click', fetchNews);
+  document.querySelectorAll('#news-view [data-nv]').forEach((s) => s.addEventListener('click', () => setNewsView(s.dataset.nv)));
+  document.querySelectorAll('#news-src [data-ns]').forEach((s) => s.addEventListener('click', () => setNewsSource(s.dataset.ns)));
   setInterval(fetchNews, 20 * 60 * 1000);                        // and periodically while the tab stays open
 }
 
@@ -337,13 +420,29 @@ if (!HAS_SIDE_PANEL) {
 
 applyWidgets();   // initial layout (also renders bookmarks)
 
-// ── clock ─────────────────────────────────────────────────
+// ── clock (click the clock to cycle styles: small → large → ascii) ───────
+const CLOCK_STYLE_KEY = 'bm-browser.clockStyle.v1';
+const CLOCK_STYLES = ['small', 'large', 'ascii'];
+let clockStyle = CLOCK_STYLES.includes(localStorage.getItem(CLOCK_STYLE_KEY)) ? localStorage.getItem(CLOCK_STYLE_KEY) : 'small';
+function bigDigits(s) {
+  const ph = ['     ', '     ', '     ', '     ', '     '];
+  const out = [];
+  for (let i = 0; i < 5; i++) out.push(String(s).split('').map((c) => (ASCII_FONT[c] || ph)[i]).join(' '));
+  return out.join('\n');
+}
 function tick() {
   const d = new Date(), p = (n) => String(n).padStart(2, '0');
   const days = ['日', '月', '火', '水', '木', '金', '土'];
-  const el = document.getElementById('clock');
-  if (el) el.textContent = `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${days[d.getDay()]} · ${p(d.getHours())}:${p(d.getMinutes())}`;
+  const el = document.getElementById('clock'); if (!el) return;
+  const date = `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${days[d.getDay()]}`;
+  const time = `${p(d.getHours())}:${p(d.getMinutes())}`;
+  el.className = 'clock-w s-' + clockStyle;
+  if (clockStyle === 'large')      el.innerHTML = `<span class="ct">${esc(time)}</span><span class="cd">${esc(date)}</span>`;
+  else if (clockStyle === 'ascii') el.innerHTML = `<span class="ca">${esc(bigDigits(time))}</span><span class="cd">${esc(date)}</span>`;
+  else                             el.textContent = `${date} · ${time}`;
 }
+function cycleClock() { clockStyle = CLOCK_STYLES[(CLOCK_STYLES.indexOf(clockStyle) + 1) % CLOCK_STYLES.length]; try { localStorage.setItem(CLOCK_STYLE_KEY, clockStyle); } catch (_) {} tick(); }
+document.getElementById('clock')?.addEventListener('click', cycleClock);
 tick(); setInterval(tick, 15_000);
 
 // ── "boss mode" easter egg — Ctrl+` fills the screen with fake work ──────
@@ -422,7 +521,10 @@ function bossOff() {
 }
 document.addEventListener('keydown', (e) => {
   if (bossActive()) { e.preventDefault(); e.stopPropagation(); bossOff(); return; }
-  if (e.ctrlKey && !e.metaKey && !e.altKey && (e.code === 'Backquote' || e.key === '`')) { e.preventDefault(); bossOn(); }
+  // boss key: Ctrl+.  (period — layout-independent) OR Ctrl+`  (the classic)
+  if (e.ctrlKey && !e.metaKey && !e.altKey && (e.code === 'Period' || e.key === '.' || e.code === 'Backquote' || e.key === '`')) {
+    e.preventDefault(); bossOn();
+  }
 }, true);   // capture — works even when an input/textarea has focus
 if (bossEl) bossEl.addEventListener('click', bossOff);
 
