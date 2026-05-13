@@ -150,6 +150,7 @@ function saveView() { try { localStorage.setItem(VIEW_KEY, bmView); } catch (_) 
 
 // ── widget state ──────────────────────────────────────────
 const WIDGET_DEFS = {
+  location:  { title: '現在地',      icon: '⌖', desc: '現在地ON/OFF — 天気・時計・ニュース・相場が連動' },
   cta:       { title: 'side panel', icon: '▤', desc: 'BMBoard をサイドパネルで開く（⌘⇧Y）' },
   bookmarks: { title: 'bookmarks',  icon: '▦', desc: '編集できるブックマーク（chips / ascii）' },
   memo:      { title: 'memo',       icon: '✎', desc: '自動保存のスクラッチパッド' },
@@ -160,7 +161,7 @@ const WIDGET_DEFS = {
   clock:     { title: 'clock',      icon: '⏱', desc: '時計（クリックで small / large / ascii）' },
   pet:       { title: 'にこちゃん',  icon: '◡', desc: 'たまごっち風 — 時間帯で表情が変わる（クリックで mini / compact / full）' },
 };
-const WIDGET_ORDER_DEFAULT = ['cta', 'prompt', 'bookmarks', 'news', 'memo', 'weather', 'markets', 'clock', 'pet'];
+const WIDGET_ORDER_DEFAULT = ['location', 'cta', 'prompt', 'bookmarks', 'news', 'memo', 'weather', 'markets', 'clock', 'pet'];
 const WIDGETS_KEY = 'bm-browser.widgets.v1';
 function loadWidgets() {
   const w = lsGet(WIDGETS_KEY) || {};
@@ -529,11 +530,12 @@ async function fetchNews() {
 // Default = 大津・滋賀. Turning on 現在地 (geolocation) links place name + country
 // + timezone (the clock) + forecast — all follow wherever you are.
 const WX_KEY = 'bm-browser.weather.v1';
-const GEO_KEY = 'bm-browser.geo.v1';   // { on, lat, lon, name, tz }
-const WX_DEFAULT_LOC = { lat: 35.0045, lon: 135.8686, name: '大津・滋賀', tz: 'Asia/Tokyo', geo: false };
+const GEO_KEY = 'bm-browser.geo.v1';   // { on, lat, lon, name, cc, tz }
+const WX_DEFAULT_LOC = { lat: 35.0045, lon: 135.8686, name: '大津・滋賀', cc: 'JP', tz: 'Asia/Tokyo', geo: false };
 function loadGeo() { const g = lsGet(GEO_KEY); return (g && g.on && g.lat != null && g.lon != null) ? g : null; }
-let wxLoc = (() => { const g = loadGeo(); return g ? { lat: g.lat, lon: g.lon, name: g.name || '現在地', tz: g.tz || 'auto', geo: true } : { ...WX_DEFAULT_LOC }; })();
+let wxLoc = (() => { const g = loadGeo(); return g ? { lat: g.lat, lon: g.lon, name: g.name || '現在地', cc: g.cc || '', tz: g.tz || 'auto', geo: true } : { ...WX_DEFAULT_LOC }; })();
 let clockTz = (wxLoc.geo && wxLoc.tz && wxLoc.tz !== 'auto') ? wxLoc.tz : null;   // null = browser-local
+function geoCC() { return (wxLoc.geo && wxLoc.cc) ? String(wxLoc.cc).toUpperCase() : ''; }
 function wxUrl() {
   const tz = wxLoc.geo ? 'auto' : encodeURIComponent(wxLoc.tz || 'Asia/Tokyo');
   return `https://api.open-meteo.com/v1/forecast?latitude=${wxLoc.lat}&longitude=${wxLoc.lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=${tz}&forecast_days=1`;
@@ -545,28 +547,37 @@ async function reverseGeocode(lat, lon) {
     const d = await r.json();
     const city = d.city || d.locality || d.principalSubdivision || '';
     const country = d.countryName || '';
-    return [city, country].filter(Boolean).join(' · ') || null;
+    const name = [city, country].filter(Boolean).join(' · ') || null;
+    return { name, cc: (d.countryCode || '').toUpperCase() };
   } catch (_) { return null; }
 }
 function _geoBtnState() {
   const b = document.getElementById('wx-geo'); if (b) b.classList.toggle('active', !!wxLoc.geo);
   const hd = document.getElementById('wx-loc-hd'); if (hd) hd.textContent = wxLoc.name || '—';
+  if (typeof renderLocation === 'function') renderLocation();
+  const mc = document.getElementById('mk-cur'); if (mc) mc.textContent = mkCurrency().toUpperCase();
+}
+function _refreshGeoLinked() {   // re-pull weather/news/markets/clock after the location changes
+  if (typeof tick === 'function') tick();
+  fetchWeather();
+  if (typeof fetchNews === 'function') { loadNewsCache(); renderNews(); fetchNews(); }
+  if (typeof fetchMarkets === 'function') { mkItems = []; fetchMarkets(); }
 }
 function geoOff() {
   lsSet(GEO_KEY, { on: false });
   wxLoc = { ...WX_DEFAULT_LOC }; clockTz = null; wxData = null;
-  _geoBtnState(); renderWeather('現在地OFF — 大津・滋賀に戻しました'); if (typeof tick === 'function') tick(); fetchWeather();
+  _geoBtnState(); renderWeather('現在地OFF — 大津・滋賀に戻しました'); _refreshGeoLinked();
 }
 function geoOn() {
   if (!navigator.geolocation) { renderWeather('この環境では現在地を使えません'); setTimeout(() => renderWeather(), 2500); return; }
   renderWeather('現在地を取得中…（許可が必要です）');
   navigator.geolocation.getCurrentPosition(async (pos) => {
     const lat = +pos.coords.latitude.toFixed(4), lon = +pos.coords.longitude.toFixed(4);
-    const name = (await reverseGeocode(lat, lon)) || '現在地';
-    wxLoc = { lat, lon, name, tz: 'auto', geo: true }; clockTz = null; wxData = null;
-    lsSet(GEO_KEY, { on: true, lat, lon, name, tz: 'auto' });
-    _geoBtnState(); renderWeather('天気を取得中…'); if (typeof tick === 'function') tick();
-    fetchWeather();   // also pulls the IANA timezone → updates the clock
+    const rg = (await reverseGeocode(lat, lon)) || {};
+    const name = rg.name || '現在地', cc = rg.cc || '';
+    wxLoc = { lat, lon, name, cc, tz: 'auto', geo: true }; clockTz = null; wxData = null;
+    lsSet(GEO_KEY, { on: true, lat, lon, name, cc, tz: 'auto' });
+    _geoBtnState(); renderWeather('天気を取得中…'); _refreshGeoLinked();   // weather also pulls the IANA tz → clock
   }, (err) => {
     console.warn('[bmbrowser] geolocation:', err);
     renderWeather(err && err.code === 1 ? '現在地の許可がありません' : '現在地を取得できませんでした');
@@ -574,6 +585,16 @@ function geoOn() {
   }, { timeout: 9000, maximumAge: 10 * 60 * 1000 });
 }
 function toggleGeo() { wxLoc.geo ? geoOff() : geoOn(); }
+function renderLocation() {
+  const el = document.getElementById('loc-w'); if (!el) return;
+  if (wxLoc.geo) {
+    el.innerHTML = `<span class="loc-mark on">⌖</span><span class="loc-name">${esc(wxLoc.name)}</span><button class="loc-btn off" id="loc-toggle">現在地 OFF</button>`;
+  } else {
+    el.innerHTML = `<span class="loc-mark">·</span><span class="loc-name">${esc(WX_DEFAULT_LOC.name)} <span class="loc-def">（既定）</span></span><button class="loc-btn on" id="loc-toggle">⌖ 現在地 ON</button>`;
+  }
+  el.querySelector('#loc-toggle')?.addEventListener('click', toggleGeo);
+}
+renderLocation();
 const WX_ART = {
   clear:  ['  \\|/  ', '--(o)--', '  /|\\  '],
   partly: [' \\|/.-.', '-o-(  )', '   (__)'],
