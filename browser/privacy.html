@@ -25,7 +25,7 @@
 <body>
 <div class="wrap">
   <h1>▮ Black Mirror Browser — Privacy Policy</h1>
-  <div class="meta">Last updated: 2026-05-12 · kinoshita studio</div>
+  <div class="meta">Last updated: 2026-05-13 · kinoshita studio</div>
 
   <p>Black Mirror Browser (the “Extension”) is a browser extension by kinoshita studio that brings BMBoard (an infinite‑canvas blackboard at <a href="https://bmboard.studio/">bmboard.studio</a>) into your browsing — as a side panel, a launcher new‑tab page, and a “send to BMBoard” right‑click menu. This page explains what data the Extension touches.</p>
 
@@ -42,10 +42,15 @@
   <h2>Network requests the Extension makes</h2>
   <ul>
     <li><strong>bmboard.studio</strong> — the side panel loads <code>bmboard.studio/app.html</code> in a frame. BMBoard’s own behaviour applies inside that frame; the Extension just hosts it.</li>
-    <li><strong>Public read‑only feeds</strong>, only to display them on the new‑tab page: Hacker News (Algolia API), Yahoo! News Japan and NHK news RSS, and CoinGecko (crypto prices). These requests carry no personal data — they just fetch public headlines and prices. RSS feeds on the standalone web version are routed through a public CORS proxy (<code>allorigins.win</code>) purely to read the public XML.</li>
+    <li><strong>Public read‑only feeds &amp; APIs</strong>, only to display them on the new‑tab page: Hacker News (Algolia API), Google News and NHK news RSS, CoinGecko (crypto prices), and Open‑Meteo (weather forecast). These requests carry no personal data — they just fetch public headlines, prices, and a forecast. On the standalone web version (not the extension) RSS feeds are routed through a public CORS proxy (<code>api.codetabs.com</code>) purely to read the public XML.</li>
+    <li><strong>Background images</strong> — the optional new‑tab background presets load images from <code>images.unsplash.com</code>; a background image URL you paste yourself is loaded from wherever you point it. These are plain image loads with no personal data.</li>
+    <li><strong>Radio</strong> — if you press play on the radio widget, the new‑tab page plays a public internet‑radio stream (SomaFM, <code>ice.somafm.com</code>). Nothing is sent except the request to receive the stream.</li>
     <li><strong>Images you choose to send</strong> — fetched from the page you right‑clicked, so the Extension can hand the image to your board.</li>
     <li>Web fonts from Google Fonts, for the page’s typeface.</li>
   </ul>
+
+  <h2>Location (the “現在地ON / use my location” option)</h2>
+  <p>The new‑tab page has an optional “use my location” toggle. If — and only if — you turn it on, your browser asks for permission to share your location. With your permission, the Extension uses the coordinates to (a) ask <code>api.bigdatacloud.net</code> for the nearby place / country name, and (b) fetch that location’s weather, timezone (for the clock), local news edition, and local‑currency prices. Your coordinates and the resolved place name are stored only in your browser’s <code>localStorage</code> (so it doesn’t re‑ask every time); they are <strong>never sent to us</strong> and are not used for tracking or advertising. The toggle is off by default, and you can turn it off again at any time.</p>
 
   <h2>Permissions, and why</h2>
   <ul>
@@ -56,7 +61,7 @@
   </ul>
 
   <h2>Third parties</h2>
-  <p>We do not use analytics or advertising SDKs. The external services contacted (Hacker News / Yahoo! / NHK / CoinGecko / Google Fonts / a CORS proxy / bmboard.studio) receive only the request needed to display public content — no identifiers, no profiles. Their own privacy policies apply to those requests.</p>
+  <p>We do not use analytics or advertising SDKs. The external services contacted — Hacker News / Google News / NHK / CoinGecko / Open‑Meteo / BigDataCloud (only when you opt into “use my location”) / Unsplash (background images) / SomaFM (radio, only if you press play) / Google Fonts / a CORS proxy (web version only) / bmboard.studio — receive only the request needed to display public content or play a public stream: no identifiers, no profiles, no browsing history. Their own privacy policies apply to those requests.</p>
 
   <h2>Children</h2>
   <p>The Extension is not directed at children and does not knowingly collect any information from anyone.</p>
