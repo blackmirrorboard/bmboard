@@ -158,8 +158,9 @@ const WIDGET_DEFS = {
   weather:   { title: 'weather',    icon: '☁', desc: '天気（ASCII アイコン + 気温 + 最高/最低）' },
   markets:   { title: 'markets',    icon: '₿', desc: '相場ティッカー（BTC/ETH/SOL · 24h% + 7日 ASCII チャート）' },
   clock:     { title: 'clock',      icon: '⏱', desc: '時計（クリックで small / large / ascii）' },
+  pet:       { title: 'にこちゃん',  icon: '◡', desc: 'たまごっち風 — 時間帯で表情が変わる（クリックで mini / compact / full）' },
 };
-const WIDGET_ORDER_DEFAULT = ['cta', 'bookmarks', 'memo', 'prompt', 'news', 'weather', 'markets', 'clock'];
+const WIDGET_ORDER_DEFAULT = ['cta', 'bookmarks', 'memo', 'prompt', 'news', 'weather', 'markets', 'clock', 'pet'];
 const WIDGETS_KEY = 'bm-browser.widgets.v1';
 function loadWidgets() {
   const w = lsGet(WIDGETS_KEY) || {};
@@ -694,6 +695,52 @@ function tick() {
 function cycleClock() { clockStyle = CLOCK_STYLES[(CLOCK_STYLES.indexOf(clockStyle) + 1) % CLOCK_STYLES.length]; try { localStorage.setItem(CLOCK_STYLE_KEY, clockStyle); } catch (_) {} tick(); }
 document.getElementById('clock')?.addEventListener('click', cycleClock);
 tick(); setInterval(tick, 15_000);
+
+// ── にこちゃん pet (BMBoard smiley) — mood by time of day, blinks, occasional grin ──
+const PET_MODE_KEY = 'bm-browser.petMode.v1';
+const PET_MODES = ['mini', 'compact', 'full'];
+let petMode = PET_MODES.includes(localStorage.getItem(PET_MODE_KEY)) ? localStorage.getItem(PET_MODE_KEY) : 'compact';
+let petBlink = false, petGrin = false, petSpark = 0;
+const PET_SPARKS = ['✦', '✧', '·', '✧'];
+function _petMood() {
+  const h = new Date().getHours();
+  if (h >= 23 || h < 5)  return { face: '˘ω˘',  say: 'すやすや…' };
+  if (h < 9)             return { face: '◕▿◕',  say: 'おはよう！' };
+  if (h < 12)            return { face: '´◡`',  say: '今日もやろ' };
+  if (h < 17)            return { face: '•ᴗ•',  say: '' };
+  if (h < 20)            return { face: '◠‿◠',  say: 'おつかれさま' };
+  return                        { face: 'ーωー', say: 'そろそろ夜だね' };
+}
+function _petFace() {
+  if (petGrin)  return { face: '＾▽＾', say: 'にこっ♪' };
+  const m = _petMood();
+  if (petBlink) return { face: 'ーᴗー', say: m.say };   // eyes closed
+  return m;
+}
+function petRender() {
+  const el = document.getElementById('pet'); if (!el) return;
+  el.className = 'pet-w m-' + petMode;
+  const f = _petFace();
+  const kao = '( ' + f.face + ' )';
+  if (petMode === 'mini') {
+    el.textContent = kao;
+  } else if (petMode === 'compact') {
+    el.innerHTML = esc(kao) + (f.say ? `<span class="ps">${esc(f.say)}</span>` : '');
+  } else {
+    el.innerHTML = `<span class="pspark">${esc(PET_SPARKS[petSpark % PET_SPARKS.length])}</span>` +
+                   `<span class="pk">${esc(kao)}</span>` +
+                   `<span class="ps">${esc(f.say || '　')}</span>`;
+  }
+}
+function petTick() {
+  petSpark++;
+  if (!petGrin && Math.random() < 0.04) { petGrin = true; petRender(); setTimeout(() => { petGrin = false; petRender(); }, 1500); return; }
+  if (!petGrin && Math.random() < 0.20) { petBlink = true; petRender(); setTimeout(() => { petBlink = false; petRender(); }, 170); return; }
+  if (petMode === 'full') petRender();   // keep the sparkle moving even when not blinking
+}
+function cyclePet() { petMode = PET_MODES[(PET_MODES.indexOf(petMode) + 1) % PET_MODES.length]; try { localStorage.setItem(PET_MODE_KEY, petMode); } catch (_) {} petRender(); }
+document.getElementById('pet')?.addEventListener('click', cyclePet);
+petRender(); setInterval(petTick, 2200);
 
 // ── "boss mode" easter egg — Ctrl+` fills the screen with fake work ──────
 const bossEl = document.getElementById('boss');

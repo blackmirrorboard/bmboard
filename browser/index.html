@@ -292,6 +292,14 @@
   .clock-w.s-large .cd { display:block; font-size:11px; color:var(--green-faint); letter-spacing:0.18em; margin-top:4px; }
   .clock-w.s-ascii .ca { display:block; font-family:var(--font-mono); white-space:pre; font-size:16px; line-height:1; color:var(--green-bright); }
   .clock-w.s-ascii .cd { display:block; font-size:11px; color:var(--green-faint); letter-spacing:0.2em; margin-top:10px; }
+  /* にこちゃん pet — BMBoard smiley, tamagotchi-ish; mood changes by time of day */
+  .pet-w { cursor:pointer; user-select:none; text-align:center; font-family:var(--font-mono); }
+  .pet-w.m-mini    { font-size:14px; color:var(--green-dim); letter-spacing:0.04em; }
+  .pet-w.m-compact { font-size:16px; color:var(--green-bright); letter-spacing:0.04em; }
+  .pet-w.m-compact .ps { font-family:var(--font-term); font-size:11px; color:var(--green-faint); margin-left:10px; letter-spacing:0.04em; }
+  .pet-w.m-full .pspark { display:block; font-size:12px; color:var(--green-faint); line-height:1; }
+  .pet-w.m-full .pk     { display:block; font-size:30px; line-height:1.1; color:var(--green-bright); letter-spacing:0.04em; }
+  .pet-w.m-full .ps     { display:block; font-family:var(--font-term); font-size:12px; color:var(--green-faint); margin-top:6px; letter-spacing:0.08em; min-height:1.2em; }
 
   /* shared size toggle (小 · 中 · 大) used by weather + markets headers */
   .wx-hd .sz-tg, .mk-hd .sz-tg { font-size:10px; letter-spacing:0; text-transform:none; }
@@ -474,6 +482,11 @@
       <div class="widget" data-wid="clock">
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">clock</span><button class="w-hide" title="hide widget">✕</button></div>
         <div class="w-body"><div class="clock-w s-small" id="clock" title="クリックで表示切替（small → large → ascii）">— · —</div></div>
+      </div>
+
+      <div class="widget" data-wid="pet">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">にこちゃん</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body"><div class="pet-w m-compact" id="pet" title="クリックで表示切替（mini → compact → full）">( •ᴗ• )</div></div>
       </div>
 
     </div>
