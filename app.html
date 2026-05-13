@@ -617,6 +617,30 @@
             display: none;
             z-index: 30;
         }
+        /* Done (✓) button — visible only on touch-only devices, so PC layout
+           stays untouched. Anchored to the textarea's right edge so it doesn't
+           disturb the input field's positioning math. */
+        #textDone {
+            display: none;
+            position: absolute;
+            top: 0; left: 100%;
+            margin-left: 6px;
+            width: 30px; height: 30px;
+            background: rgba(255,255,255,0.92);
+            border: 1px solid #0c0c0c;
+            border-radius: 3px;
+            color: #0c0c0c;
+            font: inherit;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.08);
+        }
+        body.bm-dark #textDone { background: rgba(20,20,20,0.92); border-color: #F0EDE6; color: #F0EDE6; }
+        body.bm-gray #textDone { background: rgba(245,243,235,0.92); border-color: #1600A2; color: #1600A2; }
+        @media (pointer: coarse) {
+            #textDone { display: flex; align-items: center; justify-content: center; }
+        }
 
         #textOverlay input,
         #textOverlay textarea {
@@ -1574,6 +1598,7 @@
         <canvas id="c" draggable="false"></canvas>
         <div id="textOverlay">
             <textarea id="ti2" rows="1" autocomplete="off" spellcheck="false" placeholder="type…"></textarea>
+            <button id="textDone" type="button" aria-label="確定" title="確定">✓</button>
         </div>
         <textarea id="stickyEditor" spellcheck="false" placeholder="type…"></textarea>
         <div id="bmTimer" class="bm-timer" style="display:none">
@@ -5230,6 +5255,30 @@ function _sizeTextInput() {
     });
 }
 textInput.addEventListener('input', _sizeTextInput);
+
+// Auto-commit when focus leaves the textarea — covers mobile cases where the
+// only easy way to "finish" is to tap somewhere else (keyboard down, toolbar
+// tap, etc). On PC this also commits when the user tabs/clicks away, which
+// matches the sticky editor's behavior.
+textInput.addEventListener('blur', () => {
+    // Defer one tick so a tap on the Done button (which steals focus first)
+    // doesn't double-fire with the button's click handler.
+    setTimeout(() => { if (textOverlay.style.display === 'block') commitText(); }, 0);
+});
+
+// Mobile "✓" Done button — explicit commit trigger when the iOS keyboard
+// can't easily produce a Shift/⌘ combo. mousedown (not click) so the
+// textarea doesn't lose focus first via blur and steal the action.
+const textDoneBtn = document.getElementById('textDone');
+if (textDoneBtn) {
+    const _doneCommit = (ev) => {
+        ev.preventDefault(); ev.stopPropagation();
+        commitText();
+        if (typeof setTool === 'function') setTool('select');
+    };
+    textDoneBtn.addEventListener('mousedown', _doneCommit);
+    textDoneBtn.addEventListener('touchstart', _doneCommit, { passive: false });
+}
 
 // ── Sticky editor (textarea) ─ Miro-style in-place editing ──────────────
 const stickyEditor = document.getElementById('stickyEditor');
