@@ -27,9 +27,11 @@ const BG_KEY = 'bm-browser.bg.v1';
 const BG_OPTIONS = [
   { id: 'none', label: 'なし' }, { id: 'grid', label: 'グリッド' },
   { id: 'stars', label: '星空' }, { id: 'glow', label: 'グロウ' },
+  { id: 'mtn-aerial', label: '山（空撮）' }, { id: 'mtn-snow', label: '雪山' },
   { id: 'custom', label: '画像' },
 ];
-const BG_PATTERNS = ['grid', 'stars', 'glow'];
+// ids applyBg() recognizes as built-in backgrounds (patterns + bundled photos)
+const BG_PATTERNS = ['grid', 'stars', 'glow', 'mtn-aerial', 'mtn-snow'];
 // A Google Drive / Dropbox *share* link points at an HTML page, not the image —
 // so `background-image: url(...)` shows nothing. Convert common share links to a
 // direct image URL (same trick Atelier uses for image blocks).
