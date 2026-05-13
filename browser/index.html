@@ -134,10 +134,11 @@
   .head .edit-btn.active { color:var(--green-bright); border-color:var(--green); background:var(--bg-1); }
   /* widgets modal */
   .wg-ov { position:fixed; inset:0; z-index:99998; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.82); padding:24px; }
-  .wg-card { background:#0a0a0a; border:1px solid var(--line); border-radius:3px; padding:22px 24px; width:100%; max-width:440px; }
+  .wg-card { background:#0a0a0a; border:1px solid var(--line); border-radius:3px; padding:22px 24px; width:100%; max-width:600px; max-height:calc(100vh - 56px); max-height:calc(100dvh - 56px); overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .wg-card .wg-h { font-size:11px; letter-spacing:0.3em; color:var(--gray); margin-bottom:6px; }
   .wg-card .wg-sub { font-size:11px; color:var(--gray); margin-bottom:14px; line-height:1.6; }
-  .wg-row { display:flex; align-items:flex-start; gap:11px; padding:8px 6px; cursor:pointer; border-top:1px solid #1a1a1a; }
+  .wg-rows { display:grid; grid-template-columns:repeat(2, 1fr); gap:1px 18px; }   /* 2 columns so the list doesn't run off the bottom */
+  .wg-row { display:flex; align-items:flex-start; gap:10px; padding:7px 6px; cursor:pointer; border-top:1px solid #1a1a1a; }
   .wg-row:hover { background:var(--bg-1); }
   .wg-row .wg-ck { width:14px; text-align:center; font-size:13px; color:var(--green-faint); flex:0 0 auto; }
   .wg-row.on .wg-ck { color:var(--green-bright); }
@@ -145,7 +146,8 @@
   .wg-row .wg-tx { flex:1; min-width:0; }
   .wg-row .wg-tt { color:var(--gray); }
   .wg-row.on .wg-tt { color:var(--green-bright); }
-  .wg-row .wg-de { display:block; color:var(--gray); font-size:11px; margin-top:1px; }
+  .wg-row .wg-de { display:block; color:var(--gray); font-size:10px; line-height:1.45; margin-top:1px; }
+  @media (max-width:560px) { .wg-rows { grid-template-columns:1fr; } .wg-ov { padding:10px; } .wg-card { padding:18px 16px; max-height:calc(100dvh - 24px); } }
   .wg-card .wg-foot { display:flex; justify-content:flex-end; margin-top:16px; }
   .wg-card .wg-done { background:var(--bg-1); border:1px solid var(--green-faint); color:var(--green-bright); padding:7px 16px; font:inherit; cursor:pointer; border-radius:2px; }
   .wg-card .wg-done:hover { border-color:var(--green); }
