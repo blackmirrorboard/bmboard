@@ -124,7 +124,12 @@ function openBoardPanel() {
 }
 
 // ── helpers ───────────────────────────────────────────────
-function go(url) { window.location.href = url; }
+function go(url) {
+  // open links (bookmarks / command bar / shortcuts) in a NEW tab so this new-tab
+  // page — and anything playing on it, e.g. the radio — keeps running.
+  try { const w = window.open(url, '_blank'); if (w) { try { w.opener = null; } catch (_) {} return; } } catch (_) {}
+  window.location.href = url;   // popup blocked / window.open unavailable → fall back to navigating here
+}
 function looksLikeUrl(s) {
   if (/\s/.test(s)) return false;
   if (/^https?:\/\//i.test(s)) return true;
