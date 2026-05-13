@@ -61,11 +61,11 @@
   /* glow + custom image: viewport-fixed ::before/::after (iOS-safe — `background-attachment:fixed` is broken there) */
   body.bg-glow::before   { content:''; position:fixed; inset:0; background:var(--pat-glow); z-index:-1; pointer-events:none; }
   body.bg-custom::before { content:''; position:fixed; inset:0; background-image:var(--custom-bg); background-size:cover; background-position:center; z-index:-2; pointer-events:none; }
-  body.bg-custom::after  { content:''; position:fixed; inset:0; background:rgba(0,0,0,.34); z-index:-1; pointer-events:none; }
-  body.light.bg-custom::after { background:rgba(250,249,244,.42); }
+  body.bg-custom::after  { content:''; position:fixed; inset:0; background:rgba(0,0,0,.52); z-index:-1; pointer-events:none; }
+  body.light.bg-custom::after { background:rgba(250,249,244,.6); }
   /* with ANY non-default background → make the widget cards translucent so the page bg shows through (works for any image, dark or light) */
-  body.has-bg { --bg-1:rgba(8,8,8,.78); --bg-2:rgba(18,24,18,.82); --bg-cta:rgba(12,24,10,.78); }
-  body.light.has-bg { --bg-1:rgba(244,242,233,.84); --bg-2:rgba(232,231,225,.88); --bg-cta:rgba(238,245,232,.84); }
+  body.has-bg { --bg-1:rgba(6,6,6,.9); --bg-2:rgba(16,22,16,.92); --bg-cta:rgba(10,22,8,.9); }
+  body.light.has-bg { --bg-1:rgba(245,243,234,.94); --bg-2:rgba(234,232,225,.95); --bg-cta:rgba(239,246,233,.94); }
   body.has-bg .cta, body.has-bg .prompt, body.has-bg .ticker, body.has-bg .news-list, body.has-bg .news-msg,
   body.has-bg .memo-ta, body.has-bg .mk-body, body.has-bg .mk-msg, body.has-bg .wx-body, body.has-bg .wx-msg, body.has-bg .bk {
     -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);

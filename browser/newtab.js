@@ -25,11 +25,28 @@ applyTheme();
 // ── background picker (selectable patterns + custom image URL) ──
 const BG_KEY = 'bm-browser.bg.v1';
 const BG_OPTIONS = [
-  { id: 'none', label: 'なし' }, { id: 'grid', label: 'グリッド' }, { id: 'dots', label: 'ドット' },
-  { id: 'scanlines', label: '走査線' }, { id: 'stars', label: '星空' }, { id: 'glow', label: 'グロウ' },
+  { id: 'none', label: 'なし' }, { id: 'grid', label: 'グリッド' },
+  { id: 'stars', label: '星空' }, { id: 'glow', label: 'グロウ' },
   { id: 'custom', label: '画像' },
 ];
-const BG_PATTERNS = ['grid', 'dots', 'scanlines', 'stars', 'glow'];
+const BG_PATTERNS = ['grid', 'stars', 'glow'];
+// A Google Drive / Dropbox *share* link points at an HTML page, not the image —
+// so `background-image: url(...)` shows nothing. Convert common share links to a
+// direct image URL (same trick Atelier uses for image blocks).
+function _bgDirectUrl(u) {
+  u = (u || '').trim();
+  let m = u.match(/drive\.google\.com\/file\/d\/([^/?#]+)/);
+  if (m) return 'https://lh3.googleusercontent.com/d/' + m[1] + '=w2000';
+  m = u.match(/[?&]id=([^&]+)/);
+  if (m && u.indexOf('drive.google.com') !== -1) return 'https://lh3.googleusercontent.com/d/' + m[1] + '=w2000';
+  if (u.indexOf('dropbox.com') !== -1) {
+    u = u.replace('dl.dropboxusercontent.com', 'www.dropbox.com');
+    if (/[?&](dl|raw)=/.test(u)) u = u.replace(/([?&])(?:dl|raw)=[^&#]*/, '$1raw=1');
+    else u += (u.indexOf('?') !== -1 ? '&' : '?') + 'raw=1';
+    return u;
+  }
+  return u;
+}
 let bgSetting = localStorage.getItem(BG_KEY) || 'none';
 function applyBg() {
   Array.from(document.body.classList).forEach((c) => { if (c.indexOf('bg-') === 0 || c === 'has-bg') document.body.classList.remove(c); });
@@ -37,7 +54,7 @@ function applyBg() {
   document.body.style.backgroundImage = '';
   if (bgSetting && bgSetting.indexOf('custom:') === 0) {
     document.body.classList.add('bg-custom', 'has-bg');
-    document.body.style.setProperty('--custom-bg', 'url("' + bgSetting.slice(7).replace(/["\\\n]/g, '') + '")');
+    document.body.style.setProperty('--custom-bg', 'url("' + _bgDirectUrl(bgSetting.slice(7)).replace(/["\\\n]/g, '') + '")');
   } else if (BG_PATTERNS.includes(bgSetting)) {
     document.body.classList.add('bg-' + bgSetting, 'has-bg');
   }
