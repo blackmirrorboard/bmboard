@@ -5115,18 +5115,32 @@ const textInput   = document.getElementById('ti2');
 
 // editObj: existing text object to re-edit, or null for new text
 function showTextInput(p, editObj = null) {
-    S.textPos        = p;
-    S.editingTextId  = editObj ? editObj.id : null;
     // Use the same scale-compensated default as commitText so the input
     // size matches the post-commit rendered size (no pop on Enter).
     const _baseFs = 16;
     const _newFs = Math.max(_baseFs, Math.round(_baseFs / Math.max(0.01, VIEW.scale)));
     const fs  = editObj ? (editObj.data.fontSize || 16) : _newFs;
-    const sx  = p.x * VIEW.scale + VIEW.tx;
-    const sy  = p.y * VIEW.scale + VIEW.ty;
     // Vertical text anchors on the bbox top-left; horizontal text on the
-    // baseline — so only the latter needs the one-line upward nudge.
+    // baseline — so only the latter needs the alignment math.
     const _isVert = !!(editObj && editObj.data.vertical);
+    // Measure the font's ascent so we can align "what the user sees while
+    // typing" with "where the committed text renders". Without this, the
+    // input field and the rendered text appear at slightly different vertical
+    // positions, and the text seems to "jump" on commit (esp. obvious on
+    // touch where the tap point matters).
+    const _ff = editObj && editObj.data && editObj.data.fontFamily ? editObj.data.fontFamily : undefined;
+    const _bold = !!(editObj && editObj.data && editObj.data.bold);
+    const _m = (typeof measureTextMetrics === 'function') ? measureTextMetrics('M', fs, _ff, _bold) : null;
+    const _ascent = (_m && _m.ascent) ? _m.ascent : (fs * 0.78);
+    // For NEW text only: shift the canvas y down by ascent so the rendered
+    // text's visible TOP lines up with the tap point (the rendering still
+    // uses baseline-as-origin, but stored y = baseline = tap_y + ascent ⇒
+    // visible top = tap_y). Re-editing existing text keeps the stored y.
+    const _pos = (!editObj && !_isVert) ? { x: p.x, y: p.y + _ascent } : p;
+    S.textPos        = _pos;
+    S.editingTextId  = editObj ? editObj.id : null;
+    const sx  = _pos.x * VIEW.scale + VIEW.tx;
+    const sy  = _pos.y * VIEW.scale + VIEW.ty;
     // Disable the terminal input while the board-text overlay is open. Otherwise
     // there are two visible text fields on the page, and iOS shows the keyboard's
     // prev/next field arrows — tapping them hops focus into the terminal, which
@@ -5135,7 +5149,9 @@ function showTextInput(p, editObj = null) {
     if (_termIn) { try { _termIn.blur(); } catch (_) {} _termIn.disabled = true; }
     textOverlay.style.display = 'block';
     textOverlay.style.left    = sx + 'px';
-    textOverlay.style.top     = (_isVert ? sy : sy - fs * VIEW.scale) + 'px';
+    // Position the input field so its content's visible TOP sits at the
+    // tap's screen y. `-2px` accounts for the textarea's top padding (CSS).
+    textOverlay.style.top     = (_isVert ? sy : sy - _ascent * VIEW.scale - 2) + 'px';
     textInput.style.fontSize  = Math.max(10, Math.round(fs * VIEW.scale)) + 'px';
     textInput.value = editObj ? editObj.data.text : '';
     if (typeof _sizeTextInput === 'function') _sizeTextInput();
@@ -5287,6 +5303,10 @@ function echoText(text) {
     const low = text.toLowerCase();
     if (low.includes('youtube') || low.includes('yt')) {
         enqueue(`stdin > "${text}"`, ['→ parsing input...', '→ keyword match: YOUTUBE', '→ triggering easter egg protocol...']);
+        // Mobile / touch-only: open synchronously here so we stay within the
+        // user-gesture window. Desktop gets the delayed open via triggerYouTube.
+        const _hasFinePointer = (typeof window.matchMedia === 'function') && window.matchMedia('(pointer: fine)').matches;
+        if (!_hasFinePointer) { try { window.open('https://www.youtube.com/', '_blank', 'noopener'); } catch (_) {} }
         setTimeout(triggerYouTube, 800); return;
     }
     const tokens = text.split(/\s+/);
@@ -5669,13 +5689,17 @@ function triggerYouTube() {
         enqueue('', ['▶  Stream initialized.', '▶  Playing: kinoshita studio / Black Mirror Board',
             '', '   [ ████████████████████ 100% ] 0:00 / 3:24', '   [ launching youtube.com ... ]']);
     }, 2000);
-    // After the ASCII演出 finishes, actually open YouTube in a new tab.
-    // (popup blockers may block this if not triggered by the user gesture chain —
-    // since the command runs inside an Enter-keypress handler, it's typically allowed.)
-    setTimeout(() => {
-        try { window.open('https://www.youtube.com/', '_blank', 'noopener'); }
-        catch (_) {}
-    }, 2800);
+    // Desktop only: open YouTube AFTER the dramatic演出 for the filming/demo
+    // experience. Mobile (touch-only) callers should open synchronously in the
+    // gesture handler — popup blockers reject window.open() from setTimeout
+    // outside the user-gesture window on mobile browsers.
+    const _hasFinePointer = (typeof window.matchMedia === 'function') && window.matchMedia('(pointer: fine)').matches;
+    if (_hasFinePointer) {
+        setTimeout(() => {
+            try { window.open('https://www.youtube.com/', '_blank', 'noopener'); }
+            catch (_) {}
+        }, 2800);
+    }
 }
 
 // ══════════════════════════════════════════════════
@@ -6743,7 +6767,18 @@ function runCommand(val) {
     // Debug: uncomment to verify in terminal
     // printRaw(`[DBG] head="${head}" rest="${rest}" raw="${raw}"`, 't-dim');
 
-    if (head==='youtube'||head==='yt'||head==='youtube.com') { enqueue(`stdin > "${val}"`,['→ keyword match: YOUTUBE','→ triggering easter egg...']); setTimeout(triggerYouTube,600); return; }
+    if (head==='youtube'||head==='yt'||head==='youtube.com') {
+        enqueue(`stdin > "${val}"`,['→ keyword match: YOUTUBE','→ triggering easter egg...']);
+        // Mobile / touch-only: open synchronously here so we stay within the
+        // user-gesture window. Mobile popup blockers reject window.open() from
+        // inside setTimeout. Desktop keeps the dramatic delayed open in
+        // triggerYouTube (works because mouse-click gesture chain is more
+        // permissive on desktop).
+        const _hasFinePointer = (typeof window.matchMedia === 'function') && window.matchMedia('(pointer: fine)').matches;
+        if (!_hasFinePointer) { try { window.open('https://www.youtube.com/', '_blank', 'noopener'); } catch (_) {} }
+        setTimeout(triggerYouTube,600);
+        return;
+    }
 
     // ── black mirror wipe (self-facing camera) ─────────────────────────────
     //   "Black Mirror"       → on
