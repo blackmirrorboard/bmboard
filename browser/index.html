@@ -316,6 +316,16 @@
   .pet-w.pet-hop { animation: pet-hop .52s ease; }
   .pet-w.pet-glee { color:var(--green-bright); text-shadow:0 0 8px rgba(65,255,65,.45); }
   .pet-w.m-full.pet-glee .pk, .pet-w.m-full.pet-glee .pspark { text-shadow:0 0 14px rgba(65,255,65,.55); }
+  /* ラジオ — internet radio + fake ASCII spectrum */
+  .rd-hd { display:flex; align-items:center; gap:9px; margin:0 2px 7px; font-size:11px; letter-spacing:0.04em; color:var(--gray); }
+  .rd-hd .rd-mark { color:var(--green-faint); flex:0 0 auto; }
+  .rd-hd .rd-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--green-dim); }
+  .rd-hd .rd-ctl { cursor:pointer; color:var(--green-faint); font-size:13px; line-height:1; padding:0 4px; flex:0 0 auto; }
+  .rd-hd .rd-ctl:hover { color:var(--green); }
+  .rd-hd .rd-play { color:var(--green-bright); font-size:12px; }
+  .rd-bars { font-family:var(--font-mono); white-space:pre; font-size:14px; line-height:1; color:var(--green-faint); letter-spacing:1px; overflow:hidden; }
+  .rd-bars.on { color:var(--green-bright); }
+  .rd-msg { font-size:11px; color:var(--green-faint); letter-spacing:0.06em; }
 
   /* shared size toggle (小 · 中 · 大) used by weather + markets headers */
   .wx-hd .sz-tg, .mk-hd .sz-tg { font-size:10px; letter-spacing:0; text-transform:none; }
@@ -500,6 +510,14 @@
             <span class="mk-r" id="mk-refresh" title="refresh">↻</span>
           </div>
           <div id="mk-body"></div>
+        </div>
+      </div>
+
+      <div class="widget" data-wid="radio">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">ラジオ</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body">
+          <div class="rd-hd" id="radio-hd"></div>
+          <div id="radio-body"></div>
         </div>
       </div>
 

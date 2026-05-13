@@ -159,9 +159,10 @@ const WIDGET_DEFS = {
   weather:   { title: 'weather',    icon: '☁', desc: '天気（ASCII アイコン + 気温 + 最高/最低）' },
   markets:   { title: 'markets',    icon: '₿', desc: '相場ティッカー（BTC/ETH/SOL · 24h% + 7日 ASCII チャート）' },
   clock:     { title: 'clock',      icon: '⏱', desc: '時計（クリックで small / large / ascii）' },
+  radio:     { title: 'ラジオ',      icon: '◉', desc: 'インターネットラジオ（SomaFM）+ ASCII スペクトラム' },
   pet:       { title: 'にこちゃん',  icon: '◡', desc: 'たまごっち風 — 時間帯で表情が変わる（クリックで mini / compact / full）' },
 };
-const WIDGET_ORDER_DEFAULT = ['location', 'cta', 'prompt', 'bookmarks', 'news', 'memo', 'weather', 'markets', 'clock', 'pet'];
+const WIDGET_ORDER_DEFAULT = ['location', 'cta', 'prompt', 'bookmarks', 'news', 'memo', 'weather', 'markets', 'radio', 'clock', 'pet'];
 const WIDGETS_KEY = 'bm-browser.widgets.v1';
 function loadWidgets() {
   const w = lsGet(WIDGETS_KEY) || {};
@@ -863,6 +864,71 @@ function petTick() {
 function cyclePet() { petMode = PET_MODES[(PET_MODES.indexOf(petMode) + 1) % PET_MODES.length]; try { localStorage.setItem(PET_MODE_KEY, petMode); } catch (_) {} petRender(); }
 document.getElementById('pet')?.addEventListener('click', cyclePet);
 petRender(); setInterval(petTick, 2200);
+
+// ── ラジオ (internet radio — SomaFM — + fake ASCII spectrum) ──────────────
+// No autoplay on load (browsers block it); starts stopped, ▶ to play. We only
+// persist the chosen station index.
+const RADIO_KEY = 'bm-browser.radio.v1';
+const RADIO_STATIONS = [
+  { name: 'SomaFM · Groove Salad',  url: 'https://ice.somafm.com/groovesalad-128-mp3' },
+  { name: 'SomaFM · Drone Zone',    url: 'https://ice.somafm.com/dronezone-128-mp3' },
+  { name: 'SomaFM · Lush',          url: 'https://ice.somafm.com/lush-128-mp3' },
+  { name: 'SomaFM · DEF CON Radio', url: 'https://ice.somafm.com/defcon-128-mp3' },
+  { name: 'SomaFM · Space Station', url: 'https://ice.somafm.com/spacestation-128-mp3' },
+  { name: 'SomaFM · Beat Blender',  url: 'https://ice.somafm.com/beatblender-128-mp3' },
+];
+const RADIO_LV = '▁▂▃▄▅▆▇█';
+let radioIdx = (() => { const s = lsGet(RADIO_KEY); const i = (s && Number.isInteger(s.i)) ? s.i : 0; return (i >= 0 && i < RADIO_STATIONS.length) ? i : 0; })();
+let radioAudio = null, radioPlaying = false, radioAnim = 0, radioBars = '─'.repeat(24);
+function _radioStation() { return RADIO_STATIONS[radioIdx] || RADIO_STATIONS[0]; }
+function radioRender(msg) {
+  const hd = document.getElementById('radio-hd'), body = document.getElementById('radio-body');
+  if (hd) hd.innerHTML = `<span class="rd-mark">${radioPlaying ? '◉' : '○'}</span><span class="rd-name">${esc(_radioStation().name)}</span>` +
+    `<span class="rd-ctl rd-prev" title="前の局">‹</span><span class="rd-ctl rd-play" title="${radioPlaying ? '止める' : '再生'}">${radioPlaying ? '❚❚' : '▶'}</span><span class="rd-ctl rd-next" title="次の局">›</span>`;
+  if (body) {
+    if (msg) body.innerHTML = `<div class="rd-msg">${esc(msg)}</div>`;
+    else body.innerHTML = `<pre class="rd-bars${radioPlaying ? ' on' : ''}">${esc(radioPlaying ? radioBars : '─'.repeat(24))}</pre>`;
+  }
+  if (hd) {
+    hd.querySelector('.rd-prev')?.addEventListener('click', () => radioStep(-1));
+    hd.querySelector('.rd-next')?.addEventListener('click', () => radioStep(1));
+    hd.querySelector('.rd-play')?.addEventListener('click', radioToggle);
+  }
+}
+function radioPlay() {
+  try { if (radioAudio) { radioAudio.pause(); radioAudio.src = ''; } } catch (_) {}
+  radioAudio = new Audio();
+  radioAudio.src = _radioStation().url;
+  radioAudio.addEventListener('playing', () => { radioPlaying = true; radioRender(); });
+  radioAudio.addEventListener('pause',   () => { radioPlaying = false; radioRender(); });
+  radioAudio.addEventListener('error',   () => { radioPlaying = false; radioRender('受信できませんでした — ›で別の局を'); });
+  radioRender('接続中…');
+  radioAudio.play().catch((e) => { console.warn('[bmbrowser] radio:', e); radioPlaying = false; radioRender('再生できませんでした'); });
+}
+function radioStop() {
+  try { if (radioAudio) { radioAudio.pause(); radioAudio.src = ''; } } catch (_) {}
+  radioAudio = null; radioPlaying = false; radioRender();
+}
+function radioToggle() { radioPlaying ? radioStop() : radioPlay(); }
+function radioStep(d) {
+  radioIdx = (radioIdx + d + RADIO_STATIONS.length) % RADIO_STATIONS.length;
+  lsSet(RADIO_KEY, { i: radioIdx });
+  if (radioPlaying) radioPlay(); else radioRender();
+}
+function radioTick() {
+  if (!radioPlaying) return;
+  radioAnim++;
+  const n = 24, arr = [];
+  for (let i = 0; i < n; i++) {
+    const base = 0.32 + 0.42 * Math.abs(Math.sin(radioAnim * 0.55 + i * 0.7));
+    const v = Math.max(0, Math.min(7, Math.round((base + (Math.random() - 0.5) * 0.5) * 7)));
+    arr.push(RADIO_LV[v]);
+  }
+  radioBars = arr.join('');
+  const bars = document.querySelector('#radio-body .rd-bars');
+  if (bars) bars.textContent = radioBars;
+}
+radioRender(); setInterval(radioTick, 130);
 
 // ── "boss mode" easter egg — Ctrl+` fills the screen with fake work ──────
 const bossEl = document.getElementById('boss');
