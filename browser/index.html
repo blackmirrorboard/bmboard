@@ -119,6 +119,20 @@
   }
   @media (max-width: 480px) { body { padding:36px 16px; } }
 
+  /* ── intro banner (BMBrowser Chrome extension landing — pre-launch copy) ── */
+  .intro-banner { border:1px solid var(--line); background:var(--bg-1); border-radius:3px; padding:22px 24px; margin-bottom:22px; font-family:var(--font-mono); }
+  .intro-banner .ib-eyebrow { font-size:10px; letter-spacing:0.3em; color:var(--gray); text-transform:uppercase; margin-bottom:8px; }
+  .intro-banner .ib-title { font-size:18px; letter-spacing:0.18em; color:var(--green-bright); text-transform:uppercase; margin-bottom:6px; }
+  .intro-banner .ib-tagline { font-size:12px; color:var(--green-dim); line-height:1.6; margin-bottom:16px; font-family:var(--font-term); }
+  .intro-banner .ib-cmd { font-size:12px; color:var(--green); line-height:1.85; }
+  .intro-banner .ib-cmd > div { display:flex; gap:10px; align-items:baseline; }
+  .intro-banner .ib-cmd .ib-key { color:var(--green-bright); min-width:124px; flex:0 0 auto; }
+  .intro-banner .ib-cmd .ib-dim { color:var(--green-faint); font-family:var(--font-term); flex:1; min-width:0; }
+  .intro-banner .ib-status { margin-top:14px; padding-top:12px; border-top:1px dashed var(--line-soft); font-size:11px; color:var(--green-faint); letter-spacing:0.04em; }
+  .intro-banner .ib-status a { color:var(--green-dim); text-decoration:none; border-bottom:1px dotted var(--green-faint); }
+  .intro-banner .ib-status a:hover { color:var(--green); border-color:var(--green); }
+  @media (max-width:480px) { .intro-banner { padding:18px 16px; } .intro-banner .ib-title { font-size:15px; } .intro-banner .ib-cmd { font-size:11px; } .intro-banner .ib-cmd .ib-key { min-width:104px; } }
+
   /* ── header (the one place that keeps the clean font) ── */
   .head { display:flex; flex-wrap:wrap; align-items:center; gap:12px; row-gap:7px; margin-bottom:20px; }
   @keyframes bm-breathe { 0%, 100% { opacity:1; } 50% { opacity:0.18; } }
@@ -441,6 +455,21 @@
       <span class="edit-btn" id="edit-btn" title="edit / rearrange widgets">✎ edit</span>
       <span class="ver">v0.3</span>
     </div>
+
+    <section class="intro-banner" aria-label="Black Mirror Browser — Chrome extension">
+      <div class="ib-eyebrow">/// kinoshita studio · chrome extension</div>
+      <div class="ib-title">Black Mirror Browser</div>
+      <p class="ib-tagline">BMBoard, beside any page. ─ サイドパネルに黒板。新しいタブをウィジェットスタックに。右クリックで黒板へ送る。</p>
+      <div class="ib-cmd">
+        <div><span class="ib-key">$ open --side-panel</span><span class="ib-dim">⌘⇧Y で BMBoard を開く</span></div>
+        <div><span class="ib-key">$ new-tab</span><span class="ib-dim">ウィジェットランチャー</span></div>
+        <div><span class="ib-key">$ right-click</span><span class="ib-dim">"send image / text to BMBoard"</span></div>
+        <div><span class="ib-key">$ status</span><span class="ib-dim">coming soon · chrome web store</span></div>
+      </div>
+      <div class="ib-status">
+        privacy → <a href="./privacy.html">bmboard.studio/browser/privacy.html</a>
+      </div>
+    </section>
 
     <div class="add-bar" id="add-bar"></div>
 

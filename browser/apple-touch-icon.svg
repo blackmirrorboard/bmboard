@@ -1,11 +1,12 @@
-<!-- Source for browser/apple-touch-icon.png (180×180) — BMBoard smiley recoloured
-     (soft green + white face), on a black square (iOS "Add to Home Screen" wants
-     an opaque PNG; it ignores SVG apple-touch-icons). Matches browser/bmbrowserlogo.png. -->
+<!-- Source for browser/apple-touch-icon.png (180×180) — BMBrowser smiley
+     (soft green face + black eyes/mouth, "kore" design adopted 2026-05-13)
+     on a black square (iOS "Add to Home Screen" wants an opaque PNG; it ignores
+     SVG apple-touch-icons). Matches browser/bmbrowserlogo.png. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="1024" height="1024" role="img" aria-label="BMBrowser">
   <title>BMBrowser</title>
   <rect width="180" height="180" fill="#000000"/>
   <circle cx="90" cy="90" r="68" fill="#88d878"/>
-  <path fill="#ffffff" d="M60 94 L72 58 Q75 50 78 58 L90 94 Q92 100 84 100 L66 100 Q58 100 60 94 Z"/>
-  <path fill="#ffffff" d="M102 94 L114 58 Q117 50 120 58 L132 94 Q134 100 126 100 L108 100 Q100 100 102 94 Z"/>
-  <path fill="#ffffff" d="M50 108 Q90 162 130 108 Q90 132 50 108 Z"/>
+  <path fill="#000000" d="M60 94 L72 58 Q75 50 78 58 L90 94 Q92 100 84 100 L66 100 Q58 100 60 94 Z"/>
+  <path fill="#000000" d="M102 94 L114 58 Q117 50 120 58 L132 94 Q134 100 126 100 L108 100 Q100 100 102 94 Z"/>
+  <path fill="#000000" d="M50 108 Q90 162 130 108 Q90 132 50 108 Z"/>
 </svg>
