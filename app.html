@@ -618,7 +618,8 @@
             z-index: 30;
         }
 
-        #textOverlay input {
+        #textOverlay input,
+        #textOverlay textarea {
             min-width: 100px;
             background: transparent;
             border: none;
@@ -629,6 +630,11 @@
             outline: none;
             padding: 2px 2px 3px;
             letter-spacing: 0.02em;
+            resize: none;
+            overflow: hidden;
+            line-height: 1.22;
+            white-space: pre;
+            vertical-align: top;
         }
 
         #stickyEditor {
@@ -1296,12 +1302,14 @@
         }
         body.bm-dark .shape-hint   { color: rgba(255,255,255,0.22); }
         body.bm-gray .shape-hint   { color: rgba(22,0,162,0.35); }
-        body.bm-dark #textOverlay input {
+        body.bm-dark #textOverlay input,
+        body.bm-dark #textOverlay textarea {
             border-bottom-color: #F0EDE6;
             color: #F0EDE6;
             caret-color: #F0EDE6;
         }
-        body.bm-gray #textOverlay input {
+        body.bm-gray #textOverlay input,
+        body.bm-gray #textOverlay textarea {
             border-bottom-color: #1600A2;
             color: #1600A2;
             caret-color: #1600A2;
@@ -1565,7 +1573,7 @@
              autocomplete="off">
         <canvas id="c" draggable="false"></canvas>
         <div id="textOverlay">
-            <input id="ti2" type="text" autocomplete="off" spellcheck="false" placeholder="type…">
+            <textarea id="ti2" rows="1" autocomplete="off" spellcheck="false" placeholder="type… (Enter=改行, Shift/⌘+Enter=確定)"></textarea>
         </div>
         <textarea id="stickyEditor" spellcheck="false" placeholder="type…"></textarea>
         <div id="bmTimer" class="bm-timer" style="display:none">
@@ -5176,11 +5184,14 @@ function commitText() {
 }
 
 textInput.addEventListener('keydown', e => {
-    // Enter (or Esc, or click-away) commits and drops back to the select tool.
+    // Multi-line text:
+    //   · Esc                       → commit + back to select
+    //   · Shift/⌘/Ctrl + Enter      → commit + back to select
+    //   · Plain Enter               → newline (browser default, no preventDefault)
     // IME-conversion Enter (keyCode 229 / isComposing) is left to the IME so
-    // 漢字変換の確定 Enter doesn't fire a commit.
+    // 漢字変換の確定 Enter doesn't fire a commit nor insert a stray newline.
     if (e.key === 'Escape') { e.preventDefault(); commitText(); if (typeof setTool === 'function') setTool('select'); }
-    else if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+    else if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && (e.shiftKey || e.metaKey || e.ctrlKey)) {
         e.preventDefault(); commitText(); if (typeof setTool === 'function') setTool('select');
     }
     e.stopPropagation();
@@ -5189,11 +5200,16 @@ textInput.addEventListener('keydown', e => {
 // tracks the widest line (wrap=off), height tracks the line count. Also nudge the
 // overlay left if the wider box runs off-screen.
 function _sizeTextInput() {
-    // Grow the input to the actual pixel width of the text (works for CJK / proportional
-    // fonts where a char-count `size` undershoots), so the whole line stays visible.
+    // Grow the input to the actual pixel width AND height of the text. Width
+    // tracks the widest line (white-space:pre, wrap off), height tracks the
+    // number of lines so multi-line edits stay fully visible.
     textInput.style.width = '0px';
     const w = textInput.scrollWidth;
     textInput.style.width = Math.max(80, w + 8) + 'px';
+    // Height auto-grow (textarea): collapse then read scrollHeight.
+    textInput.style.height = 'auto';
+    const h = textInput.scrollHeight;
+    textInput.style.height = Math.max(20, h) + 'px';
     // If the now-wider input runs off the right edge, slide the overlay left to keep it on-screen.
     requestAnimationFrame(() => {
         const r = textOverlay.getBoundingClientRect();
