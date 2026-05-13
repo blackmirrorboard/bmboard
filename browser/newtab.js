@@ -454,11 +454,18 @@ const NEWS_SOURCES = {
   google: { label: 'Google', type: 'rss', url: 'https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja' },
   nhk:    { label: 'NHK',    type: 'rss', url: 'https://www3.nhk.or.jp/rss/news/cat0.xml' },
 };
+// 現在地ON → the Google source follows the detected country (per-user "今いる国" のニュース)
+const CC_LANG = { JP:'ja', US:'en', GB:'en', CA:'en', AU:'en', NZ:'en', IE:'en', IN:'en', SG:'en', PH:'en', ZA:'en', FR:'fr', DE:'de', AT:'de', CH:'de', ES:'es', MX:'es-419', AR:'es-419', CL:'es-419', CO:'es-419', IT:'it', NL:'nl', BE:'nl', PT:'pt-PT', BR:'pt-BR', SE:'sv', NO:'no', DK:'da', FI:'fi', PL:'pl', CZ:'cs', RU:'ru', UA:'uk', TR:'tr', GR:'el', KR:'ko', CN:'zh-CN', TW:'zh-TW', HK:'zh-HK', TH:'th', ID:'id', VN:'vi', MY:'ms', AE:'ar', SA:'ar', EG:'ar', IL:'he' };
+function googleNewsUrl() {
+  const cc = geoCC();
+  if (cc) { const lang = CC_LANG[cc] || 'en'; return `https://news.google.com/rss?hl=${lang}&gl=${cc}&ceid=${cc}:${lang}`; }
+  return NEWS_SOURCES.google.url;
+}
 const NEWS_VIEW_KEY = 'bm-browser.newsView.v1', NEWS_SOURCE_KEY = 'bm-browser.newsSource.v1';
 let newsItems = [];
 let newsView   = (localStorage.getItem(NEWS_VIEW_KEY) === 'list') ? 'list' : 'ticker';
 let newsSource = NEWS_SOURCES[localStorage.getItem(NEWS_SOURCE_KEY)] ? localStorage.getItem(NEWS_SOURCE_KEY) : 'hn';
-function newsCacheKey() { return 'bm-browser.news.v1.' + newsSource; }
+function newsCacheKey() { return 'bm-browser.news.v1.' + newsSource + ((newsSource === 'google' && geoCC()) ? '.' + geoCC() : ''); }
 function loadNewsCache() { const c = lsGet(newsCacheKey()); if (c && Array.isArray(c.items) && c.items.length) { newsItems = c.items; return c.fetchedAt || 0; } newsItems = []; return 0; }
 function saveNewsCache() { lsSet(newsCacheKey(), { items: newsItems, fetchedAt: Date.now() }); }
 function newsUrl(it) { return it.url || (it.objectID ? `https://news.ycombinator.com/item?id=${it.objectID}` : '#'); }
@@ -499,7 +506,8 @@ async function fetchNews() {
   const src = NEWS_SOURCES[newsSource] || NEWS_SOURCES.hn;
   if (!newsItems.length) renderNews('loading ' + src.label + ' …');
   try {
-    const target = (src.type === 'rss' && !IS_EXTENSION) ? CORS_PROXY + encodeURIComponent(src.url) : src.url;
+    const feedUrl = (newsSource === 'google') ? googleNewsUrl() : src.url;
+    const target = (src.type === 'rss' && !IS_EXTENSION) ? CORS_PROXY + encodeURIComponent(feedUrl) : feedUrl;
     const res = await fetch(target, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     let items;
@@ -666,12 +674,22 @@ async function fetchWeather() {
 }
 
 // ── widget: markets (crypto ticker via CoinGecko — CORS-friendly, free, no key) ──
+// 現在地ON → priced in the local currency (per-user "今いる国" の通貨で表示)
 const MK_KEY = 'bm-browser.markets.v1';
-const MK_URL = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=jpy&ids=bitcoin,ethereum,solana&sparkline=true&price_change_percentage=24h';
+const MK_CUR = { JP:'jpy', US:'usd', GB:'gbp', CA:'cad', AU:'aud', NZ:'nzd', CH:'chf', SE:'sek', NO:'nok', DK:'dkk', PL:'pln', CZ:'czk', RU:'rub', UA:'uah', TR:'try', KR:'krw', CN:'cny', TW:'twd', HK:'hkd', SG:'sgd', TH:'thb', ID:'idr', VN:'vnd', MY:'myr', PH:'php', IN:'inr', BR:'brl', MX:'mxn', AR:'ars', CL:'clp', ZA:'zar', AE:'aed', SA:'sar', IL:'ils',
+  FR:'eur', DE:'eur', ES:'eur', IT:'eur', NL:'eur', BE:'eur', AT:'eur', IE:'eur', PT:'eur', GR:'eur', FI:'eur' };
+function mkCurrency() { const cc = geoCC(); return (cc && MK_CUR[cc]) ? MK_CUR[cc] : 'jpy'; }
+function mkUrl() { return `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${mkCurrency()}&ids=bitcoin,ethereum,solana&sparkline=true&price_change_percentage=24h`; }
+function fmtCur(n, cur) {
+  cur = (cur || 'jpy').toUpperCase();
+  try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(Math.round(Number(n) || 0)); }
+  catch (_) { return (cur === 'JPY' ? '¥' : cur + ' ') + Math.round(Number(n) || 0).toLocaleString(); }
+}
 const SPARK_CHARS = '▁▂▃▄▅▆▇█';
 let mkItems = [];
-function loadMkCache() { const c = lsGet(MK_KEY); if (c && Array.isArray(c.items) && c.items.length) { mkItems = c.items; return c.fetchedAt || 0; } return 0; }
-function saveMkCache() { lsSet(MK_KEY, { items: mkItems, fetchedAt: Date.now() }); }
+function mkCacheKey() { return MK_KEY + '.' + mkCurrency(); }
+function loadMkCache() { const c = lsGet(mkCacheKey()); if (c && Array.isArray(c.items) && c.items.length) { mkItems = c.items; return c.fetchedAt || 0; } mkItems = []; return 0; }
+function saveMkCache() { lsSet(mkCacheKey(), { items: mkItems, fetchedAt: Date.now() }); }
 function sparkline(arr, width) {
   if (!Array.isArray(arr) || arr.length < 2) return '';
   width = width || 32;
@@ -693,16 +711,18 @@ function renderMarkets(msg) {
   document.querySelectorAll('#mk-size [data-sz]').forEach((s) => s.classList.toggle('active', s.dataset.sz === marketsSize));
   if (msg || !mkItems.length) { body.className = ''; body.innerHTML = `<div class="mk-msg">${esc(msg || 'no data yet — ↻')}</div>`; return; }
   body.className = 'mk-body sz-' + marketsSize;
+  const cur = mkCurrency();
   body.innerHTML = mkItems.map((it) => {
     const ch = (typeof it.ch === 'number') ? it.ch : 0;
     const chStr = (ch >= 0 ? '▲' : '▼') + Math.abs(ch).toFixed(1) + '%';
-    return `<div class="mk-row"><span class="mk-sym">${esc(String(it.sym || '').toUpperCase())}</span><span class="mk-px">${esc(fmtJPY(it.px))}</span><span class="mk-ch ${ch >= 0 ? 'up' : 'down'}">${esc(chStr)}</span><span class="mk-spark" title="7日">${esc(sparkline(it.spark, 28))}</span></div>`;
+    return `<div class="mk-row"><span class="mk-sym">${esc(String(it.sym || '').toUpperCase())}</span><span class="mk-px">${esc(fmtCur(it.px, cur))}</span><span class="mk-ch ${ch >= 0 ? 'up' : 'down'}">${esc(chStr)}</span><span class="mk-spark" title="7日">${esc(sparkline(it.spark, 28))}</span></div>`;
   }).join('');
+  const mc = document.getElementById('mk-cur'); if (mc) mc.textContent = cur.toUpperCase();
 }
 async function fetchMarkets() {
   if (!mkItems.length) renderMarkets('loading markets…');
   try {
-    const res = await fetch(MK_URL, { cache: 'no-store' });
+    const res = await fetch(mkUrl(), { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (!Array.isArray(data) || !data.length) throw new Error('empty');

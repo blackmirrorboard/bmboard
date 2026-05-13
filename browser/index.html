@@ -72,8 +72,8 @@
   /* with ANY non-default background → make the widget cards translucent so the page bg shows through (works for any image, dark or light) */
   body.has-bg { --bg-1:rgba(6,6,6,.9); --bg-2:rgba(16,22,16,.92); --bg-cta:rgba(10,22,8,.9); }
   body.light.has-bg { --bg-1:rgba(245,243,234,.94); --bg-2:rgba(234,232,225,.95); --bg-cta:rgba(239,246,233,.94); }
-  body.has-bg .cta, body.has-bg .prompt, body.has-bg .ticker, body.has-bg .news-list, body.has-bg .news-msg,
-  body.has-bg .memo-ta, body.has-bg .mk-body, body.has-bg .mk-msg, body.has-bg .wx-body, body.has-bg .wx-msg, body.has-bg .bk {
+  body.has-bg .head, body.has-bg .cta, body.has-bg .prompt, body.has-bg .ticker, body.has-bg .news-list, body.has-bg .news-msg,
+  body.has-bg .memo-ta, body.has-bg .mk-body, body.has-bg .mk-msg, body.has-bg .wx-body, body.has-bg .wx-msg, body.has-bg .bk, body.has-bg .loc-w {
     -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
   }
   /* ASCII-art bookmark tiles: keep them (near-)opaque like every other widget
@@ -113,7 +113,7 @@
   @media (max-width: 480px) { body { padding:36px 16px; } }
 
   /* ── header (the one place that keeps the clean font) ── */
-  .head { display:flex; flex-wrap:wrap; align-items:center; gap:12px; row-gap:7px; margin-bottom:20px; }
+  .head { display:flex; flex-wrap:wrap; align-items:center; gap:12px; row-gap:7px; margin-bottom:20px; padding:9px 13px; border-radius:4px; background:var(--bg-1); border:1px solid var(--line-soft); }
   @keyframes bm-breathe { 0%, 100% { opacity:1; } 50% { opacity:0.18; } }
   .head .logo {
     display:flex; align-items:center; gap:9px; font-size:16px; letter-spacing:0.18em;
@@ -148,6 +148,15 @@
   .wg-card .wg-done { background:var(--bg-1); border:1px solid var(--green-faint); color:var(--green-bright); padding:7px 16px; font:inherit; cursor:pointer; border-radius:2px; }
   .wg-card .wg-done:hover { border-color:var(--green); }
   .head .ver { font-family:var(--font-mono); font-size:10px; letter-spacing:0.24em; color:var(--green-faint); text-transform:uppercase; }
+  /* 現在地 widget — place name + ON/OFF; weather・clock・news・markets follow it */
+  .loc-w { display:flex; align-items:center; gap:10px; background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:9px 13px; font-size:13px; }
+  .loc-w .loc-mark { color:var(--green-faint); font-size:14px; line-height:1; flex:0 0 auto; }
+  .loc-w .loc-mark.on { color:var(--green-bright); }
+  .loc-w .loc-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--green-bright); letter-spacing:0.04em; }
+  .loc-w .loc-def { color:var(--green-faint); }
+  .loc-w .loc-btn { flex:0 0 auto; cursor:pointer; font:inherit; font-size:11px; padding:3px 10px; border-radius:2px; border:1px solid var(--green-faint); background:var(--bg-2); color:var(--green-dim); letter-spacing:0.04em; white-space:nowrap; }
+  .loc-w .loc-btn:hover { color:var(--green); border-color:var(--green); }
+  .loc-w .loc-btn.off { color:var(--green-bright); border-color:var(--green-bright); }
 
   /* ── add-bar (edit mode: re-add hidden widgets) ── */
   .add-bar { display:none; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:18px; }
@@ -406,6 +415,11 @@
 
     <div class="stack" id="stack">
 
+      <div class="widget" data-wid="location">
+        <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">現在地</span><button class="w-hide" title="hide widget">✕</button></div>
+        <div class="w-body"><div class="loc-w" id="loc-w">·　大津・滋賀</div></div>
+      </div>
+
       <div class="widget" data-wid="cta">
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">side panel</span><button class="w-hide" title="hide widget">✕</button></div>
         <div class="w-body">
@@ -470,7 +484,6 @@
         <div class="w-body">
           <div class="wx-hd">
             <span>weather · <span id="wx-loc-hd">大津・滋賀</span></span>
-            <span class="wx-geo" id="wx-geo" title="現在地ON/OFF（位置情報の許可が必要）">⌖現在地</span>
             <span class="sz-tg" id="wx-size"><span data-sz="s">小</span><span class="sep">·</span><span data-sz="m">中</span><span class="sep">·</span><span data-sz="l">大</span></span>
             <span class="wx-r" id="wx-refresh" title="refresh">↻</span>
           </div>
@@ -482,7 +495,7 @@
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">markets</span><button class="w-hide" title="hide widget">✕</button></div>
         <div class="w-body">
           <div class="mk-hd">
-            <span>markets · crypto (JPY)</span>
+            <span>markets · crypto (<span id="mk-cur">JPY</span>)</span>
             <span class="sz-tg" id="mk-size"><span data-sz="s">小</span><span class="sep">·</span><span data-sz="m">中</span><span class="sep">·</span><span data-sz="l">大</span></span>
             <span class="mk-r" id="mk-refresh" title="refresh">↻</span>
           </div>
