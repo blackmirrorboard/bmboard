@@ -162,7 +162,7 @@ const WIDGET_DEFS = {
   radio:     { title: 'ラジオ',      icon: '◉', desc: 'インターネットラジオ（SomaFM）+ ASCII スペクトラム' },
   pet:       { title: 'にこちゃん',  icon: '◡', desc: 'たまごっち風 — 時間帯で表情が変わる（クリックで mini / compact / full）' },
 };
-const WIDGET_ORDER_DEFAULT = ['location', 'cta', 'prompt', 'bookmarks', 'news', 'memo', 'weather', 'markets', 'radio', 'clock', 'pet'];
+const WIDGET_ORDER_DEFAULT = ['location', 'cta', 'prompt', 'bookmarks', 'radio', 'news', 'memo', 'weather', 'markets', 'clock', 'pet'];
 const WIDGETS_KEY = 'bm-browser.widgets.v1';
 function loadWidgets() {
   const w = lsGet(WIDGETS_KEY) || {};
@@ -188,7 +188,7 @@ function applyWidgets() {
   document.body.classList.toggle('editing', editMode);
   editBtn.classList.toggle('active', editMode);
   editBtn.textContent = editMode ? '✓ done' : '✎ edit';
-  stackEl.querySelectorAll('.w-handle').forEach((h) => { h.draggable = editMode; });
+  stackEl.querySelectorAll('.w-handle').forEach((h) => { h.draggable = false; });   // drag is pointer-event based, not native DnD
   renderAddBar();
   renderBookmarks();
 }
@@ -250,12 +250,16 @@ function openWidgetModal() {
   ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
 }
 
-// hide / reorder / drag wiring (once — widgets are static, edit mode just moves them)
+// hide / reorder wiring (once — widgets are static, edit mode just moves them).
+// Drag-to-reorder uses Pointer Events so it works on mouse AND touch (HTML5 DnD
+// doesn't do touch). The ⠿ handle is the grip. ↑↓ buttons stay as a precise/
+// accessible alternative.
+let dragWid = null, dragEl = null, dragStartY = 0, dragTarget = null, dragAfter = false;
+function _clearDropMarks() { stackEl.querySelectorAll('.widget').forEach((x) => x.classList.remove('drop-before', 'drop-after')); }
 stackEl.querySelectorAll('.widget').forEach((w) => {
   const id = w.dataset.wid;
   const bar = w.querySelector('.w-bar');
   const hideBtn = w.querySelector('.w-hide');
-  // inject ↑↓ reorder buttons before the hide button (touch-friendly — HTML5 drag doesn't work on touch)
   if (bar && hideBtn) {
     const up = document.createElement('button'); up.className = 'w-up'; up.title = 'up'; up.textContent = '↑';
     const dn = document.createElement('button'); dn.className = 'w-down'; dn.title = 'down'; dn.textContent = '↓';
@@ -266,40 +270,45 @@ stackEl.querySelectorAll('.widget').forEach((w) => {
   if (hideBtn) hideBtn.addEventListener('click', () => { widgetState.hidden.add(id); saveWidgets(); applyWidgets(); });
 
   const handle = w.querySelector('.w-handle');
-  if (handle) {
-    handle.addEventListener('dragstart', (e) => {
-      if (!editMode) { e.preventDefault(); return; }
-      draggedWid = id; w.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      try { e.dataTransfer.setData('text/plain', id); } catch (_) {}
-      try { e.dataTransfer.setDragImage(w, 12, 12); } catch (_) {}
-    });
-    handle.addEventListener('dragend', () => {
-      w.classList.remove('dragging');
-      stackEl.querySelectorAll('.widget').forEach((x) => x.classList.remove('drop-before', 'drop-after'));
-      draggedWid = null;
-    });
-  }
-  w.addEventListener('dragover', (e) => {
-    if (!editMode || !draggedWid || w.dataset.wid === draggedWid) return;
-    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
-    const r = w.getBoundingClientRect(); const after = e.clientY > r.top + r.height / 2;
-    w.classList.toggle('drop-after', after); w.classList.toggle('drop-before', !after);
-  });
-  w.addEventListener('dragleave', () => { w.classList.remove('drop-before', 'drop-after'); });
-  w.addEventListener('drop', (e) => {
-    if (!editMode || !draggedWid || w.dataset.wid === draggedWid) return;
+  if (!handle) return;
+  handle.addEventListener('pointerdown', (e) => {
+    if (!editMode || (e.button != null && e.button > 0)) return;
     e.preventDefault();
-    const r = w.getBoundingClientRect(); const after = e.clientY > r.top + r.height / 2;
-    const ord = widgetState.order.filter(x => x !== draggedWid);
-    let idx = ord.indexOf(w.dataset.wid); if (after) idx += 1;
-    ord.splice(Math.max(0, idx), 0, draggedWid);
-    widgetState.order = ord; saveWidgets();
-    w.classList.remove('drop-before', 'drop-after');
-    applyWidgets();
+    try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+    dragWid = id; dragEl = w; dragStartY = e.clientY; dragTarget = null; dragAfter = false;
+    w.classList.add('dragging'); w.style.pointerEvents = 'none';
+    document.body.classList.add('w-dragging');
   });
+  handle.addEventListener('pointermove', (e) => {
+    if (dragWid !== id) return;
+    e.preventDefault();
+    w.style.transform = 'translateY(' + (e.clientY - dragStartY) + 'px)';
+    _clearDropMarks();
+    const over = document.elementFromPoint(e.clientX, e.clientY);
+    const tw = (over && over.closest) ? over.closest('.widget') : null;
+    if (tw && tw !== w && tw.parentElement === stackEl && tw.style.display !== 'none') {
+      const r = tw.getBoundingClientRect(); const after = e.clientY > r.top + r.height / 2;
+      tw.classList.toggle('drop-after', after); tw.classList.toggle('drop-before', !after);
+      dragTarget = tw.dataset.wid; dragAfter = after;
+    } else { dragTarget = null; }
+  });
+  const endDrag = (e) => {
+    if (dragWid !== id) return;
+    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+    w.classList.remove('dragging'); w.style.transform = ''; w.style.pointerEvents = '';
+    document.body.classList.remove('w-dragging'); _clearDropMarks();
+    if (dragTarget && dragTarget !== dragWid) {
+      const ord = widgetState.order.filter((x) => x !== dragWid);
+      let idx = ord.indexOf(dragTarget); if (dragAfter) idx += 1;
+      ord.splice(Math.max(0, idx), 0, dragWid);
+      widgetState.order = ord; saveWidgets();
+    }
+    dragWid = null; dragEl = null; dragTarget = null;
+    applyWidgets();
+  };
+  handle.addEventListener('pointerup', endDrag);
+  handle.addEventListener('pointercancel', endDrag);
 });
-let draggedWid = null;
 editBtn.addEventListener('click', toggleEdit);
 document.getElementById('wg-btn')?.addEventListener('click', openWidgetModal);
 document.getElementById('th-btn')?.addEventListener('click', toggleTheme);
@@ -805,61 +814,97 @@ function cycleClock() { clockStyle = CLOCK_STYLES[(CLOCK_STYLES.indexOf(clockSty
 document.getElementById('clock')?.addEventListener('click', cycleClock);
 tick(); setInterval(tick, 15_000);
 
-// ── にこちゃん pet (BMBoard smiley) — mood by time of day, blinks, occasional grin ──
+// ── にこちゃん pet (BMBoard smiley — たまごっち風) — mood by time of day, blinks, fidgets ──
 const PET_MODE_KEY = 'bm-browser.petMode.v1';
 const PET_MODES = ['mini', 'compact', 'full'];
 let petMode = PET_MODES.includes(localStorage.getItem(PET_MODE_KEY)) ? localStorage.getItem(PET_MODE_KEY) : 'compact';
-let petBlink = false, petGrin = false, petHop = false, petSpark = 0;
+let petBlink = false, petGrin = false, petHop = false, petSpark = 0, petPose = false, petPoseUntil = 0;
 const PET_SPARKS = ['✦', '✧', '＊', '✺', '·', '✦', '＊', '✧'];
+// big-reaction poses (a grin/burst — pet hops + glows). Lots of variety, incl. wide full-body ones.
 const PET_GRINS = [
-  { face: '＾▽＾', say: 'にこっ♪',  arms: true },
-  { face: '◕▽◕', say: 'わーい！',  arms: true },
-  { face: '＞ω＜', say: 'えへへ',    arms: false },
-  { face: '＾ｗ＾', say: 'やっほー',  arms: true },
-  { face: '✧▽✧', say: 'きらーん',  arms: false },
+  { k: '\\( ＾▽＾ )/',         say: 'にこっ♪' },
+  { k: '\\( ◕▽◕ )/',         say: 'わーい！' },
+  { k: '( ＞ω＜ )',            say: 'えへへ' },
+  { k: '\\( ＾ｗ＾ )/',         say: 'やっほー' },
+  { k: '( ✧▽✧ )',            say: 'きらーん' },
+  { k: 'ᕕ( ◕▿◕ )ᕗ',         say: 'るんるん' },
+  { k: 'ᕦ( ◕▿◕ )ᕤ',         say: 'ふんっ！' },
+  { k: '୧( ◕▽◕ )୨',         say: 'いえーい' },
+  { k: '٩( ＾◡＾ )۶',         say: 'ばんざーい' },
+  { k: '╰( ◕▿◕ )╯',         say: 'やったー' },
+  { k: '⤜( ◕▿◕ )⤏',         say: 'びよーん' },
+  { k: '(づ｡◕‿‿◕｡)づ',       say: 'ぎゅー' },
+  { k: '( ﾉ◕ヮ◕)ﾉ*:･ﾟ✧',    say: 'まほう！' },
+  { k: 'ヽ(°〇°)ﾉ',            say: 'わお！' },
 ];
-let petGrinCur = PET_GRINS[0];
+// idle "fidget" poses (shown briefly now and then — keeps the pet alive, たまごっち感)
+const PET_IDLES = [
+  { k: '( ◕ω◕ )',     say: '' },
+  { k: '( ・ω・ )',     say: 'ふんふん' },
+  { k: '( ´-` )',      say: 'ぼーっ' },
+  { k: '( ◞・౪・)',    say: 'ふぅ' },
+  { k: 'ᕙ( ⇀‸↼‶ )ᕗ',  say: 'むむ' },
+  { k: '( ´◔ ‸◔` )',  say: 'んん？' },
+  { k: '( ˃ ᵕ ˂ )',   say: 'てへ' },
+  { k: 'ʕ•ᴥ•ʔ',       say: 'くまさん' },
+  { k: '( ✿◕‿◕ )',    say: '' },
+  { k: '( ⌐■_■ )',     say: 'クール' },
+  { k: '~( ˘▾˘~)',    say: 'おどる' },
+  { k: '(~˘▾˘)~',     say: 'ゆらゆら' },
+  { k: 'ヽ( ◕▿◕ )ノ',   say: '' },
+  { k: '( ◕▿◕ )ノ゛',   say: 'やぁ' },
+  { k: '( ๑˃ᴗ˂ )ﻭ',   say: 'がんばろ' },
+  { k: '( ˙꒳​˙ )',    say: '' },
+];
+let petGrinCur = PET_GRINS[0], petPoseCur = PET_IDLES[0];
 function _petMood() {
   const h = new Date().getHours();
-  if (h >= 23 || h < 5)  return { face: '˘ω˘',  say: 'すやすや…' };
-  if (h < 9)             return { face: '◕▿◕',  say: 'おはよう！' };
-  if (h < 12)            return { face: '´◡`',  say: '今日もやろ' };
-  if (h < 17)            return { face: '•ᴗ•',  say: '' };
-  if (h < 20)            return { face: '◠‿◠',  say: 'おつかれさま' };
-  return                        { face: 'ーωー', say: 'そろそろ夜だね' };
+  if (h >= 23 || h < 5)  return { k: '( ˘ω˘ )',  say: 'すやすや…' };
+  if (h < 9)             return { k: '( ◕▿◕ )',  say: 'おはよう！' };
+  if (h < 12)            return { k: '( ´◡` )',  say: '今日もやろ' };
+  if (h < 17)            return { k: '( •ᴗ• )',  say: '' };
+  if (h < 20)            return { k: '( ◠‿◠ )',  say: 'おつかれさま' };
+  return                        { k: '( ーωー )', say: 'そろそろ夜だね' };
 }
 function _petFace() {
-  if (petGrin)  return { face: petGrinCur.face, say: petGrinCur.say, arms: petGrinCur.arms };
+  if (petGrin) return petGrinCur;
+  if (petPose) return petPoseCur;
   const m = _petMood();
-  if (petBlink) return { face: 'ーᴗー', say: m.say };   // eyes closed
+  if (petBlink) return { k: '( ーᴗー )', say: m.say };   // eyes closed
   return m;
 }
 function petRender() {
   const el = document.getElementById('pet'); if (!el) return;
   el.className = 'pet-w m-' + petMode + (petHop ? ' pet-hop' : '') + (petGrin ? ' pet-glee' : '');
   const f = _petFace();
-  const kao = (f.arms ? '\\( ' + f.face + ' )/' : '( ' + f.face + ' )');
   if (petMode === 'mini') {
-    el.textContent = kao;
+    el.textContent = f.k;
   } else if (petMode === 'compact') {
-    el.innerHTML = esc(kao) + (f.say ? `<span class="ps">${esc(f.say)}</span>` : '');
+    el.innerHTML = esc(f.k) + (f.say ? `<span class="ps">${esc(f.say)}</span>` : '');
   } else {
     el.innerHTML = `<span class="pspark">${esc(PET_SPARKS[petSpark % PET_SPARKS.length])}</span>` +
-                   `<span class="pk">${esc(kao)}</span>` +
+                   `<span class="pk">${esc(f.k)}</span>` +
                    `<span class="ps">${esc(f.say || '　')}</span>`;
   }
 }
 function petTick() {
   petSpark++;
-  if (!petGrin && Math.random() < 0.10) {            // big grin — picks a random pose, hops, then settles
+  if (petPose && Date.now() > petPoseUntil) { petPose = false; petRender(); }
+  if (petGrin || petPose) { if (petMode === 'full') petRender(); return; }
+  const r = Math.random();
+  if (r < 0.10) {                                    // big grin — random pose, hops, glows, then settles
     petGrinCur = PET_GRINS[Math.floor(Math.random() * PET_GRINS.length)];
     petGrin = true; petHop = true; petRender();
     setTimeout(() => { petHop = false; petRender(); }, 520);
-    setTimeout(() => { petGrin = false; petRender(); }, 1700);
+    setTimeout(() => { petGrin = false; petRender(); }, 1750);
     return;
   }
-  if (!petGrin && Math.random() < 0.22) { petBlink = true; petRender(); setTimeout(() => { petBlink = false; petRender(); }, 160); return; }
-  if (petMode === 'full') petRender();   // keep the sparkle moving even when not blinking
+  if (r < 0.27) {                                    // brief idle fidget pose
+    petPoseCur = PET_IDLES[Math.floor(Math.random() * PET_IDLES.length)];
+    petPose = true; petPoseUntil = Date.now() + 3000 + Math.random() * 2400; petRender(); return;
+  }
+  if (r < 0.48) { petBlink = true; petRender(); setTimeout(() => { petBlink = false; petRender(); }, 160); return; }
+  if (petMode === 'full') petRender();               // keep the sparkle moving
 }
 function cyclePet() { petMode = PET_MODES[(PET_MODES.indexOf(petMode) + 1) % PET_MODES.length]; try { localStorage.setItem(PET_MODE_KEY, petMode); } catch (_) {} petRender(); }
 document.getElementById('pet')?.addEventListener('click', cyclePet);
@@ -878,18 +923,27 @@ const RADIO_STATIONS = [
   { name: 'SomaFM · Beat Blender',  url: 'https://ice.somafm.com/beatblender-128-mp3' },
 ];
 const RADIO_LV = '▁▂▃▄▅▆▇█';
+const RADIO_SIZE_KEY = 'bm-browser.radioSize.v1';
+const RADIO_BARS_N = { s: 14, m: 26, l: 40 };
+let radioSize = ['s', 'm', 'l'].includes(localStorage.getItem(RADIO_SIZE_KEY)) ? localStorage.getItem(RADIO_SIZE_KEY) : 'm';
+function _radioN() { return RADIO_BARS_N[radioSize] || 26; }
+function setRadioSize(s) { if (!['s', 'm', 'l'].includes(s)) return; radioSize = s; try { localStorage.setItem(RADIO_SIZE_KEY, s); } catch (_) {} radioBars = '─'.repeat(_radioN()); radioRender(); }
 let radioIdx = (() => { const s = lsGet(RADIO_KEY); const i = (s && Number.isInteger(s.i)) ? s.i : 0; return (i >= 0 && i < RADIO_STATIONS.length) ? i : 0; })();
-let radioAudio = null, radioPlaying = false, radioAnim = 0, radioBars = '─'.repeat(24);
+let radioAudio = null, radioPlaying = false, radioAnim = 0, radioBars = '─'.repeat(RADIO_BARS_N.m);
 function _radioStation() { return RADIO_STATIONS[radioIdx] || RADIO_STATIONS[0]; }
 function radioRender(msg) {
   const hd = document.getElementById('radio-hd'), body = document.getElementById('radio-body');
   if (hd) hd.innerHTML = `<span class="rd-mark">${radioPlaying ? '◉' : '○'}</span><span class="rd-name">${esc(_radioStation().name)}</span>` +
+    `<span class="sz-tg" id="rd-size"><span data-sz="s">小</span><span class="sep">·</span><span data-sz="m">中</span><span class="sep">·</span><span data-sz="l">大</span></span>` +
     `<span class="rd-ctl rd-prev" title="前の局">‹</span><span class="rd-ctl rd-play" title="${radioPlaying ? '止める' : '再生'}">${radioPlaying ? '❚❚' : '▶'}</span><span class="rd-ctl rd-next" title="次の局">›</span>`;
   if (body) {
     if (msg) body.innerHTML = `<div class="rd-msg">${esc(msg)}</div>`;
-    else body.innerHTML = `<pre class="rd-bars${radioPlaying ? ' on' : ''}">${esc(radioPlaying ? radioBars : '─'.repeat(24))}</pre>`;
+    else if (radioPlaying) body.innerHTML = `<pre class="rd-bars sz-${radioSize} on">${esc(radioBars)}</pre>`;
+    else body.innerHTML = `<button type="button" class="rd-btn sz-${radioSize}" id="rd-btn" title="クリックでラジオ再生">▶ ▷ ▷　ラジオを聴く　◁ ◁ ◀</button>`;
+    body.querySelector('#rd-btn')?.addEventListener('click', radioPlay);
   }
   if (hd) {
+    hd.querySelectorAll('#rd-size [data-sz]').forEach((s) => { s.classList.toggle('active', s.dataset.sz === radioSize); s.addEventListener('click', () => setRadioSize(s.dataset.sz)); });
     hd.querySelector('.rd-prev')?.addEventListener('click', () => radioStep(-1));
     hd.querySelector('.rd-next')?.addEventListener('click', () => radioStep(1));
     hd.querySelector('.rd-play')?.addEventListener('click', radioToggle);
@@ -918,7 +972,7 @@ function radioStep(d) {
 function radioTick() {
   if (!radioPlaying) return;
   radioAnim++;
-  const n = 24, arr = [];
+  const n = _radioN(), arr = [];
   for (let i = 0; i < n; i++) {
     const base = 0.32 + 0.42 * Math.abs(Math.sin(radioAnim * 0.55 + i * 0.7));
     const v = Math.max(0, Math.min(7, Math.round((base + (Math.random() - 0.5) * 0.5) * 7)));

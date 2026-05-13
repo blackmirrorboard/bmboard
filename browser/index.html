@@ -72,8 +72,9 @@
   /* with ANY non-default background → make the widget cards translucent so the page bg shows through (works for any image, dark or light) */
   body.has-bg { --bg-1:rgba(6,6,6,.9); --bg-2:rgba(16,22,16,.92); --bg-cta:rgba(10,22,8,.9); }
   body.light.has-bg { --bg-1:rgba(245,243,234,.94); --bg-2:rgba(234,232,225,.95); --bg-cta:rgba(239,246,233,.94); }
-  body.has-bg .head, body.has-bg .cta, body.has-bg .prompt, body.has-bg .ticker, body.has-bg .news-list, body.has-bg .news-msg,
-  body.has-bg .memo-ta, body.has-bg .mk-body, body.has-bg .mk-msg, body.has-bg .wx-body, body.has-bg .wx-msg, body.has-bg .bk, body.has-bg .loc-w {
+  body.has-bg .th-btn, body.has-bg .bg-btn, body.has-bg .wg-btn, body.has-bg .edit-btn,
+  body.has-bg .cta, body.has-bg .prompt, body.has-bg .ticker, body.has-bg .news-list, body.has-bg .news-msg,
+  body.has-bg .memo-ta, body.has-bg .mk-body, body.has-bg .mk-msg, body.has-bg .wx-body, body.has-bg .wx-msg, body.has-bg .bk, body.has-bg .loc-w, body.has-bg .rd-btn {
     -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
   }
   /* ASCII-art bookmark tiles: keep them (near-)opaque like every other widget
@@ -113,7 +114,7 @@
   @media (max-width: 480px) { body { padding:36px 16px; } }
 
   /* ── header (the one place that keeps the clean font) ── */
-  .head { display:flex; flex-wrap:wrap; align-items:center; gap:12px; row-gap:7px; margin-bottom:20px; padding:9px 13px; border-radius:4px; background:var(--bg-1); border:1px solid var(--line-soft); }
+  .head { display:flex; flex-wrap:wrap; align-items:center; gap:12px; row-gap:7px; margin-bottom:20px; }
   @keyframes bm-breathe { 0%, 100% { opacity:1; } 50% { opacity:0.18; } }
   .head .logo {
     display:flex; align-items:center; gap:9px; font-size:16px; letter-spacing:0.18em;
@@ -125,6 +126,7 @@
   .head .th-btn, .head .bg-btn, .head .wg-btn, .head .edit-btn {
     font-size:10px; letter-spacing:0.06em; color:var(--green-faint);
     cursor:pointer; border:1px solid var(--line); border-radius:2px; padding:2px 9px;
+    background:var(--bg-1);   /* chip bg so the buttons stay legible over any background image */
   }
   .head .th-btn { margin-left:auto; font-size:12px; line-height:1; padding:2px 8px; }
   .head .bg-btn { font-size:13px; line-height:1; padding:2px 8px; }
@@ -171,7 +173,8 @@
   .widget { position:relative; }
   .widget + .widget { margin-top:22px; }
   body.editing .widget { outline:1px dashed var(--line); outline-offset:7px; }
-  .widget.dragging { opacity:0.35; }
+  .widget.dragging { opacity:0.9; z-index:30; box-shadow:0 8px 28px rgba(0,0,0,0.55); }
+  body.w-dragging, body.w-dragging * { user-select:none; -webkit-user-select:none; }
   .widget.drop-before::before, .widget.drop-after::after {
     content:''; position:absolute; left:0; right:0; height:2px; background:var(--green-bright); pointer-events:none;
   }
@@ -180,7 +183,7 @@
 
   .w-bar { display:none; align-items:center; gap:8px; margin-bottom:6px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gray); }
   body.editing .w-bar { display:flex; }
-  .w-bar .w-handle { cursor:grab; color:var(--green-faint); user-select:none; font-size:14px; line-height:1; padding:0 2px; }
+  .w-bar .w-handle { cursor:grab; color:var(--green-faint); user-select:none; font-size:14px; line-height:1; padding:0 4px; touch-action:none; }
   .w-bar .w-handle:active { cursor:grabbing; }
   .w-bar .w-title { flex:1; }
   .w-bar .w-up, .w-bar .w-down, .w-bar .w-hide { background:transparent; border:0; color:var(--gray); font:inherit; font-size:14px; line-height:1; cursor:pointer; padding:0 3px; }
@@ -323,16 +326,26 @@
   .rd-hd .rd-ctl { cursor:pointer; color:var(--green-faint); font-size:13px; line-height:1; padding:0 4px; flex:0 0 auto; }
   .rd-hd .rd-ctl:hover { color:var(--green); }
   .rd-hd .rd-play { color:var(--green-bright); font-size:12px; }
-  .rd-bars { font-family:var(--font-mono); white-space:pre; font-size:14px; line-height:1; color:var(--green-faint); letter-spacing:1px; overflow:hidden; }
+  .rd-bars { font-family:var(--font-mono); white-space:pre; line-height:1; color:var(--green-faint); letter-spacing:1px; overflow:hidden; }
+  .rd-bars.sz-s { font-size:11px; }
+  .rd-bars.sz-m { font-size:15px; }
+  .rd-bars.sz-l { font-size:24px; letter-spacing:2px; line-height:1.15; padding:4px 0; }
+  /* stopped-state "press to tune in" button — make the default obviously clickable */
+  .rd-btn { display:block; width:100%; font:inherit; font-family:var(--font-mono); cursor:pointer; text-align:center; color:var(--green-dim); background:var(--bg-1); border:1px dashed var(--green-faint); border-radius:3px; padding:9px 8px; letter-spacing:1px; transition:border-color .12s, color .12s, background .12s, transform .06s; }
+  .rd-btn:hover { color:var(--green-bright); border-color:var(--green); background:var(--bg-2); }
+  .rd-btn:active { transform:translateY(1px); }
+  .rd-btn.sz-s { font-size:11px; padding:6px 6px; }
+  .rd-btn.sz-m { font-size:13px; }
+  .rd-btn.sz-l { font-size:18px; padding:14px 8px; letter-spacing:2px; }
   .rd-bars.on { color:var(--green-bright); }
   .rd-msg { font-size:11px; color:var(--green-faint); letter-spacing:0.06em; }
 
   /* shared size toggle (小 · 中 · 大) used by weather + markets headers */
-  .wx-hd .sz-tg, .mk-hd .sz-tg { font-size:10px; letter-spacing:0; text-transform:none; }
-  .wx-hd [data-sz], .mk-hd [data-sz] { cursor:pointer; color:var(--green-faint); }
-  .wx-hd [data-sz]:hover, .mk-hd [data-sz]:hover { color:var(--green); }
-  .wx-hd [data-sz].active, .mk-hd [data-sz].active { color:var(--green-bright); }
-  .wx-hd .sz-tg .sep, .mk-hd .sz-tg .sep { color:var(--line); padding:0 4px; cursor:default; }
+  .wx-hd .sz-tg, .mk-hd .sz-tg, .rd-hd .sz-tg { font-size:10px; letter-spacing:0; text-transform:none; }
+  .wx-hd [data-sz], .mk-hd [data-sz], .rd-hd [data-sz] { cursor:pointer; color:var(--green-faint); }
+  .wx-hd [data-sz]:hover, .mk-hd [data-sz]:hover, .rd-hd [data-sz]:hover { color:var(--green); }
+  .wx-hd [data-sz].active, .mk-hd [data-sz].active, .rd-hd [data-sz].active { color:var(--green-bright); }
+  .wx-hd .sz-tg .sep, .mk-hd .sz-tg .sep, .rd-hd .sz-tg .sep { color:var(--line); padding:0 4px; cursor:default; }
 
   /* ── widget: weather ── */
   .wx-hd { display:flex; align-items:center; gap:12px; margin:0 2px 7px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gray); }
