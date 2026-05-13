@@ -18,9 +18,11 @@
   :root {
     --bg:#000; --bg-1:#0a0a0a; --bg-2:#141a14; --bg-cta:#08200a;
     --line:#2a2826; --line-soft:#1c1b1a;
-    /* classic terminal-phosphor green — less yellow, more "screen" */
-    --green:#28d428; --green-bright:#33ff33; --green-dim:#1d9e1d; --green-faint:#1a6e1a;
-    --aqua:#4fda7a; --gray:#6b6b66; --red:#cc4444;
+    /* classic terminal-phosphor green — less yellow, more "screen". Tuned for
+       readability: --green-dim/--green-faint were too dark on #000 (secondary
+       text was barely legible), so they're brighter now. */
+    --green:#33dd33; --green-bright:#41ff41; --green-dim:#2bb82b; --green-faint:#3aa53a;
+    --aqua:#5ee08a; --gray:#8d8d86; --red:#dd5555;
     --font-term: "DotGothic16", ui-monospace, "SF Mono", Menlo, Consolas, monospace;  /* hacker terminal type — handles 日本語 */
     --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "JetBrains Mono", monospace; /* clean mono — top header + ASCII art */
     /* selectable background patterns ("old web" vibes) — reused by the picker previews */
@@ -32,9 +34,10 @@
   }
   body.light {   /* light theme — for visibility. same "base = key colour, cut-outs = page bg" rule still holds */
     --bg:#faf9f4; --bg-1:#f0eee6; --bg-2:#e6e3d8; --bg-cta:#ecf3e6;
-    --line:#d6d2c4; --line-soft:#e3e0d4;
-    --green:#2f7a1c; --green-bright:#1c6e10; --green-dim:#6a9a52; --green-faint:#a6bb96;
-    --aqua:#3f8a2e; --gray:#8a8778; --red:#b03028;
+    --line:#cdc9ba; --line-soft:#ddd9cc;
+    /* darkened the dim/faint/gray ramps — on cream they were near-invisible */
+    --green:#2c7019; --green-bright:#1c6410; --green-dim:#4f7a3a; --green-faint:#577f3f;
+    --aqua:#367f28; --gray:#6e6b5d; --red:#a82c24;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html { height:100%; -webkit-text-size-adjust:100%; text-size-adjust:100%; overflow-x:hidden; overscroll-behavior:none; }
@@ -61,8 +64,8 @@
   body.bg-custom::after  { content:''; position:fixed; inset:0; background:rgba(0,0,0,.34); z-index:-1; pointer-events:none; }
   body.light.bg-custom::after { background:rgba(250,249,244,.42); }
   /* with ANY non-default background → make the widget cards translucent so the page bg shows through (works for any image, dark or light) */
-  body.has-bg { --bg-1:rgba(10,10,10,.62); --bg-2:rgba(20,26,20,.7); --bg-cta:rgba(14,26,12,.64); }
-  body.light.has-bg { --bg-1:rgba(244,242,233,.7); --bg-2:rgba(232,231,225,.78); --bg-cta:rgba(238,245,232,.72); }
+  body.has-bg { --bg-1:rgba(8,8,8,.78); --bg-2:rgba(18,24,18,.82); --bg-cta:rgba(12,24,10,.78); }
+  body.light.has-bg { --bg-1:rgba(244,242,233,.84); --bg-2:rgba(232,231,225,.88); --bg-cta:rgba(238,245,232,.84); }
   body.has-bg .cta, body.has-bg .prompt, body.has-bg .ticker, body.has-bg .news-list, body.has-bg .news-msg,
   body.has-bg .memo-ta, body.has-bg .mk-body, body.has-bg .mk-msg, body.has-bg .wx-body, body.has-bg .wx-msg, body.has-bg .bk {
     -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
