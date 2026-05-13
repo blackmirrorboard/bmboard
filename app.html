@@ -5651,8 +5651,15 @@ function triggerYouTube() {
     }, 1100);
     setTimeout(() => {
         enqueue('', ['▶  Stream initialized.', '▶  Playing: kinoshita studio / Black Mirror Board',
-            '', '   [ ████████████████████ 100% ] 0:00 / 3:24', '   [ press any key to continue ]']);
+            '', '   [ ████████████████████ 100% ] 0:00 / 3:24', '   [ launching youtube.com ... ]']);
     }, 2000);
+    // After the ASCII演出 finishes, actually open YouTube in a new tab.
+    // (popup blockers may block this if not triggered by the user gesture chain —
+    // since the command runs inside an Enter-keypress handler, it's typically allowed.)
+    setTimeout(() => {
+        try { window.open('https://www.youtube.com/', '_blank', 'noopener'); }
+        catch (_) {}
+    }, 2800);
 }
 
 // ══════════════════════════════════════════════════
