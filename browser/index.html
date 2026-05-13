@@ -67,8 +67,8 @@
   body.bg-custom::before { background-image:var(--custom-bg); }
   body.bg-mtn-aerial::before { background-image:var(--photo-mtn-aerial); }
   body.bg-mtn-snow::before   { background-image:var(--photo-mtn-snow); }
-  body.bg-custom::after, body.bg-mtn-aerial::after, body.bg-mtn-snow::after { content:''; position:fixed; inset:0; background:rgba(0,0,0,.52); z-index:-1; pointer-events:none; }
-  body.light.bg-custom::after, body.light.bg-mtn-aerial::after, body.light.bg-mtn-snow::after { background:rgba(250,249,244,.6); }
+  body.bg-custom::after, body.bg-mtn-aerial::after, body.bg-mtn-snow::after { content:''; position:fixed; inset:0; background:rgba(0,0,0,var(--bg-veil, .52)); z-index:-1; pointer-events:none; }
+  body.light.bg-custom::after, body.light.bg-mtn-aerial::after, body.light.bg-mtn-snow::after { background:rgba(250,249,244,var(--bg-veil, .6)); }
   /* with ANY non-default background → make the widget cards translucent so the page bg shows through (works for any image, dark or light) */
   body.has-bg { --bg-1:rgba(6,6,6,.9); --bg-2:rgba(16,22,16,.92); --bg-cta:rgba(10,22,8,.9); }
   body.light.has-bg { --bg-1:rgba(245,243,234,.94); --bg-2:rgba(234,232,225,.95); --bg-cta:rgba(239,246,233,.94); }
@@ -101,6 +101,10 @@
   .bg-custom-row .bg-url { flex:1; min-width:0; background:#000; border:1px solid var(--line); border-radius:2px; color:var(--green-bright); font:inherit; font-size:11px; padding:5px 8px; outline:0; }
   .bg-custom-row .bg-set { background:var(--bg-1); border:1px solid var(--green-faint); color:var(--green-bright); font:inherit; font-size:11px; padding:5px 10px; border-radius:2px; cursor:pointer; }
   .bg-custom-row .bg-set:hover { border-color:var(--green); }
+  .bg-veil-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .bg-veil-row .bg-cl { font-size:10px; color:var(--gray); white-space:nowrap; }
+  .bg-veil-row input[type=range] { flex:1; accent-color:var(--green); }
+  .bg-veil-row .bg-vv { font-size:10px; color:var(--green-faint); width:30px; text-align:right; font-variant-numeric:tabular-nums; }
 
   /* mobile: inputs at 16px so iOS doesn't auto-zoom on focus (zoom is also locked via the viewport meta) */
   @media (pointer: coarse) {

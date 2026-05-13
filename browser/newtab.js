@@ -24,6 +24,7 @@ applyTheme();
 
 // ── background picker (selectable patterns + custom image URL) ──
 const BG_KEY = 'bm-browser.bg.v1';
+const BG_VEIL_KEY = 'bm-browser.bgVeil.v1';   // user-adjustable darkness of the overlay on image backgrounds
 const BG_OPTIONS = [
   { id: 'none', label: 'なし' }, { id: 'grid', label: 'グリッド' },
   { id: 'stars', label: '星空' }, { id: 'glow', label: 'グロウ' },
@@ -62,7 +63,15 @@ function applyBg() {
   }
 }
 function setBg(v) { bgSetting = v || 'none'; try { localStorage.setItem(BG_KEY, bgSetting); } catch (_) {} applyBg(); }
-applyBg();
+// overlay darkness on image backgrounds — 0..1, unset = theme default (.52 dark / .6 light, from CSS)
+let bgVeil = parseFloat(localStorage.getItem(BG_VEIL_KEY));
+function applyBgVeil() {
+  if (isNaN(bgVeil)) document.body.style.removeProperty('--bg-veil');
+  else document.body.style.setProperty('--bg-veil', String(bgVeil));
+}
+function setBgVeil(v) { bgVeil = parseFloat(v); try { localStorage.setItem(BG_VEIL_KEY, String(bgVeil)); } catch (_) {} applyBgVeil(); }
+function _bgVeilDefault() { return document.body.classList.contains('light') ? 0.6 : 0.52; }
+applyBg(); applyBgVeil();
 function openBgModal() {
   const ov = document.createElement('div'); ov.className = 'wg-ov';
   const card = document.createElement('div'); card.className = 'wg-card';
@@ -77,6 +86,7 @@ function openBgModal() {
     `<div class="wg-sub">背景を選ぶ。昔のサイトみたいに。</div>` +
     `<div class="bg-tiles">${tiles()}</div>` +
     `<div class="bg-custom-row"><span class="bg-cl">画像URL</span><input class="bg-url" id="bg-url" type="text" placeholder="https://… の画像URL" value="${esc(isCustom ? bgSetting.slice(7) : '')}"><button class="bg-set" id="bg-set">使う</button></div>` +
+    `<div class="bg-veil-row"><span class="bg-cl">背景の暗さ</span><input type="range" id="bg-veil" min="0" max="0.85" step="0.05" value="${isNaN(bgVeil) ? _bgVeilDefault() : bgVeil}"><span class="bg-vv" id="bg-veil-v">${Math.round((isNaN(bgVeil) ? _bgVeilDefault() : bgVeil) * 100)}</span></div>` +
     `<div class="wg-foot"><button class="wg-done">done</button></div>`;
   ov.appendChild(card); document.body.appendChild(ov);
   const close = () => { try { document.body.removeChild(ov); } catch (_) {} };
@@ -89,6 +99,7 @@ function openBgModal() {
   wireTiles();
   card.querySelector('#bg-set').addEventListener('click', useUrl);
   card.querySelector('#bg-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); useUrl(); } });
+  card.querySelector('#bg-veil').addEventListener('input', (e) => { setBgVeil(e.target.value); card.querySelector('#bg-veil-v').textContent = Math.round(parseFloat(e.target.value) * 100); });
   card.querySelector('.wg-done').addEventListener('click', close);
   ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
 }
