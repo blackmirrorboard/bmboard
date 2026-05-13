@@ -29,10 +29,11 @@ const BG_OPTIONS = [
   { id: 'none', label: 'なし' }, { id: 'grid', label: 'グリッド' },
   { id: 'stars', label: '星空' }, { id: 'glow', label: 'グロウ' },
   { id: 'mtn-aerial', label: '山（空撮）' }, { id: 'mtn-snow', label: '雪山' },
+  { id: 'minecraft', label: 'マイクラ' }, { id: 'pixel', label: 'ピクセル夜' },
   { id: 'custom', label: '画像' },
 ];
 // ids applyBg() recognizes as built-in backgrounds (patterns + bundled photos)
-const BG_PATTERNS = ['grid', 'stars', 'glow', 'mtn-aerial', 'mtn-snow'];
+const BG_PATTERNS = ['grid', 'stars', 'glow', 'mtn-aerial', 'mtn-snow', 'minecraft', 'pixel'];
 // A Google Drive / Dropbox *share* link points at an HTML page, not the image —
 // so `background-image: url(...)` shows nothing. Convert common share links to a
 // direct image URL (same trick Atelier uses for image blocks).
@@ -191,6 +192,7 @@ function applyWidgets() {
   stackEl.querySelectorAll('.w-handle').forEach((h) => { h.draggable = false; });   // drag is pointer-event based, not native DnD
   renderAddBar();
   renderBookmarks();
+  if (typeof _autoGrowMemo === 'function') _autoGrowMemo();   // re-fit the memo box after a (re)layout
 }
 
 function renderAddBar() {
@@ -449,9 +451,15 @@ cmd.addEventListener('keydown', (e) => {
 // ── widget: memo (scratchpad, auto-saved to localStorage) ──
 const MEMO_KEY = 'bm-browser.memo.v1';
 const memoTa = document.getElementById('memo-ta');
+function _autoGrowMemo() {
+  if (!memoTa) return;
+  memoTa.style.height = 'auto';
+  memoTa.style.height = Math.max(memoTa.scrollHeight, 150) + 'px';   // generous default, grows downward as you type
+}
 if (memoTa) {
   try { memoTa.value = localStorage.getItem(MEMO_KEY) || ''; } catch (_) {}
-  memoTa.addEventListener('input', () => { try { localStorage.setItem(MEMO_KEY, memoTa.value); } catch (_) {} });
+  _autoGrowMemo();
+  memoTa.addEventListener('input', () => { try { localStorage.setItem(MEMO_KEY, memoTa.value); } catch (_) {} _autoGrowMemo(); });
 }
 
 // ── widget: news (selectable source — HN / Yahoo!ニュース / NHK) ──────────

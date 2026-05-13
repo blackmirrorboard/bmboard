@@ -34,6 +34,8 @@
     /* built-in photo backgrounds (Unsplash, hotlinked w/ resize params) */
     --photo-mtn-aerial: url("https://images.unsplash.com/photo-1548679847-1d4ff48016c7?w=2400&q=70&auto=format&fit=crop");
     --photo-mtn-snow:   url("https://images.unsplash.com/photo-1549472579-e133f59d8b23?w=2400&q=70&auto=format&fit=crop");
+    --photo-minecraft:  url("bg-minecraft.png");
+    --photo-pixel:      url("bg-pixel.jpg");
   }
   body.light {   /* light theme — for visibility. same "base = key colour, cut-outs = page bg" rule still holds */
     --bg:#faf9f4; --bg-1:#f0eee6; --bg-2:#e6e3d8; --bg-cta:#ecf3e6;
@@ -63,12 +65,14 @@
   body.bg-stars     { background-image:var(--pat-stars); background-size:210px 210px; }
   /* glow + custom image: viewport-fixed ::before/::after (iOS-safe — `background-attachment:fixed` is broken there) */
   body.bg-glow::before   { content:''; position:fixed; inset:0; background:var(--pat-glow); z-index:-1; pointer-events:none; }
-  body.bg-custom::before, body.bg-mtn-aerial::before, body.bg-mtn-snow::before { content:''; position:fixed; inset:0; background-size:cover; background-position:center; z-index:-2; pointer-events:none; }
+  body.bg-custom::before, body.bg-mtn-aerial::before, body.bg-mtn-snow::before, body.bg-minecraft::before, body.bg-pixel::before { content:''; position:fixed; inset:0; background-size:cover; background-position:center; z-index:-2; pointer-events:none; }
   body.bg-custom::before { background-image:var(--custom-bg); }
   body.bg-mtn-aerial::before { background-image:var(--photo-mtn-aerial); }
   body.bg-mtn-snow::before   { background-image:var(--photo-mtn-snow); }
-  body.bg-custom::after, body.bg-mtn-aerial::after, body.bg-mtn-snow::after { content:''; position:fixed; inset:0; background:rgba(0,0,0,var(--bg-veil, .52)); z-index:-1; pointer-events:none; }
-  body.light.bg-custom::after, body.light.bg-mtn-aerial::after, body.light.bg-mtn-snow::after { background:rgba(250,249,244,var(--bg-veil, .6)); }
+  body.bg-minecraft::before  { background-image:var(--photo-minecraft); }
+  body.bg-pixel::before      { background-image:var(--photo-pixel); image-rendering:pixelated; }
+  body.bg-custom::after, body.bg-mtn-aerial::after, body.bg-mtn-snow::after, body.bg-minecraft::after, body.bg-pixel::after { content:''; position:fixed; inset:0; background:rgba(0,0,0,var(--bg-veil, .52)); z-index:-1; pointer-events:none; }
+  body.light.bg-custom::after, body.light.bg-mtn-aerial::after, body.light.bg-mtn-snow::after, body.light.bg-minecraft::after, body.light.bg-pixel::after { background:rgba(250,249,244,var(--bg-veil, .6)); }
   /* with ANY non-default background → make the widget cards translucent so the page bg shows through (works for any image, dark or light) */
   body.has-bg { --bg-1:rgba(6,6,6,.9); --bg-2:rgba(16,22,16,.92); --bg-cta:rgba(10,22,8,.9); }
   body.light.has-bg { --bg-1:rgba(245,243,234,.94); --bg-2:rgba(234,232,225,.95); --bg-cta:rgba(239,246,233,.94); }
@@ -96,6 +100,8 @@
   .bg-pv.pv-custom { background:linear-gradient(135deg, #2a2826, #4fda7a 80%); }
   .bg-pv.pv-mtn-aerial { background-image:var(--photo-mtn-aerial); background-size:cover; background-position:center; }
   .bg-pv.pv-mtn-snow   { background-image:var(--photo-mtn-snow); background-size:cover; background-position:center; }
+  .bg-pv.pv-minecraft  { background-image:var(--photo-minecraft); background-size:cover; background-position:center; }
+  .bg-pv.pv-pixel      { background-image:var(--photo-pixel); background-size:cover; background-position:center; image-rendering:pixelated; }
   .bg-pv.pv-none { background:#000; }
   .bg-custom-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
   .bg-custom-row .bg-cl { font-size:10px; color:var(--gray); white-space:nowrap; }
@@ -253,10 +259,10 @@
 
   /* ── widget: memo (scratchpad) ── */
   .memo-ta {
-    display:block; width:100%; min-height:100px; resize:vertical;
+    display:block; width:100%; min-height:150px; resize:none;
     background:var(--bg-1); border:1px solid var(--line); border-radius:3px;
     padding:11px 14px; color:var(--green-bright); font:inherit; font-size:13px; line-height:1.6;
-    outline:0; white-space:pre-wrap; overflow:auto;
+    outline:0; white-space:pre-wrap; overflow-y:auto;   /* auto-grows downward (height set by JS); scrollbar only if JS hasn't run */
   }
   .memo-ta::placeholder { color:var(--green-faint); }
   .memo-ta:focus { border-color:var(--green-faint); }
@@ -474,7 +480,7 @@
       <div class="widget" data-wid="memo">
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">memo</span><button class="w-hide" title="hide widget">✕</button></div>
         <div class="w-body">
-          <textarea class="memo-ta" id="memo-ta" spellcheck="false" placeholder="scratch · notes · ascii …  （自動保存）"></textarea>
+          <textarea class="memo-ta" id="memo-ta" spellcheck="false" placeholder="メモを入れてね…  書くほど下に伸びます（自動保存）"></textarea>
         </div>
       </div>
 
