@@ -248,8 +248,10 @@
   .bk .ctl { background:transparent; border:0; color:var(--gray); font:inherit; font-size:13px; line-height:1; cursor:pointer; padding:0 2px; }
   .bk .ctl:hover { color:var(--green); }
   .bk .ctl.x:hover { color:var(--red); }
-  .bk .x.solo { display:none; }
-  .bk:hover .x.solo { display:inline; }
+  /* non-edit mode solo controls (✎ edit / ✕ remove) — always visible but discreet */
+  .bk .ctl.solo { opacity:0.5; transition:opacity .15s; }
+  .bk:hover .ctl.solo, .bk:focus-within .ctl.solo { opacity:1; }
+  @media (hover: none) { .bk .ctl.solo { opacity:0.75; } }
   .bm-empty { font-size:11px; color:var(--green-faint); letter-spacing:0.06em; padding:4px 2px; }
 
   .bm.ascii { gap:20px; }
@@ -267,9 +269,10 @@
   .aa-ctls .ctl { background:transparent; border:0; color:var(--gray); font:inherit; font-size:12px; line-height:1; cursor:pointer; padding:0 2px; }
   .aa-ctls .ctl:hover { color:var(--green); }
   .aa-ctls .ctl.x:hover { color:var(--red); }
-  .aa-card .x.solo { position:absolute; top:1px; right:3px; display:none; background:transparent; border:0; color:var(--gray); font:inherit; font-size:13px; line-height:1; cursor:pointer; padding:0; }
-  .aa-card:hover .x.solo { display:block; }
-  .aa-card .x.solo:hover { color:var(--red); }
+  /* non-edit mode solo controls — discreet by default, brighter on hover/focus */
+  .aa-ctls .ctl.solo { opacity:0.5; transition:opacity .15s; }
+  .aa-card:hover .aa-ctls .ctl.solo, .aa-card:focus-within .aa-ctls .ctl.solo { opacity:1; }
+  @media (hover: none) { .aa-ctls .ctl.solo { opacity:0.75; } }
 
   /* ── widget: memo (scratchpad) ── */
   .memo-ta {

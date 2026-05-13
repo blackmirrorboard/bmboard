@@ -382,7 +382,7 @@ function renderBookmarks() {
 
   const ctlsHTML = editMode
     ? `<button class="ctl up" title="up">↑</button><button class="ctl down" title="down">↓</button><button class="ctl ed" title="edit">✎</button><button class="ctl x" title="remove">✕</button>`
-    : `<button class="x solo ctl" title="remove">✕</button>`;
+    : `<button class="ctl ed solo" title="edit">✎</button><button class="ctl x solo" title="remove">✕</button>`;
 
   bookmarks.forEach((b, i) => {
     let el;
@@ -392,7 +392,7 @@ function renderBookmarks() {
       el.innerHTML =
         `<pre class="aa">${esc(bookmarkArt(b))}</pre>` +
         `<span class="aa-name">${esc(b.label || b.url)}</span>` +
-        (editMode ? `<span class="aa-ctls">${ctlsHTML}</span>` : `<button class="x solo ctl" title="remove">✕</button>`);
+        `<span class="aa-ctls">${ctlsHTML}</span>`;
     } else {
       el = document.createElement('a'); el.className = 'bk'; el.href = b.url; el.title = b.url;
       el.innerHTML = `<span class="i">${esc(b.icon || '◦')}</span><span class="l">${esc(b.label || b.url)}</span>${ctlsHTML}`;
