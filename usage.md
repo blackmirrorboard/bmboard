@@ -395,7 +395,7 @@ Reload is safe. Close the tab and come back — your spells are still there.
 ## Contact / フィードバック
 
 ```
-feedback   →  kinoshita.studio@gmail.com
+feedback   →  tkinoshita.studio@gmail.com
               subject: Black Mirror Feedback
               (tap the logo in-app to open the form)
 
