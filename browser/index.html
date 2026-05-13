@@ -248,14 +248,17 @@
   .memo-ta:focus { border-color:var(--green-faint); }
 
   /* ── widget: command prompt ── */
+  /* command bar — the core "browser" interaction; given visual weight on purpose */
   .prompt {
-    display:flex; align-items:center; gap:10px;
-    background:var(--bg-1); border:1px solid var(--line); padding:11px 14px; border-radius:3px;
+    display:flex; align-items:center; gap:12px;
+    background:var(--bg-1); border:1px solid var(--green-dim); padding:15px 18px; border-radius:4px;
+    box-shadow: inset 0 0 24px rgba(51,221,51,.06);
   }
-  .prompt .mark { color:var(--green); font-weight:700; }
-  .prompt input { flex:1; background:transparent; border:0; outline:0; color:var(--green-bright); font:inherit; font-size:14px; letter-spacing:0.02em; }
+  .prompt:focus-within { border-color:var(--green-bright); box-shadow: inset 0 0 30px rgba(65,255,65,.11), 0 0 0 1px var(--green-bright); }
+  .prompt .mark { color:var(--green-bright); font-weight:700; font-size:19px; line-height:1; }
+  .prompt input { flex:1; background:transparent; border:0; outline:0; color:var(--green-bright); font:inherit; font-size:17px; letter-spacing:0.02em; }
   .prompt input::placeholder { color:var(--green-faint); }
-  .hint { margin-top:8px; font-size:10px; color:var(--gray); letter-spacing:0.08em; }
+  .hint { margin-top:9px; font-size:10px; color:var(--gray); letter-spacing:0.08em; }
   .hint b { color:var(--green-dim); font-weight:400; }
 
   /* ── widget: news ── */
@@ -300,6 +303,10 @@
   .pet-w.m-full .pspark { display:block; font-size:12px; color:var(--green-faint); line-height:1; }
   .pet-w.m-full .pk     { display:block; font-size:30px; line-height:1.1; color:var(--green-bright); letter-spacing:0.04em; }
   .pet-w.m-full .ps     { display:block; font-family:var(--font-term); font-size:12px; color:var(--green-faint); margin-top:6px; letter-spacing:0.08em; min-height:1.2em; }
+  @keyframes pet-hop { 0%,100% { transform:translateY(0) rotate(0) } 28% { transform:translateY(-7px) rotate(-4deg) } 55% { transform:translateY(-1px) rotate(3deg) } 78% { transform:translateY(-3px) rotate(-1deg) } }
+  .pet-w.pet-hop { animation: pet-hop .52s ease; }
+  .pet-w.pet-glee { color:var(--green-bright); text-shadow:0 0 8px rgba(65,255,65,.45); }
+  .pet-w.m-full.pet-glee .pk, .pet-w.m-full.pet-glee .pspark { text-shadow:0 0 14px rgba(65,255,65,.55); }
 
   /* shared size toggle (小 · 中 · 大) used by weather + markets headers */
   .wx-hd .sz-tg, .mk-hd .sz-tg { font-size:10px; letter-spacing:0; text-transform:none; }
@@ -312,6 +319,9 @@
   .wx-hd { display:flex; align-items:center; gap:12px; margin:0 2px 7px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gray); }
   .wx-hd .wx-r { margin-left:auto; cursor:pointer; color:var(--green-faint); border:1px solid var(--line); border-radius:2px; padding:1px 7px; font-size:11px; text-transform:none; letter-spacing:0; }
   .wx-hd .wx-r:hover { color:var(--green); border-color:var(--green); }
+  .wx-hd .wx-geo { cursor:pointer; color:var(--green-faint); border:1px solid var(--line); border-radius:2px; padding:1px 6px; font-size:9px; text-transform:none; letter-spacing:0; white-space:nowrap; }
+  .wx-hd .wx-geo:hover { color:var(--green); border-color:var(--green); }
+  .wx-hd .wx-geo.active { color:var(--green-bright); border-color:var(--green-bright); }
   .wx-body { background:var(--bg-1); border:1px solid var(--line); border-radius:3px; padding:12px 16px; overflow:hidden; }
   .wx-row { display:flex; align-items:center; gap:18px; }
   .wx-art { margin:0; font-family:var(--font-mono); font-size:11px; line-height:1.05; color:var(--green-bright); white-space:pre; flex:0 0 auto; }
@@ -459,7 +469,8 @@
         <div class="w-bar"><span class="w-handle" title="drag to reorder">⠿</span><span class="w-title">weather</span><button class="w-hide" title="hide widget">✕</button></div>
         <div class="w-body">
           <div class="wx-hd">
-            <span>weather · 滋賀</span>
+            <span>weather · <span id="wx-loc-hd">大津・滋賀</span></span>
+            <span class="wx-geo" id="wx-geo" title="現在地ON/OFF（位置情報の許可が必要）">⌖現在地</span>
             <span class="sz-tg" id="wx-size"><span data-sz="s">小</span><span class="sep">·</span><span data-sz="m">中</span><span class="sep">·</span><span data-sz="l">大</span></span>
             <span class="wx-r" id="wx-refresh" title="refresh">↻</span>
           </div>

@@ -160,7 +160,7 @@ const WIDGET_DEFS = {
   clock:     { title: 'clock',      icon: '⏱', desc: '時計（クリックで small / large / ascii）' },
   pet:       { title: 'にこちゃん',  icon: '◡', desc: 'たまごっち風 — 時間帯で表情が変わる（クリックで mini / compact / full）' },
 };
-const WIDGET_ORDER_DEFAULT = ['cta', 'bookmarks', 'memo', 'prompt', 'news', 'weather', 'markets', 'clock', 'pet'];
+const WIDGET_ORDER_DEFAULT = ['cta', 'prompt', 'bookmarks', 'memo', 'news', 'weather', 'markets', 'clock', 'pet'];
 const WIDGETS_KEY = 'bm-browser.widgets.v1';
 function loadWidgets() {
   const w = lsGet(WIDGETS_KEY) || {};
@@ -525,11 +525,55 @@ async function fetchNews() {
   setInterval(fetchNews, 20 * 60 * 1000);                        // and periodically while the tab stays open
 }
 
-// ── widget: weather (Open-Meteo — CORS-friendly, free, no key) ──────────
-// Default location = 大津・滋賀. (Configurable later — for now hardcoded.)
+// ── widget: weather + "現在地ON" (Open-Meteo — CORS-friendly, free, no key) ──
+// Default = 大津・滋賀. Turning on 現在地 (geolocation) links place name + country
+// + timezone (the clock) + forecast — all follow wherever you are.
 const WX_KEY = 'bm-browser.weather.v1';
-const WX_LOC = { lat: 35.0045, lon: 135.8686, name: '大津・滋賀' };
-const WX_URL = `https://api.open-meteo.com/v1/forecast?latitude=${WX_LOC.lat}&longitude=${WX_LOC.lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Asia%2FTokyo&forecast_days=1`;
+const GEO_KEY = 'bm-browser.geo.v1';   // { on, lat, lon, name, tz }
+const WX_DEFAULT_LOC = { lat: 35.0045, lon: 135.8686, name: '大津・滋賀', tz: 'Asia/Tokyo', geo: false };
+function loadGeo() { const g = lsGet(GEO_KEY); return (g && g.on && g.lat != null && g.lon != null) ? g : null; }
+let wxLoc = (() => { const g = loadGeo(); return g ? { lat: g.lat, lon: g.lon, name: g.name || '現在地', tz: g.tz || 'auto', geo: true } : { ...WX_DEFAULT_LOC }; })();
+let clockTz = (wxLoc.geo && wxLoc.tz && wxLoc.tz !== 'auto') ? wxLoc.tz : null;   // null = browser-local
+function wxUrl() {
+  const tz = wxLoc.geo ? 'auto' : encodeURIComponent(wxLoc.tz || 'Asia/Tokyo');
+  return `https://api.open-meteo.com/v1/forecast?latitude=${wxLoc.lat}&longitude=${wxLoc.lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=${tz}&forecast_days=1`;
+}
+async function reverseGeocode(lat, lon) {
+  try {
+    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ja`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const city = d.city || d.locality || d.principalSubdivision || '';
+    const country = d.countryName || '';
+    return [city, country].filter(Boolean).join(' · ') || null;
+  } catch (_) { return null; }
+}
+function _geoBtnState() {
+  const b = document.getElementById('wx-geo'); if (b) b.classList.toggle('active', !!wxLoc.geo);
+  const hd = document.getElementById('wx-loc-hd'); if (hd) hd.textContent = wxLoc.name || '—';
+}
+function geoOff() {
+  lsSet(GEO_KEY, { on: false });
+  wxLoc = { ...WX_DEFAULT_LOC }; clockTz = null; wxData = null;
+  _geoBtnState(); renderWeather('現在地OFF — 大津・滋賀に戻しました'); if (typeof tick === 'function') tick(); fetchWeather();
+}
+function geoOn() {
+  if (!navigator.geolocation) { renderWeather('この環境では現在地を使えません'); setTimeout(() => renderWeather(), 2500); return; }
+  renderWeather('現在地を取得中…（許可が必要です）');
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = +pos.coords.latitude.toFixed(4), lon = +pos.coords.longitude.toFixed(4);
+    const name = (await reverseGeocode(lat, lon)) || '現在地';
+    wxLoc = { lat, lon, name, tz: 'auto', geo: true }; clockTz = null; wxData = null;
+    lsSet(GEO_KEY, { on: true, lat, lon, name, tz: 'auto' });
+    _geoBtnState(); renderWeather('天気を取得中…'); if (typeof tick === 'function') tick();
+    fetchWeather();   // also pulls the IANA timezone → updates the clock
+  }, (err) => {
+    console.warn('[bmbrowser] geolocation:', err);
+    renderWeather(err && err.code === 1 ? '現在地の許可がありません' : '現在地を取得できませんでした');
+    setTimeout(() => renderWeather(), 2800);
+  }, { timeout: 9000, maximumAge: 10 * 60 * 1000 });
+}
+function toggleGeo() { wxLoc.geo ? geoOff() : geoOn(); }
 const WX_ART = {
   clear:  ['  \\|/  ', '--(o)--', '  /|\\  '],
   partly: [' \\|/.-.', '-o-(  )', '   (__)'],
@@ -559,6 +603,7 @@ function saveWxCache() { lsSet(WX_KEY, { data: wxData, fetchedAt: Date.now() });
 function renderWeather(msg) {
   const body = document.getElementById('wx-body'); if (!body) return;
   document.querySelectorAll('#wx-size [data-sz]').forEach((s) => s.classList.toggle('active', s.dataset.sz === weatherSize));
+  _geoBtnState();
   if (msg || !wxData) { body.className = ''; body.innerHTML = `<div class="wx-msg">${esc(msg || 'no data yet — ↻')}</div>`; return; }
   body.className = 'wx-body sz-' + weatherSize;
   const cat = wxCat(wxData.code);
@@ -566,17 +611,23 @@ function renderWeather(msg) {
   body.innerHTML =
     `<div class="wx-row"><pre class="wx-art">${esc((WX_ART[cat] || WX_ART.cloudy).join('\n'))}</pre>` +
     `<div class="wx-tx"><span class="wx-now">${r(wxData.temp)}°</span> <span class="wx-lbl">${esc(WX_LABEL[cat] || '')}</span><br>` +
-    `<span class="wx-hl">H ${r(wxData.max)}° / L ${r(wxData.min)}°</span> <span class="wx-loc">· ${esc(WX_LOC.name)}</span></div></div>`;
+    `<span class="wx-hl">H ${r(wxData.max)}° / L ${r(wxData.min)}°</span> <span class="wx-loc">· ${esc(wxLoc.name)}${wxLoc.geo ? ' ⌖' : ''}</span></div></div>`;
 }
 async function fetchWeather() {
   if (!wxData) renderWeather('loading weather…');
   try {
-    const res = await fetch(WX_URL, { cache: 'no-store' });
+    const res = await fetch(wxUrl(), { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const d = await res.json();
     const cur = d.current || {}, dly = d.daily || {};
     if (cur.temperature_2m == null) throw new Error('no data');
     wxData = { temp: cur.temperature_2m, code: (cur.weather_code != null ? cur.weather_code : (dly.weather_code && dly.weather_code[0]) || 3), max: (dly.temperature_2m_max && dly.temperature_2m_max[0]), min: (dly.temperature_2m_min && dly.temperature_2m_min[0]) };
+    // when on 現在地, Open-Meteo's `timezone=auto` echoes back the IANA tz — link the clock to it
+    if (wxLoc.geo && typeof d.timezone === 'string' && d.timezone && d.timezone !== 'auto') {
+      wxLoc.tz = d.timezone; clockTz = d.timezone;
+      lsSet(GEO_KEY, { on: true, lat: wxLoc.lat, lon: wxLoc.lon, name: wxLoc.name, tz: d.timezone });
+      if (typeof tick === 'function') tick();
+    }
     saveWxCache(); renderWeather();
   } catch (e) {
     console.warn('[bmbrowser] weather fetch:', e);
@@ -588,6 +639,7 @@ async function fetchWeather() {
   renderWeather();
   if (Date.now() - at > 30 * 60 * 1000) fetchWeather();
   document.getElementById('wx-refresh')?.addEventListener('click', fetchWeather);
+  document.getElementById('wx-geo')?.addEventListener('click', toggleGeo);
   document.querySelectorAll('#wx-size [data-sz]').forEach((s) => s.addEventListener('click', () => setWeatherSize(s.dataset.sz)));
   setInterval(fetchWeather, 30 * 60 * 1000);
 }
@@ -682,15 +734,30 @@ function bigDigits(s) {
   return out.join('\n');
 }
 function tick() {
-  const d = new Date(), p = (n) => String(n).padStart(2, '0');
-  const days = ['日', '月', '火', '水', '木', '金', '土'];
   const el = document.getElementById('clock'); if (!el) return;
-  const date = `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${days[d.getDay()]}`;
-  const time = `${p(d.getHours())}:${p(d.getMinutes())}`;
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  const p = (n) => String(n).padStart(2, '0');
+  let date, time, suffix = '';
+  if (clockTz) {   // 現在地ON → show that location's wall clock (linked to weather + place)
+    try {
+      const now = new Date();
+      const num = new Intl.DateTimeFormat('en-GB', { timeZone: clockTz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(now);
+      const g = (t) => (num.find(x => x.type === t) || {}).value || '';
+      const wd = new Intl.DateTimeFormat('ja-JP', { timeZone: clockTz, weekday: 'short' }).format(now);
+      date = `${g('year')}.${g('month')}.${g('day')} ${wd}`;
+      time = `${g('hour')}:${g('minute')}`;
+      suffix = ' ⌖';
+    } catch (_) { clockTz = null; }
+  }
+  if (!clockTz) {
+    const d = new Date();
+    date = `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${days[d.getDay()]}`;
+    time = `${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
   el.className = 'clock-w s-' + clockStyle;
-  if (clockStyle === 'large')      el.innerHTML = `<span class="ct">${esc(time)}</span><span class="cd">${esc(date)}</span>`;
-  else if (clockStyle === 'ascii') el.innerHTML = `<span class="ca">${esc(bigDigits(time))}</span><span class="cd">${esc(date)}</span>`;
-  else                             el.textContent = `${date} · ${time}`;
+  if (clockStyle === 'large')      el.innerHTML = `<span class="ct">${esc(time)}</span><span class="cd">${esc(date + suffix)}</span>`;
+  else if (clockStyle === 'ascii') el.innerHTML = `<span class="ca">${esc(bigDigits(time))}</span><span class="cd">${esc(date + suffix)}</span>`;
+  else                             el.textContent = `${date}${suffix} · ${time}`;
 }
 function cycleClock() { clockStyle = CLOCK_STYLES[(CLOCK_STYLES.indexOf(clockStyle) + 1) % CLOCK_STYLES.length]; try { localStorage.setItem(CLOCK_STYLE_KEY, clockStyle); } catch (_) {} tick(); }
 document.getElementById('clock')?.addEventListener('click', cycleClock);
@@ -700,8 +767,16 @@ tick(); setInterval(tick, 15_000);
 const PET_MODE_KEY = 'bm-browser.petMode.v1';
 const PET_MODES = ['mini', 'compact', 'full'];
 let petMode = PET_MODES.includes(localStorage.getItem(PET_MODE_KEY)) ? localStorage.getItem(PET_MODE_KEY) : 'compact';
-let petBlink = false, petGrin = false, petSpark = 0;
-const PET_SPARKS = ['✦', '✧', '·', '✧'];
+let petBlink = false, petGrin = false, petHop = false, petSpark = 0;
+const PET_SPARKS = ['✦', '✧', '＊', '✺', '·', '✦', '＊', '✧'];
+const PET_GRINS = [
+  { face: '＾▽＾', say: 'にこっ♪',  arms: true },
+  { face: '◕▽◕', say: 'わーい！',  arms: true },
+  { face: '＞ω＜', say: 'えへへ',    arms: false },
+  { face: '＾ｗ＾', say: 'やっほー',  arms: true },
+  { face: '✧▽✧', say: 'きらーん',  arms: false },
+];
+let petGrinCur = PET_GRINS[0];
 function _petMood() {
   const h = new Date().getHours();
   if (h >= 23 || h < 5)  return { face: '˘ω˘',  say: 'すやすや…' };
@@ -712,16 +787,16 @@ function _petMood() {
   return                        { face: 'ーωー', say: 'そろそろ夜だね' };
 }
 function _petFace() {
-  if (petGrin)  return { face: '＾▽＾', say: 'にこっ♪' };
+  if (petGrin)  return { face: petGrinCur.face, say: petGrinCur.say, arms: petGrinCur.arms };
   const m = _petMood();
   if (petBlink) return { face: 'ーᴗー', say: m.say };   // eyes closed
   return m;
 }
 function petRender() {
   const el = document.getElementById('pet'); if (!el) return;
-  el.className = 'pet-w m-' + petMode;
+  el.className = 'pet-w m-' + petMode + (petHop ? ' pet-hop' : '') + (petGrin ? ' pet-glee' : '');
   const f = _petFace();
-  const kao = '( ' + f.face + ' )';
+  const kao = (f.arms ? '\\( ' + f.face + ' )/' : '( ' + f.face + ' )');
   if (petMode === 'mini') {
     el.textContent = kao;
   } else if (petMode === 'compact') {
@@ -734,8 +809,14 @@ function petRender() {
 }
 function petTick() {
   petSpark++;
-  if (!petGrin && Math.random() < 0.04) { petGrin = true; petRender(); setTimeout(() => { petGrin = false; petRender(); }, 1500); return; }
-  if (!petGrin && Math.random() < 0.20) { petBlink = true; petRender(); setTimeout(() => { petBlink = false; petRender(); }, 170); return; }
+  if (!petGrin && Math.random() < 0.10) {            // big grin — picks a random pose, hops, then settles
+    petGrinCur = PET_GRINS[Math.floor(Math.random() * PET_GRINS.length)];
+    petGrin = true; petHop = true; petRender();
+    setTimeout(() => { petHop = false; petRender(); }, 520);
+    setTimeout(() => { petGrin = false; petRender(); }, 1700);
+    return;
+  }
+  if (!petGrin && Math.random() < 0.22) { petBlink = true; petRender(); setTimeout(() => { petBlink = false; petRender(); }, 160); return; }
   if (petMode === 'full') petRender();   // keep the sparkle moving even when not blinking
 }
 function cyclePet() { petMode = PET_MODES[(PET_MODES.indexOf(petMode) + 1) % PET_MODES.length]; try { localStorage.setItem(PET_MODE_KEY, petMode); } catch (_) {} petRender(); }
