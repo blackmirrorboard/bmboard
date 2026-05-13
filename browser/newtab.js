@@ -467,7 +467,7 @@ const NEWS_SOURCES = {
 // 現在地ON → the Google source follows the detected country (per-user "今いる国" のニュース)
 const CC_LANG = { JP:'ja', US:'en', GB:'en', CA:'en', AU:'en', NZ:'en', IE:'en', IN:'en', SG:'en', PH:'en', ZA:'en', FR:'fr', DE:'de', AT:'de', CH:'de', ES:'es', MX:'es-419', AR:'es-419', CL:'es-419', CO:'es-419', IT:'it', NL:'nl', BE:'nl', PT:'pt-PT', BR:'pt-BR', SE:'sv', NO:'no', DK:'da', FI:'fi', PL:'pl', CZ:'cs', RU:'ru', UA:'uk', TR:'tr', GR:'el', KR:'ko', CN:'zh-CN', TW:'zh-TW', HK:'zh-HK', TH:'th', ID:'id', VN:'vi', MY:'ms', AE:'ar', SA:'ar', EG:'ar', IL:'he' };
 function googleNewsUrl() {
-  const cc = geoCC();
+  let cc = ''; try { cc = geoCC(); } catch (_) {}
   if (cc) { const lang = CC_LANG[cc] || 'en'; return `https://news.google.com/rss?hl=${lang}&gl=${cc}&ceid=${cc}:${lang}`; }
   return NEWS_SOURCES.google.url;
 }
@@ -475,7 +475,12 @@ const NEWS_VIEW_KEY = 'bm-browser.newsView.v1', NEWS_SOURCE_KEY = 'bm-browser.ne
 let newsItems = [];
 let newsView   = (localStorage.getItem(NEWS_VIEW_KEY) === 'list') ? 'list' : 'ticker';
 let newsSource = NEWS_SOURCES[localStorage.getItem(NEWS_SOURCE_KEY)] ? localStorage.getItem(NEWS_SOURCE_KEY) : 'hn';
-function newsCacheKey() { return 'bm-browser.news.v1.' + newsSource + ((newsSource === 'google' && geoCC()) ? '.' + geoCC() : ''); }
+function newsCacheKey() {
+  // geoCC() reads wxLoc, which is declared later (weather section) → still in the TDZ
+  // when this runs from the news init block. Guard so the init doesn't throw.
+  let cc = ''; try { cc = geoCC(); } catch (_) {}
+  return 'bm-browser.news.v1.' + newsSource + ((newsSource === 'google' && cc) ? '.' + cc : '');
+}
 function loadNewsCache() { const c = lsGet(newsCacheKey()); if (c && Array.isArray(c.items) && c.items.length) { newsItems = c.items; return c.fetchedAt || 0; } newsItems = []; return 0; }
 function saveNewsCache() { lsSet(newsCacheKey(), { items: newsItems, fetchedAt: Date.now() }); }
 function newsUrl(it) { return it.url || (it.objectID ? `https://news.ycombinator.com/item?id=${it.objectID}` : '#'); }
@@ -573,7 +578,10 @@ function _geoBtnState() {
   const b = document.getElementById('wx-geo'); if (b) b.classList.toggle('active', !!wxLoc.geo);
   const hd = document.getElementById('wx-loc-hd'); if (hd) hd.textContent = wxLoc.name || '—';
   if (typeof renderLocation === 'function') renderLocation();
-  const mc = document.getElementById('mk-cur'); if (mc) mc.textContent = mkCurrency().toUpperCase();
+  // mkCurrency() reads MK_CUR (a const declared later in the markets section) — on the
+  // very first render that const is still in the TDZ, so guard it. renderMarkets() sets
+  // #mk-cur correctly once the markets section initialises.
+  try { const mc = document.getElementById('mk-cur'); if (mc) mc.textContent = mkCurrency().toUpperCase(); } catch (_) {}
 }
 function _refreshGeoLinked() {   // re-pull weather/news/markets/clock after the location changes
   if (typeof tick === 'function') tick();
