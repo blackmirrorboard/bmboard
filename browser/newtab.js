@@ -160,7 +160,7 @@ const WIDGET_DEFS = {
   clock:     { title: 'clock',      icon: '⏱', desc: '時計（クリックで small / large / ascii）' },
   pet:       { title: 'にこちゃん',  icon: '◡', desc: 'たまごっち風 — 時間帯で表情が変わる（クリックで mini / compact / full）' },
 };
-const WIDGET_ORDER_DEFAULT = ['cta', 'prompt', 'bookmarks', 'memo', 'news', 'weather', 'markets', 'clock', 'pet'];
+const WIDGET_ORDER_DEFAULT = ['cta', 'prompt', 'bookmarks', 'news', 'memo', 'weather', 'markets', 'clock', 'pet'];
 const WIDGETS_KEY = 'bm-browser.widgets.v1';
 function loadWidgets() {
   const w = lsGet(WIDGETS_KEY) || {};
