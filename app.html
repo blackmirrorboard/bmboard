@@ -617,18 +617,6 @@
             display: none;
             z-index: 30;
         }
-        #textHint {
-            font-family: 'Courier New', monospace;
-            font-size: 9px;
-            color: rgba(128,128,128,0.55);
-            letter-spacing: 0.04em;
-            margin-top: 2px;
-            white-space: nowrap;
-            pointer-events: none;
-            user-select: none;
-        }
-        body.bm-dark #textHint { color: rgba(240,237,230,0.40); }
-        body.bm-gray #textHint { color: rgba(22,0,162,0.45); }
 
         #textOverlay input,
         #textOverlay textarea {
@@ -647,19 +635,6 @@
             line-height: 1.22;
             white-space: pre;
             vertical-align: top;
-        }
-        /* Touch / mobile only: tight box (padding:0, line-height:1) so the visible
-           glyph TOP aligns precisely with the textarea's top edge — used by the
-           mobile-only WYSIWYG positioning math in showTextInput. PC keeps the
-           original loose box (which works correctly with the original math). */
-        @media (pointer: coarse) {
-            #textOverlay input,
-            #textOverlay textarea {
-                min-width: 60px;
-                padding: 0;
-                line-height: 1;
-                display: block;
-            }
         }
 
         #stickyEditor {
@@ -1599,7 +1574,6 @@
         <canvas id="c" draggable="false"></canvas>
         <div id="textOverlay">
             <textarea id="ti2" rows="1" autocomplete="off" spellcheck="false" placeholder="type…"></textarea>
-            <div id="textHint" aria-hidden="true">Enter=改行 ⇧+Enter=確定</div>
         </div>
         <textarea id="stickyEditor" spellcheck="false" placeholder="type…"></textarea>
         <div id="bmTimer" class="bm-timer" style="display:none">
@@ -5141,36 +5115,18 @@ const textInput   = document.getElementById('ti2');
 
 // editObj: existing text object to re-edit, or null for new text
 function showTextInput(p, editObj = null) {
+    S.textPos        = p;
+    S.editingTextId  = editObj ? editObj.id : null;
     // Use the same scale-compensated default as commitText so the input
     // size matches the post-commit rendered size (no pop on Enter).
     const _baseFs = 16;
     const _newFs = Math.max(_baseFs, Math.round(_baseFs / Math.max(0.01, VIEW.scale)));
     const fs  = editObj ? (editObj.data.fontSize || 16) : _newFs;
+    const sx  = p.x * VIEW.scale + VIEW.tx;
+    const sy  = p.y * VIEW.scale + VIEW.ty;
     // Vertical text anchors on the bbox top-left; horizontal text on the
-    // baseline — so only the latter needs the alignment math.
+    // baseline — so only the latter needs the one-line upward nudge.
     const _isVert = !!(editObj && editObj.data.vertical);
-    // Touch / mobile only: switch to WYSIWYG positioning (tap point = visible
-    // glyph top). PC (fine pointer) keeps the original input-above-tap layout
-    // which was working fine before.
-    const _isTouch = (typeof window.matchMedia === 'function') && !window.matchMedia('(pointer: fine)').matches;
-    let _pos = p;
-    let _topOffsetPx = fs * VIEW.scale;   // PC default: input top one font above tap baseline
-    if (_isTouch && !_isVert) {
-        // Measure the font's ascent so the input field and the eventual canvas
-        // text appear at the exact same screen position (no "jump" on commit).
-        const _ff = editObj && editObj.data && editObj.data.fontFamily ? editObj.data.fontFamily : undefined;
-        const _bold = !!(editObj && editObj.data && editObj.data.bold);
-        const _m = (typeof measureTextMetrics === 'function') ? measureTextMetrics('M', fs, _ff, _bold) : null;
-        const _ascent = (_m && _m.ascent) ? _m.ascent : (fs * 0.78);
-        // For NEW text only: shift the canvas y down by ascent so the rendered
-        // text's visible TOP lines up with the tap point.
-        if (!editObj) _pos = { x: p.x, y: p.y + _ascent };
-        _topOffsetPx = _ascent * VIEW.scale;
-    }
-    S.textPos        = _pos;
-    S.editingTextId  = editObj ? editObj.id : null;
-    const sx  = _pos.x * VIEW.scale + VIEW.tx;
-    const sy  = _pos.y * VIEW.scale + VIEW.ty;
     // Disable the terminal input while the board-text overlay is open. Otherwise
     // there are two visible text fields on the page, and iOS shows the keyboard's
     // prev/next field arrows — tapping them hops focus into the terminal, which
@@ -5179,10 +5135,16 @@ function showTextInput(p, editObj = null) {
     if (_termIn) { try { _termIn.blur(); } catch (_) {} _termIn.disabled = true; }
     textOverlay.style.display = 'block';
     textOverlay.style.left    = sx + 'px';
-    // PC: top = sy - fs (input bottom at tap baseline, original loose layout)
-    // Mobile: top = sy - ascent (input top at tap visible-text-top, WYSIWYG)
-    textOverlay.style.top     = (_isVert ? sy : sy - _topOffsetPx) + 'px';
-    textInput.style.fontSize  = Math.max(10, Math.round(fs * VIEW.scale)) + 'px';
+    textOverlay.style.top     = (_isVert ? sy : sy - fs * VIEW.scale) + 'px';
+    // iOS Safari auto-zooms in when an input has font-size < 16px on focus.
+    // The auto-zoom shifts the viewport and the input field appears in a
+    // confusing place. Force >= 16px CSS font-size on touch-only devices to
+    // suppress the zoom (the visible size will be a little larger than the
+    // eventual rendered text at low scale, but that's a much smaller annoyance
+    // than the page zooming mid-tap).
+    const _isTouch = (typeof window.matchMedia === 'function') && !window.matchMedia('(pointer: fine)').matches;
+    const _displayFs = _isTouch ? Math.max(16, Math.round(fs * VIEW.scale)) : Math.max(10, Math.round(fs * VIEW.scale));
+    textInput.style.fontSize  = _displayFs + 'px';
     textInput.value = editObj ? editObj.data.text : '';
     if (typeof _sizeTextInput === 'function') _sizeTextInput();
     // The click's default handling (mousedown focus-move + setPointerCapture on the
