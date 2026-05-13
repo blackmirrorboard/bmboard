@@ -24,11 +24,11 @@
     --font-term: "DotGothic16", ui-monospace, "SF Mono", Menlo, Consolas, monospace;  /* hacker terminal type — handles 日本語 */
     --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "JetBrains Mono", monospace; /* clean mono — top header + ASCII art */
     /* selectable background patterns ("old web" vibes) — reused by the picker previews */
-    --pat-grid: linear-gradient(rgba(51,255,51,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(51,255,51,.05) 1px, transparent 1px);
-    --pat-dots: radial-gradient(rgba(51,255,51,.08) 1.1px, transparent 1.5px);
-    --pat-scanlines: repeating-linear-gradient(0deg, transparent 0 2px, rgba(255,255,255,.03) 2px 3px);
-    --pat-stars: radial-gradient(1.3px 1.3px at 22px 34px, rgba(255,255,255,.8), transparent), radial-gradient(1px 1px at 108px 90px, rgba(255,255,255,.55), transparent), radial-gradient(1.5px 1.5px at 168px 28px, rgba(255,255,255,.85), transparent), radial-gradient(1px 1px at 60px 152px, rgba(255,255,255,.6), transparent), radial-gradient(1px 1px at 192px 132px, rgba(255,255,255,.5), transparent), radial-gradient(1.2px 1.2px at 132px 178px, rgba(255,255,255,.65), transparent), radial-gradient(1px 1px at 36px 112px, rgba(255,255,255,.45), transparent);
-    --pat-glow: radial-gradient(ellipse 75% 55% at 50% -5%, rgba(51,255,51,.08), transparent 72%);
+    --pat-grid: linear-gradient(rgba(51,255,51,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(51,255,51,.1) 1px, transparent 1px);
+    --pat-dots: radial-gradient(rgba(51,255,51,.14) 1.2px, transparent 1.7px);
+    --pat-scanlines: repeating-linear-gradient(0deg, transparent 0 2px, rgba(255,255,255,.06) 2px 3px);
+    --pat-stars: radial-gradient(1.4px 1.4px at 22px 34px, rgba(255,255,255,.95), transparent), radial-gradient(1.1px 1.1px at 108px 90px, rgba(255,255,255,.7), transparent), radial-gradient(1.6px 1.6px at 168px 28px, rgba(255,255,255,1), transparent), radial-gradient(1.1px 1.1px at 60px 152px, rgba(255,255,255,.75), transparent), radial-gradient(1.1px 1.1px at 192px 132px, rgba(255,255,255,.65), transparent), radial-gradient(1.3px 1.3px at 132px 178px, rgba(255,255,255,.8), transparent), radial-gradient(1.1px 1.1px at 36px 112px, rgba(255,255,255,.6), transparent);
+    --pat-glow: radial-gradient(ellipse 82% 60% at 50% -5%, rgba(51,255,51,.14), transparent 72%);
   }
   body.light {   /* light theme — for visibility. same "base = key colour, cut-outs = page bg" rule still holds */
     --bg:#faf9f4; --bg-1:#f0eee6; --bg-2:#e6e3d8; --bg-cta:#ecf3e6;
@@ -50,13 +50,25 @@
   .wrap { width:100%; max-width:640px; overflow-x:hidden; }
 
   /* ── selectable backgrounds ── */
+  /* tiled patterns: just set background-image on body (tiling handles tall pages fine) */
   body.bg-grid      { background-image:var(--pat-grid); background-size:28px 28px; }
   body.bg-dots      { background-image:var(--pat-dots); background-size:16px 16px; }
   body.bg-scanlines { background-image:var(--pat-scanlines); }
   body.bg-stars     { background-image:var(--pat-stars); background-size:210px 210px; }
-  body.bg-glow      { background-image:var(--pat-glow); background-attachment:fixed; }
-  body.bg-custom    { background-size:cover; background-position:center; background-attachment:fixed; }
-  body.bg-custom::before { content:''; position:fixed; inset:0; background:rgba(0,0,0,.55); pointer-events:none; z-index:-1; }
+  /* glow + custom image: viewport-fixed ::before/::after (iOS-safe — `background-attachment:fixed` is broken there) */
+  body.bg-glow::before   { content:''; position:fixed; inset:0; background:var(--pat-glow); z-index:-1; pointer-events:none; }
+  body.bg-custom::before { content:''; position:fixed; inset:0; background-image:var(--custom-bg); background-size:cover; background-position:center; z-index:-2; pointer-events:none; }
+  body.bg-custom::after  { content:''; position:fixed; inset:0; background:rgba(0,0,0,.34); z-index:-1; pointer-events:none; }
+  body.light.bg-custom::after { background:rgba(250,249,244,.42); }
+  /* with ANY non-default background → make the widget cards translucent so the page bg shows through (works for any image, dark or light) */
+  body.has-bg { --bg-1:rgba(10,10,10,.62); --bg-2:rgba(20,26,20,.7); --bg-cta:rgba(14,26,12,.64); }
+  body.light.has-bg { --bg-1:rgba(244,242,233,.7); --bg-2:rgba(232,231,225,.78); --bg-cta:rgba(238,245,232,.72); }
+  body.has-bg .cta, body.has-bg .prompt, body.has-bg .ticker, body.has-bg .news-list, body.has-bg .news-msg,
+  body.has-bg .memo-ta, body.has-bg .mk-body, body.has-bg .mk-msg, body.has-bg .wx-body, body.has-bg .wx-msg, body.has-bg .bk {
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  }
+  body.has-bg .aa-card { background-color:rgba(0,0,0,.4); border-color:var(--line); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
+  body.light.has-bg .aa-card { background-color:rgba(255,255,255,.5); }
   /* bg picker modal */
   .bg-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
   .bg-tile { cursor:pointer; text-align:center; }
@@ -145,7 +157,8 @@
   .w-bar .w-handle { cursor:grab; color:var(--green-faint); user-select:none; font-size:14px; line-height:1; padding:0 2px; }
   .w-bar .w-handle:active { cursor:grabbing; }
   .w-bar .w-title { flex:1; }
-  .w-bar .w-hide { background:transparent; border:0; color:var(--gray); font:inherit; font-size:14px; line-height:1; cursor:pointer; padding:0 2px; }
+  .w-bar .w-up, .w-bar .w-down, .w-bar .w-hide { background:transparent; border:0; color:var(--gray); font:inherit; font-size:14px; line-height:1; cursor:pointer; padding:0 3px; }
+  .w-bar .w-up:hover, .w-bar .w-down:hover { color:var(--green); }
   .w-bar .w-hide:hover { color:var(--red); }
 
   /* ── widget: CTA ── */
@@ -464,7 +477,7 @@
       <div><span class="k">edit</span><span class="c">編集モード — ウィジェットのドラッグ並べ替え・表示/非表示、ブックマークの編集</span></div>
       <div><span class="k">? / help</span><span class="c">このリスト</span></div>
       <div><span class="k">Ctrl + .</span><span class="c">「仕事してますモード」— 画面いっぱいにコードを流す（Ctrl + ` でも可。任意のキー / クリックで戻る）</span></div>
-      <div style="margin-top:6px;color:var(--green-faint)">編集モード: ✎ edit → ⠿ でウィジェットをドラッグ並べ替え · ✕ で非表示 · ブックマークに ↑↓✎✕</div>
+      <div style="margin-top:6px;color:var(--green-faint)">編集モード: ✎ edit → ウィジェットを ⠿ ドラッグ（PC）or ↑↓ で並べ替え · ✕ で非表示 · ブックマークに ↑↓✎✕</div>
     </div>
 
     <div class="foot">

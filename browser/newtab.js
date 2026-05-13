@@ -32,13 +32,14 @@ const BG_OPTIONS = [
 const BG_PATTERNS = ['grid', 'dots', 'scanlines', 'stars', 'glow'];
 let bgSetting = localStorage.getItem(BG_KEY) || 'none';
 function applyBg() {
-  Array.from(document.body.classList).forEach((c) => { if (c.indexOf('bg-') === 0) document.body.classList.remove(c); });
+  Array.from(document.body.classList).forEach((c) => { if (c.indexOf('bg-') === 0 || c === 'has-bg') document.body.classList.remove(c); });
+  document.body.style.removeProperty('--custom-bg');
   document.body.style.backgroundImage = '';
   if (bgSetting && bgSetting.indexOf('custom:') === 0) {
-    document.body.classList.add('bg-custom');
-    document.body.style.backgroundImage = 'url("' + bgSetting.slice(7).replace(/["\\\n]/g, '') + '")';
+    document.body.classList.add('bg-custom', 'has-bg');
+    document.body.style.setProperty('--custom-bg', 'url("' + bgSetting.slice(7).replace(/["\\\n]/g, '') + '")');
   } else if (BG_PATTERNS.includes(bgSetting)) {
-    document.body.classList.add('bg-' + bgSetting);
+    document.body.classList.add('bg-' + bgSetting, 'has-bg');
   }
 }
 function setBg(v) { bgSetting = v || 'none'; try { localStorage.setItem(BG_KEY, bgSetting); } catch (_) {} applyBg(); }
@@ -174,6 +175,16 @@ function renderAddBar() {
 }
 
 function toggleEdit() { editMode = !editMode; applyWidgets(); }
+// reorder a widget by one step, skipping hidden neighbours (works on touch — drag doesn't)
+function moveWidget(id, delta) {
+  const ord = widgetState.order.slice();
+  const i = ord.indexOf(id); if (i < 0) return;
+  let j = i + delta;
+  while (j >= 0 && j < ord.length && widgetState.hidden.has(ord[j])) j += delta;
+  if (j < 0 || j >= ord.length) return;
+  [ord[i], ord[j]] = [ord[j], ord[i]];
+  widgetState.order = ord; saveWidgets(); applyWidgets();
+}
 
 // ── widgets modal: pick which widgets to show ──
 function openWidgetModal() {
@@ -190,7 +201,7 @@ function openWidgetModal() {
   }).join('');
   card.innerHTML =
     `<div class="wg-h">◼ WIDGETS</div>` +
-    `<div class="wg-sub">表示するウィジェットを選ぶ。<br>並べ替えは <b style="color:var(--green-bright)">✎ edit</b> に入って ⠿ をドラッグ。</div>` +
+    `<div class="wg-sub">表示するウィジェットを選ぶ。<br>並べ替えは <b style="color:var(--green-bright)">✎ edit</b> に入って ⠿ ドラッグ（PC）or ↑↓ ボタン（モバイルも）。</div>` +
     `<div class="wg-rows">${rowsHTML()}</div>` +
     `<div class="wg-foot"><button class="wg-done">done</button></div>`;
   ov.appendChild(card); document.body.appendChild(ov);
@@ -206,10 +217,19 @@ function openWidgetModal() {
   ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
 }
 
-// hide buttons + drag wiring (once — widgets are static, edit mode just moves them)
+// hide / reorder / drag wiring (once — widgets are static, edit mode just moves them)
 stackEl.querySelectorAll('.widget').forEach((w) => {
   const id = w.dataset.wid;
+  const bar = w.querySelector('.w-bar');
   const hideBtn = w.querySelector('.w-hide');
+  // inject ↑↓ reorder buttons before the hide button (touch-friendly — HTML5 drag doesn't work on touch)
+  if (bar && hideBtn) {
+    const up = document.createElement('button'); up.className = 'w-up'; up.title = 'up'; up.textContent = '↑';
+    const dn = document.createElement('button'); dn.className = 'w-down'; dn.title = 'down'; dn.textContent = '↓';
+    bar.insertBefore(up, hideBtn); bar.insertBefore(dn, hideBtn);
+    up.addEventListener('click', () => moveWidget(id, -1));
+    dn.addEventListener('click', () => moveWidget(id, +1));
+  }
   if (hideBtn) hideBtn.addEventListener('click', () => { widgetState.hidden.add(id); saveWidgets(); applyWidgets(); });
 
   const handle = w.querySelector('.w-handle');
