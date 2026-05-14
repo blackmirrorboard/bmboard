@@ -1450,6 +1450,175 @@
             main { padding-bottom: calc(44px + env(safe-area-inset-bottom, 0px)); }
         }
 
+        /* ── v1.3 Phase 2: Background layer (bg / bg-pattern commands) ── */
+        #bgLayer {
+            position: absolute;
+            inset: 0;
+            z-index: 0;          /* under canvas-panel::before (grid) at z:1 */
+            pointer-events: none;
+            background-color: transparent;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 1;
+            transition: opacity .2s;
+        }
+        #bgLayer.is-pattern {
+            background-size: 32px 32px;
+            background-repeat: repeat;
+        }
+
+        /* ── v1.3 Phase 2: Palette modal — opens on `palette load <name>` ── */
+        #paletteOverlay {
+            position: fixed; inset: 0;
+            background: rgba(8,8,8,0.88);
+            z-index: 400;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #paletteOverlay.open { display: flex; }
+        .palette-card {
+            background: #0c0c0c;
+            border: 1px solid var(--line, #2a2a2a);
+            padding: 22px 24px 20px;
+            width: 100%;
+            max-width: 480px;
+            color: #eee;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+        .palette-card .pal-h {
+            font-size: 11px; letter-spacing: 0.18em;
+            color: #888; margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .palette-card h3 {
+            font-size: 18px; font-weight: 600;
+            margin-bottom: 16px; color: #fff;
+        }
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px; margin: 12px 0 8px;
+        }
+        .palette-swatch {
+            aspect-ratio: 1;
+            border: 1px solid rgba(255,255,255,0.18);
+            cursor: pointer;
+            position: relative;
+            background: transparent;
+            padding: 0;
+            font-family: inherit;
+            color: #fff;
+            transition: transform .15s, border-color .15s;
+            overflow: hidden;
+        }
+        .palette-swatch:hover { transform: scale(1.04); border-color: #fff; }
+        .palette-swatch::after {
+            content: attr(data-hex);
+            position: absolute;
+            left: 4px; bottom: 4px;
+            font-size: 9.5px;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.4);
+            font-family: monospace;
+            letter-spacing: 0;
+        }
+        .palette-card .pal-foot {
+            margin-top: 12px;
+            font-size: 10.5px;
+            color: #666;
+            text-align: center;
+            letter-spacing: 0.04em;
+        }
+
+        /* ── v1.3: TPL picker modal — opens on `tpl` (no args) or `tpl ?` ── */
+        #tplOverlay {
+            position: fixed; inset: 0;
+            background: rgba(8,8,8,0.88);
+            z-index: 400;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #tplOverlay.open { display: flex; }
+        .tpl-card {
+            background: #0c0c0c;
+            border: 1px solid var(--line, #2a2a2a);
+            padding: 22px 24px 20px;
+            width: 100%;
+            max-width: 480px;
+            color: #eee;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+        .tpl-card .tpl-h {
+            font-size: 11px; letter-spacing: 0.18em;
+            color: #888; margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .tpl-card h3 {
+            font-size: 18px; font-weight: 600;
+            margin-bottom: 16px; color: #fff;
+        }
+        .tpl-card .tpl-list {
+            display: flex; flex-direction: column;
+            gap: 8px; margin: 12px 0 6px;
+        }
+        .tpl-card .tpl-item {
+            background: transparent;
+            border: 1px solid #2a2a2a;
+            padding: 11px 13px;
+            color: #eee;
+            font-family: inherit;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            transition: border-color .15s, background .15s;
+        }
+        .tpl-card .tpl-item:hover, .tpl-card .tpl-item:focus-visible {
+            border-color: #fff;
+            background: rgba(255,255,255,0.04);
+            outline: none;
+        }
+        .tpl-card .tpl-name {
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.06em;
+            color: #fff;
+        }
+        .tpl-card .tpl-desc {
+            color: #888;
+            font-size: 11.5px;
+        }
+        .tpl-close {
+            position: absolute;
+            top: 8px; right: 10px;
+            background: transparent;
+            border: none;
+            color: #aaa;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-family: inherit;
+            line-height: 1;
+        }
+        .tpl-close:hover { color: #fff; }
+        .tpl-card .tpl-foot {
+            margin-top: 10px;
+            font-size: 10.5px;
+            color: #666;
+            text-align: center;
+            letter-spacing: 0.04em;
+        }
+
         /* ── v1.3: GIF on canvas — animated overlay layer (additive only) ── */
         #gif-overlay-layer {
             position: absolute;
@@ -1613,7 +1782,49 @@
              autocorrect="off"
              autocapitalize="off"
              autocomplete="off">
+        <!-- v1.3 Phase 2: bg layer (set via `bg <url>` / `bg-pattern <name>`).
+             Sits under the canvas-panel grid pseudo + canvas — additive only. -->
+        <div id="bgLayer" aria-hidden="true"></div>
         <canvas id="c" draggable="false"></canvas>
+        <!-- v1.3 Phase 2: Palette modal (opens on `palette load <name>`).
+             Shows swatch grid, click to copy hex to clipboard, X / Esc to close. -->
+        <div id="paletteOverlay" onclick="if(event.target===event.currentTarget)closePaletteModal()" aria-hidden="true">
+            <div class="palette-card" role="dialog" aria-label="Palette">
+                <button class="tpl-close" type="button" onclick="closePaletteModal()" aria-label="close">✕</button>
+                <div class="pal-h">▮ PALETTE</div>
+                <h3 id="paletteNameH"></h3>
+                <div class="palette-grid" id="paletteGrid"></div>
+                <div class="pal-foot">click swatch → copy hex · Esc / ✕ to close</div>
+            </div>
+        </div>
+        <!-- v1.3: TPL picker modal (opens on `tpl` no-args or `tpl ?`). Shows
+             template choices with click-to-place + X / Esc / outside-click to close. -->
+        <div id="tplOverlay" onclick="if(event.target===event.currentTarget)closeTplPicker()" aria-hidden="true">
+            <div class="tpl-card" role="dialog" aria-label="Templates">
+                <button class="tpl-close" type="button" onclick="closeTplPicker()" aria-label="close">✕</button>
+                <div class="tpl-h">▮ TPL · TEMPLATES</div>
+                <h3>tpl &lt;name&gt;</h3>
+                <div class="tpl-list">
+                    <button class="tpl-item" type="button" onclick="pickTplFromModal('wireframe')">
+                        <span class="tpl-name">wireframe</span>
+                        <span class="tpl-desc">720×480 web mock — header / sidebar / content / nav</span>
+                    </button>
+                    <button class="tpl-item" type="button" onclick="pickTplFromModal('kanban')">
+                        <span class="tpl-name">kanban</span>
+                        <span class="tpl-desc">3 columns — TODO / DOING / DONE — 3 stickies each</span>
+                    </button>
+                    <button class="tpl-item" type="button" onclick="pickTplFromModal('mindmap')">
+                        <span class="tpl-name">mindmap</span>
+                        <span class="tpl-desc">center TOPIC + 6 branches with arrows</span>
+                    </button>
+                    <button class="tpl-item" type="button" onclick="pickTplFromModal('moodboard')">
+                        <span class="tpl-name">moodboard</span>
+                        <span class="tpl-desc">3×2 image placeholders + 4 tag stickies</span>
+                    </button>
+                </div>
+                <div class="tpl-foot">click to place · Esc / ✕ to close</div>
+            </div>
+        </div>
         <!-- v1.3: GIF on canvas — animated <img> overlay layer (additive only).
              Only image objects whose src is a GIF use this; everything else
              keeps the existing canvas drawImage path. Pencil / text / sticky /
@@ -1864,7 +2075,19 @@
                             <code>left</code> / <code>center</code> / <code>right</code> / <code>top</code> / <code>middle</code> / <code>bottom</code>
 <b>distribute h | v</b>      evenly space 3+ selected objects (by center)
 <b>tpl &lt;name&gt;</b>             instant scaffold at view center:
-                            <code>wireframe</code> · <code>kanban</code> · <code>mindmap</code> · <code>moodboard</code></pre>
+                            <code>wireframe</code> · <code>kanban</code> · <code>mindmap</code> · <code>moodboard</code>
+                            <code>tpl</code> alone opens a picker modal
+
+<b>palette save &lt;name&gt;</b>     save canvas colors as palette
+<b>palette load &lt;name&gt;</b>     open swatch modal (click to copy hex)
+<b>palette retint &lt;name&gt;</b>   re-tint all objects with palette colors
+<b>palette list</b>             list saved palettes
+<b>bg &lt;url&gt;</b>                 set canvas background image
+<b>bg-pattern &lt;name&gt;</b>       <code>dots</code> / <code>grid</code> / <code>cross</code> / <code>dotted-grid</code> / <code>stripes</code>
+<b>bg-opacity 0-100</b>        adjust background layer opacity
+<b>bg none</b>                  clear background
+<b>auto-theme on | off</b>     auto switch dark/light by hour
+<b>auto-theme on 6 19</b>      custom morning / evening hours</pre>
         <h3>TOOLS</h3>
         <pre><b>↑ Select</b>   tap/click · drag to move · Del to delete
          ↳ drag ○ handle above box to rotate
@@ -7383,6 +7606,177 @@ function runCommand(val) {
         return;
     }
 
+    // ── bg / bg-pattern — canvas background image or pattern (v1.3 Phase 2) ──
+    //   bg <url>                  set background image (URL or data URI)
+    //   bg none / bg off          clear background
+    //   bg-pattern dots|grid|cross|dotted-grid|stripes
+    //   bg-opacity 0-100          adjust background opacity
+    if (head === 'bg' || head === 'background') {
+        const arg = (rest || '').trim();
+        const bg = document.getElementById('bgLayer');
+        if (!bg) { printRaw('bg: layer not found', 't-err'); return; }
+        if (!arg || arg === 'none' || arg === 'off' || arg === 'clear') {
+            bg.style.backgroundImage = '';
+            bg.classList.remove('is-pattern');
+            try { localStorage.removeItem('bm_bgLayer'); } catch (_) {}
+            printRaw('[bg] cleared', 't-ok');
+            return;
+        }
+        // Treat anything else as a URL (http/https/data:)
+        if (/^(https?:\/\/|data:image\/|\/|\.\/)/.test(arg)) {
+            bg.style.backgroundImage = `url("${arg.replace(/"/g, '%22')}")`;
+            bg.classList.remove('is-pattern');
+            try { localStorage.setItem('bm_bgLayer', JSON.stringify({ url: arg })); } catch (_) {}
+            printRaw(`[bg] image set → ${arg.slice(0, 60)}${arg.length > 60 ? '...' : ''}`, 't-ok');
+            return;
+        }
+        printRaw('bg: usage → bg <url> | bg none | bg-pattern <name> | bg-opacity 0-100', 't-dim');
+        return;
+    }
+    if (head === 'bg-pattern' || head === 'bgpattern' || head === 'pattern') {
+        const name = (rest || '').trim().toLowerCase();
+        const bg = document.getElementById('bgLayer');
+        if (!bg) { printRaw('bg-pattern: layer not found', 't-err'); return; }
+        // Compact SVG pattern URIs (1-bit, opacity-friendly). Repeat tiles at 32px.
+        const PATTERNS = {
+            dots:        'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'%3E%3Ccircle cx=\'16\' cy=\'16\' r=\'2\' fill=\'%23000\' fill-opacity=\'0.18\'/%3E%3C/svg%3E")',
+            grid:        'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'%3E%3Crect width=\'32\' height=\'32\' fill=\'none\' stroke=\'%23000\' stroke-width=\'0.5\' stroke-opacity=\'0.22\'/%3E%3C/svg%3E")',
+            cross:       'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'%3E%3Cpath d=\'M14 16h4M16 14v4\' stroke=\'%23000\' stroke-width=\'0.8\' stroke-opacity=\'0.25\'/%3E%3C/svg%3E")',
+            'dotted-grid': 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'%3E%3Ccircle cx=\'0\' cy=\'0\' r=\'1\' fill=\'%23000\' fill-opacity=\'0.28\'/%3E%3Ccircle cx=\'32\' cy=\'0\' r=\'1\' fill=\'%23000\' fill-opacity=\'0.28\'/%3E%3Ccircle cx=\'0\' cy=\'32\' r=\'1\' fill=\'%23000\' fill-opacity=\'0.28\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'1\' fill=\'%23000\' fill-opacity=\'0.28\'/%3E%3C/svg%3E")',
+            stripes:     'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'8\' height=\'8\'%3E%3Cpath d=\'M0 8 L8 0\' stroke=\'%23000\' stroke-width=\'0.6\' stroke-opacity=\'0.20\'/%3E%3C/svg%3E")',
+        };
+        if (!name || name === '?' || name === 'list' || name === 'help') {
+            printRaw(`bg-pattern: usage → bg-pattern <${Object.keys(PATTERNS).join(' | ')}>`, 't-dim');
+            return;
+        }
+        if (!PATTERNS[name]) { printRaw(`bg-pattern: unknown "${name}"`, 't-err'); return; }
+        bg.style.backgroundImage = PATTERNS[name];
+        bg.classList.add('is-pattern');
+        try { localStorage.setItem('bm_bgLayer', JSON.stringify({ pattern: name })); } catch (_) {}
+        printRaw(`[bg-pattern] ${name}`, 't-ok');
+        return;
+    }
+    if (head === 'bg-opacity' || head === 'bgopacity') {
+        const v = parseInt((rest || '').trim(), 10);
+        const bg = document.getElementById('bgLayer');
+        if (!bg) { printRaw('bg-opacity: layer not found', 't-err'); return; }
+        if (!Number.isFinite(v) || v < 0 || v > 100) { printRaw('bg-opacity: usage → bg-opacity 0-100', 't-dim'); return; }
+        bg.style.opacity = (v / 100).toString();
+        try {
+            const cur = JSON.parse(localStorage.getItem('bm_bgLayer') || '{}');
+            cur.opacity = v;
+            localStorage.setItem('bm_bgLayer', JSON.stringify(cur));
+        } catch (_) {}
+        printRaw(`[bg-opacity] ${v}%`, 't-ok');
+        return;
+    }
+
+    // ── palette save / load / retint / list / delete (v1.3 Phase 2) ──
+    //   palette save sunset      extract canvas colors → save as "sunset"
+    //   palette load sunset      open swatch modal
+    //   palette retint sunset    re-tint all object stroke/fill via palette cycle
+    //   palette list             list all saved palettes
+    //   palette delete sunset    remove
+    if (head === 'palette' || head === 'pal') {
+        const args = (rest || '').trim().split(/\s+/).filter(Boolean);
+        const sub = (args[0] || '').toLowerCase();
+        const palName = args.slice(1).join(' ').trim();
+        const _palKey = 'bm_palettes';
+        const _palGetAll = () => { try { return JSON.parse(localStorage.getItem(_palKey) || '{}'); } catch (_) { return {}; } };
+        const _palSetAll = (m) => { try { localStorage.setItem(_palKey, JSON.stringify(m)); } catch (_) {} };
+        const _palExtract = () => {
+            const counts = {};
+            for (const o of S.objects) {
+                for (const c of [o.data && o.data.stroke, o.data && o.data.fill, o.data && o.data.color]) {
+                    if (!c || c === 'none' || c === 'transparent') continue;
+                    if (typeof c !== 'string') continue;
+                    counts[c] = (counts[c] || 0) + 1;
+                }
+            }
+            return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([c]) => c);
+        };
+        const pals = _palGetAll();
+
+        if (sub === 'save') {
+            if (!palName) { printRaw('palette save: name required → palette save <name>', 't-err'); return; }
+            const colors = _palExtract();
+            if (!colors.length) { printRaw('palette save: no colors on canvas (draw something first)', 't-err'); return; }
+            pals[palName] = colors;
+            _palSetAll(pals);
+            printRaw(`[palette] saved "${palName}" — ${colors.length} colors`, 't-ok');
+            return;
+        }
+        if (sub === 'load' || sub === 'show' || sub === 'open') {
+            if (!palName) { printRaw('palette load: name required → palette load <name>', 't-err'); return; }
+            if (!pals[palName]) { printRaw(`palette: "${palName}" not found`, 't-err'); return; }
+            if (typeof openPaletteModal === 'function') openPaletteModal(palName, pals[palName]);
+            else { pals[palName].forEach((c, i) => printRaw(`  ${String(i + 1).padStart(2, '0')}. ${c}`, '')); }
+            return;
+        }
+        if (sub === 'list' || !sub) {
+            const keys = Object.keys(pals);
+            if (!keys.length) { printRaw('palette: no saved palettes. try: palette save <name>', 't-dim'); return; }
+            printRaw(`▮ palettes (${keys.length}):`, 't-ok');
+            keys.forEach(k => printRaw(`  ${k} — ${pals[k].length} colors`, ''));
+            printRaw('  use: palette load <name> · palette retint <name>', 't-dim');
+            return;
+        }
+        if (sub === 'delete' || sub === 'forget' || sub === 'rm') {
+            if (!palName) { printRaw('palette delete: name required', 't-err'); return; }
+            if (!pals[palName]) { printRaw(`palette: "${palName}" not found`, 't-err'); return; }
+            delete pals[palName]; _palSetAll(pals);
+            printRaw(`[palette] deleted "${palName}"`, 't-ok');
+            return;
+        }
+        if (sub === 'retint' || sub === 'apply') {
+            if (!palName) { printRaw('palette retint: name required → palette retint <name>', 't-err'); return; }
+            if (!pals[palName]) { printRaw(`palette: "${palName}" not found`, 't-err'); return; }
+            const colors = pals[palName];
+            let i = 0, retinted = 0;
+            for (const o of S.objects) {
+                const c = colors[i % colors.length];
+                if (o.data && o.data.stroke && o.data.stroke !== 'none') { o.data.stroke = c; retinted++; }
+                if (o.data && o.data.fill && o.data.fill !== 'none') { o.data.fill = c; retinted++; }
+                if (o.data && o.data.color) { o.data.color = c; retinted++; }
+                i++;
+            }
+            saveHistory(); redrawAll();
+            printRaw(`[palette] retint with "${palName}" — ${retinted} property changes`, 't-ok');
+            return;
+        }
+        printRaw('palette: usage → palette save <name> | load <name> | retint <name> | list | delete <name>', 't-dim');
+        return;
+    }
+
+    // ── auto-theme — switch dark/light by hour (v1.3 Phase 2, additive) ──
+    //   auto-theme on               → light 7-18, dark otherwise (default hours)
+    //   auto-theme on 6 19          → custom morning / evening hours
+    //   auto-theme off              → stop
+    if (head === 'auto-theme' || head === 'autotheme') {
+        const args = (rest || '').trim().split(/\s+/).filter(Boolean);
+        const first = (args[0] || '').toLowerCase();
+        if (first === 'off' || first === 'stop') {
+            if (typeof _autoThemeStop === 'function') _autoThemeStop();
+            try { localStorage.setItem('bm_autoTheme', JSON.stringify({ on: false })); } catch (_) {}
+            printRaw('[auto-theme] OFF', 't-ok');
+            return;
+        }
+        if (first === 'on' || !first) {
+            if (args.length >= 3) {
+                const m = parseInt(args[1], 10);
+                const e = parseInt(args[2], 10);
+                if (Number.isFinite(m) && m >= 0 && m < 24) _autoThemeMorning = m;
+                if (Number.isFinite(e) && e >= 0 && e < 24) _autoThemeEvening = e;
+            }
+            if (typeof _autoThemeStart === 'function') _autoThemeStart();
+            try { localStorage.setItem('bm_autoTheme', JSON.stringify({ on: true, morning: _autoThemeMorning, evening: _autoThemeEvening })); } catch (_) {}
+            printRaw(`[auto-theme] ON · light ${_autoThemeMorning}:00–${_autoThemeEvening}:00 · dark otherwise`, 't-ok');
+            return;
+        }
+        printRaw('auto-theme: usage → auto-theme on | off | on <morning_h> <evening_h>', 't-dim');
+        return;
+    }
+
     // ── tpl / template — instant scaffolds (v1.3 addition) ──
     //   tpl wireframe | kanban | mindmap | moodboard
     // Places a pre-arranged set of objects (squares / stickies / text / arrows)
@@ -7484,7 +7878,9 @@ function runCommand(val) {
             },
         };
         if (!name || name === 'list' || name === 'help' || name === '?') {
-            printRaw(`tpl: usage → tpl <${Object.keys(TPL).join(' | ')}>`, 't-dim');
+            // v1.3: open the picker modal instead of a dim terminal line.
+            if (typeof openTplPicker === 'function') openTplPicker();
+            else printRaw(`tpl: usage → tpl <${Object.keys(TPL).join(' | ')}>`, 't-dim');
             return;
         }
         if (!TPL[name]) {
@@ -8922,6 +9318,102 @@ document.addEventListener('keyup', e => {
 
 function openUsage()  { document.getElementById('usageOverlay').classList.add('open'); }
 function closeUsage() { document.getElementById('usageOverlay').classList.remove('open'); }
+
+// v1.3 Phase 2: Restore bg layer settings on load
+(function () {
+    try {
+        const v = localStorage.getItem('bm_bgLayer');
+        if (!v) return;
+        const parsed = JSON.parse(v);
+        const apply = () => {
+            const bg = document.getElementById('bgLayer');
+            if (!bg) return;
+            if (parsed.url) { bg.style.backgroundImage = `url("${parsed.url.replace(/"/g, '%22')}")`; bg.classList.remove('is-pattern'); }
+            else if (parsed.pattern) {
+                // Re-run via runCommand for pattern (so PATTERNS is the source of truth)
+                if (typeof runCommand === 'function') runCommand('bg-pattern ' + parsed.pattern);
+            }
+            if (Number.isFinite(parsed.opacity)) bg.style.opacity = (parsed.opacity / 100).toString();
+        };
+        if (document.readyState === 'complete') apply();
+        else window.addEventListener('load', apply, { once: true });
+    } catch (_) {}
+})();
+
+// v1.3 Phase 2: Palette modal (open via `palette load <name>`)
+function openPaletteModal(name, colors) {
+    const overlay = document.getElementById('paletteOverlay');
+    const heading = document.getElementById('paletteNameH');
+    const grid = document.getElementById('paletteGrid');
+    if (!overlay || !heading || !grid) return;
+    heading.textContent = name + ' · ' + (colors || []).length + ' colors';
+    grid.innerHTML = (colors || []).map((c) => {
+        const safe = String(c).replace(/[^#0-9a-zA-Z(),.\s%]/g, '');
+        return '<button class="palette-swatch" type="button" style="background:' + safe + '" data-hex="' + safe + '" onclick="(function(b){navigator.clipboard&&navigator.clipboard.writeText(b.dataset.hex);b.style.outline=\'2px solid #fff\';setTimeout(function(){b.style.outline=\'\'},800);})(this)" aria-label="copy ' + safe + '"></button>';
+    }).join('');
+    overlay.classList.add('open');
+}
+function closePaletteModal() {
+    const el = document.getElementById('paletteOverlay');
+    if (el) el.classList.remove('open');
+}
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const el = document.getElementById('paletteOverlay');
+        if (el && el.classList.contains('open')) closePaletteModal();
+    }
+}, true);
+
+// v1.3 Phase 2: auto-theme by hour (dark at night, light during day)
+// Additive — touches only setMode (existing). No core behaviour changed.
+let _autoThemeMorning = 7;
+let _autoThemeEvening = 18;
+let _autoThemeTimer = null;
+function _autoThemeCheck() {
+    const h = new Date().getHours();
+    const wantDark = (h >= _autoThemeEvening || h < _autoThemeMorning);
+    const want = wantDark ? 'dark' : 'light';
+    if (typeof MODE !== 'undefined' && MODE !== want && typeof setMode === 'function') setMode(want);
+}
+function _autoThemeStart() {
+    _autoThemeCheck();
+    if (_autoThemeTimer) clearInterval(_autoThemeTimer);
+    _autoThemeTimer = setInterval(_autoThemeCheck, 60000);  // every minute
+}
+function _autoThemeStop() {
+    if (_autoThemeTimer) { clearInterval(_autoThemeTimer); _autoThemeTimer = null; }
+}
+// Restore setting on load
+(function () {
+    try {
+        const v = localStorage.getItem('bm_autoTheme');
+        if (!v) return;
+        const parsed = JSON.parse(v);
+        if (parsed && parsed.on) {
+            if (Number.isFinite(parsed.morning)) _autoThemeMorning = parsed.morning;
+            if (Number.isFinite(parsed.evening)) _autoThemeEvening = parsed.evening;
+            // Start after DOM is ready (setMode requires MODE/setMode defined)
+            const kickoff = () => _autoThemeStart();
+            if (document.readyState === 'complete') kickoff();
+            else window.addEventListener('load', kickoff, { once: true });
+        }
+    } catch (_) {}
+})();
+
+// v1.3: TPL picker modal (open on `tpl` no-args / `tpl ?`)
+function openTplPicker()  { const el = document.getElementById('tplOverlay'); if (el) el.classList.add('open'); }
+function closeTplPicker() { const el = document.getElementById('tplOverlay'); if (el) el.classList.remove('open'); }
+function pickTplFromModal(name) {
+    closeTplPicker();
+    if (typeof runCommand === 'function') runCommand('tpl ' + name);
+}
+// Close picker on Esc (alongside other Esc handlers in the page)
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const el = document.getElementById('tplOverlay');
+        if (el && el.classList.contains('open')) closeTplPicker();
+    }
+}, true);
 document.getElementById('usageOverlay').addEventListener('click', e => {
     if (e.target===e.currentTarget) closeUsage();
 });
