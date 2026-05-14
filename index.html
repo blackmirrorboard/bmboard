@@ -569,6 +569,21 @@ html[data-theme="light"] .hero-logo { filter: none; }
     align-self: flex-start;
     background: var(--glass);
 }
+/* Badge for features that require BMBrowser (Chrome extension). */
+.cap-card .ext-badge {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--dim);
+    padding: 3px 8px;
+    border: 1px dashed var(--rule);
+    display: inline-block;
+    margin-top: 4px;
+    align-self: flex-start;
+    background: transparent;
+    text-transform: uppercase;
+    font-style: italic;
+}
+.cap-card .ext-badge::before { content: '⌛ '; opacity: 0.7; font-style: normal; }
 
 /* demo illustration helpers (all monochrome, SVG-only) */
 .cap-svg path,
@@ -1570,7 +1585,7 @@ footer {
             </h3>
             <p class="lang-en">Built-in GIF encoder (gifenc). Select multiple images — frames, sketches, fetched stills — and pack them into a looped animation. Local-only, no upload, no service.</p>
             <p class="lang-ja">GIF エンコーダ（gifenc）を内蔵。複数の画像を選んで一発でループ GIF に。フレーム、スケッチ、fetch した素材も同列に扱える。サーバ不要、外部サービス不要。</p>
-            <span class="spell-tag">$ gif</span>
+            <span class="ext-badge">via BMBrowser · coming soon</span>
         </article>
 
         <!-- ── 6. NO LAYERS · BY DESIGN ── -->

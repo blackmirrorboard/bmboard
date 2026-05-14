@@ -1449,6 +1449,24 @@
                terminal body + resize handle never sit under the fixed input. */
             main { padding-bottom: calc(44px + env(safe-area-inset-bottom, 0px)); }
         }
+
+        /* ── v1.3: GIF on canvas — animated overlay layer (additive only) ── */
+        #gif-overlay-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;        /* clicks pass through to canvas */
+            overflow: hidden;
+        }
+        #gif-overlay-layer img {
+            position: absolute;
+            top: 0; left: 0;
+            transform-origin: top left;
+            user-select: none;
+            -webkit-user-drag: none;
+            will-change: transform;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -1596,6 +1614,11 @@
              autocapitalize="off"
              autocomplete="off">
         <canvas id="c" draggable="false"></canvas>
+        <!-- v1.3: GIF on canvas — animated <img> overlay layer (additive only).
+             Only image objects whose src is a GIF use this; everything else
+             keeps the existing canvas drawImage path. Pencil / text / sticky /
+             shapes / static images are completely unaffected. -->
+        <div id="gif-overlay-layer" aria-hidden="true"></div>
         <div id="textOverlay">
             <textarea id="ti2" rows="1" autocomplete="off" spellcheck="false" placeholder="type…"></textarea>
             <button id="textDone" type="button" aria-label="確定" title="確定">✓</button>
@@ -3379,6 +3402,8 @@ function redrawAll() {
     }
     // Sync action button enabled state (DUP depends on selection)
     updateUndoRedoBtns();
+    // v1.3: keep animated GIF overlays positioned/visible matching canvas state.
+    if (typeof syncGifOverlays === 'function') syncGifOverlays();
 }
 
 function renderObject(obj) {
@@ -3650,6 +3675,82 @@ function renderImage(obj) {
     }
     if (obj.selected) { selBox(x, y, w, h); drawAnchors(obj); }
     ctx.restore();
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// v1.3: GIF on canvas — animated <img> overlay (additive, no core touched)
+//
+// Pencil / text / sticky / shapes are completely unaffected. Only image
+// objects whose src is a GIF (which Canvas drawImage can't loop) get a
+// position-synced HTML <img> overlay above the canvas. CSS pointer-events
+// is none on the layer, so clicks still reach the canvas — drag / scale /
+// rotate / anchor edit continue to work via the existing object code path.
+//
+// Limitation v1.3: cropped GIFs fall back to the static-frame canvas path.
+// Future v1.4: object-fit + clip-path overlay would add cropped GIF.
+// ─────────────────────────────────────────────────────────────────────
+const _gifOverlays = new Map();   // objId → HTMLImageElement
+function _gifLayer() { return document.getElementById('gif-overlay-layer'); }
+function _isGifSrc(src) {
+    if (!src || typeof src !== 'string') return false;
+    if (src.startsWith('data:image/gif')) return true;
+    return /\.gif(\?[^.]*)?$/i.test(src);
+}
+function _ensureGifOverlay(obj) {
+    const layer = _gifLayer(); if (!layer) return null;
+    let el = _gifOverlays.get(obj.id);
+    if (!el) {
+        el = document.createElement('img');
+        el.draggable = false;
+        el.alt = '';
+        el.src = obj.data.src;
+        layer.appendChild(el);
+        _gifOverlays.set(obj.id, el);
+    } else if (el.getAttribute('src') !== obj.data.src) {
+        el.src = obj.data.src;
+    }
+    return el;
+}
+function _positionGifOverlay(obj) {
+    const el = _gifOverlays.get(obj.id); if (!el) return;
+    const { x, y, w, h } = obj.data;
+    const rotation = obj.data.rotation || 0;
+    const sx = x * VIEW.scale + VIEW.tx;
+    const sy = y * VIEW.scale + VIEW.ty;
+    const sw = w * VIEW.scale;
+    const sh = h * VIEW.scale;
+    let tf;
+    if (rotation) {
+        // rotate around object's visual center
+        tf = `translate(${sx + sw/2}px, ${sy + sh/2}px) rotate(${rotation}rad) translate(${-sw/2}px, ${-sh/2}px)`;
+    } else {
+        tf = `translate(${sx}px, ${sy}px)`;
+    }
+    el.style.transform = tf;
+    el.style.width = sw + 'px';
+    el.style.height = sh + 'px';
+}
+function _removeGifOverlay(objId) {
+    const el = _gifOverlays.get(objId);
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    _gifOverlays.delete(objId);
+}
+function syncGifOverlays() {
+    const layer = _gifLayer(); if (!layer) return;
+    const liveIds = new Set();
+    for (const obj of S.objects) {
+        if (obj.type !== 'image') continue;
+        if (!_isGifSrc(obj.data && obj.data.src)) continue;
+        // Cropped GIFs fall back to the canvas path (single frame) for now.
+        if (obj.data.crop && obj.data.crop.w > 0 && obj.data.crop.h > 0) continue;
+        liveIds.add(obj.id);
+        _ensureGifOverlay(obj);
+        _positionGifOverlay(obj);
+    }
+    // Drop overlays for objects that no longer qualify (deleted / cropped / src changed type)
+    for (const objId of Array.from(_gifOverlays.keys())) {
+        if (!liveIds.has(objId)) _removeGifOverlay(objId);
+    }
 }
 
 // ── Sticky note ─ Miro-style yellow post-it with auto-fit text ──────────
