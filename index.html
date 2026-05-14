@@ -1670,6 +1670,56 @@ footer {
     <h2 class="lang-en">The board, <em>beside</em> any page.</h2>
     <h2 class="lang-ja">どのページの<em>横にも</em>、黒板を。</h2>
 
+    <!-- ── COMING SOON visual: browser + side-panel mock + CWS pending badge ── -->
+    <div class="demo-frame coming-soon-frame" aria-hidden="true" style="margin: 24px 0 32px; max-width: 720px;">
+        <div class="demo-frame-label">▸ COMING SOON · CHROME WEB STORE</div>
+        <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet">
+            <!-- browser frame -->
+            <rect x="14" y="22" width="372" height="180"/>
+            <line x1="14" y1="40" x2="386" y2="40"/>
+            <circle cx="24" cy="31" r="3" class="faint"/>
+            <circle cx="34" cy="31" r="3" class="faint"/>
+            <circle cx="44" cy="31" r="3" class="faint"/>
+            <text x="60" y="34" class="faint">https://any-page</text>
+            <!-- left: page content (lines + image placeholder) -->
+            <line x1="28" y1="58" x2="240" y2="58" class="dim"/>
+            <line x1="28" y1="68" x2="220" y2="68" class="dim"/>
+            <line x1="28" y1="78" x2="232" y2="78" class="dim"/>
+            <rect x="28" y="92" width="100" height="60" class="faint"/>
+            <line x1="138" y1="98" x2="240" y2="98" class="dim"/>
+            <line x1="138" y1="108" x2="232" y2="108" class="dim"/>
+            <line x1="138" y1="118" x2="240" y2="118" class="dim"/>
+            <line x1="28" y1="166" x2="240" y2="166" class="dim"/>
+            <line x1="28" y1="176" x2="220" y2="176" class="dim"/>
+            <!-- vertical divider -->
+            <line x1="252" y1="42" x2="252" y2="200"/>
+            <!-- right: BMBoard side panel mock -->
+            <text x="260" y="56" class="hi">▮ BMBOARD</text>
+            <path d="M 264 78 C 280 72, 300 76, 320 88 S 360 100, 374 88"/>
+            <line x1="268" y1="104" x2="374" y2="104" class="faint"/>
+            <circle cx="288" cy="130" r="14"/>
+            <rect x="312" y="118" width="32" height="28"/>
+            <text x="260" y="186" class="faint">side panel · ⌘⇧Y</text>
+            <!-- COMING SOON banner across center (filled, contrast) -->
+            <g transform="translate(200, 112)">
+                <rect x="-138" y="-19" width="276" height="38" class="fill" style="opacity:0.94"/>
+                <circle cx="-118" cy="0" r="5" class="cs-pulse"/>
+                <text x="-100" y="4" class="hi" style="fill:var(--void); font-size:12px; letter-spacing:0.18em;">COMING SOON · CWS REVIEW</text>
+            </g>
+            <!-- bottom note -->
+            <text x="200" y="216" text-anchor="middle" class="faint">submitted 2026-05-13 · 数日〜2週間で公開予定</text>
+        </svg>
+    </div>
+    <style>
+        /* pulsing white dot inside the COMING SOON badge (1-bit, no red) */
+        .cs-pulse {
+            fill: var(--ink);
+            stroke: none;
+            animation: csPulseFade 1.6s infinite var(--ease);
+        }
+        @keyframes csPulseFade { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+    </style>
+
     <p class="en lang-en"><strong>Black Mirror Browser</strong> is a Chrome extension. It brings BMBoard into the browser as a side panel — opened with the toolbar icon or <code>⌘⇧Y</code>. The new tab becomes a launcher of widgets: clock, weather, news, bookmarks, notes. Right-click an image or selected text — "Send to BMBoard" drops it on the side panel.</p>
     <p class="jp lang-ja"><strong>Black Mirror Browser</strong> は Chrome 拡張機能。BMBoard をサイドパネルとして持ち込み、ツールバーのアイコン（または <code>⌘⇧Y</code>）でいつでも黒板を開ける。新しいタブはウィジェットランチャー（時計・天気・ニュース・ブックマーク・メモ）に。画像やテキストの右クリックメニューから「Send to BMBoard」でサイドパネルに送る。</p>
     <p class="en lang-en">No account. No analytics. No tracking. Settings live in your browser. Same hands, same desk — one more surface.</p>
