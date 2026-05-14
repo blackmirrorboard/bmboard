@@ -1857,6 +1857,14 @@
 <div id="usageOverlay">
     <div class="usage-box">
         <h2>USAGE — BLACK MIRROR BOARD v1.3</h2>
+        <h3>v1.3 NEW</h3>
+        <pre><b>GIF on canvas</b>           drop a <code>.gif</code> file → animates in place
+                            (copy-paste from web converts to PNG; use file D&amp;D)
+<b>align &lt;direction&gt;</b>       align 2+ selected objects:
+                            <code>left</code> / <code>center</code> / <code>right</code> / <code>top</code> / <code>middle</code> / <code>bottom</code>
+<b>distribute h | v</b>      evenly space 3+ selected objects (by center)
+<b>tpl &lt;name&gt;</b>             instant scaffold at view center:
+                            <code>wireframe</code> · <code>kanban</code> · <code>mindmap</code> · <code>moodboard</code></pre>
         <h3>TOOLS</h3>
         <pre><b>↑ Select</b>   tap/click · drag to move · Del to delete
          ↳ drag ○ handle above box to rotate
@@ -7293,6 +7301,201 @@ function runCommand(val) {
         const pl=JSON.stringify({command:target3,action:BM_CMDS[target3].action},null,2);
         const ship=()=>enqueue(`share ${target3}`,['→ copied to clipboard!','───────────────────',...pl.split('\n').slice(0,10),'───────────────────']);
         if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(pl).then(ship,ship)}else{ship()}
+        return;
+    }
+
+    // ── align / distribute ─ multi-select alignment (v1.3 addition) ──
+    //   align left | center | right | top | middle | bottom
+    //   distribute h | v        — 3+ objects, even spacing on chosen axis
+    // Touches positions only via moveObj (existing BM API), no other side
+    // effects. Pencil/text/sticky never modified. Selection preserved.
+    if (head === 'align') {
+        const sel = BM.getSelected();
+        if (sel.length < 2) { printRaw('align: select 2+ objects first', 't-err'); return; }
+        const dir = (rest || '').trim().toLowerCase();
+        const validDirs = ['left', 'center', 'right', 'top', 'middle', 'bottom'];
+        if (!validDirs.includes(dir)) {
+            printRaw(`align: usage → align <${validDirs.join(' | ')}>`, 't-dim');
+            return;
+        }
+        const items = sel.map(o => ({ obj: o, b: getObjBounds(o) })).filter(x => x.b);
+        if (items.length < 2) { printRaw('align: not enough valid objects', 't-err'); return; }
+        if (dir === 'left') {
+            const target = Math.min(...items.map(x => x.b.x));
+            items.forEach(({ obj, b }) => moveObj(obj, target - b.x, 0));
+        } else if (dir === 'right') {
+            const target = Math.max(...items.map(x => x.b.x + x.b.w));
+            items.forEach(({ obj, b }) => moveObj(obj, target - (b.x + b.w), 0));
+        } else if (dir === 'center') {
+            const cxs = items.map(x => x.b.x + x.b.w / 2);
+            const target = (Math.min(...cxs) + Math.max(...cxs)) / 2;
+            items.forEach(({ obj, b }) => moveObj(obj, target - (b.x + b.w / 2), 0));
+        } else if (dir === 'top') {
+            const target = Math.min(...items.map(x => x.b.y));
+            items.forEach(({ obj, b }) => moveObj(obj, 0, target - b.y));
+        } else if (dir === 'bottom') {
+            const target = Math.max(...items.map(x => x.b.y + x.b.h));
+            items.forEach(({ obj, b }) => moveObj(obj, 0, target - (b.y + b.h)));
+        } else if (dir === 'middle') {
+            const cys = items.map(x => x.b.y + x.b.h / 2);
+            const target = (Math.min(...cys) + Math.max(...cys)) / 2;
+            items.forEach(({ obj, b }) => moveObj(obj, 0, target - (b.y + b.h / 2)));
+        }
+        saveHistory(); redrawAll();
+        printRaw(`[align] ${items.length} objects → ${dir}`, 't-ok');
+        return;
+    }
+    if (head === 'distribute' || head === 'dist') {
+        const sel = BM.getSelected();
+        if (sel.length < 3) { printRaw('distribute: select 3+ objects first', 't-err'); return; }
+        const axisRaw = (rest || '').trim().toLowerCase();
+        const isH = (axisRaw === 'h' || axisRaw === 'horizontal' || axisRaw === '横');
+        const isV = (axisRaw === 'v' || axisRaw === 'vertical' || axisRaw === '縦');
+        if (!isH && !isV) { printRaw('distribute: usage → distribute <h | v>', 't-dim'); return; }
+        const items = sel.map(o => ({ obj: o, b: getObjBounds(o) })).filter(x => x.b);
+        if (items.length < 3) { printRaw('distribute: not enough valid objects', 't-err'); return; }
+        // Sort by center on chosen axis, keep first/last fixed, distribute middle.
+        items.sort((a, b) => isH
+            ? (a.b.x + a.b.w / 2) - (b.b.x + b.b.w / 2)
+            : (a.b.y + a.b.h / 2) - (b.b.y + b.b.h / 2));
+        const first = items[0], last = items[items.length - 1];
+        if (isH) {
+            const startCx = first.b.x + first.b.w / 2;
+            const endCx = last.b.x + last.b.w / 2;
+            const step = (endCx - startCx) / (items.length - 1);
+            items.forEach(({ obj, b }, i) => {
+                if (i === 0 || i === items.length - 1) return;
+                const targetCx = startCx + i * step;
+                moveObj(obj, targetCx - (b.x + b.w / 2), 0);
+            });
+        } else {
+            const startCy = first.b.y + first.b.h / 2;
+            const endCy = last.b.y + last.b.h / 2;
+            const step = (endCy - startCy) / (items.length - 1);
+            items.forEach(({ obj, b }, i) => {
+                if (i === 0 || i === items.length - 1) return;
+                const targetCy = startCy + i * step;
+                moveObj(obj, 0, targetCy - (b.y + b.h / 2));
+            });
+        }
+        saveHistory(); redrawAll();
+        printRaw(`[distribute] ${items.length} objects · ${isH ? 'horizontal' : 'vertical'} centers`, 't-ok');
+        return;
+    }
+
+    // ── tpl / template — instant scaffolds (v1.3 addition) ──
+    //   tpl wireframe | kanban | mindmap | moodboard
+    // Places a pre-arranged set of objects (squares / stickies / text / arrows)
+    // around the current view center via BM.create. Pencil/text/sticky core
+    // logic is not touched — uses only the existing object-creation API.
+    if (head === 'tpl' || head === 'template') {
+        const name = (rest || '').trim().toLowerCase();
+        const TPL = {
+            wireframe: () => {
+                const vc = BM.viewCenter();
+                const W = 720, H = 480;
+                const x0 = vc.x - W / 2, y0 = vc.y - H / 2;
+                BM.create('square', { x: x0, y: y0, w: W, h: H });                        // outer container
+                BM.create('square', { x: x0 + 16, y: y0 + 16, w: W - 32, h: 56 });        // header bar
+                BM.create('text',   { x: x0 + 32, y: y0 + 50, text: 'HEADER', fontSize: 18 });
+                BM.create('square', { x: x0 + 16, y: y0 + 88, w: 160, h: H - 104 });      // sidebar
+                BM.create('square', { x: x0 + 192, y: y0 + 88, w: W - 208, h: H - 104 }); // content
+                BM.create('text',   { x: x0 + 208, y: y0 + 116, text: 'CONTENT', fontSize: 18 });
+                for (let i = 0; i < 4; i++) {
+                    BM.create('text', { x: x0 + 32, y: y0 + 116 + i * 36, text: '› nav ' + (i + 1), fontSize: 14 });
+                }
+            },
+            kanban: () => {
+                const vc = BM.viewCenter();
+                const colW = 220, colH = 380, gap = 18;
+                const totalW = colW * 3 + gap * 2;
+                const x0 = vc.x - totalW / 2, y0 = vc.y - colH / 2;
+                const titles = ['TODO', 'DOING', 'DONE'];
+                const colors = ['#F8C8A0', '#FFE873', '#B6E2A1'];
+                for (let i = 0; i < 3; i++) {
+                    const cx = x0 + i * (colW + gap);
+                    BM.create('square', { x: cx, y: y0, w: colW, h: colH });
+                    BM.create('text',   { x: cx + 16, y: y0 + 24, text: titles[i], fontSize: 18 });
+                    for (let j = 0; j < 3; j++) {
+                        BM.create('sticky', {
+                            x: cx + 16, y: y0 + 60 + j * 100,
+                            w: colW - 32, h: 84,
+                            text: `task ${i + 1}.${j + 1}`,
+                            color: colors[i],
+                        });
+                    }
+                }
+            },
+            mindmap: () => {
+                const vc = BM.viewCenter();
+                const r = 220;
+                // Center sticky
+                BM.create('sticky', {
+                    x: vc.x - 90, y: vc.y - 48, w: 180, h: 96,
+                    text: 'TOPIC', color: '#FFE873',
+                });
+                const branches = [
+                    { angle: -Math.PI / 2,         label: 'idea 1' },  // top
+                    { angle: -Math.PI / 6,         label: 'idea 2' },  // top-right
+                    { angle:  Math.PI / 6,         label: 'idea 3' },  // bottom-right
+                    { angle:  Math.PI / 2,         label: 'idea 4' },  // bottom
+                    { angle:  5 * Math.PI / 6,     label: 'idea 5' },  // bottom-left
+                    { angle: -5 * Math.PI / 6,     label: 'idea 6' },  // top-left
+                ];
+                branches.forEach(({ angle, label }) => {
+                    const bx = vc.x + Math.cos(angle) * r;
+                    const by = vc.y + Math.sin(angle) * r;
+                    BM.create('arrow', { x1: vc.x, y1: vc.y, x2: bx, y2: by });
+                    BM.create('sticky', {
+                        x: bx - 60, y: by - 30, w: 120, h: 60,
+                        text: label, color: '#E0F0FF',
+                    });
+                });
+            },
+            moodboard: () => {
+                const vc = BM.viewCenter();
+                const tileW = 180, tileH = 120, gap = 16;
+                const cols = 3, rows = 2;
+                const gridW = tileW * cols + gap * (cols - 1);
+                const gridH = tileH * rows + gap * (rows - 1);
+                const x0 = vc.x - gridW / 2, y0 = vc.y - gridH / 2 - 40;
+                for (let rr = 0; rr < rows; rr++) {
+                    for (let cc = 0; cc < cols; cc++) {
+                        BM.create('square', {
+                            x: x0 + cc * (tileW + gap),
+                            y: y0 + rr * (tileH + gap),
+                            w: tileW, h: tileH,
+                        });
+                    }
+                }
+                // tag stickies below
+                const tags = ['mood', 'palette', 'reference', 'note'];
+                const tagW = 120, tagH = 60, tagGap = 14;
+                const tagsW = tagW * tags.length + tagGap * (tags.length - 1);
+                const tagX0 = vc.x - tagsW / 2;
+                const tagY = y0 + gridH + 30;
+                tags.forEach((t, i) => {
+                    BM.create('sticky', {
+                        x: tagX0 + i * (tagW + tagGap),
+                        y: tagY, w: tagW, h: tagH,
+                        text: t, color: '#FFE873',
+                    });
+                });
+            },
+        };
+        if (!name || name === 'list' || name === 'help' || name === '?') {
+            printRaw(`tpl: usage → tpl <${Object.keys(TPL).join(' | ')}>`, 't-dim');
+            return;
+        }
+        if (!TPL[name]) {
+            printRaw(`tpl: unknown "${name}". try: ${Object.keys(TPL).join(' / ')}`, 't-err');
+            return;
+        }
+        const before = S.objects.length;
+        TPL[name]();
+        const placed = S.objects.length - before;
+        saveHistory(); redrawAll();
+        printRaw(`[tpl] ${name} → ${placed} object(s) placed.`, 't-ok');
         return;
     }
 
