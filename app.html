@@ -7756,9 +7756,12 @@ function runCommand(val) {
         const args = (rest || '').trim().split(/\s+/).filter(Boolean);
         const first = (args[0] || '').toLowerCase();
         if (first === 'off' || first === 'stop') {
+            const wasMode = (typeof MODE !== 'undefined') ? MODE : null;
             if (typeof _autoThemeStop === 'function') _autoThemeStop();
             try { localStorage.setItem('bm_autoTheme', JSON.stringify({ on: false })); } catch (_) {}
-            printRaw('[auto-theme] OFF', 't-ok');
+            const nowMode = (typeof MODE !== 'undefined') ? MODE : null;
+            const reverted = (wasMode && nowMode && wasMode !== nowMode);
+            printRaw(`[auto-theme] OFF${reverted ? ' · restored to ' + nowMode : ''}`, 't-ok');
             return;
         }
         if (first === 'on' || !first) {
@@ -9369,6 +9372,7 @@ window.addEventListener('keydown', (e) => {
 let _autoThemeMorning = 7;
 let _autoThemeEvening = 18;
 let _autoThemeTimer = null;
+let _autoThemePreMode = null;   // mode the user had before turning auto on, restored on off
 function _autoThemeCheck() {
     const h = new Date().getHours();
     const wantDark = (h >= _autoThemeEvening || h < _autoThemeMorning);
@@ -9376,12 +9380,19 @@ function _autoThemeCheck() {
     if (typeof MODE !== 'undefined' && MODE !== want && typeof setMode === 'function') setMode(want);
 }
 function _autoThemeStart() {
+    // Snapshot current mode so we can restore it on off (only if not already snapped).
+    if (_autoThemePreMode === null && typeof MODE !== 'undefined') _autoThemePreMode = MODE;
     _autoThemeCheck();
     if (_autoThemeTimer) clearInterval(_autoThemeTimer);
     _autoThemeTimer = setInterval(_autoThemeCheck, 60000);  // every minute
 }
 function _autoThemeStop() {
     if (_autoThemeTimer) { clearInterval(_autoThemeTimer); _autoThemeTimer = null; }
+    // Restore the mode the user had before auto was turned on.
+    if (_autoThemePreMode && typeof MODE !== 'undefined' && MODE !== _autoThemePreMode && typeof setMode === 'function') {
+        setMode(_autoThemePreMode);
+    }
+    _autoThemePreMode = null;
 }
 // Restore setting on load
 (function () {
