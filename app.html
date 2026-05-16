@@ -2090,7 +2090,7 @@
          ↳ drag blue □ anchors to deform (single select)
          ↳ drag on empty canvas → marquee multi-select
 <b>✎ Pen</b>      draw freely — shape detected on lift
-<b>⌫ Eraser</b>   tap object to remove
+<b>⌫ Eraser</b>   tap object to remove · with selection: 1-tap batch-delete
 <b>○ △ □ →</b>   drag to place shape → terminal fires
 <b>🪣 Fill</b>    tap bucket → pick none/black/grey/white
 <b>T  Text</b>    tap canvas, type, Enter to confirm</pre>
@@ -2099,7 +2099,7 @@
 Release → all fully-enclosed objects selected.
   drag      move whole group
   ○ handle  rotate whole group
-  Del       delete all selected
+  Del       delete all selected (Eraser tap on mobile)
   Esc       deselect all</pre>
         <h3>PAN / ZOOM (v0.7+)</h3>
         <pre><b>Space + drag</b>   pan canvas (desktop)
@@ -9068,7 +9068,25 @@ document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
     if (btn.closest('#shapePopover') || btn.closest('#penPopover')) return;
     // Skip penBtn — handled above with popover logic
     if (btn.id === 'penBtn') return;
-    btn.addEventListener('click', () => { playClick(false); setTool(btn.dataset.tool); });
+    btn.addEventListener('click', () => {
+        playClick(false);
+        // Eraser tap with active selection → batch-delete (mobile-friendly,
+        // no Del key needed). Stays in current tool instead of switching.
+        if (btn.dataset.tool === 'eraser' &&
+            (S.multiSelected.length > 0 || S.selectedId !== null)) {
+            if (S.multiSelected.length > 0) {
+                S.objects = S.objects.filter(o => !S.multiSelected.includes(o.id));
+                S.multiSelected = [];
+            } else {
+                S.objects = S.objects.filter(o => o.id !== S.selectedId);
+                S.selectedId = null;
+            }
+            saveHistory();
+            redrawAll();
+            return;
+        }
+        setTool(btn.dataset.tool);
+    });
 });
 
 // Track Shift / Alt modifier state globally — read live during anchor drag + multi-resize.
