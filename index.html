@@ -1726,23 +1726,37 @@ footer {
         </svg>
     </div>
     <style>
-        /* pulsing white dot inside the COMING SOON badge (1-bit, no red) */
+        /* BMBrowser section — green SVG override */
+        #also .cap-svg path,
+        #also .cap-svg line,
+        #also .cap-svg rect,
+        #also .cap-svg circle,
+        #also .cap-svg polyline,
+        #also .cap-svg polygon {
+            stroke: #58dc44;
+        }
+        #also .cap-svg text { fill: #3da028; }
+        #also .cap-svg text.hi { fill: #58dc44; }
+        #also .cap-svg .fill { fill: #58dc44; stroke: none; }
+        #also .cap-svg .dim  { stroke: #2e7a1e; }
+        #also .cap-svg .faint { stroke: #1f5215; }
+        /* pulsing green dot inside the CWS REVIEW badge */
         .cs-pulse {
-            fill: var(--ink);
+            fill: #58dc44;
             stroke: none;
             animation: csPulseFade 1.6s infinite var(--ease);
         }
         @keyframes csPulseFade { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
     </style>
 
-    <p class="en lang-en"><strong>Black Mirror Browser</strong> is a Chrome extension. It brings BMBoard into the browser as a side panel — opened with the toolbar icon or <code>⌘⇧Y</code>. The new tab becomes a launcher of widgets: clock, weather, news, bookmarks, notes. Right-click an image or selected text — "Send to BMBoard" drops it on the side panel.</p>
-    <p class="jp lang-ja"><strong>Black Mirror Browser</strong> は Chrome 拡張機能。BMBoard をサイドパネルとして持ち込み、ツールバーのアイコン（または <code>⌘⇧Y</code>）でいつでも黒板を開ける。新しいタブはウィジェットランチャー（時計・天気・ニュース・ブックマーク・メモ）に。画像やテキストの右クリックメニューから「Send to BMBoard」でサイドパネルに送る。</p>
-    <p class="en lang-en">No account. No analytics. No tracking. Settings live in your browser. Same hands, same desk — one more surface.</p>
-    <p class="jp lang-ja">アカウントなし。アナリティクスなし。トラッキングなし。設定はブラウザに保存される。同じ手、同じ机 — もう一面だけ広く。</p>
+    <p class="en lang-en"><strong>Black Mirror Browser</strong> is a Chrome extension. It brings BMBoard into the browser as a side panel — opened with the toolbar icon or <code>⌘⇧Y</code>. Right-click an image or selected text on any page — "Send to BMBoard" drops it directly onto the side panel.</p>
+    <p class="jp lang-ja"><strong>Black Mirror Browser</strong> は Chrome 拡張機能。BMBoard をサイドパネルとして持ち込み、ツールバーのアイコン（または <code>⌘⇧Y</code>）でいつでも黒板を開ける。画像やテキストの右クリックメニューから「Send to BMBoard」でサイドパネルに送る。</p>
+    <p class="en lang-en">No account. No analytics. No tracking. Same hands, same desk — one more surface.</p>
+    <p class="jp lang-ja">アカウントなし。アナリティクスなし。トラッキングなし。同じ手、同じ机 — もう一面だけ広く。</p>
 
     <div class="hero-meta">
-        <span class="lang-en">Chrome Web Store · coming soon</span>
-        <span class="lang-ja">Chrome ウェブストア · 近日公開</span>
+        <span class="lang-en">Chrome Web Store · under review</span>
+        <span class="lang-ja">Chrome ウェブストア · 審査中</span>
         <span class="lang-en"><a href="./browser/" style="color:inherit;text-decoration:underline;">learn more →</a></span>
         <span class="lang-ja"><a href="./browser/" style="color:inherit;text-decoration:underline;">詳しく見る →</a></span>
     </div>

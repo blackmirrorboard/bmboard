@@ -25,49 +25,39 @@
 <body>
 <div class="wrap">
   <h1>▮ Black Mirror Browser — Privacy Policy</h1>
-  <div class="meta">Last updated: 2026-05-13 · kinoshita studio</div>
+  <div class="meta">Last updated: 2026-05-19 · kinoshita studio</div>
 
-  <p>Black Mirror Browser (the “Extension”) is a browser extension by kinoshita studio that brings BMBoard (an infinite‑canvas blackboard at <a href="https://bmboard.studio/">bmboard.studio</a>) into your browsing — as a side panel, a launcher new‑tab page, and a “send to BMBoard” right‑click menu. This page explains what data the Extension touches.</p>
+  <p>Black Mirror Browser (the "Extension") is a Chrome extension by kinoshita studio. It opens BMBoard (an infinite‑canvas blackboard at <a href="https://bmboard.studio/">bmboard.studio</a>) as a browser side panel, and adds a right‑click menu to send images and text to the board. This page explains what data the Extension touches.</p>
 
   <h2>Short version</h2>
-  <p><strong>The Extension does not collect, transmit, sell, or share any personal data.</strong> Everything you customise stays in your own browser. There is no analytics, no tracking, no account, no server run by us.</p>
+  <p><strong>The Extension does not collect, transmit, sell, or share any personal data.</strong> There is no analytics, no tracking, no account, no server run by us.</p>
 
   <h2>What is stored, and where</h2>
   <ul>
-    <li><strong>Your customisations</strong> — bookmarks, widget order and visibility, scratch‑memo text, display preferences — are saved only in your browser’s <code>localStorage</code> on this device. They never leave your browser and we cannot see them.</li>
-    <li><strong>Images / text you send to BMBoard</strong> (via the right‑click menu or drag‑and‑drop) — the Extension fetches the image you picked and places it (or the selected text) onto your BMBoard canvas. It is not sent to us or to any third party; it goes only to the BMBoard page you’re using.</li>
-    <li><strong>Nothing is uploaded</strong> by the Extension itself.</li>
+    <li><strong>Nothing is stored by the Extension itself.</strong> It uses no local storage, no cookies, and no browser sync.</li>
+    <li><strong>Images / text you send to BMBoard</strong> (via the right‑click menu) — the Extension fetches the image or selected text and passes it to your BMBoard side panel. It is not sent to us or to any third party.</li>
   </ul>
 
   <h2>Network requests the Extension makes</h2>
   <ul>
-    <li><strong>bmboard.studio</strong> — the side panel loads <code>bmboard.studio/app.html</code> in a frame. BMBoard’s own behaviour applies inside that frame; the Extension just hosts it.</li>
-    <li><strong>Public read‑only feeds &amp; APIs</strong>, only to display them on the new‑tab page: Hacker News (Algolia API), Google News and NHK news RSS, CoinGecko (crypto prices), and Open‑Meteo (weather forecast). These requests carry no personal data — they just fetch public headlines, prices, and a forecast. On the standalone web version (not the extension) RSS feeds are routed through a public CORS proxy (<code>api.codetabs.com</code>) purely to read the public XML.</li>
-    <li><strong>Background images</strong> — the optional new‑tab background presets load images from <code>images.unsplash.com</code>; a background image URL you paste yourself is loaded from wherever you point it. These are plain image loads with no personal data.</li>
-    <li><strong>Radio</strong> — if you press play on the radio widget, the new‑tab page plays a public internet‑radio stream (SomaFM, <code>ice.somafm.com</code>). Nothing is sent except the request to receive the stream.</li>
-    <li><strong>Images you choose to send</strong> — fetched from the page you right‑clicked, so the Extension can hand the image to your board.</li>
-    <li>Web fonts from Google Fonts, for the page’s typeface.</li>
+    <li><strong>bmboard.studio</strong> — the side panel loads <code>bmboard.studio/app.html</code> in a frame, and a bridge script runs on that page to receive content you send. BMBoard's own behaviour applies inside that frame; the Extension just hosts it.</li>
+    <li><strong>Images you choose to send</strong> — when you right‑click an image and choose "Send image to BMBoard", the Extension fetches that image from the page so it can hand it to your board. No image data is sent to us.</li>
   </ul>
-
-  <h2>Location (the “現在地ON / use my location” option)</h2>
-  <p>The new‑tab page has an optional “use my location” toggle. If — and only if — you turn it on, your browser asks for permission to share your location. With your permission, the Extension uses the coordinates to (a) ask <code>api.bigdatacloud.net</code> for the nearby place / country name, and (b) fetch that location’s weather, timezone (for the clock), local news edition, and local‑currency prices. Your coordinates and the resolved place name are stored only in your browser’s <code>localStorage</code> (so it doesn’t re‑ask every time); they are <strong>never sent to us</strong> and are not used for tracking or advertising. The toggle is off by default, and you can turn it off again at any time.</p>
 
   <h2>Permissions, and why</h2>
   <ul>
     <li><code>sidePanel</code> — to show BMBoard alongside any page.</li>
-    <li><code>storage</code> — to remember your bookmarks, widget layout, and preferences locally.</li>
-    <li><code>contextMenus</code> — to add the “Send image / text to BMBoard” right‑click items.</li>
-    <li><code>host_permissions</code> (all sites) — needed so that, when you right‑click an image on any page and choose “send to BMBoard”, the Extension can fetch that image; and so the bridge script can run on <code>bmboard.studio/app.html</code>. It is not used to read, monitor, or transmit your browsing.</li>
+    <li><code>contextMenus</code> — to add the "Send image / text to BMBoard" right‑click items.</li>
   </ul>
 
   <h2>Third parties</h2>
-  <p>We do not use analytics or advertising SDKs. The external services contacted — Hacker News / Google News / NHK / CoinGecko / Open‑Meteo / BigDataCloud (only when you opt into “use my location”) / Unsplash (background images) / SomaFM (radio, only if you press play) / Google Fonts / a CORS proxy (web version only) / bmboard.studio — receive only the request needed to display public content or play a public stream: no identifiers, no profiles, no browsing history. Their own privacy policies apply to those requests.</p>
+  <p>The only external service the Extension contacts is <strong>bmboard.studio</strong> — to display the board in the side panel and to run the bridge that receives content you send. No analytics, no advertising SDKs, no tracking services. BMBoard's own privacy policy applies to your use of the board itself.</p>
 
   <h2>Children</h2>
   <p>The Extension is not directed at children and does not knowingly collect any information from anyone.</p>
 
   <h2>Changes</h2>
-  <p>If this policy changes, the “Last updated” date above will change. Material changes will be noted in the extension’s store listing.</p>
+  <p>If this policy changes, the "Last updated" date above will change. Material changes will be noted in the extension's store listing.</p>
 
   <h2>Contact</h2>
   <p>kinoshita studio — <a href="mailto:tkinoshita.studio@gmail.com">tkinoshita.studio@gmail.com</a> · <a href="https://bmboard.studio/">bmboard.studio</a></p>
