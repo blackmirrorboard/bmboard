@@ -1751,6 +1751,65 @@ footer {
 
     <p class="en lang-en"><strong>Black Mirror Browser</strong> is a Chrome extension. It brings BMBoard into the browser as a side panel — opened with the toolbar icon or <code>⌘⇧Y</code>. Right-click an image or selected text on any page — "Send to BMBoard" drops it directly onto the side panel.</p>
     <p class="jp lang-ja"><strong>Black Mirror Browser</strong> は Chrome 拡張機能。BMBoard をサイドパネルとして持ち込み、ツールバーのアイコン（または <code>⌘⇧Y</code>）でいつでも黒板を開ける。画像やテキストの右クリックメニューから「Send to BMBoard」でサイドパネルに送る。</p>
+
+    <style>
+        #also .bmbr-list {
+            margin: 22px 0 28px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            border: 1px solid #58dc44;
+            max-width: 640px;
+        }
+        #also .bmbr-list dt {
+            grid-column: 1;
+            padding: 8px 14px;
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            color: #58dc44;
+            border-bottom: 1px solid #1f5215;
+        }
+        #also .bmbr-list dd {
+            grid-column: 2;
+            padding: 8px 14px;
+            font-size: 12px;
+            color: #3da028;
+            border-bottom: 1px solid #1f5215;
+            margin: 0;
+        }
+        #also .bmbr-list dt:last-of-type,
+        #also .bmbr-list dd:last-of-type { border-bottom: 0; }
+        @media (max-width: 600px) {
+            #also .bmbr-list { grid-template-columns: 1fr; }
+            #also .bmbr-list dt { border-bottom: 0; padding-bottom: 2px; }
+            #also .bmbr-list dd { border-bottom: 1px solid #1f5215; padding-top: 2px; }
+        }
+    </style>
+
+    <dl class="bmbr-list lang-en">
+        <dt>⌘⇧Y</dt><dd>open BMBoard side panel from any page</dd>
+        <dt>right-click image</dt><dd>send to BMBoard canvas</dd>
+        <dt>right-click text</dt><dd>send as sticky note</dd>
+        <dt>drag image → panel</dt><dd>drop any web image onto the board</dd>
+        <dt>paste text on canvas</dt><dd>lands as a sticky note</dd>
+        <dt>right-click sticky</dt><dd>colour palette · font · bold</dd>
+        <dt>right-click 1 image</dt><dd>crop / trim (non-destructive)</dd>
+        <dt>right-click 2+ images</dt><dd>make animated GIF</dd>
+        <dt>selection size</dt><dd>W × H px shown in panel bar</dd>
+    </dl>
+    <dl class="bmbr-list lang-ja">
+        <dt>⌘⇧Y</dt><dd>どのページからでもサイドパネルを開く</dd>
+        <dt>画像を右クリック</dt><dd>キャンバスに送る</dd>
+        <dt>テキストを右クリック</dt><dd>付箋として送る</dd>
+        <dt>画像を D&D → パネル</dt><dd>ウェブ画像をそのままキャンバスへ</dd>
+        <dt>キャンバスにペースト</dt><dd>テキストが付箋になる</dd>
+        <dt>付箋を右クリック</dt><dd>カラー変更・フォント・Bold</dd>
+        <dt>画像1枚を右クリック</dt><dd>クロップ / トリム（非破壊）</dd>
+        <dt>画像2枚以上を右クリック</dt><dd>GIF アニメを作成</dd>
+        <dt>選択サイズ表示</dt><dd>W × H px をパネルバーに表示</dd>
+    </dl>
+
     <p class="en lang-en">No account. No analytics. No tracking. Same hands, same desk — one more surface.</p>
     <p class="jp lang-ja">アカウントなし。アナリティクスなし。トラッキングなし。同じ手、同じ机 — もう一面だけ広く。</p>
 
