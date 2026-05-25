@@ -442,6 +442,7 @@
     <button class="tab active" data-file="README.md">README</button>
     <button class="tab" data-file="usage.md">USAGE (MD)</button>
     <button class="tab" data-file="spell-spec.md">魔法の作り方 / Spell Spec</button>
+    <button class="tab" data-file="bmbrowser.md">BM BROWSER</button>
 </div>
 
 <div class="content-area">
@@ -1616,6 +1617,112 @@ AI が出した 1 行 JSON を BMBoard ターミナルにペーストするだ�
 これをターミナルに貼って `hi` で発火 → 黄色付箋が中央に出ればすべて理解済み。
 </script>
 
+<script type="text/markdown" id="md-bmbrowser">
+# ◼ BLACK MIRROR BROWSER
+
+<div class="lang-ja">
+
+**BMBoard をサイドパネルに常駐させる Chrome 拡張。**
+ブラウジング中に見つけた素材をそのままキャンバスへ — ウェブと描画ツールの境界を消す。
+
+</div>
+
+<div class="lang-en">
+
+**A Chrome extension that keeps BMBoard in your side panel.**
+Send anything you find while browsing straight to the canvas — erasing the boundary between the web and your drawing tool.
+
+</div>
+
+---
+
+<div class="lang-ja" style="text-align:center;margin:28px 0;">
+
+<a href="https://chromewebstore.google.com/detail/black-mirror-browser/ndnjojkcfekgcnfiieecehclidhkibjm" style="display:inline-block;padding:10px 22px;border:1px solid var(--glow);color:var(--glow);text-decoration:none;font-size:11px;letter-spacing:0.16em;">Chrome Web Store から入手</a>
+
+</div>
+
+<div class="lang-en" style="text-align:center;margin:28px 0;">
+
+<a href="https://chromewebstore.google.com/detail/black-mirror-browser/ndnjojkcfekgcnfiieecehclidhkibjm" style="display:inline-block;padding:10px 22px;border:1px solid var(--glow);color:var(--glow);text-decoration:none;font-size:11px;letter-spacing:0.16em;">Get it on the Chrome Web Store</a>
+
+</div>
+
+---
+
+## What you can do / できること
+
+```
+SIDE PANEL          ⌘⇧Y でパネルを開く / open with ⌘⇧Y
+                    BMBoard がサイドに常駐 · live build に直結
+                    ページを離れずキャンバスを操作できる
+
+SEND TO BMBOARD     画像を右クリック → "Send to BMBoard"
+                    見つけた写真・イラストをワンクリックでキャンバスへ
+
+DRAG & DROP         ウェブ上の画像をパネルへ直接 D&D
+
+GIF 化              キャンバスの描画過程を GIF アニメとして書き出し
+
+CROP                取り込んだ画像を拡張内でトリミング
+
+SIZE DISPLAY        キャンバス上のオブジェクトのサイズをリアルタイム表示
+```
+
+---
+
+## Keyboard / キーボード
+
+```
+⌘⇧Y    サイドパネルを開閉 / toggle side panel
+↻      パネル内の BMBoard をリロード
+↗      BMBoard を別タブで全画面表示
+```
+
+---
+
+## How it works / しくみ
+
+<div class="lang-ja">
+
+拡張のサイドパネルは `bmboard.studio/app.html` を iframe で読み込んでいます。
+本体（bmboard.studio）の更新がそのまま拡張に反映されるため、拡張のアップデートなしで新機能を受け取れます。
+
+キャンバスのデータは BMBoard の IndexedDB にそのまま保存されます。タブを閉じても、次に開いたときに続きから始められます。
+
+</div>
+
+<div class="lang-en">
+
+The side panel loads `bmboard.studio/app.html` inside an iframe.
+Updates to the live site reflect in the extension immediately — no extension update required to receive new features.
+
+Canvas data persists in BMBoard's IndexedDB. Close the panel, open it again — everything is exactly where you left it.
+
+</div>
+
+---
+
+## Install / インストール
+
+```
+1. Chrome Web Store を開く
+2. "Black Mirror Browser" を検索 — または下のリンクから
+3. "Chrome に追加" をクリック
+4. ⌘⇧Y でパネルを開いてすぐ使える
+```
+
+<div style="text-align:center;margin:32px 0 8px;">
+
+<a href="https://chromewebstore.google.com/detail/black-mirror-browser/ndnjojkcfekgcnfiieecehclidhkibjm" style="display:inline-block;padding:10px 22px;border:1px solid var(--glow);color:var(--glow);text-decoration:none;font-size:11px;letter-spacing:0.16em;">→ Chrome Web Store</a>
+
+</div>
+
+---
+
+*Black Mirror Browser — kinoshita studio / 2026*
+</script>
+
 <script>
     const mdBody = document.getElementById('mdBody');
     // README has separate en/ja markdown blocks so the JP/EN toggle can swap
@@ -1625,6 +1732,7 @@ AI が出した 1 行 JSON を BMBoard ターミナルにペーストするだ�
         if (file === 'README.md')      return 'md-readme-' + currentLang();
         if (file === 'usage.md')       return 'md-usage';
         if (file === 'spell-spec.md')  return 'md-spell-spec';
+        if (file === 'bmbrowser.md')   return 'md-bmbrowser';
         return null;
     }
     let activeFile = 'README.md';
