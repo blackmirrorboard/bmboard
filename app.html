@@ -6036,6 +6036,7 @@ function disableBlackMirror() {
 // Without this, in-progress sticky edits (or any edit within 1.5s of closing)
 // are lost on re-open.
 function _flushOnHide() {
+    try { commitText(); } catch(_) {}        // commit any open text overlay
     try { commitStickyEdit(); } catch(_) {}  // commit any open sticky textarea
     clearTimeout(_saveTimer);
     _saveTimer = null;
