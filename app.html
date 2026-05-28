@@ -1636,6 +1636,76 @@
             will-change: transform;
             pointer-events: none;
         }
+
+        /* ── Notify / Confirm modals (additive) ── */
+        #bm-notify-overlay,
+        #bm-confirm-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(8,8,8,0.55);
+            z-index: 10001;
+            align-items: center;
+            justify-content: center;
+        }
+        #bm-notify-overlay.open,
+        #bm-confirm-overlay.open { display: flex; }
+
+        #bm-notify-modal,
+        #bm-confirm-modal {
+            background: var(--wb, #fff);
+            border: 1px solid #111;
+            padding: 24px 28px 20px;
+            max-width: 380px;
+            width: calc(100% - 48px);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .bm-modal-eyebrow {
+            font-size: 8px;
+            letter-spacing: 0.22em;
+            color: #aaa;
+            margin-bottom: 12px;
+        }
+        .bm-modal-title {
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+        }
+        .bm-modal-title.type-error { color: #c0392b; }
+        .bm-modal-title.type-warn  { color: #a0720a; }
+        .bm-modal-title.type-info  { color: #111; }
+
+        .bm-modal-body {
+            font-size: 11px;
+            line-height: 1.7;
+            color: #555;
+            margin-bottom: 18px;
+        }
+        .bm-modal-btn-row { display: flex; gap: 8px; }
+
+        .bm-modal-btn {
+            flex: 1;
+            min-height: 40px;
+            background: #111;
+            color: #FAFAF8;
+            border: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s;
+        }
+        .bm-modal-btn:hover { background: #333; }
+        .bm-modal-btn.bm-secondary {
+            background: transparent;
+            color: #111;
+            border: 1px solid #111;
+        }
+        .bm-modal-btn.bm-secondary:hover { background: #f0f0f0; }
     </style>
 </head>
 <body>
@@ -7419,9 +7489,9 @@ function runCommand(val) {
     }
 
     // ── save / ls / load ──────────────────────────────────────────────────
-    if (head==='save') { const name=rest.trim(); if(!/^[a-zA-Z0-9][a-zA-Z0-9_\- .]{0,40}$/.test(name)){printRaw('save: usage → save <name>','t-err');return;} const record={name,savedAt:new Date().toISOString(),objectCount:S.objects.length,view:{scale:VIEW.scale,tx:VIEW.tx,ty:VIEW.ty},objects:JSON.parse(JSON.stringify(S.objects))}; bmProjectsPut(record).then(()=>{enqueue(`save ${name}`,['→ serializing...','→ '+record.objectCount+' object(s)',`[SUCCESS] Snapshot '${name}' committed.`])}).catch(err=>{printRaw('save: '+err.message,'t-err')}); return; }
+    if (head==='save') { const name=rest.trim(); if(!/^[a-zA-Z0-9][a-zA-Z0-9_\- .]{0,40}$/.test(name)){printRaw('save: usage → save <name>','t-err');return;} const _doSave=()=>{const record={name,savedAt:new Date().toISOString(),objectCount:S.objects.length,view:{scale:VIEW.scale,tx:VIEW.tx,ty:VIEW.ty},objects:JSON.parse(JSON.stringify(S.objects))};bmProjectsPut(record).then(()=>{enqueue(`save ${name}`,['→ serializing...','→ '+record.objectCount+' object(s)',`[SUCCESS] Snapshot '${name}' committed.`])}).catch(err=>{printRaw('save: '+err.message,'t-err')});}; try{bmConfirm('◼ SAVE',`"${name}" として保存しますか？ (${S.objects.length} obj)`).then(ok=>{if(ok)_doSave();});}catch(_){_doSave();} return; }
     if (head==='ls') { bmProjectsAll().then(rows=>{if(!rows.length){enqueue('ls',['no saved projects.','tip: $ save <name>']);return;} rows.sort((a,b)=>(b.savedAt||'').localeCompare(a.savedAt||'')); const lines=['saved projects  —  '+rows.length+' entries','', ...rows.map(r=>'  '+r.name.padEnd(20)+' '+(r.savedAt||'').slice(0,16)+' '+((r.objectCount??0)+' obj'))]; enqueue('ls',lines)}).catch(err=>{printRaw('ls: '+err.message,'t-err')}); return; }
-    if (head==='load') { const name=rest.trim(); if(!name){printRaw('load: usage → load <name>','t-err');return;} bmProjectsGet(name).then(p=>{if(!p){printRaw(`load: '${name}' not found`,'t-err');return;} S.objects=p.objects||[];S.selectedId=null;S.multiSelected=[];S.objects.forEach(o=>o.selected=false);if(p.view){VIEW.scale=p.view.scale||1;VIEW.tx=p.view.tx||0;VIEW.ty=p.view.ty||0;updateZoomLabel();}redrawAll();saveHistory();enqueue(`load ${name}`,['→ restored '+(p.objectCount??p.objects.length)+' object(s)',`[SUCCESS] Snapshot '${name}' restored.`])}).catch(err=>{printRaw('load: '+err.message,'t-err')}); return; }
+    if (head==='load') { const name=rest.trim(); if(!name){printRaw('load: usage → load <name>','t-err');return;} bmProjectsGet(name).then(p=>{if(!p){printRaw(`load: '${name}' not found`,'t-err');return;} const _doLoad=()=>{S.objects=p.objects||[];S.selectedId=null;S.multiSelected=[];S.objects.forEach(o=>o.selected=false);if(p.view){VIEW.scale=p.view.scale||1;VIEW.tx=p.view.tx||0;VIEW.ty=p.view.ty||0;updateZoomLabel();}redrawAll();saveHistory();enqueue(`load ${name}`,['→ restored '+(p.objectCount??p.objects.length)+' object(s)',`[SUCCESS] Snapshot '${name}' restored.`]);}; try{bmConfirm('◼ LOAD',`"${name}" を読み込みます。現在のキャンバスは上書きされます。よろしいですか？`).then(ok=>{if(ok)_doLoad();});}catch(_){_doLoad();}}).catch(err=>{printRaw('load: '+err.message,'t-err')}); return; }
 
     // ── list ──────────────────────────────────────────────────────────────
     if (head==='list') {
@@ -8587,10 +8657,46 @@ function _saveCanvasNow() {
                 try { printRaw('[autosave] storage quota tight — trimmed undo history', 't-dim'); } catch(_) {}
             } catch (_) {
                 try { printRaw('[autosave] localStorage full — please SAVE to .json', 't-err'); } catch(_) {}
+                try { bmAlert('◼ STORAGE FULL', 'ストレージが満杯です。\nSAVE ボタンまたは export data コマンドで .json に書き出してください。', 'error'); } catch(_) {}
             }
         }
     }
 }
+/* ── bmAlert / bmConfirm — additive modal system ── */
+function bmAlert(title, msg, type) {
+    try {
+        const ov = document.getElementById('bm-notify-overlay');
+        const ti = document.getElementById('bm-notify-title');
+        const bo = document.getElementById('bm-notify-body');
+        if (!ov || !ti || !bo) return;
+        ti.textContent = title;
+        ti.className   = 'bm-modal-title type-' + (type || 'info');
+        bo.textContent = msg;
+        ov.classList.add('open');
+        const close = () => ov.classList.remove('open');
+        document.getElementById('bm-notify-ok').onclick = close;
+        ov.onclick = (e) => { if (e.target === ov) close(); };
+    } catch (_) {}
+}
+
+function bmConfirm(title, msg) {
+    return new Promise(resolve => {
+        try {
+            const ov = document.getElementById('bm-confirm-overlay');
+            const ti = document.getElementById('bm-confirm-title');
+            const bo = document.getElementById('bm-confirm-body');
+            if (!ov || !ti || !bo) { resolve(true); return; }
+            ti.textContent = title;
+            bo.textContent = msg;
+            ov.classList.add('open');
+            const close = (val) => { ov.classList.remove('open'); resolve(val); };
+            document.getElementById('bm-confirm-yes').onclick    = () => close(true);
+            document.getElementById('bm-confirm-cancel').onclick = () => close(false);
+            ov.onclick = (e) => { if (e.target === ov) close(false); };
+        } catch (_) { resolve(true); }
+    });
+}
+
 function _loadCanvasFromLocal() {
     try {
         const raw = localStorage.getItem(BM_CANVAS_KEY);
@@ -10631,5 +10737,30 @@ document.addEventListener('selectionchange', () => {
     s.removeAllRanges();
 });
 </script>
+
+<!-- bm-notify (alert) overlay — additive, z-index 10001 -->
+<div id="bm-notify-overlay">
+    <div id="bm-notify-modal">
+        <div class="bm-modal-eyebrow">BLACK MIRROR BOARD</div>
+        <div class="bm-modal-title" id="bm-notify-title"></div>
+        <div class="bm-modal-body"  id="bm-notify-body"></div>
+        <div class="bm-modal-btn-row">
+            <button class="bm-modal-btn" id="bm-notify-ok">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- bm-confirm overlay — additive, z-index 10001 -->
+<div id="bm-confirm-overlay">
+    <div id="bm-confirm-modal">
+        <div class="bm-modal-eyebrow">BLACK MIRROR BOARD</div>
+        <div class="bm-modal-title type-info" id="bm-confirm-title"></div>
+        <div class="bm-modal-body"            id="bm-confirm-body"></div>
+        <div class="bm-modal-btn-row">
+            <button class="bm-modal-btn bm-secondary" id="bm-confirm-cancel">CANCEL</button>
+            <button class="bm-modal-btn"              id="bm-confirm-yes">YES</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
