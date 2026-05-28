@@ -6030,13 +6030,29 @@ function disableBlackMirror() {
 // Release the camera device on tab close / navigation. Without this, a user
 // who leaves the tab without running "Black Mirror off" leaves the camera
 // LED on until the OS reclaims the device — privacy / hygiene concern.
+// Flush any pending canvas save synchronously before the page disappears.
+// This is critical for Chrome extension popups: closing the popup fires
+// pagehide/visibilitychange but the 1500ms _saveTimer would never complete.
+// Without this, in-progress sticky edits (or any edit within 1.5s of closing)
+// are lost on re-open.
+function _flushOnHide() {
+    try { commitStickyEdit(); } catch(_) {}  // commit any open sticky textarea
+    clearTimeout(_saveTimer);
+    _saveTimer = null;
+    try { _saveCanvasNow(); } catch(_) {}    // write to localStorage immediately
+}
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') _flushOnHide();
+});
 window.addEventListener('beforeunload', () => {
+    _flushOnHide();
     if (_bmMirrorStream) {
         try { _bmMirrorStream.getTracks().forEach(t => t.stop()); } catch {}
         _bmMirrorStream = null;
     }
 });
 window.addEventListener('pagehide', () => {
+    _flushOnHide();
     if (_bmMirrorStream) {
         try { _bmMirrorStream.getTracks().forEach(t => t.stop()); } catch {}
         _bmMirrorStream = null;
