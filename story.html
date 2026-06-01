@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Black Mirror Board 開発ストーリー | 木下スタジオ（木下貴博 / 滋賀）</title>
+  <meta name="description" content="なぜHTMLひとつで無限キャンバスを作ったのか。木下スタジオ（木下貴博 / 滋賀・琵琶湖）によるBlack Mirror Board（BMBoard）の開発背景と設計思想。依存ゼロ・オフライン動作・Terminal Magic。">
+  <meta name="keywords" content="Black Mirror Board,BMBoard,開発ストーリー,木下スタジオ,木下貴博,滋賀 個人開発,HTMLキャンバス,依存ゼロ,Terminal Magic,Kinoshita Studio,琵琶湖">
+  <meta property="og:title" content="Black Mirror Board 開発ストーリー | 木下スタジオ（木下貴博 / 滋賀）">
+  <meta property="og:description" content="なぜHTMLひとつで無限キャンバスを作ったのか。木下スタジオ（木下貴博 / 滋賀・琵琶湖）によるBMBoard開発背景と設計思想。">
+  <meta property="og:image" content="https://bmboard.studio/og-image.png">
+  <meta property="og:url" content="https://bmboard.studio/story.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Black Mirror Board 開発ストーリー | 木下スタジオ（木下貴博）">
+  <meta name="twitter:description" content="なぜHTMLひとつで無限キャンバスを作ったのか。木下スタジオ（木下貴博 / 滋賀）の設計思想。">
+  <meta name="twitter:image" content="https://bmboard.studio/og-image.png">
+  <link rel="canonical" href="https://bmboard.studio/story.html">
+  <link rel="icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Zen+Kaku+Gothic+New:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #0e0e0c; --ink: #e8e5de; --ink-faint: #6a6a60; --gold: #a89060; --line: rgba(240,237,232,0.1); }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 400; line-height: 1.8; }
+    nav { padding: 2rem 3rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
+    .nav-logo { font-family: 'Space Mono', monospace; font-size: .65rem; letter-spacing: .2em; color: var(--ink); text-decoration: none; text-transform: uppercase; }
+    .nav-back { font-family: 'Space Mono', monospace; font-size: .58rem; letter-spacing: .15em; color: var(--ink-faint); text-decoration: none; transition: color .3s; }
+    .nav-back:hover { color: var(--gold); }
+    .hero { padding: 6rem 3rem 4rem; border-bottom: 1px solid var(--line); max-width: 800px; margin: 0 auto; }
+    .hero-label { font-family: 'Space Mono', monospace; font-size: .55rem; letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: 2rem; }
+    .hero-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 400; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: .02em; }
+    .hero-sub { font-family: 'Space Mono', monospace; font-size: .7rem; color: var(--ink-faint); letter-spacing: .1em; line-height: 2; }
+    .section { padding: 5rem 3rem; border-bottom: 1px solid var(--line); max-width: 800px; margin: 0 auto; }
+    .section-num { font-family: 'Space Mono', monospace; font-size: .55rem; color: var(--gold); letter-spacing: .25em; margin-bottom: 1.5rem; }
+    .section-title { font-size: 1.4rem; font-weight: 400; margin-bottom: 2rem; letter-spacing: .04em; }
+    .section-body { font-size: .9rem; color: #b8b4ac; line-height: 2.4; }
+    .section-body p + p { margin-top: 1.4em; }
+    .section-body strong { color: var(--ink); font-weight: 400; }
+    .quote { border-left: 2px solid var(--gold); padding-left: 2rem; margin: 2.5rem 0; }
+    .quote p { font-size: 1.1rem; line-height: 1.8; color: var(--ink); }
+    .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.5rem; }
+    .spec-item { border: 1px solid var(--line); padding: 1.5rem; }
+    .spec-label { font-family: 'Space Mono', monospace; font-size: .5rem; letter-spacing: .25em; color: var(--gold); text-transform: uppercase; margin-bottom: .6rem; }
+    .spec-value { font-size: .82rem; color: var(--ink); line-height: 1.8; }
+    .studio-note { padding: 4rem 3rem; background: rgba(168,144,96,.06); border-top: 1px solid var(--line); }
+    .studio-note-inner { max-width: 800px; margin: 0 auto; }
+    .studio-note-label { font-family: 'Space Mono', monospace; font-size: .5rem; letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: 1.5rem; }
+    .studio-note-body { font-size: .82rem; color: #b8b4ac; line-height: 2.4; margin-bottom: 1.5rem; }
+    .studio-link { font-family: 'Space Mono', monospace; font-size: .58rem; color: var(--gold); text-decoration: none; letter-spacing: .12em; border-bottom: 1px solid var(--gold); padding-bottom: .1rem; transition: color .3s; }
+    .studio-link:hover { color: #c8a870; }
+    footer { padding: 2rem 3rem; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    footer span, footer a { font-family: 'Space Mono', monospace; font-size: .5rem; color: var(--ink-faint); letter-spacing: .12em; text-decoration: none; }
+    footer a:hover { color: var(--gold); }
+    @media(max-width:600px) { nav, .hero, .section, .studio-note, footer { padding-left: 1.5rem; padding-right: 1.5rem; } .spec-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Black Mirror Board</a>
+  <a href="app.html" class="nav-back">← App を開く</a>
+</nav>
+
+<div class="hero">
+  <p class="hero-label">— Story / 開発背景</p>
+  <h1 class="hero-title">なぜHTMLひとつで<br>無限キャンバスを作ったのか。</h1>
+  <p class="hero-sub">木下スタジオ（木下貴博 / 滋賀・琵琶湖）による開発背景と設計思想</p>
+</div>
+
+<div class="section">
+  <p class="section-num">— 01</p>
+  <h2 class="section-title">問いは「なぜフレームワークを使わないのか」だった。</h2>
+  <div class="section-body">
+    <p>Reactは速い。でもHTMLより速くはない。</p>
+    <p>ブラウザは最強のランタイムだ。Canvas API、IndexedDB、Web Audio API、PointerEvents——これだけのAPIが標準で使える。フレームワークが何かをしてくれると思っていたが、実はブラウザがすでにやってくれていた。</p>
+    <div class="quote">
+      <p>「依存はいつか裏切る。だからゼロにした。」</p>
+    </div>
+    <p>npmのエコシステムは素晴らしい。でも、今日使っているパッケージが3年後もメンテされているかはわからない。BMBoardが依存しているのはブラウザAPIだけだ。W3Cが標準化した仕様——10年後も動く。</p>
+  </div>
+</div>
+
+<div class="section">
+  <p class="section-num">— 02</p>
+  <h2 class="section-title">499KBに詰め込んだもの。</h2>
+  <div class="section-body">
+    <p>HTMLファイルひとつ。そこに全部入っている。</p>
+    <div class="spec-grid">
+      <div class="spec-item">
+        <p class="spec-label">描画エンジン</p>
+        <p class="spec-value">Canvas 2D API<br>コーナー検出付きquad-midpoint smoothing</p>
+      </div>
+      <div class="spec-item">
+        <p class="spec-label">保存</p>
+        <p class="spec-value">IndexedDB<br>オフライン自動保存</p>
+      </div>
+      <div class="spec-item">
+        <p class="spec-label">Terminal Magic</p>
+        <p class="spec-value">$sakura / $scatter / $make-img<br>ClaudeでJSON生成→貼るだけ拡張</p>
+      </div>
+      <div class="spec-item">
+        <p class="spec-label">書き出し</p>
+        <p class="spec-value">PNG / SVG / PPTX / GIF<br>全てクライアントサイドで完結</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <p class="section-num">— 03</p>
+  <h2 class="section-title">Terminal Magicとは何か。</h2>
+  <div class="section-body">
+    <p>テキストボックスに <strong>$sakura</strong> と打つと、キャンバスに桜が降り始める。<strong>$scatter</strong> で選択中のオブジェクトが爆発する。<strong>$make-img biwako 4</strong> で琵琶湖の写真が4枚飛んでくる。</p>
+    <p>spellは1行のJSONだ。ClaudeやChatGPTに「こういう動きをするspellを作って」と依頼すると生成してくれる。それをターミナルに貼るだけで登録される。Enterも不要。</p>
+    <div class="quote">
+      <p>「コマンドラインとキャンバスが合体した感じ。デザイナーが呪文を唱えるイメージで作った。」</p>
+    </div>
+    <p>自分のツールをAIで育てていく体験——これがTerminal Magicの本質だ。</p>
+  </div>
+</div>
+
+<div class="section">
+  <p class="section-num">— 04</p>
+  <h2 class="section-title">シンプルにするのが一番難しかった。</h2>
+  <div class="section-body">
+    <p>機能を削ることは、追加することより10倍難しい。「これも必要かも」という誘惑に負け続けると、いつの間にかファイルサイズが膨らむ。499KBというサイズは、削った結果だ。</p>
+    <p>制約は敵じゃない。「1ファイルで全部入れる」という制約が、依存を持ち込まない習慣、ランタイムコストへの敏感さ、APIの理解の深さ——これらを全部鍛えてくれた。</p>
+    <p>琵琶湖のそばで、このツールを毎日使いながら作り続けた。</p>
+  </div>
+</div>
+
+<div class="studio-note">
+  <div class="studio-note-inner">
+    <p class="studio-note-label">— Studio</p>
+    <p class="studio-note-body">Black Mirror Board（BMBoard）は、<strong>木下スタジオ</strong>（木下貴博 / 滋賀・琵琶湖）による個人開発プロダクトです。UX/UIデザイン・アートディレクション・個人開発を一人で担う体験翻訳家・木下貴博が、「届けたい体験と届いている体験のズレを揃える」という思想のもとに開発しました。</p>
+    <a href="https://kinoshita.studio" target="_blank" rel="noopener" class="studio-link">木下スタジオ（kinoshita.studio）→</a>
+  </div>
+</div>
+
+<footer>
+  <span>© 2026 木下スタジオ / Kinoshita Studio — 木下貴博 / Takahiro Kinoshita（滋賀・琵琶湖）</span>
+  <a href="app.html">App を開く →</a>
+</footer>
+
+</body>
+</html>
