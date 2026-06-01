@@ -1822,6 +1822,113 @@ footer {
 </section>
 
 <!-- ═════════════════════════════════════════════════════════════════
+     MAKER
+     ═════════════════════════════════════════════════════════════════ -->
+<section class="section" id="maker">
+    <div class="section-number">
+        <span class="lang-en">Section 08 — THE MAKER</span>
+        <span class="lang-ja">セクション 08 — 作った人</span>
+    </div>
+
+    <style>
+        .maker-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 60px;
+            align-items: center;
+            margin-top: 40px;
+        }
+        .maker-photo {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            object-position: center top;
+            display: block;
+            filter: grayscale(30%) contrast(1.05);
+        }
+        .maker-text h3 {
+            font-size: clamp(20px, 2.8vw, 32px);
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: -0.01em;
+            margin-bottom: 20px;
+        }
+        .maker-text h3 em { font-style: normal; color: var(--dim); font-weight: 400; }
+        .maker-story {
+            font-size: 13px;
+            line-height: 2;
+            color: var(--dim);
+            margin-bottom: 28px;
+            max-width: 52ch;
+        }
+        .maker-story strong { color: var(--ink); }
+        .maker-name {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: var(--ink);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .maker-role {
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            color: var(--faint);
+            margin-bottom: 20px;
+        }
+        .maker-link {
+            font-size: 11px;
+            letter-spacing: 0.16em;
+            color: var(--ink);
+            text-decoration: none;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--rule);
+            padding-bottom: 2px;
+        }
+        .maker-link:hover { border-color: var(--ink); }
+        @media (max-width: 660px) {
+            .maker-grid {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+            .maker-photo {
+                aspect-ratio: 4/3;
+                max-width: 320px;
+            }
+        }
+    </style>
+
+    <div class="maker-grid">
+        <img
+            src="assets/founder.jpg"
+            alt="木下 貴博 — kinoshita studio / 琵琶湖のほとりで"
+            class="maker-photo"
+            loading="lazy"
+        >
+        <div class="maker-text">
+            <h3 class="lang-en">Built by one person,<br><em>beside Lake Biwa.</em></h3>
+            <h3 class="lang-ja">琵琶湖のほとりで、<br><em>ひとりで作った。</em></h3>
+            <p class="maker-story lang-en">
+                Netflix was on. I was watching Black Mirror.<br>
+                Then it hit me — <strong>why don't designers and engineers ever share the same canvas?</strong><br><br>
+                One has intuition. The other has commands.<br>
+                Both are trying to build something.<br>
+                Black Mirror Board is the place where they finally meet.
+            </p>
+            <p class="maker-story lang-ja">
+                ある夜、Netflixで「ブラックミラー」を見ていた。<br>
+                そのとき気づいた —— <strong>デザイナーとエンジニアが同じキャンバスを見る場所が、この世にない。</strong><br><br>
+                一方には直感がある。もう一方にはコマンドがある。<br>
+                ふたりは同じものを作ろうとしている。<br>
+                Black Mirror Board は、その交差点だ。
+            </p>
+            <p class="maker-name">Takahiro Kinoshita / 木下 貴博</p>
+            <p class="maker-role">Designer &amp; Developer — kinoshita studio · Shiga, Japan</p>
+            <a href="https://kinoshita.studio/" target="_blank" rel="noopener" class="maker-link">kinoshita.studio →</a>
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════
      FOOTER
      ═════════════════════════════════════════════════════════════════ -->
 <footer>
