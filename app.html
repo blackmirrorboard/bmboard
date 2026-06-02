@@ -3974,11 +3974,31 @@ function getCachedImg(src) {
 
 function renderImage(obj) {
     const { x, y, w, h, crop } = obj.data;
-    const img = getCachedImg(obj.data.src);
     ctx.save();
+
+    // Stripped image — data was not persisted in localStorage (too large).
+    // Show a clear placeholder so the user knows to OPEN their .json.
+    if (!obj.data.src || obj.data.src === '__stripped__') {
+        ctx.strokeStyle = '#e0a020'; ctx.lineWidth = 1.5 / VIEW.scale;
+        ctx.setLineDash([6/VIEW.scale, 3/VIEW.scale]);
+        ctx.strokeRect(x, y, w, h);
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#fffbf0'; ctx.fillRect(x, y, w, h);
+        const fs = Math.max(10, Math.min(13, h * 0.12)) / VIEW.scale;
+        ctx.fillStyle = '#c08000'; ctx.font = `${fs}px Courier New`;
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠ image not saved', x + w/2, y + h/2 - fs);
+        ctx.fillStyle = '#aaa'; ctx.font = `${fs * 0.85}px Courier New`;
+        ctx.fillText('OPEN .json to restore', x + w/2, y + h/2 + fs * 0.4);
+        ctx.textAlign = 'left';
+        if (obj.selected) { selBox(x, y, w, h); drawAnchors(obj); }
+        ctx.restore();
+        return;
+    }
+
+    const img = getCachedImg(obj.data.src);
     if (img.complete && img.naturalWidth > 0) {
         if (crop && crop.w > 0 && crop.h > 0) {
-            // Non-destructive crop: draw only the crop region of the source image
             ctx.drawImage(img, crop.x, crop.y, crop.w, crop.h, x, y, w, h);
         } else {
             ctx.drawImage(img, x, y, w, h);
@@ -5925,6 +5945,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Load state from URL hash on boot — runs after everything is initialized
 async function loadSharedStateFromHash() {
+    // Init IndexedDB image store before restoring canvas
+    await _initImgDb().catch(() => {});
     const h = location.hash;
     if (!h || !h.startsWith('#s=')) {
         // No shared URL → restore from local auto-save (if any).
@@ -8656,6 +8678,60 @@ const BM_CANVAS_KEY = 'bm.canvas.v1';
 let _saveTimer = null;
 let _storageFull = false; // true after first quota-exceeded — suppresses repeated alerts
 
+// ── IndexedDB image store — survives panel close / reload ──────────────────
+// localStorage (5 MB) can't hold base64 images. IndexedDB stores them
+// separately with no practical size limit. Images are keyed by object ID.
+const _imgDbStore = { db: null };
+function _initImgDb() {
+    return new Promise(resolve => {
+        try {
+            const req = indexedDB.open('bm_canvas_images_v1', 1);
+            req.onupgradeneeded = e => { e.target.result.createObjectStore('imgs'); };
+            req.onsuccess  = e => { _imgDbStore.db = e.target.result; resolve(); };
+            req.onerror    = () => resolve();
+        } catch(_) { resolve(); }
+    });
+}
+function _dbSaveImg(id, src) {
+    if (!_imgDbStore.db || !src || src === '__stripped__') return;
+    try {
+        const tx = _imgDbStore.db.transaction('imgs', 'readwrite');
+        tx.objectStore('imgs').put(src, id);
+    } catch(_) {}
+}
+function _dbLoadImg(id) {
+    return new Promise(resolve => {
+        if (!_imgDbStore.db) return resolve(null);
+        try {
+            const tx = _imgDbStore.db.transaction('imgs', 'readonly');
+            const req = tx.objectStore('imgs').get(id);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror   = () => resolve(null);
+        } catch(_) { resolve(null); }
+    });
+}
+function _dbDeleteImg(id) {
+    if (!_imgDbStore.db) return;
+    try {
+        const tx = _imgDbStore.db.transaction('imgs', 'readwrite');
+        tx.objectStore('imgs').delete(id);
+    } catch(_) {}
+}
+async function _restoreStrippedImages() {
+    const stripped = S.objects.filter(o =>
+        o.type === 'image' && o.data && o.data.src === '__stripped__');
+    if (!stripped.length) return;
+    let restored = 0;
+    for (const obj of stripped) {
+        const src = await _dbLoadImg(obj.id);
+        if (src) { obj.data.src = src; restored++; }
+    }
+    if (restored) {
+        try { redrawAll(); } catch(_) {}
+        try { printRaw('[autosave] ' + restored + ' image(s) restored from IndexedDB', 't-ok'); } catch(_) {}
+    }
+}
+
 function _scheduleCanvasSave() {
     clearTimeout(_saveTimer);
     _saveTimer = setTimeout(_saveCanvasNow, 1500);
@@ -8772,6 +8848,8 @@ function _loadCanvasFromLocal() {
                 '→ all changes will be auto-saved.',
             ]);
         } catch(_) {}
+        // Async: restore image data from IndexedDB for any stripped objects
+        _restoreStrippedImages().catch(() => {});
         return true;
     } catch (_) { return false; }
 }
@@ -10623,6 +10701,7 @@ function placeImageOnCanvas(file, source) {
             obj.selected     = true;
             S.multiSelected  = [];
             S.objects.push(obj);
+            _dbSaveImg(id, dataUrl); // persist to IndexedDB — survives panel close
             saveHistory();
             redrawAll();
 
