@@ -7528,6 +7528,7 @@ function runCommand(val) {
         const payload={format:'blackmirror.bundle',version:'1.2',exportedAt:new Date().toISOString(),project,commands};
         const json=JSON.stringify(payload,null,2), fname=bmFilename('_BUNDLE');
         enqueue('export-all',['→ '+project.objectCount+' object(s) + '+commands.length+' command(s)','→ '+fname+' — '+(json.length/1024).toFixed(1)+' KB']);
+        _storageFull = false; // exported — autosave can retry
         bmDeliverJson(json,fname).then(r=>{if(r==='share')printRaw('[export-all] shared ✓','t-ok');else if(r!=='cancelled')printRaw('[export-all] downloaded ✓','t-ok')}).catch(()=>{});
         return;
     }
@@ -8487,6 +8488,7 @@ function showBundleExportDialog() {
                 `→ ${fname} — ${(json.length/1024).toFixed(1)} KB`,
             ];
             enqueue('export data', lines);
+            _storageFull = false; // exported successfully — autosave can retry
             bmDeliverJson(json, fname).then(r=>{if(r==='share')printRaw('[export data] shared ✓','t-ok');else if(r!=='cancelled')printRaw('[export data] downloaded ✓','t-ok')}).catch(()=>{});
         });
     });
@@ -8638,20 +8640,37 @@ function saveHistory() {
 // URL "#s=" hash takes priority on boot (explicit consume of a shared board).
 const BM_CANVAS_KEY = 'bm.canvas.v1';
 let _saveTimer = null;
+let _storageFull = false; // true after first quota-exceeded — suppresses repeated alerts
+
 function _scheduleCanvasSave() {
     clearTimeout(_saveTimer);
     _saveTimer = setTimeout(_saveCanvasNow, 1500);
 }
+
+// Strip base64 image data from objects before saving to localStorage.
+// Images stay live on the canvas (in S.objects / _imgCache) but their
+// large dataUrl is not written to the 5 MB localStorage quota.
+function _serializeForStorage(objects) {
+    return objects.map(o => {
+        if (o.type === 'image' && o.data && o.data.src && o.data.src.startsWith('data:')) {
+            return { ...o, data: { ...o.data, src: '__stripped__' } };
+        }
+        return o;
+    });
+}
+
 function _saveCanvasNow() {
+    if (_storageFull) return; // already known full — skip quietly, user must export
     try {
         const payload = {
             v: '1.2',
             ts: Date.now(),
             mode: typeof MODE !== 'undefined' ? MODE : undefined,
             view: { scale: VIEW.scale, tx: VIEW.tx, ty: VIEW.ty },
-            objects: S.objects,
+            objects: _serializeForStorage(S.objects),
         };
         localStorage.setItem(BM_CANVAS_KEY, JSON.stringify(payload));
+        _storageFull = false; // successful save — reset flag
     } catch (err) {
         // Quota exceeded → drop oldest undo history and retry once.
         if (err && err.name === 'QuotaExceededError') {
@@ -8659,12 +8678,16 @@ function _saveCanvasNow() {
                 while (_history.length > 10) _history.shift();
                 if (_histIdx > _history.length - 1) _histIdx = _history.length - 1;
                 const compact = { v:'1.2', ts:Date.now(), mode: typeof MODE!=='undefined'?MODE:undefined,
-                    view:{scale:VIEW.scale,tx:VIEW.tx,ty:VIEW.ty}, objects:S.objects };
+                    view:{scale:VIEW.scale,tx:VIEW.tx,ty:VIEW.ty}, objects:_serializeForStorage(S.objects) };
                 localStorage.setItem(BM_CANVAS_KEY, JSON.stringify(compact));
+                _storageFull = false;
                 try { printRaw('[autosave] storage quota tight — trimmed undo history', 't-dim'); } catch(_) {}
             } catch (_) {
-                try { printRaw('[autosave] localStorage full — please SAVE to .json', 't-err'); } catch(_) {}
-                try { bmAlert('◼ STORAGE FULL', 'ストレージが満杯です。\nSAVE ボタンまたは export data コマンドで .json に書き出してください。', 'error'); } catch(_) {}
+                if (!_storageFull) {
+                    _storageFull = true;
+                    try { printRaw('[autosave] localStorage full — please SAVE to .json', 't-err'); } catch(_) {}
+                    try { bmAlert('◼ STORAGE FULL', 'ストレージが満杯です。\nSAVE ボタンまたは export data コマンドで .json に書き出してください。\n※ 画像を含むボードは .json で保存してください。', 'error'); } catch(_) {}
+                }
             }
         }
     }
