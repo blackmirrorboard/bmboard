@@ -2187,7 +2187,14 @@ Release → all fully-enclosed objects selected.
         <h3>SAVE / LOAD (v0.7+)</h3>
         <pre><b>SAVE</b>   download .json — all objects + terminal log
 <b>OPEN</b>   import .json — fully restore project
-Local only. No upload. No account required.</pre>
+Local only. No upload. No account required.
+
+<b>⚠ IMAGES &amp; AUTOSAVE</b>
+Autosave (localStorage) stores shapes, text, and
+positions — but <b>NOT image pixel data</b>.
+If your board contains images, always <b>SAVE to .json</b>
+before closing or reloading. Images are fully
+embedded in the .json and restore on OPEN.</pre>
         <h3>TERMINAL FILE OPS (v1.2)</h3>
         <pre><b>save &lt;name&gt;</b>   commit canvas → <code>blackmirror / projects</code>
 <b>ls</b>            list every snapshot
@@ -2249,7 +2256,14 @@ Set before drawing, or apply to selected object.</pre>
 <b>make-img sea 6</b>     6 photos · auto 3×2 grid · color by default
 <b>monoclo</b>            select image(s) → grayscale · Cmd+Z reverts
   · max 25 per fetch · grid cols = ceil(√n)
-  · CORS-safe images are dataURL-persisted into bundles</pre>
+  · CORS-safe images are dataURL-persisted into bundles
+
+<b>⚠ IMAGE PERSISTENCE</b>
+Images are <b>NOT saved by autosave</b> (localStorage limit).
+They exist in memory for the current session only.
+→ Use <b>SAVE</b> or <b>export data</b> to write a <b>.json</b> file.
+→ The .json contains full image data and restores on <b>OPEN</b>.
+→ Tip: save to iCloud Drive to share between Mac and iPhone.</pre>
         <h3>SPELL MANAGEMENT</h3>
         <pre><b>register &lt;name&gt; &lt;js&gt;</b>   save a JS action as <code>$name</code>
 <b>alias &lt;new&gt;=&lt;old&gt;</b>     duplicate under a new name

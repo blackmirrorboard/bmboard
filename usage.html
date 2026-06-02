@@ -766,6 +766,39 @@ grayscale(100%) contrast(110%) brightness(95%)
 · selection required · multi-select supported
 · updates obj.data.src to a new dataURL → persisted
 · Cmd+Z reverts to the original color image</pre>
+
+    <h3>⚠ Image Persistence — 画像の保存について</h3>
+    <div class="bil">
+        <div class="jp lang-ja">
+            <b>画像はオートセーブ（localStorage）に含まれません。</b><br>
+            テキスト・図形・線などは自動保存されますが、画像ファイルは容量の関係でローカルストレージには保存されません。<br><br>
+            <b>画像を含むボードを保存するには：</b><br>
+            SAVE ボタンまたは <code>export data</code> コマンドで <b>.json ファイルに書き出し</b>てください。<br>
+            .json には画像データが完全に含まれており、OPEN で読み込めば画像も復元されます。<br><br>
+            <b>iCloud / Dropbox などのクラウドストレージとの連携：</b><br>
+            保存した .json を iCloud Drive などに置くことで、Mac・iPhone・iPad など複数デバイス間で同じボードを共有できます。
+            ただし複数デバイスで同時に編集・保存した場合は競合が発生することがあります。編集は1台ずつ行うことを推奨します。
+        </div>
+        <div class="en lang-en">
+            <b>Images are NOT included in autosave (localStorage).</b><br>
+            Shapes, text, and strokes save automatically, but image pixel data is too large for the localStorage quota.<br><br>
+            <b>To save a board that contains images:</b><br>
+            Use the <b>SAVE</b> button or <code>export data</code> command to write a <b>.json file</b>.<br>
+            The .json fully embeds all image data — <b>OPEN</b> restores everything exactly.<br><br>
+            <b>Cloud storage (iCloud, Dropbox, etc.):</b><br>
+            Saving your .json to iCloud Drive lets you share boards across Mac, iPhone, and iPad.
+            Avoid editing the same file on two devices simultaneously — the last save wins and conflicts may occur.
+        </div>
+    </div>
+
+    <table>
+        <thead><tr><th>データ</th><th>オートセーブ</th><th>.json 保存</th></tr></thead>
+        <tbody>
+            <tr><td>テキスト・付箋・図形・線</td><td>✅ 自動保存</td><td>✅ 含まれる</td></tr>
+            <tr><td>画像（写真・スクショ等）</td><td>❌ 保存されない</td><td>✅ 含まれる</td></tr>
+            <tr><td>カスタムコマンド（Spells）</td><td>✅ 自動保存</td><td>✅ 含まれる</td></tr>
+        </tbody>
+    </table>
 </section>
 
 <!-- ═══════════════════════════════════════════════════ -->
