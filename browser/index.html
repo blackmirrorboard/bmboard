@@ -120,18 +120,31 @@
   @media (max-width: 480px) { body { padding:36px 16px; } }
 
   /* ── intro banner (BMBrowser Chrome extension landing — pre-launch copy) ── */
-  .intro-banner { border:1px solid var(--line); background:var(--bg-1); border-radius:3px; padding:22px 24px; margin-bottom:22px; font-family:var(--font-mono); }
+  .intro-banner { border:1px solid var(--green-dim); background:var(--bg-1); border-radius:3px; padding:22px 24px; margin-bottom:22px; font-family:var(--font-mono); }
   .intro-banner .ib-eyebrow { font-size:10px; letter-spacing:0.3em; color:var(--gray); text-transform:uppercase; margin-bottom:8px; }
   .intro-banner .ib-title { font-size:18px; letter-spacing:0.18em; color:var(--green-bright); text-transform:uppercase; margin-bottom:6px; }
-  .intro-banner .ib-tagline { font-size:12px; color:var(--green-dim); line-height:1.6; margin-bottom:16px; font-family:var(--font-term); }
-  .intro-banner .ib-cmd { font-size:12px; color:var(--green); line-height:1.85; }
-  .intro-banner .ib-cmd > div { display:flex; gap:10px; align-items:baseline; }
-  .intro-banner .ib-cmd .ib-key { color:var(--green-bright); min-width:124px; flex:0 0 auto; }
-  .intro-banner .ib-cmd .ib-dim { color:var(--green-faint); font-family:var(--font-term); flex:1; min-width:0; }
-  .intro-banner .ib-status { margin-top:14px; padding-top:12px; border-top:1px dashed var(--line-soft); font-size:11px; color:var(--green-faint); letter-spacing:0.04em; }
-  .intro-banner .ib-status a { color:var(--green-dim); text-decoration:none; border-bottom:1px dotted var(--green-faint); }
+  .intro-banner .ib-tagline { font-size:12px; color:var(--green-dim); line-height:1.6; margin-bottom:18px; font-family:var(--font-term); }
+  /* CWS install button — most prominent element */
+  .intro-banner .ib-install {
+    display:block; width:100%; text-align:center; text-decoration:none;
+    background:var(--green-dim); color:#000; font-family:var(--font-mono);
+    font-size:13px; letter-spacing:0.12em; padding:13px 16px; border-radius:3px;
+    margin-bottom:18px; transition:background .12s, box-shadow .12s;
+    box-shadow:0 0 18px rgba(51,221,51,0.25);
+  }
+  .intro-banner .ib-install:hover { background:var(--green-bright); box-shadow:0 0 28px rgba(65,255,65,0.4); }
+  .intro-banner .ib-install .ib-badge { font-size:10px; opacity:0.7; margin-left:8px; }
+  /* features */
+  .intro-banner .ib-features { font-size:11px; color:var(--green); line-height:1.9; border-top:1px dashed var(--line-soft); padding-top:12px; margin-bottom:12px; }
+  .intro-banner .ib-features > div { display:flex; gap:10px; align-items:baseline; }
+  .intro-banner .ib-features .ib-key { color:var(--green-bright); min-width:116px; flex:0 0 auto; }
+  .intro-banner .ib-features .ib-dim { color:var(--green-faint); font-family:var(--font-term); flex:1; min-width:0; }
+  .intro-banner .ib-status { padding-top:10px; border-top:1px dashed var(--line-soft); font-size:10px; color:var(--green-faint); letter-spacing:0.04em; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .intro-banner .ib-status a { color:var(--green-faint); text-decoration:none; border-bottom:1px dotted var(--green-faint); }
   .intro-banner .ib-status a:hover { color:var(--green); border-color:var(--green); }
-  @media (max-width:480px) { .intro-banner { padding:18px 16px; } .intro-banner .ib-title { font-size:15px; } .intro-banner .ib-cmd { font-size:11px; } .intro-banner .ib-cmd .ib-key { min-width:104px; } }
+  .ib-live { display:inline-flex; align-items:center; gap:5px; color:var(--green-bright); }
+  .ib-live::before { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--green-bright); animation:bm-breathe 1.8s ease-in-out infinite; }
+  @media (max-width:480px) { .intro-banner { padding:18px 16px; } .intro-banner .ib-title { font-size:15px; } .intro-banner .ib-features { font-size:10px; } .intro-banner .ib-features .ib-key { min-width:98px; } }
 
   /* ── header (the one place that keeps the clean font) ── */
   .head { display:flex; flex-wrap:wrap; align-items:center; gap:12px; row-gap:7px; margin-bottom:20px; }
@@ -462,15 +475,22 @@
     <section class="intro-banner" aria-label="Black Mirror Browser — Chrome extension">
       <div class="ib-eyebrow">/// kinoshita studio · chrome extension</div>
       <div class="ib-title">Black Mirror Browser</div>
-      <p class="ib-tagline">BMBoard, beside any page. ─ サイドパネルに黒板。新しいタブをウィジェットスタックに。右クリックで黒板へ送る。</p>
-      <div class="ib-cmd">
-        <div><span class="ib-key">$ open --side-panel</span><span class="ib-dim">⌘⇧Y で BMBoard を開く</span></div>
-        <div><span class="ib-key">$ new-tab</span><span class="ib-dim">ウィジェットランチャー</span></div>
-        <div><span class="ib-key">$ right-click</span><span class="ib-dim">"send image / text to BMBoard"</span></div>
-        <div><span class="ib-key">$ status</span><span class="ib-dim">coming soon · chrome web store</span></div>
+      <p class="ib-tagline">どのページの横にも黒板を。サイドパネルに BMBoard、新しいタブをウィジェットに、右クリックで直接送る。</p>
+      <a class="ib-install" href="https://chromewebstore.google.com/detail/black-mirror-browser/ndnjojkcfekgcnfiieecehclidhkibjm" target="_blank" rel="noopener">
+        + Chrome に追加 · 無料<span class="ib-badge">Chrome Web Store</span>
+      </a>
+      <div class="ib-features">
+        <div><span class="ib-key">⌘⇧Y</span><span class="ib-dim">任意のページの横に BMBoard を開く</span></div>
+        <div><span class="ib-key">右クリック → 送る</span><span class="ib-dim">画像・テキストをそのままキャンバスへ</span></div>
+        <div><span class="ib-key">新しいタブ</span><span class="ib-dim">このウィジェットスタック画面</span></div>
+        <div><span class="ib-key">D&D / ペースト</span><span class="ib-dim">ドラッグ&ドロップ・Cmd+V でも送れる</span></div>
       </div>
       <div class="ib-status">
-        privacy → <a href="./privacy.html">bmboard.studio/browser/privacy.html</a>
+        <span class="ib-live">v1.1.3 · 公開中</span>
+        <span>·</span>
+        <a href="https://chromewebstore.google.com/detail/black-mirror-browser/ndnjojkcfekgcnfiieecehclidhkibjm" target="_blank" rel="noopener">Chrome Web Store →</a>
+        <span>·</span>
+        <a href="./privacy.html">プライバシーポリシー</a>
       </div>
     </section>
 
