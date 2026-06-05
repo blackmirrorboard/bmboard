@@ -9795,6 +9795,11 @@ function importProject(file) {
                 });
                 scroll();
             }
+            // Persist imported images to IndexedDB so they survive reload.
+            d.objects.forEach(o => {
+                if (o.type === 'image' && o.data && o.data.src && o.data.src.startsWith('data:'))
+                    _dbSaveImg(o.id, o.data.src);
+            });
             updateZoomLabel(); redrawAll();
             try { saveHistory(); _saveCanvasNow(); } catch(_) {}
             printRaw(`[import] ${d.objects.length} objects restored — v${d.version} ✓ (auto-saved)`, 't-ok');
