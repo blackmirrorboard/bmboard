@@ -6984,6 +6984,13 @@ async function bmDeliverJson(json, fname) {
     if (bmIsIOS() && navigator.share) {
         try { const file=new File([json],fname,{type:'application/json'}); if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Black Mirror Project'});return'share';} await navigator.share({title:fname,text:json}); return'share'; } catch(err){ if(err&&err.name==='AbortError')return'cancelled'; }
     }
+    if (window.showSaveFilePicker) {
+        try {
+            const fh = await window.showSaveFilePicker({ suggestedName: fname, types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
+            const w = await fh.createWritable();
+            await w.write(json); await w.close(); return 'download';
+        } catch(err) { if (err && err.name === 'AbortError') return 'cancelled'; }
+    }
     const blob=new Blob([json],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);return'download';
 }
