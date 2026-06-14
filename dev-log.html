@@ -447,6 +447,19 @@
     </div>
 
     <div class="phase">
+        <span class="tag">v1.3 · VOICE INPUT</span>
+        <h4>音声入力 — マイクボタンでターミナルにコマンドを発話</h4>
+        <div class="date">2026-06-15</div>
+        <ul>
+            <li><b>マイクボタン</b> — ターミナル入力行右端に SVG マイクアイコンを追加。Web Speech API (<code>SpeechRecognition</code> / <code>webkitSpeechRecognition</code>) 非対応ブラウザでは <code>display:none</code> のまま自動非表示。</li>
+            <li><b>音声→コマンド実行</b> — クリックで認識開始、発話終了後にトランスクリプトを <code>#ti</code> に挿入し自動 <code>runCommand()</code>。再クリックでキャンセル（<code>cancelled</code> フラグ）。</li>
+            <li><b>listening アニメ</b> — 認識中は <code>.listening</code> クラスを付与、0.7s のパルス (opacity 1 → 0.25) でフィードバック。</li>
+            <li><b>エラー処理</b> — <code>no-speech</code> / <code>aborted</code> はサイレント。それ以外は <code>mic: &lt;error&gt;</code> をターミナルに赤ログ。</li>
+            <li><b>動作確認</b> — Playwright headless Chromium でボタン表示・listening クラス付け外し・キャンセルフロー検証済み。Mac 実機での動作確認は pending。</li>
+        </ul>
+    </div>
+
+    <div class="phase">
         <span class="tag">v1.2+ · DOMAIN + ICONS + DOCS</span>
         <h4>Custom domain · favicon set · OGP png · onboarding rewrite</h4>
         <div class="date">2026-05-01</div>

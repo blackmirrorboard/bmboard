@@ -944,6 +944,23 @@
 
         #ti::placeholder { color: #282828; }
 
+        #micBtn {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            color: var(--dim);
+            cursor: pointer;
+            padding: 2px 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            line-height: 0;
+            transition: color 0.15s;
+        }
+        #micBtn:hover { color: var(--glow); }
+        #micBtn.listening { color: var(--glow); animation: mic-pulse 0.7s ease-in-out infinite alternate; }
+        @keyframes mic-pulse { from { opacity: 1; } to { opacity: 0.25; } }
+
         /* ══════════════════════════════════
            USAGE OVERLAY
         ══════════════════════════════════ */
@@ -1942,6 +1959,14 @@
         <div class="term-input-row">
             <span class="t-prompt">❯</span>
             <input type="text" id="ti" placeholder="type a command… (try: youtube)" autocomplete="off" spellcheck="false">
+            <button id="micBtn" title="Voice input" aria-label="Voice input">
+                <svg width="11" height="15" viewBox="0 0 11 15" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="0.5" width="5" height="8" rx="2.5"/>
+                    <path d="M1 6.5C1 10 10 10 10 6.5"/>
+                    <line x1="5.5" y1="10" x2="5.5" y2="13.5"/>
+                    <line x1="3" y1="13.5" x2="8" y2="13.5"/>
+                </svg>
+            </button>
         </div>
     </section>
 </main>
@@ -8254,6 +8279,55 @@ tiEl.addEventListener('paste', e => {
         }
     }, 50);
 });
+
+// VOICE INPUT
+(function () {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const btn = document.getElementById('micBtn');
+    btn.style.display = 'flex';
+    const rec = new SR();
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    let listening = false;
+    let cancelled = false;
+
+    btn.addEventListener('click', () => {
+        if (listening) { cancelled = true; rec.stop(); return; }
+        cancelled = false;
+        try { rec.start(); } catch (_) {}
+    });
+
+    rec.addEventListener('start', () => {
+        listening = true;
+        btn.classList.add('listening');
+    });
+
+    rec.addEventListener('result', e => {
+        const text = e.results[0][0].transcript.trim();
+        tiEl.value = text;
+    });
+
+    rec.addEventListener('end', () => {
+        listening = false;
+        btn.classList.remove('listening');
+        if (cancelled) { tiEl.value = ''; return; }
+        const val = tiEl.value.trim();
+        tiEl.value = '';
+        if (!val) return;
+        _termHistIx = -1; _termDraft = '';
+        pushHistory(val);
+        const parsed = tryParseCommandJson(val);
+        if (parsed) { _importLog(importSpellJson(parsed), 'stdin > [JSON payload detected]'); return; }
+        runCommand(val);
+    });
+
+    rec.addEventListener('error', e => {
+        listening = false;
+        btn.classList.remove('listening');
+        if (e.error !== 'aborted' && e.error !== 'no-speech') termLog(`mic: ${e.error}`, 't-err');
+    });
+})();
 
 // ══════════════════════════════════════════════════
 // UNIFIED JSON IMPORT — auto-detects 4 formats:
