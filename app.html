@@ -961,6 +961,34 @@
         #micBtn.listening { color: var(--glow); animation: mic-pulse 0.7s ease-in-out infinite alternate; }
         @keyframes mic-pulse { from { opacity: 1; } to { opacity: 0.25; } }
 
+        #voicePreview {
+            flex-shrink: 0;
+            border-top: 1px solid var(--glow);
+            display: flex;
+            align-items: center;
+            padding: 6px 16px;
+            gap: 10px;
+        }
+        .vp-hint {
+            color: var(--dim);
+            font-size: 0.65rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+            letter-spacing: 0.03em;
+        }
+        #vpInput {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--glow);
+            font-family: inherit;
+            font-size: 15px;
+            caret-color: var(--glow);
+            -webkit-appearance: none;
+            border-radius: 0;
+        }
+
         /* ══════════════════════════════════
            USAGE OVERLAY
         ══════════════════════════════════ */
@@ -1956,6 +1984,10 @@
             <span class="term-title">blackmirror — bash</span>
         </div>
         <div class="term-body" id="tb"></div>
+        <div id="voicePreview" style="display:none">
+            <span class="vp-hint">↵ 実行　Esc キャンセル</span>
+            <input type="text" id="vpInput" autocomplete="off" spellcheck="false">
+        </div>
         <div class="term-input-row">
             <span class="t-prompt">❯</span>
             <input type="text" id="ti" placeholder="type a command… (try: youtube)" autocomplete="off" spellcheck="false">
@@ -8284,15 +8316,102 @@ tiEl.addEventListener('paste', e => {
 (function () {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
-    const btn = document.getElementById('micBtn');
+    const btn   = document.getElementById('micBtn');
+    const vpBox = document.getElementById('voicePreview');
+    const vpIn  = document.getElementById('vpInput');
     btn.style.display = 'flex';
+
     const rec = new SR();
+    rec.lang = 'ja-JP';
     rec.interimResults = false;
     rec.maxAlternatives = 1;
     let listening = false;
     let cancelled = false;
 
+    // Japanese → English alias table
+    const JA = {
+        // themes
+        'ライト':'light','ライトモード':'light','明るい':'light','明るくして':'light',
+        'ダーク':'dark','ダークモード':'dark','暗い':'dark','暗くして':'dark',
+        'グレー':'gray','グレイ':'gray','グレーモード':'gray','グレイモード':'gray',
+        // canvas
+        'クリア':'clear','消す':'clear','消して':'clear','きれいにして':'clear',
+        '付箋':'sticky','ふせん':'sticky','ポストイット':'sticky',
+        '音量オン':'volume on','音をつけて':'volume on',
+        '音量オフ':'volume off','音を消して':'volume off',
+        'ミュート':'mute','消音':'mute','ミュート解除':'unmute',
+        'BGMオン':'bgm on','BGMつけて':'bgm on',
+        'BGMオフ':'bgm off','BGM消して':'bgm off',
+        // camera
+        'カメラ':'Black Mirror','カメラオン':'Black Mirror','ブラックミラー':'Black Mirror',
+        'カメラオフ':'Black Mirror off','ブラックミラーオフ':'Black Mirror off',
+        // persistence / export
+        '一覧':'ls','リスト':'ls','ファイル一覧':'ls',
+        '書き出し':'export','エクスポート':'export',
+        'SVG':'$svg','SVG書き出し':'$svg','SVGエクスポート':'$svg',
+        'パワポ':'export pptx','スライド':'export pptx','パワーポイント':'export pptx',
+        // spellbook
+        'コマンド一覧':'list','スペル一覧':'list',
+        '共有':'share','シェア':'share',
+        // preset spells
+        '桜':'$sakura','さくら':'$sakura','サクラ':'$sakura',
+        '雨':'$rain','レイン':'$rain',
+        '葉':'$leaf','落ち葉':'$leaf','リーフ':'$leaf',
+        '雪':'$snow','スノー':'$snow',
+        '散らす':'$scatter','バラバラ':'$scatter','スキャッター':'$scatter',
+        'グリッド':'$grid-3x3','付箋グリッド':'$sticky-3x3',
+        'モノクロ':'$monoclo','白黒':'$monoclo',
+        '画像':'$make-img',
+        '琵琶湖ブルー':'$biwako-blue','琵琶湖':'$biwako-blue',
+        // help / misc
+        'ヘルプ':'help','使い方':'help','説明':'help',
+        'ユーチューブ':'youtube',
+    };
+    // prefix aliases for commands that take arguments
+    const JA_PREFIX = [
+        ['保存','save'],['読み込み','load'],
+        ['付箋','sticky'],['画像','$make-img'],
+    ];
+
+    function resolveAlias(text) {
+        for (const [ja, en] of JA_PREFIX) {
+            if (text.startsWith(ja + ' ') || text.startsWith(ja + '　')) {
+                return en + ' ' + text.slice(ja.length).trim();
+            }
+        }
+        return JA[text] || text;
+    }
+
+    function showPreview(raw) {
+        vpIn.value = resolveAlias(raw);
+        vpBox.style.display = 'flex';
+        vpIn.focus();
+        vpIn.setSelectionRange(0, vpIn.value.length);
+    }
+
+    function hidePreview() {
+        vpBox.style.display = 'none';
+        vpIn.value = '';
+    }
+
+    function submitPreview() {
+        const val = vpIn.value.trim();
+        hidePreview();
+        if (!val) return;
+        _termHistIx = -1; _termDraft = '';
+        pushHistory(val);
+        const parsed = tryParseCommandJson(val);
+        if (parsed) { _importLog(importSpellJson(parsed), 'stdin > [JSON payload detected]'); return; }
+        runCommand(val);
+    }
+
+    vpIn.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  { e.preventDefault(); submitPreview(); }
+        if (e.key === 'Escape') { e.preventDefault(); hidePreview(); }
+    });
+
     btn.addEventListener('click', () => {
+        if (vpBox.style.display !== 'none') { hidePreview(); return; }
         if (listening) { cancelled = true; rec.stop(); return; }
         cancelled = false;
         try { rec.start(); } catch (_) {}
@@ -8305,21 +8424,12 @@ tiEl.addEventListener('paste', e => {
 
     rec.addEventListener('result', e => {
         const text = e.results[0][0].transcript.trim();
-        tiEl.value = text;
+        showPreview(text);
     });
 
     rec.addEventListener('end', () => {
         listening = false;
         btn.classList.remove('listening');
-        if (cancelled) { tiEl.value = ''; return; }
-        const val = tiEl.value.trim();
-        tiEl.value = '';
-        if (!val) return;
-        _termHistIx = -1; _termDraft = '';
-        pushHistory(val);
-        const parsed = tryParseCommandJson(val);
-        if (parsed) { _importLog(importSpellJson(parsed), 'stdin > [JSON payload detected]'); return; }
-        runCommand(val);
     });
 
     rec.addEventListener('error', e => {
