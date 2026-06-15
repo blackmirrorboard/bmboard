@@ -9905,6 +9905,7 @@ function toggleTermPanel() {
         if (mobile) { cp.style.flex = ''; cp.style.height = ''; }
         btn.style.opacity = '1';
     }
+    btn.blur(); // return focus to canvas so Space/Enter don't re-trigger the button
     resizeCanvas();
 }
 
