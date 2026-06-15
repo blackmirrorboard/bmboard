@@ -1910,7 +1910,7 @@
              Shows swatch grid, click to copy hex to clipboard, X / Esc to close. -->
         <div id="paletteOverlay" onclick="if(event.target===event.currentTarget)closePaletteModal()" aria-hidden="true">
             <div class="palette-card" role="dialog" aria-label="Palette">
-                <button class="tpl-close" type="button" onclick="closePaletteModal()" aria-label="close">✕</button>
+                <button class="tpl-close" type="button" onclick="closePaletteModal();this.blur();" aria-label="close">✕</button>
                 <div class="pal-h">▮ PALETTE</div>
                 <h3 id="paletteNameH"></h3>
                 <div class="palette-grid" id="paletteGrid"></div>
@@ -1921,7 +1921,7 @@
              template choices with click-to-place + X / Esc / outside-click to close. -->
         <div id="tplOverlay" onclick="if(event.target===event.currentTarget)closeTplPicker()" aria-hidden="true">
             <div class="tpl-card" role="dialog" aria-label="Templates">
-                <button class="tpl-close" type="button" onclick="closeTplPicker()" aria-label="close">✕</button>
+                <button class="tpl-close" type="button" onclick="closeTplPicker();this.blur();" aria-label="close">✕</button>
                 <div class="tpl-h">▮ TPL · TEMPLATES</div>
                 <h3>tpl &lt;name&gt;</h3>
                 <div class="tpl-list">
@@ -8392,6 +8392,7 @@ tiEl.addEventListener('paste', e => {
     function hidePreview() {
         vpBox.style.display = 'none';
         vpIn.value = '';
+        vpIn.blur();
     }
 
     function submitPreview() {
@@ -8411,6 +8412,7 @@ tiEl.addEventListener('paste', e => {
     });
 
     btn.addEventListener('click', () => {
+        btn.blur();
         if (vpBox.style.display !== 'none') { hidePreview(); return; }
         if (listening) { cancelled = true; rec.stop(); return; }
         cancelled = false;
@@ -8521,6 +8523,7 @@ function showBundleDialog(bundle, headLabel) {
     card.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('click', () => {
             const a = btn.getAttribute('data-a');
+            btn.blur();
             close();
             if (a === 'cancel') { enqueue(headLabel, ['→ bundle import cancelled.']); return; }
             importBundle(bundle, a, headLabel);
@@ -9806,7 +9809,7 @@ function openPaletteModal(name, colors) {
     heading.textContent = name + ' · ' + (colors || []).length + ' colors';
     grid.innerHTML = (colors || []).map((c) => {
         const safe = String(c).replace(/[^#0-9a-zA-Z(),.\s%]/g, '');
-        return '<button class="palette-swatch" type="button" style="background:' + safe + '" data-hex="' + safe + '" onclick="(function(b){navigator.clipboard&&navigator.clipboard.writeText(b.dataset.hex);b.style.outline=\'2px solid #fff\';setTimeout(function(){b.style.outline=\'\'},800);})(this)" aria-label="copy ' + safe + '"></button>';
+        return '<button class="palette-swatch" type="button" style="background:' + safe + '" data-hex="' + safe + '" onclick="(function(b){b.blur();navigator.clipboard&&navigator.clipboard.writeText(b.dataset.hex);b.style.outline=\'2px solid #fff\';setTimeout(function(){b.style.outline=\'\'},800);})(this)" aria-label="copy ' + safe + '"></button>';
     }).join('');
     overlay.classList.add('open');
 }
@@ -9882,6 +9885,15 @@ window.addEventListener('keydown', (e) => {
 document.getElementById('usageOverlay').addEventListener('click', e => {
     if (e.target===e.currentTarget) closeUsage();
 });
+// Esc → close usage overlay (consistent with other modal overlays)
+window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        const el = document.getElementById('usageOverlay');
+        if (el && el.classList.contains('open')) { e.stopPropagation(); closeUsage(); }
+    }
+}, true);
+// Blur all header buttons after click so Space/Enter don't re-trigger them during canvas work
+document.querySelectorAll('.hbtn').forEach(b => b.addEventListener('click', () => b.blur()));
 
 // ══════════════════════════════════════════════════
 // TERMINAL PANEL TOGGLE
@@ -10099,7 +10111,7 @@ function boot() {
     function closeFeedback() {
         overlay.classList.remove('open');
         canvas.style.pointerEvents = '';
-        logoBtn.focus();
+        logoBtn.blur();
     }
 
     logoBtn.addEventListener('click', openFeedback);
@@ -10884,13 +10896,14 @@ function svgElementFor(obj) {
     return inner;
 }
 
-document.getElementById('exportPngBtn').addEventListener('click', () => {
+document.getElementById('exportPngBtn').addEventListener('click', function() {
+    this.blur();
     playClick(false);
     exportPng();
 });
 {
     const _ci = document.getElementById('copyImgBtn');
-    if (_ci) _ci.addEventListener('click', () => { playClick(false); copyImageToClipboard(); });
+    if (_ci) _ci.addEventListener('click', function() { this.blur(); playClick(false); copyImageToClipboard(); });
 }
 
 // ── Image placement (shared by file-upload and clipboard-paste) ─────────────
