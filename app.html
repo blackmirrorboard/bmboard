@@ -990,6 +990,28 @@
         }
 
         /* ══════════════════════════════════
+           IMAGE CONTEXT MENU
+        ══════════════════════════════════ */
+        #imgCtxMenu {
+            position: fixed; z-index: 490;
+            background: var(--bm-bg, #0c0c0c);
+            border: 1px solid var(--line, #2a2a2a);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            min-width: 140px;
+            padding: 4px 0;
+        }
+        .icm-item {
+            padding: 8px 16px;
+            font-size: 12px;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            color: var(--glow, #e8e6e0);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .icm-item:hover { background: rgba(255,255,255,0.07); }
+        .icm-sep { height: 1px; background: var(--line, #2a2a2a); margin: 4px 0; }
+
+        /* ══════════════════════════════════
            CROP OVERLAY
         ══════════════════════════════════ */
         #cropOverlay {
@@ -1954,6 +1976,11 @@
                 <div class="pal-foot">click swatch → copy hex · Esc / ✕ to close</div>
             </div>
         </div>
+        <!-- IMAGE CONTEXT MENU -->
+        <div id="imgCtxMenu" style="display:none">
+            <div class="icm-item" id="icmCrop">✂ クロップ</div>
+        </div>
+
         <!-- CROP OVERLAY -->
         <div id="cropOverlay" style="display:none" role="dialog" aria-modal="true" aria-label="Crop image">
             <div class="crop-card">
@@ -9661,6 +9688,8 @@ document.addEventListener('keydown', e => {
     // letting the browser handle the input default (text undo / copy / etc.).
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         if (_histIdx <= 0) return;
+        const cropOv = document.getElementById('cropOverlay');
+        if (cropOv && cropOv.style.display !== 'none') return;
         e.preventDefault(); undo(); return;
     }
     if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
@@ -11134,7 +11163,7 @@ let _lastUITap = 0;
         natW = img.naturalWidth; natH = img.naturalHeight;
         const maxW = Math.min(window.innerWidth  - 32, 960);
         const maxH = Math.min(window.innerHeight - 120, 720);
-        scale = Math.min(maxW / natW, maxH / natH, 2);
+        scale = Math.min(maxW / natW, maxH / natH, 1);
         dispW = Math.round(natW * scale);
         dispH = Math.round(natH * scale);
         cvs.width  = dispW; cvs.height = dispH;
@@ -11157,7 +11186,20 @@ let _lastUITap = 0;
     function apply() {
         if (!cropObj) return;
         const full = cx <= 0 && cy <= 0 && cw >= natW - 1 && ch >= natH - 1;
-        cropObj.data.crop = full ? null : { x: Math.round(cx), y: Math.round(cy), w: Math.round(cw), h: Math.round(ch) };
+        if (full) {
+            cropObj.data.crop = null;
+        } else {
+            // Adjust bounding box so the cropped region occupies the correct
+            // canvas position/size — without this the cropped source would be
+            // stretched to fill the original (larger) bounding box.
+            const { x, y, w, h } = cropObj.data;
+            const sx = w / natW, sy = h / natH;
+            cropObj.data.x = x + Math.round(cx * sx);
+            cropObj.data.y = y + Math.round(cy * sy);
+            cropObj.data.w = Math.round(cw * sx);
+            cropObj.data.h = Math.round(ch * sy);
+            cropObj.data.crop = { x: Math.round(cx), y: Math.round(cy), w: Math.round(cw), h: Math.round(ch) };
+        }
         saveHistory(); redrawAll(); close();
     }
 
@@ -11272,17 +11314,50 @@ let _lastUITap = 0;
     window._openCropTool = open;
 })();
 
+// IMAGE CONTEXT MENU — right-click on image → menu → crop
+(function () {
+    const menu    = document.getElementById('imgCtxMenu');
+    const itemCrop = document.getElementById('icmCrop');
+    let menuTarget = null;
+
+    function show(clientX, clientY, obj) {
+        menuTarget = obj;
+        menu.style.display = 'block';
+        menu.style.left = clientX + 'px';
+        menu.style.top  = clientY + 'px';
+        // Clamp so menu never overflows viewport
+        const r = menu.getBoundingClientRect();
+        if (r.right  > window.innerWidth)  menu.style.left = (clientX - r.width)  + 'px';
+        if (r.bottom > window.innerHeight) menu.style.top  = (clientY - r.height) + 'px';
+    }
+
+    function hide() { menu.style.display = 'none'; menuTarget = null; }
+
+    itemCrop.addEventListener('click', () => {
+        const t = menuTarget;
+        hide();
+        if (t && typeof window._openCropTool === 'function') window._openCropTool(t);
+    });
+
+    document.addEventListener('pointerdown', e => {
+        if (!e.target.closest('#imgCtxMenu')) hide();
+    }, true);
+
+    window._showImgCtxMenu = show;
+    window._hideImgCtxMenu = hide;
+})();
+
 // Block contextmenu (long-press on mobile, right-click on desktop) on all UI chrome
 // Prevents browser callout / text-selection popup from appearing on buttons/toolbar
 document.addEventListener('contextmenu', e => {
     // Allow right-click only inside text inputs; block everywhere else (buttons, toolbar, canvas)
     if (!e.target.closest('#ti') && !e.target.closest('#ti2') && !e.target.closest('#stickyEditor')) {
         e.preventDefault();
-        // Right-click on canvas over an image → open crop tool
-        if (e.target === canvas && typeof window._openCropTool === 'function') {
+        // Right-click on canvas over an image → show context menu
+        if (e.target === canvas && typeof window._showImgCtxMenu === 'function') {
             const p = getPos(e.clientX, e.clientY);
             const hit = [...S.objects].reverse().find(o => o.type === 'image' && hitTest(o, p.x, p.y, 0));
-            if (hit) window._openCropTool(hit);
+            if (hit) window._showImgCtxMenu(e.clientX, e.clientY, hit);
         }
     }
 });
