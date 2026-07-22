@@ -1330,6 +1330,22 @@
             border-bottom-color: var(--bm-tb-border);
         }
 
+        /* ── PAPER BOARD（enpitsu モードのときだけ付く。他モードには影響しない） ──
+           板そのものを紙にする。生成りの地＋極薄のノイズ＝触ると分かる程度のざらつき。
+           ⚠️濃くすると鉛筆の線が埋もれて読めなくなるので 0.05 前後に留める。 */
+        body.bm-paper .canvas-panel { background: #EBE8E2; }
+        body.bm-paper .canvas-panel::before { opacity: .3; }   /* 方眼を紙に沈める */
+        body.bm-paper .canvas-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='pn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pn)' opacity='0.55'/%3E%3C/svg%3E");
+            opacity: .05;
+            mix-blend-mode: multiply;
+        }
+
         /* ── Header theming for dark / gray canvas modes ─────────────── */
         body.bm-dark header,
         body.bm-gray header {
@@ -2462,7 +2478,8 @@ Full guide → <b>usage.html §5</b></pre>
 
 const S = {
     tool:            'select',
-    drawMode:        (typeof localStorage !== 'undefined' && localStorage.getItem('bm_drawMode') === 'fude') ? 'fude' : 'classic',
+    drawMode:        (() => { const v = (typeof localStorage !== 'undefined') ? localStorage.getItem('bm_drawMode') : null;
+                              return (v === 'fude' || v === 'pencil') ? v : 'classic'; })(),
     lineWidth:       1.5,
     fillMode:        'none',    // 'none' | 'black' | 'grey' | 'white'
     strokeOff:       false,     // true = no outline on shapes
@@ -3679,7 +3696,9 @@ function onMove(cx, cy) {
         const first = pts[0];
         const dx = cur.x - first.x, dy = cur.y - first.y;
         const wasSnap = S.penSnapClose;
-        S.penSnapClose = pts.length > 12 && Math.sqrt(dx*dx + dy*dy) < snapDist;
+        // ⭐鉛筆モードでは自動クローズしない（紙に書きなぐるのに図形を閉じる必要はない）
+        S.penSnapClose = (S.drawMode !== 'pencil')
+                      && pts.length > 12 && Math.sqrt(dx*dx + dy*dy) < snapDist;
 
         // Full redraw only when snap state changes (keeps incremental perf otherwise)
         if (S.penSnapClose !== wasSnap) {
@@ -3693,6 +3712,11 @@ function onMove(cx, cy) {
         }
 
         // ── Incremental draw (normal) ────────────────────────────────────
+        // ⭐pencilモードだけは全体描画に回す。ここで直接描くと紙の目(grain)を通らず、
+        //   書いている最中だけツルッとした線に見えてしまうため。
+        if (S.drawMode === 'pencil' && PENCIL_GRAIN) {
+            redrawAll();
+        } else {
         ctx.save();
         ctx.setTransform(VIEW.scale*dpr, 0, 0, VIEW.scale*dpr, VIEW.tx*dpr, VIEW.ty*dpr);
         ctx.strokeStyle = getStrokeColor(); ctx.lineWidth = S.lineWidth;
@@ -3700,6 +3724,7 @@ function onMove(cx, cy) {
         const mx = (prev.x+cur.x)/2, my = (prev.y+cur.y)/2;
         ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.quadraticCurveTo(prev.x, prev.y, mx, my); ctx.stroke();
         ctx.restore();
+        }
     } else if (S.tool === 'eraser') {
         eraseAt(p, S.lastPointerType === 'touch' ? 14 : 0);
     } else if (isShapeTool(S.tool)) {
@@ -3815,6 +3840,13 @@ function redrawAll() {
     if (S.tool === 'pen' && S.penPts.length > 1) renderPenInProgress();
     // Path tool: in-progress anchors + preview segment to cursor
     if (S.tool === 'path' && S.pathPts.length > 0) renderPathInProgress();
+
+    // ⭐紙の目で削り取る（pencilモードのみ。UI要素より前に掛ける）
+    if (S.drawMode === 'pencil' && PENCIL_GRAIN) {
+        // 再読み込み時も板を紙のまま復元する
+        if (!document.body.classList.contains('bm-paper')) document.body.classList.add('bm-paper');
+        _applyPaperGrain();
+    }
 
     // Marquee selection rectangle
     if (S.marquee) {
@@ -4054,7 +4086,202 @@ function renderStrokeFude(obj) {
     ctx.restore();
 }
 
+// ══════════════════════════════════════════════════
+// PENCIL MODE（追加・既存 classic/fude には触らない）
+// 紙の目に引っかかる鉛筆。ざらつき＝決定論ノイズで多層に重ね描き、
+// 速く引いた所ほど薄くなる（かすれ）。再描画でチラつかないよう乱数は使わない。
+// ══════════════════════════════════════════════════
+function _pnoise(i, s) {
+    const x = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453;
+    return x - Math.floor(x);                     // 0..1 決定論的
+}
+
+// ⭐紙の目（grain）── デジタルブラシの原理どおり「線を描いてから、紙の目で削り取る」。
+//   grain は画面に固定される（線に貼り付かない）＝同じ所をなぞると同じ粒に重なる＝実物と同じ。
+//   ⚠️pencil モードのときだけ使う。classic / fude には一切かからない。
+let _grainPattern = null;
+function _ensureGrain() {
+    if (_grainPattern) return _grainPattern;
+    const N = 160;
+    const c = document.createElement('canvas');
+    c.width = c.height = N;
+    const g2 = c.getContext('2d');
+    const img = g2.createImageData(N, N);
+    for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+            const n1 = _pnoise(x * 1.7 + y * 5.3, y * 0.9);   // 2周波を重ねて紙の繊維に
+            const n2 = _pnoise(x * 0.6 + y * 1.1, x * 0.4);
+            const n  = n1 * 0.68 + n2 * 0.32;
+            const a  = n > 0.58 ? Math.min(200, (n - 0.58) * 200 * 2.2) : 0;  // 抜きすぎない
+            const i  = (y * N + x) * 4;
+            img.data[i] = 0; img.data[i+1] = 0; img.data[i+2] = 0; img.data[i+3] = a;
+        }
+    }
+    g2.putImageData(img, 0, 0);
+    _grainPattern = ctx.createPattern(c, 'repeat');
+    return _grainPattern;
+}
+
+// 描画の最後に1回だけ呼ぶ。ズームしても粒径が変わらないよう画面座標で掛ける。
+function _applyPaperGrain() {
+    const pat = _ensureGrain();
+    if (!pat) return;
+    const dpr = window.devicePixelRatio || 1;
+    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // ⭐画像・付箋は削らない ─ 紙の目は「鉛筆が乗る面」に対するもので、
+    //   貼った写真までザラつかせると別物になる。evenodd で穴を空けて除外する。
+    const holes = [];
+    for (const o of S.objects) {
+        if (o.type !== 'image' && o.type !== 'sticky') continue;
+        const b = (typeof getObjBounds === 'function') ? getObjBounds(o) : null;
+        if (b) holes.push(b);
+    }
+    if (holes.length) {
+        ctx.beginPath();
+        ctx.rect(0, 0, CW, CH);
+        for (const b of holes) {
+            const pad = 1;   // 端に薄い縁が出ないよう少し広げる
+            ctx.rect(b.x * VIEW.scale + VIEW.tx - pad,
+                     b.y * VIEW.scale + VIEW.ty - pad,
+                     b.w * VIEW.scale + pad * 2,
+                     b.h * VIEW.scale + pad * 2);
+        }
+        ctx.clip('evenodd');
+    }
+
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = pat;
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.restore();
+}
+
+function _drawPencilPath(pts, lw, r, g, b, baseA, ptA) {
+    const n = pts.length;
+    if (n < 2) return;
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const LAYERS = 3;
+
+    // 点ごとの残量を 0.2 刻みに量子化 ─ 同じ濃さの区間は「一本の線」で引く。
+    // ⚠️セグメントごとに stroke() すると lineCap の丸が重なって数珠状の点になる。
+    const q = new Array(n);
+    for (let i = 0; i < n; i++) {
+        const v = (ptA && ptA[i] != null) ? ptA[i] : 1;
+        q[i] = Math.round(v * 5) / 5;
+    }
+
+    for (let L = 0; L < LAYERS; L++) {
+        const jitter = lw * (0.20 + L * 0.16);          // 層ごとのブレ＝紙の目
+        ctx.lineWidth = Math.max(0.4, lw * (1 - L * 0.24));
+        // ⭐紙の目に「抜け」を作る ─ 鉛筆は紙の凸部にだけ乗り、凹部は白く残る。
+        //   層ごとに違う破線パターンを重ねると、粒状のムラになる（実物の色鉛筆と同じ理屈）
+        const dash = [lw * (0.55 + L * 0.45), lw * (0.30 + L * 0.28)];
+        ctx.setLineDash(dash);
+        ctx.lineDashOffset = L * 4.3;
+        const jx = i => (_pnoise(i, L) - 0.5) * jitter;
+        const jy = i => (_pnoise(i + 37, L) - 0.5) * jitter;
+
+        let i = 1;
+        while (i < n) {
+            const lvl = Math.min(q[i-1], q[i]);
+            const al  = baseA * lvl * 0.30 * (1 - L * 0.18);
+            // 同じ濃さが続くところまでを 1 本の連続パスで引く
+            let j = i;
+            while (j + 1 < n && Math.min(q[j], q[j+1]) === lvl) j++;
+            if (al > 0.012) {
+                ctx.strokeStyle = `rgba(${r},${g},${b},${al})`;
+                ctx.beginPath();
+                ctx.moveTo(pts[i-1].x + jx(i-1), pts[i-1].y + jy(i-1));
+                let pen = true;
+                for (let k = i; k <= j; k++) {
+                    const d  = Math.hypot(pts[k].x - pts[k-1].x, pts[k].y - pts[k-1].y);
+                    // 速く引いた所は上の層だけ線を切る＝かすれ（点は残さない）
+                    const skip = (L > 0) && (d > 11 + L * 5);
+                    const X = pts[k].x + jx(k), Y = pts[k].y + jy(k);
+                    if (skip) { ctx.moveTo(X, Y); pen = false; }
+                    else      { ctx.lineTo(X, Y); pen = true;  }
+                }
+                ctx.stroke();
+            }
+            i = j + 1;
+        }
+    }
+    ctx.restore();
+}
+
+// ⭐grain 前提のシンプルな線 ── ざらつきは線側では作らず、最後に紙の目で削り取る。
+//   （旧 _drawPencilPath は残してある。PENCIL_GRAIN=false で従来の3層版に戻せる）
+const PENCIL_GRAIN = true;
+// ⭐黒鉛は真っ黒ではない。紙の板のときだけインクをグレーに落とす＝一気に鉛筆になる。
+//   （黒板/darkモードでは見えなくなるので、紙のときだけ）
+const PENCIL_INK = '#3a3a38';
+function _pencilInk() {
+    return (typeof document !== 'undefined' && document.body.classList.contains('bm-paper'))
+        ? PENCIL_INK : getStrokeColor();
+}
+function _drawPencilLine(pts, lw, r, g, b, baseA, ptA) {
+    const n = pts.length;
+    if (n < 2) return;
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = lw;
+    // ⭐濃さの「レベルごと」に重ね描きする。
+    //   区間を分けて描くと、切れ目で quadraticCurveTo の補間がリセットされ形が変わる。
+    //   この方式なら全ての層が同じ補間で全域を通るので、消しても元の形が保たれる。
+    //   消していない所ほど層が多く重なる＝濃い／触れた所は層が減る＝薄い。
+    const q = new Array(n);
+    for (let i = 0; i < n; i++) {
+        const v = (ptA && ptA[i] != null) ? ptA[i] : 1;
+        q[i] = Math.max(0, Math.min(1, v));
+    }
+    const LEVELS = 5;
+    const layerA = baseA * 0.20;          // 5層フルに重なると ≒0.80 相当
+    for (let L = 1; L <= LEVELS; L++) {
+        // ⚠️閾値は ERASE_FLOOR 〜 1.0 に配る。
+        //   L/LEVELS（0.2〜）にすると、FLOOR(0.12)まで消した点が1層も描かれず「跡」が消える。
+        const th = ERASE_FLOOR + (1 - ERASE_FLOOR) * (L - 1) / (LEVELS - 1);
+        ctx.strokeStyle = `rgba(${r},${g},${b},${layerA})`;
+        ctx.beginPath();
+        let pen = false;
+        for (let k = 1; k < n; k++) {
+            const a0 = pts[k-1], p0 = pts[k];
+            // ⭐重さ ─ ゆっくり引いた所は濃く、速く引いた所は薄くかすれる。
+            //   マウスでは筆圧が取れないので、点の間隔（＝速度）で代用する。
+            //   ⚠️強くしすぎると線がまだらになって読めなくなるので 0.3 まで。
+            const spd = Math.min(1, Math.hypot(p0.x - a0.x, p0.y - a0.y) / 15);
+            const eff = Math.min(q[k-1], q[k]) * (1 - spd * 0.30);
+            if (eff >= th) {
+                if (!pen) { ctx.moveTo(a0.x, a0.y); pen = true; }
+                // ⭐描いた点をそのまま繋ぐ＝手の動きに忠実。
+                //   quadraticCurveTo で滑らかにすると角が丸まって描いた形とズレる。
+                ctx.lineTo(p0.x, p0.y);
+            } else {
+                pen = false;
+            }
+        }
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function renderStrokePencil(obj) {
+    const { pts, lw } = obj.data;
+    if (!pts || pts.length < 2) return;
+    const f = _fadeStroke(obj.data.stroke || _pencilInk(), 0);
+    const r = f ? f.r : 58, g = f ? f.g : 58, b = f ? f.b : 56;
+    const baseA = f ? f.alpha : 1;
+    (PENCIL_GRAIN ? _drawPencilLine : _drawPencilPath)(pts, lw || 2.5, r, g, b, baseA, obj.data.ptA);
+    if (obj.selected) {
+        const bb = strokeBBox(pts);
+        selBox(bb.x, bb.y, bb.w, bb.h);
+        drawAnchors(obj);
+    }
+}
+
 function renderStroke(obj) {
+    if (obj.data.mode === 'pencil') return renderStrokePencil(obj);
     if ((obj.data.mode || 'classic') === 'fude') return renderStrokeFude(obj);
     const { pts, lw, closed, fill, strokeOff } = obj.data;
     if (pts.length < 2) return;
@@ -4332,6 +4559,13 @@ function renderPenInProgress() {
     if (S.tool !== 'pen' || S.penPts.length < 2) return;
     const pts = S.penPts;
     ctx.save();
+    if (S.drawMode === 'pencil') {                 // 追加：鉛筆の描画中プレビュー
+        const f = _fadeStroke(_pencilInk(), 0);
+        (PENCIL_GRAIN ? _drawPencilLine : _drawPencilPath)(pts, S.lineWidth, f ? f.r : 58, f ? f.g : 58, f ? f.b : 56, 1);
+        ctx.restore();
+        renderPenSnapIndicator();
+        return;
+    }
     if (S.drawMode === 'fude') {
         const outline = _buildFudeOutline(pts, S.lineWidth);
         if (outline.length >= 3) {
@@ -4905,9 +5139,78 @@ function moveObj(obj, dx, dy) {
 }
 
 function eraseAt(p, extraPad = 0) {
+    if (_settleMode) return _eraseSoft(p, extraPad);   // settle: 黒板消しの手触り
     const before = S.objects.length;
     S.objects = S.objects.filter(o => !hitTest(o, p.x, p.y, extraPad));
     if (S.objects.length !== before) { saveHistory(); redrawAll(); }
+}
+
+// ── settle: 一度では消えない消しゴム ─────────────────────────────
+// obj.data.stroke を rgba にして alpha を落とすだけ。描画側は触らない
+// （描画は `obj.data.stroke || getStrokeColor()` を読むso、rgbaがそのまま効く）
+function _fadeStroke(col, step) {
+    if (!col) return null;
+    let r, g, b, a = 1;
+    let m = String(col).match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);
+    if (m) { r = +m[1]; g = +m[2]; b = +m[3]; a = (m[4] != null) ? +m[4] : 1; }
+    else {
+        let h = String(col).trim().replace('#', '');
+        if (h.length === 3) h = h.split('').map(c => c + c).join('');
+        if (h.length !== 6 || /[^0-9a-f]/i.test(h)) return null;
+        r = parseInt(h.slice(0,2),16); g = parseInt(h.slice(2,4),16); b = parseInt(h.slice(4,6),16);
+    }
+    const na = Math.max(0, a - step);
+    return { css: `rgba(${r},${g},${b},${na})`, alpha: na, r, g, b };
+}
+
+function _eraseSoft(p, extraPad = 0) {
+    const now = Date.now();
+    if (now - _lastFadeT < ERASE_COOLDOWN) return;   // 同一フレームの多重発火だけ防ぐ
+    // ⭐なぞった距離で削る ─ 止めたままでは消えない／動かした分だけ連続で薄くなる
+    if (_lastErasePt) {
+        const dm = Math.hypot(p.x - _lastErasePt.x, p.y - _lastErasePt.y);
+        if (dm < ERASE_MIN_DIST) return;
+    }
+    _lastErasePt = { x: p.x, y: p.y };
+    _lastFadeT = now;
+    let touched = false;
+    const survivors = [];
+    for (const o of S.objects) {
+        if (!hitTest(o, p.x, p.y, extraPad)) { survivors.push(o); continue; }
+        touched = true;
+        const base = (o.data && o.data.stroke) || (typeof getStrokeColor === 'function' ? getStrokeColor() : '#ffffff');
+        // ⭐太い線ほど消えにくい（Thin1.5→3回 / Medium2.5→5回 / Thick4.0→8回）
+        const lw   = (o.data && o.data.lw) || 2.5;
+        const step = Math.min(0.5, ERASE_STEP * (2.5 / Math.max(0.5, lw)));
+
+        // ⭐鉛筆(enpitsu)のストロークは「触れた場所だけ」薄くする＝線全体は消えない
+        //   classic/fude は描画がMASTERで点ごとの濃さを持てないため、従来どおり全体を薄くする
+        if (o.type === 'stroke' && o.data && o.data.mode === 'pencil' && Array.isArray(o.data.pts)) {
+            const R = ERASE_RADIUS + extraPad;
+            if (!Array.isArray(o.data.ptA) || o.data.ptA.length !== o.data.pts.length) {
+                o.data.ptA = new Array(o.data.pts.length).fill(1);
+            }
+            for (let i = 0; i < o.data.pts.length; i++) {
+                const q = o.data.pts[i];
+                const dd = Math.hypot(q.x - p.x, q.y - p.y);
+                if (dd > R) continue;
+                const fall = 1 - (dd / R);                       // 中心ほど強く削れる
+                const cur  = (o.data.ptA[i] != null) ? o.data.ptA[i] : 1;
+                o.data.ptA[i] = Math.max(ERASE_FLOOR, cur - step * fall);
+            }
+            survivors.push(o);
+            continue;
+        }
+        const f = _fadeStroke(base, step);
+        if (!f) continue;                      // 色が読めない形式なら従来どおり消す
+        // ⭐完全には消えない ─ 下限で止めて「黒板消しの跡」として残す
+        const na = Math.max(ERASE_FLOOR, f.alpha);
+        if (o.data) o.data.stroke = `rgba(${f.r},${f.g},${f.b},${na})`;
+        survivors.push(o);
+    }
+    if (!touched) return;
+    S.objects = survivors;
+    saveHistory(); redrawAll();
 }
 
 function strokeBBox(pts) {
@@ -7484,15 +7787,65 @@ function runCommand(val) {
     if (head==='fude'||head==='brush') {
         if (S.drawMode==='fude') { printRaw('[SYSTEM] already in fude mode.','t-dim'); return; }
         S.drawMode='fude'; try{localStorage.setItem('bm_drawMode','fude');}catch{}
+        document.body.classList.remove('bm-paper');    // ⭐板を元に戻す
         redrawAll();
         enqueue(`$ ${head}`,['→ stroke render: 筆 (fude)','→ next strokes use smooth tapered fill','→ classic で master に戻る']);
+        return;
+    }
+    // ── enpitsu ─ 紙の目に引っかかる鉛筆（追加モード。classic/fude はそのまま） ──
+    // ⭐paper ─ 板そのものを「紙のノート」に切り替える（鉛筆＋紙の地＋定着 を一括）
+    //   バラバラのコマンドを覚えなくていい。道具が変わる、という1つの体験にする。
+    if (head==='enpitsu'||head==='graphite'||head==='paper') {
+        const wasOn = (S.drawMode === 'pencil');
+        S.drawMode='pencil'; try{localStorage.setItem('bm_drawMode','pencil');}catch{}
+        document.body.classList.add('bm-paper');       // ⭐板そのものを紙にする
+        _settleMode = true; try{localStorage.setItem('bm_settle','1');}catch{}  // ⭐消せない紙
+        redrawAll(); updateUndoRedoBtns();
+        const _m = (SETTLE_MS >= 60000) ? (Math.round(SETTLE_MS/60000)+' min') : (Math.round(SETTLE_MS/1000)+' sec');
+        enqueue(`$ ${head}`, wasOn
+            ? ['→ paper board on（すでに鉛筆モードでした）', '  ink fixes after ' + _m]
+            : ['→ 紙のノートに切り替えました',
+               '  ・鉛筆（紙の目に乗るざらつき）',
+               '  ・書いたものは ' + _m + ' で定着して消せなくなる',
+               '  ・消しゴムはこすった所だけ薄くなり、跡が残る',
+               '→ board / classic で黒板に戻る']);
+        return;
+    }
+    // ⭐消しゴムの当たり半径を変える（紙モードの部分消し用）
+    if (head==='eraser'||head==='kesigomu') {
+        const a = rest.trim().toLowerCase();
+        if (a==='' || a==='status') {
+            enqueue('$ eraser', ['→ eraser radius: ' + ERASE_RADIUS + 'px',
+                                 '  usage: eraser 8 / eraser 20（2〜200）',
+                                 '  小さいほど「線の一部だけ」を削れる']);
+            return;
+        }
+        const v = parseInt(a, 10);
+        if (!Number.isFinite(v) || v < 2 || v > 200) {
+            printRaw('eraser: usage → eraser 8 / eraser 20（2〜200）', 't-err');
+            return;
+        }
+        ERASE_RADIUS = v; try{localStorage.setItem('bm_eraseR', String(v));}catch{}
+        enqueue(`$ eraser ${v}`, ['→ eraser radius: ' + v + 'px']);
+        return;
+    }
+
+    // 紙 → 元の板に戻す（分かりやすい別名）
+    if (head==='board'||head==='kokuban') {
+        S.drawMode='classic'; try{localStorage.setItem('bm_drawMode','classic');}catch{}
+        document.body.classList.remove('bm-paper');
+        _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}
+        redrawAll(); updateUndoRedoBtns();
+        enqueue(`$ ${head}`,['→ 元の板に戻しました（classic / undo も通常どおり）']);
         return;
     }
     if (head==='classic'||head==='pencil'||head==='master') {
         if (S.drawMode==='classic') { printRaw('[SYSTEM] already in classic mode.','t-dim'); return; }
         S.drawMode='classic'; try{localStorage.setItem('bm_drawMode','classic');}catch{}
-        redrawAll();
-        enqueue(`$ ${head}`,['→ stroke render: classic (master)','→ next strokes use the original pencil renderer']);
+        document.body.classList.remove('bm-paper');    // ⭐板を元に戻す
+        _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}   // 定着も解除
+        redrawAll(); updateUndoRedoBtns();
+        enqueue(`$ ${head}`,['→ stroke render: classic (master)','→ next strokes use the original pencil renderer','→ undo も通常どおりに戻りました']);
         return;
     }
 
@@ -7514,6 +7867,40 @@ function runCommand(val) {
             return;
         }
         printRaw('volume: usage → volume on / volume off / volume', 't-err');
+        return;
+    }
+
+    // ── settle on/off — 書きなぐりモード（時間で定着＝undo不可 + 消しゴムが薄くする） ──
+    if (head==='settle') {
+        const args = rest.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        const sub  = args[0] || '';
+        const dur  = args[1] || '';
+        const _mins = () => (SETTLE_MS >= 60000)
+            ? (Math.round(SETTLE_MS/60000) + ' min')
+            : (Math.round(SETTLE_MS/1000) + ' sec');
+        if (sub==='on'||sub==='1') {
+            const m = dur.match(/^(\d+)(s|m)?$/);
+            if (m) SETTLE_MS = (+m[1]) * (m[2]==='s' ? 1000 : 60000);
+            _settleMode = true; try{localStorage.setItem('bm_settle','1');}catch{}
+            enqueue(`$ settle on${dur?' '+dur:''}`, [
+                '→ settle mode ON',
+                '  strokes fix after ' + _mins() + ' (undo disabled)',
+                '  eraser fades instead of deleting'
+            ]);
+            updateUndoRedoBtns();
+            return;
+        }
+        if (sub==='off'||sub==='0') {
+            _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}
+            enqueue('$ settle off', ['→ settle mode OFF (normal undo / eraser)']);
+            updateUndoRedoBtns();
+            return;
+        }
+        if (sub===''||sub==='status') {
+            enqueue('$ settle', ['→ settle: ' + (_settleMode ? ('ON — ' + _mins()) : 'OFF')]);
+            return;
+        }
+        printRaw('settle: usage → settle on / settle on 30s / settle off / settle', 't-err');
         return;
     }
 
@@ -8935,12 +9322,44 @@ const HISTORY_MAX = 60;
 const _history  = [JSON.stringify([])];  // initial empty state
 let   _histIdx  = 0;
 
+// ── SETTLE MODE（書きなぐりモード・追加機能／既定はOFF＝従来どおり） ──
+// 思想：消せないから書きなぐれる。時間が経つと定着して undo できなくなる。
+// 消しゴムも一度では消えず、こするたびに薄くなる（黒板消しの手触り）。
+let   _settleMode = (typeof localStorage !== 'undefined' && localStorage.getItem('bm_settle') === '1');
+let   SETTLE_MS   = 10 * 60 * 1000;      // 定着までの猶予（settle on 30s / 5m で変更可）
+const _histTime   = [Date.now()];        // _history と同じ長さを保つ
+const ERASE_STEP  = 0.09;                // 消しゴム1回で薄くなる量（⚠️0.20 は速すぎた＝25px動かすと消え切る）
+// ⚠️eraseAt は onDown と onMove の両方から呼ばれ、ドラッグ中は毎フレーム発火する。
+// そのままだと数フレームで消えてしまうので、時間で間引いて「こすった回数」に変える。
+// ⚠️時間で間引くと「こすっても消えない」になる。実際の黒板消しと同じく“動いた距離”で数える。
+//   止めたまま押し続けても消えない／なぞった分だけ連続で薄くなる。
+const ERASE_MIN_DIST = 5;                // px — これだけ動くごとに1回削る
+let   _lastErasePt = null;
+const ERASE_COOLDOWN = 16;               // ms — 同一フレームの多重発火だけ防ぐ
+const ERASE_FLOOR = 0.12;                // ⭐完全には消えない。ここまで薄くなって「跡」として残る
+// ⭐消しゴムが触れる半径。26 は広すぎて線が丸ごと消えたので既定を 12 に。
+//   `eraser 20` のように打って変えられる（localStorage に残る）。
+let ERASE_RADIUS = (() => {
+    try { const v = parseInt(localStorage.getItem('bm_eraseR'), 10);
+          return (Number.isFinite(v) && v >= 2 && v <= 200) ? v : 12; } catch { return 12; }
+})();
+let   _lastFadeT  = 0;
+
+// いま undo しようとしている操作が「定着済み」か
+function _isSettled() {
+    if (!_settleMode) return false;
+    const t = _histTime[_histIdx];
+    return (t != null) && (Date.now() - t > SETTLE_MS);
+}
+
 function saveHistory() {
     const snap = JSON.stringify(S.objects);
     if (_history[_histIdx] === snap) return; // no change
     _history.splice(_histIdx + 1);           // drop redo branch
+    _histTime.splice(_histIdx + 1);          // settle: 時刻も同じ形に保つ
     _history.push(snap);
-    if (_history.length > HISTORY_MAX) _history.shift();
+    _histTime.push(Date.now());              // settle: この操作の時刻
+    if (_history.length > HISTORY_MAX) { _history.shift(); _histTime.shift(); }
     else _histIdx++;
     updateUndoRedoBtns();
     _scheduleCanvasSave();
@@ -9154,6 +9573,7 @@ function _restoreHistory() {
 
 function undo() {
     if (_histIdx <= 0) return;
+    if (_isSettled()) { updateUndoRedoBtns(); return; }  // settle: 定着済みは戻せない
     _histIdx--;
     _restoreHistory();
 }
@@ -9243,7 +9663,7 @@ function updateUndoRedoBtns() {
     const u = document.getElementById('undoBtn');
     const r = document.getElementById('redoBtn');
     const d = document.getElementById('dupBtn');
-    if (u) u.disabled = _histIdx <= 0;
+    if (u) u.disabled = _histIdx <= 0 || _isSettled();  // settle: 定着したら静かに無効化
     if (r) r.disabled = _histIdx >= _history.length - 1;
     if (d) d.disabled = !S.selectedId && !(S.multiSelected && S.multiSelected.length);
 }
