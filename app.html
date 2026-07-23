@@ -1168,6 +1168,53 @@
         }
 
         /* ══════════════════════════════════
+           SETTINGS PANEL — ⌘, 召喚・背景ブラー
+        ══════════════════════════════════ */
+        #settingsOverlay {
+            position: fixed; inset: 0; z-index: 320;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.42);
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+        }
+        #settingsOverlay.open { display: flex; }
+        .settings-card {
+            width: min(440px, 88vw);
+            background: rgba(18,16,20,0.94);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.6);
+            overflow: hidden;
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        }
+        .set-hd {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-size: 11px; letter-spacing: 0.18em; color: rgba(255,255,255,0.62);
+        }
+        .set-close { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 13px; line-height: 1; }
+        .set-close:hover { color: #fff; }
+        .set-body { padding: 12px 18px 6px; display: flex; flex-direction: column; gap: 14px; }
+        .set-row { display: flex; flex-direction: column; gap: 7px; }
+        .set-label { font-size: 10px; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); }
+        .set-seg { display: flex; gap: 5px; flex-wrap: wrap; }
+        .set-seg button {
+            flex: 1; min-width: 52px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: rgba(235,235,240,0.70);
+            border-radius: 9px; padding: 7px 8px;
+            font-family: inherit; font-size: 11px; letter-spacing: 0.03em;
+            cursor: pointer; transition: background .12s, color .12s, border-color .12s;
+        }
+        .set-seg button:hover { background: rgba(255,255,255,0.10); color: #fff; }
+        .set-seg button.active { background: rgba(255,255,255,0.17); border-color: rgba(255,255,255,0.28); color: #fff; }
+        .set-foot {
+            padding: 11px 18px 14px; margin-top: 6px;
+            font-size: 10px; color: rgba(255,255,255,0.35); text-align: center;
+            letter-spacing: 0.04em; border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* ══════════════════════════════════
            IMAGE CONTEXT MENU
         ══════════════════════════════════ */
         #imgCtxMenu {
@@ -2334,6 +2381,56 @@
         <canvas id="voiceWave" width="520" height="96"></canvas>
         <textarea id="voiceText" rows="1" autocomplete="off" spellcheck="false" placeholder="話してください…"></textarea>
         <div class="voice-hint">↵ 実行　·　Esc 取消　·　🎤 もう一度で再認識</div>
+    </div>
+</div>
+
+<!-- ⭐SETTINGS PANEL — ⌘, で召喚（パネル以外はブラー） -->
+<div id="settingsOverlay" aria-hidden="true">
+    <div class="settings-card" role="dialog" aria-label="Settings">
+        <div class="set-hd"><span>⚙ SETTINGS</span><button class="set-close" type="button" aria-label="close">✕</button></div>
+        <div class="set-body">
+            <div class="set-row">
+                <div class="set-label">ボード / BOARD</div>
+                <div class="set-seg" data-set="mode">
+                    <button type="button" data-v="light">Light</button>
+                    <button type="button" data-v="dark">Dark</button>
+                    <button type="button" data-v="gray">Gray</button>
+                </div>
+            </div>
+            <div class="set-row">
+                <div class="set-label">描き味 / DRAW</div>
+                <div class="set-seg" data-set="draw">
+                    <button type="button" data-v="pencil">鉛筆</button>
+                    <button type="button" data-v="fude">筆</button>
+                    <button type="button" data-v="classic">クラシック</button>
+                </div>
+            </div>
+            <div class="set-row">
+                <div class="set-label">芯 / GRADE</div>
+                <div class="set-seg" data-set="grade">
+                    <button type="button" data-v="2h">2H</button>
+                    <button type="button" data-v="hb">HB</button>
+                    <button type="button" data-v="2b">2B</button>
+                    <button type="button" data-v="4b">4B</button>
+                    <button type="button" data-v="6b">6B</button>
+                </div>
+            </div>
+            <div class="set-row">
+                <div class="set-label">ターミナル / TERMINAL</div>
+                <div class="set-seg" data-set="term">
+                    <button type="button" data-v="dock">Dock</button>
+                    <button type="button" data-v="float">Float</button>
+                </div>
+            </div>
+            <div class="set-row">
+                <div class="set-label">壁紙 / WALLPAPER</div>
+                <div class="set-seg" data-set="wall">
+                    <button type="button" data-v="white">白リング</button>
+                    <button type="button" data-v="red">赤リング</button>
+                </div>
+            </div>
+        </div>
+        <div class="set-foot">⌘,  で開閉 · Esc で閉じる</div>
     </div>
 </div>
 
@@ -9460,6 +9557,61 @@ tiEl.addEventListener('paste', e => {
         if (e.key === 'Escape' && overlay && overlay.classList.contains('open')) { e.stopPropagation(); closeOverlay(); }
     }, true);
     window.addEventListener('resize', () => { if (overlay && overlay.classList.contains('open')) sizeWave(); });
+})();
+
+// ══════════════════════════════════════════════════
+// SETTINGS PANEL — ⌘, で召喚（背景ブラー）。中身は既存機能に配線（追加のみ）。
+// ══════════════════════════════════════════════════
+(function initSettings() {
+    const overlay = document.getElementById('settingsOverlay');
+    if (!overlay) return;
+    const closeBtn = overlay.querySelector('.set-close');
+
+    const isOpen = () => overlay.classList.contains('open');
+    function setActive(group, val) {
+        overlay.querySelectorAll('.set-seg[data-set="' + group + '"] button').forEach(b =>
+            b.classList.toggle('active', b.dataset.v === val));
+    }
+    function sync() {
+        setActive('mode',  (typeof MODE !== 'undefined') ? MODE : 'light');
+        setActive('draw',  (typeof S !== 'undefined' && S.drawMode) ? S.drawMode : 'pencil');
+        setActive('grade', (typeof PENCIL_GRADE !== 'undefined') ? PENCIL_GRADE : 'hb');
+        setActive('term',  (window._termIsFloat && window._termIsFloat()) ? 'float' : 'dock');
+        let w = 'white'; try { w = localStorage.getItem('bm_wall') || 'white'; } catch (_) {}
+        setActive('wall', w);
+    }
+    function apply(group, v) {
+        try {
+            if (group === 'mode')       { if (typeof setMode === 'function') setMode(v); }
+            else if (group === 'draw')  { if (typeof runCommand === 'function') runCommand(v === 'pencil' ? 'enpitsu' : v); }
+            else if (group === 'grade') { if (typeof PENCIL_GRADE !== 'undefined') { PENCIL_GRADE = v; try { localStorage.setItem('bm_grade', v); } catch (_) {} } }
+            else if (group === 'term')  { if (v === 'float') { window._termFloat && window._termFloat(); } else { window._termDock && window._termDock(); } }
+            else if (group === 'wall')  {
+                const wall = document.getElementById('termWall');
+                if (wall) wall.style.backgroundImage = "url('assets/term-bg" + (v === 'red' ? '-red' : '') + ".png')";
+                try { localStorage.setItem('bm_wall', v); } catch (_) {}
+            }
+        } catch (_) {}
+        setTimeout(sync, 60);
+    }
+    overlay.querySelectorAll('.set-seg button').forEach(b =>
+        b.addEventListener('click', () => apply(b.parentElement.dataset.set, b.dataset.v)));
+
+    function open()  { overlay.classList.add('open'); sync(); }
+    function close() { overlay.classList.remove('open'); }
+    function toggle(){ isOpen() ? close() : open(); }
+    window._openSettings = open;
+    window._toggleSettings = toggle;
+
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    window.addEventListener('keydown', e => {
+        if ((e.metaKey || e.ctrlKey) && e.key === ',' && !e.shiftKey && !e.altKey) { e.preventDefault(); toggle(); return; }
+        if (e.key === 'Escape' && isOpen()) { e.stopPropagation(); close(); }
+    }, true);
+
+    // 起動時：保存済み壁紙を復元
+    try { if (localStorage.getItem('bm_wall') === 'red') { const wall = document.getElementById('termWall'); if (wall) wall.style.backgroundImage = "url('assets/term-bg-red.png')"; } } catch (_) {}
 })();
 
 // ══════════════════════════════════════════════════
