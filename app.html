@@ -1244,6 +1244,54 @@
         .omni-item.sel .omni-hint { color: rgba(255,255,255,0.60); }
 
         /* ══════════════════════════════════
+           COMMAND PALETTE（omnibox本体）— ⌘K 中央召喚
+        ══════════════════════════════════ */
+        #cmdkOverlay {
+            position: fixed; inset: 0; z-index: 330;
+            display: none; align-items: flex-start; justify-content: center;
+            padding-top: 12vh;
+            background: rgba(0,0,0,0.42);
+            -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+        }
+        #cmdkOverlay.open { display: flex; }
+        .cmdk-card {
+            width: min(560px, 92vw);
+            max-height: 68vh;
+            display: flex; flex-direction: column;
+            background: rgba(18,16,20,0.97);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.62);
+            overflow: hidden;
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        }
+        #cmdkInput {
+            background: none; border: none; outline: none;
+            color: #f2efe8; caret-color: #f2efe8;
+            font-family: inherit; font-size: 17px;
+            padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        #cmdkInput::placeholder { color: rgba(255,255,255,0.30); }
+        #cmdkList { overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 1px; }
+        #cmdkList::-webkit-scrollbar { width: 4px; }
+        #cmdkList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
+        .cmdk-item { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 9px; cursor: pointer; }
+        .cmdk-item:hover { background: rgba(255,255,255,0.06); }
+        .cmdk-item.sel  { background: rgba(255,255,255,0.13); }
+        .cmdk-name  { color: #eceae4; font-size: 13px; font-weight: 600; white-space: nowrap; }
+        .cmdk-badge {
+            font-size: 9.5px; letter-spacing: 0.04em; color: rgba(255,255,255,0.62);
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.10);
+            padding: 1.5px 6px; border-radius: 5px; white-space: nowrap; flex-shrink: 0;
+        }
+        .cmdk-hint  { color: rgba(255,255,255,0.40); font-size: 11px; margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 8px; }
+        .cmdk-empty { padding: 18px; text-align: center; color: rgba(255,255,255,0.35); font-size: 12px; }
+        .cmdk-foot {
+            padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.04em;
+        }
+
+        /* ══════════════════════════════════
            IMAGE CONTEXT MENU
         ══════════════════════════════════ */
         #imgCtxMenu {
@@ -2462,6 +2510,15 @@
             </div>
         </div>
         <div class="set-foot">⌘,  で開閉 · Esc で閉じる</div>
+    </div>
+</div>
+
+<!-- ⭐COMMAND PALETTE（omnibox本体）— ⌘K で中央に召喚・検索窓＋カテゴリバッジ -->
+<div id="cmdkOverlay" aria-hidden="true">
+    <div class="cmdk-card" role="dialog" aria-label="Command palette">
+        <input id="cmdkInput" type="text" placeholder="コマンドを検索…（calc / dark / t …）" autocomplete="off" spellcheck="false" autocapitalize="off">
+        <div id="cmdkList"></div>
+        <div class="cmdk-foot">↑↓ 選択 · ↵ 実行 · Esc 閉じる · ⌘K で開閉</div>
     </div>
 </div>
 
@@ -8341,6 +8398,11 @@ function runCommand(val) {
             enqueue('$ panel dock', ['→ terminal: docked right']);
             return;
         }
+        if (sub==='center') {
+            if (typeof centerTermPanel === 'function') centerTermPanel();
+            enqueue('$ panel center', ['→ ターミナルを画面中央に配置（⌘⇧B）']);
+            return;
+        }
         if (sub==='reset'||sub==='default') {
             if (window._termDock) window._termDock();
             setTermWidthPct(40, true);
@@ -9694,39 +9756,57 @@ tiEl.addEventListener('paste', e => {
 //   既存の runCommand の上に「発見しやすさ」を被せる層。入力/送信/履歴/IME は壊さない。
 //   capture フェーズで候補ナビだけ横取りし、実行は既存 Enter に委ねる。
 // ══════════════════════════════════════════════════
+// ⭐omnibox 共有カタログ：ターミナル補完 と ⌘Kパレット が同じ1ソースを使う。
+//   cat＝⌘Kパレットのバッジ（何の機能かひと目で分かる）。
+const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ' };
+const OMNI_CMDS = [
+    { cmd:'calc',    cat:'calc',    hint:'計算（calc 12*8）', args:true },
+    { cmd:'t',       cat:'capture', hint:'中央にテキスト（t アイデア）', args:true },
+    { cmd:'todo',    cat:'capture', hint:'ToDoを置く（todo 牛乳）', args:true },
+    { cmd:'dark',    cat:'board',   hint:'ボードを暗く（黒板）' },
+    { cmd:'light',   cat:'board',   hint:'ボードを明るく（紙）' },
+    { cmd:'gray',    cat:'board',   hint:'グレー環境' },
+    { cmd:'enpitsu', cat:'draw',    hint:'鉛筆（紙）で描く' },
+    { cmd:'fude',    cat:'draw',    hint:'筆で描く' },
+    { cmd:'classic', cat:'draw',    hint:'クラシックな線' },
+    { cmd:'hb',      cat:'grade',   hint:'芯を HB に' },
+    { cmd:'2b',      cat:'grade',   hint:'芯を 2B に' },
+    { cmd:'4b',      cat:'grade',   hint:'芯を 4B に' },
+    { cmd:'6b',      cat:'grade',   hint:'芯を 6B に' },
+    { cmd:'float',   cat:'panel',   hint:'ターミナルを浮かす' },
+    { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す' },
+    { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', args:true },
+    { cmd:'clear',   cat:'edit',    hint:'ボードを消す' },
+    { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す' },
+    { cmd:'export',  cat:'io',      hint:'書き出し（png / svg / pptx / data）', args:true },
+    { cmd:'share',   cat:'io',      hint:'URLで画面を共有' },
+    { cmd:'save',    cat:'io',      hint:'プロジェクト保存', args:true },
+    { cmd:'load',    cat:'io',      hint:'プロジェクト読込', args:true },
+    { cmd:'tpl',     cat:'insert',  hint:'テンプレを置く', args:true },
+    { cmd:'sticky',  cat:'insert',  hint:'付箋を置く', args:true },
+    { cmd:'bgm',     cat:'media',   hint:'BGM（bgm on / off）', args:true },
+    { cmd:'usage',   cat:'help',    hint:'使い方 / ヘルプ' },
+];
+// ⭐フローティング窓を画面中央へ（⌘⇧B / `panel center`）
+function centerTermPanel() {
+    const m = document.querySelector('main'); const tp = document.getElementById('termPanel');
+    if (!m || !tp) return;
+    if (window._termFloat) window._termFloat();          // フロートにしてから中央へ
+    const cs = getComputedStyle(m);
+    const num = (v, d) => { const n = parseFloat(cs.getPropertyValue(v)); return isNaN(n) ? d : n; };
+    const mr = m.getBoundingClientRect();
+    const fw = num('--term-fw', 460), fh = num('--term-fh', 520);
+    m.style.setProperty('--term-fx', Math.max(8, Math.round((mr.width  - fw) / 2)) + 'px');
+    m.style.setProperty('--term-fy', Math.max(8, Math.round((mr.height - fh) / 2)) + 'px');
+    if (typeof resizeCanvas === 'function') resizeCanvas();
+}
+
 (function initOmni() {
     const ti   = document.getElementById('ti');
     const list = document.getElementById('omniList');
     if (!ti || !list) return;
 
-    const CMDS = [
-        { cmd:'calc',    hint:'計算（calc 12*8）', args:true },
-        { cmd:'t',       hint:'中央にテキスト（t アイデア）', args:true },
-        { cmd:'todo',    hint:'ToDoを置く（todo 牛乳）', args:true },
-        { cmd:'dark',    hint:'ボードを暗く（黒板）' },
-        { cmd:'light',   hint:'ボードを明るく（紙）' },
-        { cmd:'gray',    hint:'グレー環境' },
-        { cmd:'enpitsu', hint:'鉛筆（紙）で描く' },
-        { cmd:'fude',    hint:'筆で描く' },
-        { cmd:'classic', hint:'クラシックな線' },
-        { cmd:'float',   hint:'ターミナルを浮かす' },
-        { cmd:'dock',    hint:'ターミナルを右に戻す' },
-        { cmd:'panel',   hint:'分割幅（panel 30 / float / dock）', args:true },
-        { cmd:'clear',   hint:'ボードを消す' },
-        { cmd:'flush',   hint:'ターミナルのログを消す' },
-        { cmd:'export',  hint:'書き出し（png / svg / pptx / data）', args:true },
-        { cmd:'share',   hint:'URLで画面を共有' },
-        { cmd:'save',    hint:'プロジェクト保存', args:true },
-        { cmd:'load',    hint:'プロジェクト読込', args:true },
-        { cmd:'tpl',     hint:'テンプレを置く', args:true },
-        { cmd:'sticky',  hint:'付箋を置く', args:true },
-        { cmd:'bgm',     hint:'BGM（bgm on / off）', args:true },
-        { cmd:'usage',   hint:'使い方 / ヘルプ' },
-        { cmd:'hb',      hint:'芯を HB に' },
-        { cmd:'2b',      hint:'芯を 2B に' },
-        { cmd:'4b',      hint:'芯を 4B に' },
-        { cmd:'6b',      hint:'芯を 6B に' },
-    ];
+    const CMDS = OMNI_CMDS;   // ⭐⌘Kパレットと同じ1ソースを共有
 
     let items = [], sel = -1;
     const isSub = (q, s) => { let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return true; } return q.length === 0; };
@@ -9776,6 +9856,77 @@ tiEl.addEventListener('paste', e => {
         if (it.args) { ti.value = it.cmd + ' '; ti.focus(); }  // 引数コマンドは補完だけして続けて入力
         else { ti.value = ''; try { pushHistory(it.cmd); } catch (_) {} if (typeof runCommand === 'function') runCommand(it.cmd); }
     });
+})();
+
+// ══════════════════════════════════════════════════
+// COMMAND PALETTE（omnibox本体）— ⌘K で中央召喚。検索窓＋カテゴリバッジ。
+//   同じ OMNI_CMDS を使う（ターミナル補完と1ソース）。⌘⇧B で窓を中央配置。
+// ══════════════════════════════════════════════════
+(function initCmdK() {
+    const overlay = document.getElementById('cmdkOverlay');
+    const input   = document.getElementById('cmdkInput');
+    const listEl  = document.getElementById('cmdkList');
+    if (!overlay || !input || !listEl) return;
+
+    let items = [], sel = 0;
+    const isOpen = () => overlay.classList.contains('open');
+    const isSub = (q, s) => { let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return true; } return q.length === 0; };
+    function score(q, it) {
+        const c = it.cmd.toLowerCase();
+        if (c === q) return 100;
+        if (c.startsWith(q)) return 80 - (c.length - q.length) * 0.4;
+        if (c.includes(q)) return 55;
+        if (isSub(q, c)) return 32;
+        if (it.hint && it.hint.toLowerCase().includes(q)) return 18;
+        return -1;
+    }
+    const esc = s => String(s).replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m]));
+    function render() {
+        if (!items.length) { listEl.innerHTML = '<div class="cmdk-empty">該当なし</div>'; return; }
+        listEl.innerHTML = items.map((it, i) => {
+            const badge = (typeof OMNI_CATS !== 'undefined' && OMNI_CATS[it.cat]) ? OMNI_CATS[it.cat] : (it.cat || '');
+            return `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-name">${esc(it.cmd)}</span><span class="cmdk-badge">${esc(badge)}</span><span class="cmdk-hint">${esc(it.hint || '')}</span></div>`;
+        }).join('');
+        const s = listEl.querySelector('.cmdk-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
+    }
+    function refresh() {
+        const q = input.value.trim().split(/\s+/)[0].toLowerCase();
+        if (!q) items = OMNI_CMDS.slice();
+        else items = OMNI_CMDS.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
+        sel = 0; render();
+    }
+    function open()  { overlay.classList.add('open'); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
+    function close() { overlay.classList.remove('open'); }
+    function toggle(){ isOpen() ? close() : open(); }
+    window._openCmdK = open; window._toggleCmdK = toggle;
+
+    function runSel() {
+        const it = items[sel]; if (!it) return;
+        const q = input.value.trim();
+        const fsp = q.indexOf(' ');
+        const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
+        if (it.args && !typedArgs) { input.value = it.cmd + ' '; refresh(); return; }   // 引数が要る→補完して留まる
+        const cmd = (it.args && typedArgs) ? (it.cmd + ' ' + typedArgs) : it.cmd;
+        close();
+        try { pushHistory(cmd); } catch (_) {}
+        if (typeof runCommand === 'function') runCommand(cmd);
+    }
+
+    input.addEventListener('input', refresh);
+    input.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown')    { if (items.length) { sel = (sel + 1) % items.length; render(); } e.preventDefault(); }
+        else if (e.key === 'ArrowUp') { if (items.length) { sel = (sel - 1 + items.length) % items.length; render(); } e.preventDefault(); }
+        else if (e.key === 'Enter')   { e.preventDefault(); runSel(); }
+        else if (e.key === 'Escape')  { e.preventDefault(); close(); }
+    });
+    listEl.addEventListener('mousedown', e => { const el = e.target.closest('.cmdk-item'); if (!el) return; e.preventDefault(); sel = +el.dataset.i; runSel(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+    window.addEventListener('keydown', e => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && !e.shiftKey && !e.altKey) { e.preventDefault(); toggle(); return; }
+        // ⌘⇧B → フローティング窓を中央配置
+        if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'b' && !e.altKey) { e.preventDefault(); if (typeof centerTermPanel === 'function') centerTermPanel(); }
+    }, true);
 })();
 
 // ══════════════════════════════════════════════════
