@@ -449,7 +449,6 @@
             display: flex;
             overflow: hidden;
             min-height: 0;
-            position: relative;   /* ⭐ターミナルを frosted glass で重ねるための基準 */
         }
 
         /* ══════════════════════════════════
@@ -546,20 +545,6 @@
 
         .w-btn:hover  { background: #f4f4f4; border-color: #ddd; }
         .w-btn.active { background: #efefef; border-color: #999; color: var(--wb-icon-active); }
-        /* ⭐鉛筆スライダー＆グレード */
-        .pcl-range { -webkit-appearance:none; appearance:none; width:120px; height:3px; border-radius:2px;
-            background:#ccc; outline:none; margin:2px 0; }
-        .pcl-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px;
-            border-radius:50%; background:#1a1a18; cursor:pointer; }
-        .pcl-range::-moz-range-thumb { width:14px; height:14px; border:none; border-radius:50%; background:#1a1a18; cursor:pointer; }
-        .g-btn { min-width:30px; height:26px; padding:0 6px; font-family:'Space Mono',monospace; font-size:.6rem;
-            border:1px solid #ddd; border-radius:5px; background:#fff; color:#555; cursor:pointer; }
-        .g-btn:hover { background:#f4f4f4; }
-        .g-btn.active { background:#1a1a18; color:#fff; border-color:#1a1a18; }
-        body.bm-dark .pcl-range, body.bm-gray .pcl-range { background:var(--bm-tb-border); }
-        body.bm-dark .pcl-range::-webkit-slider-thumb, body.bm-gray .pcl-range::-webkit-slider-thumb { background:var(--bm-tb-icon); }
-        body.bm-dark .g-btn, body.bm-gray .g-btn { background:transparent; color:var(--bm-tb-icon); border-color:var(--bm-tb-border); }
-        body.bm-dark .g-btn.active, body.bm-gray .g-btn.active { background:var(--bm-accent); color:#fff; border-color:var(--bm-accent); }
 
         .w-dot {
             border-radius: 50%;
@@ -853,44 +838,31 @@
         /* ══════════════════════════════════
            TERMINAL PANEL — black mirror
         ══════════════════════════════════ */
-        /* ⭐ターミナル背後の暗いグラフィック壁紙（黒＋深い赤の光＋かすかな幾何線）。
-           frosted glass がこれをぼかして「透明感」を出す。将来アプリ化で本物の透明に差し替える層。 */
-        /* ⭐ターミナル背景の壁紙＝木下作の画像を当て込む（assets/term-bg.png）。
-           画像が無いときは黒＋赤グロー（仮）にフォールバック。 */
-        #termWall {
-            position: absolute;
-            top: 0; right: 0; bottom: 0;
-            width: 40%;
-            min-width: 200px;
-            z-index: 30;
-            pointer-events: none;
-            overflow: hidden;
-            background-color: #050506;
-            background-image: url('assets/term-bg.png');   /* ⭐木下作の赤リング */
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-
         .terminal-panel {
-            /* ⭐frosted glass ─ 背後の壁紙(#termWall)をぼかして透明感を出す。 */
-            position: absolute;
-            top: 0; right: 0; bottom: 0;
-            width: 40%;
-            min-width: 200px;
+            flex-shrink: 0;
+            width: 45%;
+            min-width: 180px;
             display: flex;
             flex-direction: column;
-            background: rgba(14, 12, 14, 0.25);
-            backdrop-filter: blur(30px) saturate(1.35);
-            -webkit-backdrop-filter: blur(30px) saturate(1.35);
-            border-left: 1px solid rgba(255,255,255,0.07);
-            box-shadow: -20px 0 60px rgba(0,0,0,0.25);
+            background: var(--ink);
+            position: relative;
             overflow: hidden;
-            z-index: 40;
         }
 
-        /* 走査線はほぼ消す（Raycast方向の clean な質感） */
-        .terminal-panel::before { content: none; }
+        .terminal-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 3px,
+                rgba(255,255,255,0.012) 3px,
+                rgba(255,255,255,0.012) 4px
+            );
+            pointer-events: none;
+            z-index: 50;
+        }
 
         @keyframes glitch {
             0%,94%  { transform: translateX(0); }
@@ -899,8 +871,7 @@
             97%     { transform: translateX(-1px); }
             98%,100%{ transform: translateX(0); }
         }
-        /* ⭐Raycast方向：グリッチ(ハッカー感)は止める。frosted glass の落ち着いた質感に */
-        /* .terminal-panel { animation: glitch 11s infinite; } */
+        .terminal-panel { animation: glitch 11s infinite; }
 
         .term-hd {
             flex-shrink: 0;
@@ -1357,29 +1328,6 @@
             background: var(--bm-tb-bg);
             border-right-color: var(--bm-tb-border);
             border-bottom-color: var(--bm-tb-border);
-        }
-
-        /* ── PAPER BOARD（enpitsu モードのときだけ付く。他モードには影響しない） ──
-           板そのものを紙にする。生成りの地＋極薄のノイズ＝触ると分かる程度のざらつき。
-           ⚠️濃くすると鉛筆の線が埋もれて読めなくなるので 0.05 前後に留める。 */
-        /* ⭐紙の地：わずかに温かい生成り＋縦横グラデで手漉きの紙のムラを出す */
-        body.bm-paper .canvas-panel {
-            background:
-                radial-gradient(120% 90% at 30% 20%, #F1EEE7 0%, #E9E5DD 55%, #E4DFD5 100%);
-        }
-        body.bm-paper .canvas-panel::before { opacity: .22; }   /* 方眼を紙に沈める */
-        /* 粗い紙の目（低周波の陰影）＝触ると分かる程度のムラ */
-        body.bm-paper .canvas-panel::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 2;
-            background-image:
-                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='pf'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.016' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pf)' opacity='0.6'/%3E%3C/svg%3E"),
-                url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='pn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pn)' opacity='0.5'/%3E%3C/svg%3E");
-            opacity: .08;
-            mix-blend-mode: multiply;
         }
 
         /* ── Header theming for dark / gray canvas modes ─────────────── */
@@ -1917,11 +1865,9 @@
 
         <!-- Pen (click = opens pen-popover with width options) -->
         <button class="tool-btn" id="penBtn" data-tool="pen" title="Pen (P) · tap for width">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                <!-- 鉛筆の芯側（角丸の先） -->
-                <path d="M15.9 4.1 a2.9 2.9 0 0 1 4.1 4.1 l-1.7 1.7 -4.1-4.1 z"/>
-                <!-- 軸 -->
-                <path d="M12.9 7.1 l4.1 4.1 -9.0 9.0 -5.0 1.6 a0.6 0.6 0 0 1 -0.76-0.76 l1.6-5.0 z"/>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.5 1.5L12.5 4.5L5 12L1 13L2 9L9.5 1.5Z"/>
+                <line x1="7.5" y1="3.5" x2="10.5" y2="6.5"/>
             </svg>
         </button>
 
@@ -1937,25 +1883,23 @@
 
         <!-- Eraser -->
         <button class="tool-btn" data-tool="eraser" title="Eraser (E)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <!-- 角丸の消しゴム（斜め） -->
-                <rect x="4.5" y="9" width="15" height="8.2" rx="2" transform="rotate(-45 12 12)"/>
-                <!-- 消しゴムの分割線 -->
-                <line x1="9.7" y1="7.4" x2="15.5" y2="13.2"/>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 10L5.5 5L11 5L8.5 10Z"/>
+                <line x1="1.5" y1="12.5" x2="12.5" y2="12.5"/>
             </svg>
         </button>
         <div class="tool-sep"></div>
 
         <!-- Shapes — single button, opens #shapePopover -->
-        <button class="tool-btn" id="shapeBtn" title="Shapes (C/G/Q/A)" style="display:none">
+        <button class="tool-btn" id="shapeBtn" title="Shapes (C/G/Q/A)">
             <svg id="shapeBtnIcon" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
                 <circle cx="4.5" cy="4.5" r="3"/>
                 <rect x="7.5" y="7.5" width="5" height="5"/>
             </svg>
         </button>
 
-        <!-- Fill — paint bucket with drip, opens #toolPopover （非表示：ツールから削除） -->
-        <button class="tool-btn" id="fillBtn" title="Fill (F)" style="display:none">
+        <!-- Fill — paint bucket with drip, opens #toolPopover -->
+        <button class="tool-btn" id="fillBtn" title="Fill (F)">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <!-- bucket body -->
                 <path d="M3 5.5 L2.2 11 L11.8 11 L11 5.5 Z"/>
@@ -1972,7 +1916,7 @@
 
         <!-- Text -->
         <button class="tool-btn" data-tool="text" title="Text (T)">T</button>
-        <button class="tool-btn" id="textStyleBtn" title="Text style — font / bold (selected text or sticky)" style="display:none">Aa</button>
+        <button class="tool-btn" id="textStyleBtn" title="Text style — font / bold (selected text or sticky)">Aa</button>
         <div class="tool-sep"></div>
 
         <!-- Upload Image -->
@@ -2114,9 +2058,6 @@
     <div class="resize-handle" id="resizeHandle"></div>
 
     <!-- Terminal — black mirror -->
-    <!-- ⭐ターミナル背後の暗い壁紙。frosted glass がこれをぼかして透明感を出す -->
-    <div id="termWall" aria-hidden="true"></div>
-
     <section class="terminal-panel" id="termPanel">
         <div class="term-hd">
             <div class="term-dots"><span></span><span></span><span></span></div>
@@ -2237,22 +2178,6 @@
         <button class="w-btn" data-w="4" title="Thick (3)">
             <span class="w-dot" style="width:10px;height:10px"></span>
         </button>
-    </div>
-    <!-- ⭐鉛筆モードのときだけ出る：太さ・濃さスライダー＋芯グレード -->
-    <div id="pencilExtra" style="display:none;">
-        <div class="pop-sep-line"></div>
-        <span class="pop-label">太さ</span>
-        <div class="pop-row"><input id="pencilWidth" class="pcl-range" type="range" min="1" max="9" step="0.5" value="2.5"></div>
-        <span class="pop-label">濃さ</span>
-        <div class="pop-row"><input id="pencilDark" class="pcl-range" type="range" min="10" max="200" step="5" value="90"></div>
-        <span class="pop-label">しん（芯）</span>
-        <div class="pop-row" id="pencilGrades">
-            <button class="g-btn" data-g="2h">2H</button>
-            <button class="g-btn" data-g="hb">HB</button>
-            <button class="g-btn" data-g="2b">2B</button>
-            <button class="g-btn" data-g="5b">5B</button>
-            <button class="g-btn" data-g="6b">6B</button>
-        </div>
     </div>
 </div>
 
@@ -2537,8 +2462,7 @@ Full guide → <b>usage.html §5</b></pre>
 
 const S = {
     tool:            'select',
-    drawMode:        (() => { const v = (typeof localStorage !== 'undefined') ? localStorage.getItem('bm_drawMode') : null;
-                              return (v === 'fude' || v === 'pencil') ? v : 'classic'; })(),
+    drawMode:        (typeof localStorage !== 'undefined' && localStorage.getItem('bm_drawMode') === 'fude') ? 'fude' : 'classic',
     lineWidth:       1.5,
     fillMode:        'none',    // 'none' | 'black' | 'grey' | 'white'
     strokeOff:       false,     // true = no outline on shapes
@@ -3755,9 +3679,7 @@ function onMove(cx, cy) {
         const first = pts[0];
         const dx = cur.x - first.x, dy = cur.y - first.y;
         const wasSnap = S.penSnapClose;
-        // ⭐鉛筆モードでは自動クローズしない（紙に書きなぐるのに図形を閉じる必要はない）
-        S.penSnapClose = (S.drawMode !== 'pencil')
-                      && pts.length > 12 && Math.sqrt(dx*dx + dy*dy) < snapDist;
+        S.penSnapClose = pts.length > 12 && Math.sqrt(dx*dx + dy*dy) < snapDist;
 
         // Full redraw only when snap state changes (keeps incremental perf otherwise)
         if (S.penSnapClose !== wasSnap) {
@@ -3771,11 +3693,6 @@ function onMove(cx, cy) {
         }
 
         // ── Incremental draw (normal) ────────────────────────────────────
-        // ⭐pencilモードだけは全体描画に回す。ここで直接描くと紙の目(grain)を通らず、
-        //   書いている最中だけツルッとした線に見えてしまうため。
-        if (S.drawMode === 'pencil' && PENCIL_GRAIN) {
-            redrawAll();
-        } else {
         ctx.save();
         ctx.setTransform(VIEW.scale*dpr, 0, 0, VIEW.scale*dpr, VIEW.tx*dpr, VIEW.ty*dpr);
         ctx.strokeStyle = getStrokeColor(); ctx.lineWidth = S.lineWidth;
@@ -3783,7 +3700,6 @@ function onMove(cx, cy) {
         const mx = (prev.x+cur.x)/2, my = (prev.y+cur.y)/2;
         ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.quadraticCurveTo(prev.x, prev.y, mx, my); ctx.stroke();
         ctx.restore();
-        }
     } else if (S.tool === 'eraser') {
         eraseAt(p, S.lastPointerType === 'touch' ? 14 : 0);
     } else if (isShapeTool(S.tool)) {
@@ -3857,22 +3773,19 @@ function onUp() {
     if (S.tool === 'pen') {
         if (S.penPts.length > 4) {
             const id  = genId();
-            const isPencil = (S.drawMode === 'pencil');
-            // ⭐鉛筆モードは「書いた通り」＝閉じる概念なし・間引きなし・図形自動変換なし。
-            const closed = isPencil ? false : S.penSnapClose;
+            // Auto-close: snap the last point to the first when within range
+            const closed = S.penSnapClose;
             const raw = closed
                 ? [...S.penPts.slice(0, -1), { ...S.penPts[0] }]  // replace tail with exact start
                 : [...S.penPts];
-            // 鉛筆は生の点をほぼそのまま（ごく軽い間引きだけ＝点数爆発は防ぐが形は保つ）。
-            // 他モードは従来通り編集しやすい数に間引く。
-            const eps = isPencil ? (0.35 / VIEW.scale) : (1.4 / VIEW.scale);
+            // Simplify freehand points so the editable anchors are reasonable in count.
+            // Epsilon scales with current view zoom so feel stays consistent.
+            const eps = 1.4 / VIEW.scale;
             let pts = rdpSimplify(raw, eps);
             if (closed && pts.length > 1) pts[pts.length - 1] = { ...pts[0] };
-            const obj = { id, type: 'stroke', data: { pts, lw: S.lineWidth, rotation: 0, fill: null, closed, mode: S.drawMode,
-                ...(isPencil ? { grade: PENCIL_GRADE, dark: PENCIL_DARK } : {}) }, selected: false };
+            const obj = { id, type: 'stroke', data: { pts, lw: S.lineWidth, rotation: 0, fill: null, closed, mode: S.drawMode }, selected: false };
             S.objects.push(obj);
-            // ⭐鉛筆は図形の自動検出（○△□に補正）をしない＝書いたまま残す
-            if (!closed && !isPencil) {
+            if (!closed) {
                 clearTimeout(detectTimer);
                 detectTimer = setTimeout(() => runFreeDetect(obj), 400);
             }
@@ -3902,15 +3815,6 @@ function redrawAll() {
     if (S.tool === 'pen' && S.penPts.length > 1) renderPenInProgress();
     // Path tool: in-progress anchors + preview segment to cursor
     if (S.tool === 'path' && S.pathPts.length > 0) renderPathInProgress();
-
-    // ⭐紙の目で削り取る（pencilモードのみ。UI要素より前に掛ける）
-    if (S.drawMode === 'pencil' && PENCIL_GRAIN) {
-        // 再読み込み時も板を紙のまま復元する
-        if (!document.body.classList.contains('bm-paper')) document.body.classList.add('bm-paper');
-        _applyPaperGrain();
-    }
-    // ⭐消しカスを紙の上に（ワールド座標のまま）
-    if (_eraseDebris.length) _drawEraseDebris();
 
     // Marquee selection rectangle
     if (S.marquee) {
@@ -4150,275 +4054,7 @@ function renderStrokeFude(obj) {
     ctx.restore();
 }
 
-// ══════════════════════════════════════════════════
-// PENCIL MODE（追加・既存 classic/fude には触らない）
-// 紙の目に引っかかる鉛筆。ざらつき＝決定論ノイズで多層に重ね描き、
-// 速く引いた所ほど薄くなる（かすれ）。再描画でチラつかないよう乱数は使わない。
-// ══════════════════════════════════════════════════
-function _pnoise(i, s) {
-    const x = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453;
-    return x - Math.floor(x);                     // 0..1 決定論的
-}
-
-// ⭐紙の目（grain）── デジタルブラシの原理どおり「線を描いてから、紙の目で削り取る」。
-//   grain は画面に固定される（線に貼り付かない）＝同じ所をなぞると同じ粒に重なる＝実物と同じ。
-//   ⚠️pencil モードのときだけ使う。classic / fude には一切かからない。
-let _grainPattern = null;
-function _ensureGrain() {
-    if (_grainPattern) return _grainPattern;
-    const N = 160;
-    const c = document.createElement('canvas');
-    c.width = c.height = N;
-    const g2 = c.getContext('2d');
-    const img = g2.createImageData(N, N);
-    for (let y = 0; y < N; y++) {
-        for (let x = 0; x < N; x++) {
-            // ⭐紙の目(tooth)＝大きめの繊維セル + 細かいディテールの2周波。
-            //   線に小さな白粒がくっきり抜ける。抜きすぎると散るので中庸に。
-            const n1 = _pnoise(x * 0.7 + y * 0.25, y * 0.7);   // tooth の凸凹（大きめ）
-            const n2 = _pnoise(x * 2.4 - y * 1.1, x * 0.5 + y * 2.2);  // 繊維の細かさ
-            const n  = n1 * 0.64 + n2 * 0.36;
-            const a  = n > 0.58 ? Math.min(200, (n - 0.58) * 200 * 3.0) : 0;   // 白粒を強くくっきり
-            const i  = (y * N + x) * 4;
-            img.data[i] = 0; img.data[i+1] = 0; img.data[i+2] = 0; img.data[i+3] = a;
-        }
-    }
-    g2.putImageData(img, 0, 0);
-    _grainPattern = ctx.createPattern(c, 'repeat');
-    return _grainPattern;
-}
-
-// 描画の最後に1回だけ呼ぶ。ズームしても粒径が変わらないよう画面座標で掛ける。
-function _applyPaperGrain() {
-    const pat = _ensureGrain();
-    if (!pat) return;
-    const dpr = window.devicePixelRatio || 1;
-    ctx.save();
-    // ⭐ワールド（紙）座標で紙目を掛ける＝パン/ズームで紙ごと動く。
-    //   画面固定だと線を動かしたとき「grainが上に乗ってる」感が出る（木下の指摘）。
-    ctx.setTransform(VIEW.scale * dpr, 0, 0, VIEW.scale * dpr, VIEW.tx * dpr, VIEW.ty * dpr);
-
-    // 画像・付箋は削らない（ワールド座標そのまま）
-    const holes = [];
-    for (const o of S.objects) {
-        if (o.type !== 'image' && o.type !== 'sticky') continue;
-        const b = (typeof getObjBounds === 'function') ? getObjBounds(o) : null;
-        if (b) holes.push(b);
-    }
-    // 可視ワールド矩形
-    const x0 = -VIEW.tx / VIEW.scale, y0 = -VIEW.ty / VIEW.scale;
-    const vw = CW / VIEW.scale, vh = CH / VIEW.scale;
-    if (holes.length) {
-        ctx.beginPath();
-        ctx.rect(x0, y0, vw, vh);
-        for (const b of holes) {
-            const pad = 1 / VIEW.scale;
-            ctx.rect(b.x - pad, b.y - pad, b.w + pad * 2, b.h + pad * 2);
-        }
-        ctx.clip('evenodd');
-    }
-
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.fillStyle = pat;
-    ctx.fillRect(x0, y0, vw, vh);
-    ctx.restore();
-}
-
-function _drawPencilPath(pts, lw, r, g, b, baseA, ptA) {
-    const n = pts.length;
-    if (n < 2) return;
-    ctx.save();
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    const LAYERS = 3;
-
-    // 点ごとの残量を 0.2 刻みに量子化 ─ 同じ濃さの区間は「一本の線」で引く。
-    // ⚠️セグメントごとに stroke() すると lineCap の丸が重なって数珠状の点になる。
-    const q = new Array(n);
-    for (let i = 0; i < n; i++) {
-        const v = (ptA && ptA[i] != null) ? ptA[i] : 1;
-        q[i] = Math.round(v * 5) / 5;
-    }
-
-    for (let L = 0; L < LAYERS; L++) {
-        const jitter = lw * (0.20 + L * 0.16);          // 層ごとのブレ＝紙の目
-        ctx.lineWidth = Math.max(0.4, lw * (1 - L * 0.24));
-        // ⭐紙の目に「抜け」を作る ─ 鉛筆は紙の凸部にだけ乗り、凹部は白く残る。
-        //   層ごとに違う破線パターンを重ねると、粒状のムラになる（実物の色鉛筆と同じ理屈）
-        const dash = [lw * (0.55 + L * 0.45), lw * (0.30 + L * 0.28)];
-        ctx.setLineDash(dash);
-        ctx.lineDashOffset = L * 4.3;
-        const jx = i => (_pnoise(i, L) - 0.5) * jitter;
-        const jy = i => (_pnoise(i + 37, L) - 0.5) * jitter;
-
-        let i = 1;
-        while (i < n) {
-            const lvl = Math.min(q[i-1], q[i]);
-            const al  = baseA * lvl * 0.30 * (1 - L * 0.18);
-            // 同じ濃さが続くところまでを 1 本の連続パスで引く
-            let j = i;
-            while (j + 1 < n && Math.min(q[j], q[j+1]) === lvl) j++;
-            if (al > 0.012) {
-                ctx.strokeStyle = `rgba(${r},${g},${b},${al})`;
-                ctx.beginPath();
-                ctx.moveTo(pts[i-1].x + jx(i-1), pts[i-1].y + jy(i-1));
-                let pen = true;
-                for (let k = i; k <= j; k++) {
-                    const d  = Math.hypot(pts[k].x - pts[k-1].x, pts[k].y - pts[k-1].y);
-                    // 速く引いた所は上の層だけ線を切る＝かすれ（点は残さない）
-                    const skip = (L > 0) && (d > 11 + L * 5);
-                    const X = pts[k].x + jx(k), Y = pts[k].y + jy(k);
-                    if (skip) { ctx.moveTo(X, Y); pen = false; }
-                    else      { ctx.lineTo(X, Y); pen = true;  }
-                }
-                ctx.stroke();
-            }
-            i = j + 1;
-        }
-    }
-    ctx.restore();
-}
-
-// ⭐grain 前提のシンプルな線 ── ざらつきは線側では作らず、最後に紙の目で削り取る。
-//   （旧 _drawPencilPath は残してある。PENCIL_GRAIN=false で従来の3層版に戻せる）
-const PENCIL_GRAIN = true;
-// ⭐黒鉛は真っ黒ではない。紙の板のときだけインクをグレーに落とす＝一気に鉛筆になる。
-//   （黒板/darkモードでは見えなくなるので、紙のときだけ）
-const PENCIL_INK = '#3a3a38';
-function _pencilInk() {
-    return (typeof document !== 'undefined' && document.body.classList.contains('bm-paper'))
-        ? PENCIL_INK : getStrokeColor();
-}
-// ⭐黒鉛の粒スタンプ（オフスクリーンに1回焼いて使い回す）。
-//   鉛筆は「線」でなく「紙の凸部に乗った黒鉛の粒の集合」＝これを arc-length で連打する。
-//   中心が濃く周縁がかすれ、内部はノイズで抜けた granular なディスク。色ごとにキャッシュ。
-const _dabCache = {};
-function _pencilDab(r, g, b) {
-    const key = r + ',' + g + ',' + b;
-    if (_dabCache[key]) return _dabCache[key];
-    const S = 48, c = document.createElement('canvas');
-    c.width = c.height = S;
-    const g2 = c.getContext('2d');
-    const img = g2.createImageData(S, S);
-    const cx = (S - 1) / 2, cy = (S - 1) / 2, rad = S / 2;
-    for (let y = 0; y < S; y++) {
-        for (let x = 0; x < S; x++) {
-            const dx = (x - cx) / rad, dy = (y - cy) / rad;
-            const d = Math.hypot(dx, dy);
-            let a = 0;
-            if (d < 1) {
-                // ⭐硬い芯＋小さな羽化＝縁がくっきり（見本カスタム）。羽化しすぎると線がぼやける。
-                a = d < 0.58 ? 1 : Math.pow(1 - (d - 0.58) / 0.42, 1.2);
-            }
-            const i = (y * S + x) * 4;
-            img.data[i] = r; img.data[i+1] = g; img.data[i+2] = b;
-            img.data[i+3] = Math.round(a * 255);
-        }
-    }
-    g2.putImageData(img, 0, 0);
-    _dabCache[key] = c;
-    return c;
-}
-
-// ⭐鉛筆の芯グレード（三菱ハイユニ/ステッドラー等の 2H〜6B）。
-//   硬いほど薄く細く尖り、柔らかいほど濃く太く紙目を拾う。コマンド 2h/hb/2b/5b/6b で切替。
-// thr = 紙目の閾値（高いほど白い粒が多く残る＝硬い鉛筆）。a = 濃さ。w = 太さ係数。
-// w=太さ a=濃さ thr=紙目閾値 ｜ ⭐消しゴムを芯ごとに設計：
-//   eStep=1回で消える量（硬い芯ほど大きい＝消えやすい）／cScale=消しカスの大きさ／cFreq=カスの出やすさ
-const PENCIL_GRADES = {
-    // eFloor=消し切れずに紙に残る跡の下限（全芯に薄い跡・濃い芯ほど残る）／cFreq=カスの出やすさ
-    '2h': { w: 0.60, a: 0.42, thr: 0.60, name: '2H（硬い・薄い）',   eStep: 0.60, cScale: 0.7, cFreq: 0.35, eFloor: 0.03 },
-    'h':  { w: 0.72, a: 0.50, thr: 0.55, name: 'H',                eStep: 0.55, cScale: 0.8, cFreq: 0.4,  eFloor: 0.035 },
-    'hb': { w: 0.88, a: 0.62, thr: 0.50, name: 'HB（標準）',         eStep: 0.50, cScale: 1.0, cFreq: 0.5,  eFloor: 0.04 },
-    '2b': { w: 1.10, a: 0.74, thr: 0.45, name: '2B',               eStep: 0.45, cScale: 1.3, cFreq: 0.6,  eFloor: 0.05 },
-    '4b': { w: 1.30, a: 0.85, thr: 0.41, name: '4B',               eStep: 0.42, cScale: 1.6, cFreq: 0.75, eFloor: 0.06 },
-    '5b': { w: 1.48, a: 0.92, thr: 0.38, name: '5B（ハイユニ）',     eStep: 0.40, cScale: 1.9, cFreq: 0.85, eFloor: 0.075 },
-    '6b': { w: 1.70, a: 1.00, thr: 0.35, name: '6B（柔らかい・濃い）', eStep: 0.38, cScale: 2.3, cFreq: 1.0,  eFloor: 0.09 },
-};
-let PENCIL_GRADE = (() => {
-    try { const v = localStorage.getItem('bm_grade'); return PENCIL_GRADES[v] ? v : 'hb'; }
-    catch { return 'hb'; }
-})();
-
-// ⭐紙の目（tooth）＝キャンバス座標に固定された決定論ノイズ。
-//   ここが鉛筆とスプレーの分かれ目：粒ごとにランダム＝スプレー／紙の位置に固定＝鉛筆。
-//   同じ紙の点は必ず同じ濃さ＝黒鉛が紙の凸部にだけ引っかかる。
-function _tooth(x, y) {
-    const n1 = _pnoise(x * 0.85 + y * 0.30, y * 0.85 + x * 0.12);
-    const n2 = _pnoise(x * 2.60 - y * 1.10, x * 0.40 + y * 2.10);
-    return n1 * 0.6 + n2 * 0.4;
-}
-
-// ⭐濃さ（ユーザー可変・スライダー/コマンドで調整）。0.1〜2.0。既定は濃いめ。
-let PENCIL_DARK = (() => {
-    try { const v = parseFloat(localStorage.getItem('bm_dark'));
-          return (v >= 0.1 && v <= 2) ? v : 0.9; } catch { return 0.9; }
-})();
-
-// ⭐鉛筆ストローク ── 研究 finding[4][5]：Shape(連続した外形) の内側に Grain(紙目) を入れる。
-//   ①ここでは「連続した滑らかな線(shape)」を dab の密連打で作る（穴を開けない）
-//   ②紙目の白い粒は redrawAll の _applyPaperGrain（キャンバス固定 grain）が後から抜く
-//   →「濃い連続線＋細かい白粒」＝本物の鉛筆。tooth で線をスキップすると散らばった点になる(失敗)
-//   ・1粒は薄く source-over で累積＝overlapで濃くなる階調（研究[3]）
-//   ・ptA(消し量)が低い所は薄くなる＝かすれ・跡（消しゴムと接続）
-function _drawPencilLine(pts, lw, r, g, b, baseA, ptA, grade, dark) {
-    const n = pts.length;
-    if (n < 2) return;
-    const q = new Array(n);
-    for (let i = 0; i < n; i++) {
-        const v = (ptA && ptA[i] != null) ? ptA[i] : 1;
-        q[i] = Math.max(0, Math.min(1, v));
-    }
-    // ⭐グレード/濃さは「その線が描かれた時の値」を使う（未指定なら現在のペン設定）。
-    //   ＝過去の線は当時の芯・濃さのまま。設定変更を遡って反映しない。
-    const G     = PENCIL_GRADES[grade || PENCIL_GRADE] || PENCIL_GRADES.hb;
-    const D     = (dark != null) ? dark : PENCIL_DARK;
-    const dab   = _pencilDab(r, g, b);
-    const width = Math.max(1.2, lw * (0.5 + G.w * 0.75));   // 線幅（グレードで太さ変化）
-    // ⭐硬い芯(2H)ほど粒を締めてシャープに／柔らかい芯(6B)ほど広げて滲む。
-    //   thr が高い=硬い→係数を小さく。鮮明さは芯で変わる。
-    const tight = 1.25 + (0.62 - G.thr) * 1.6;             // 2H≈1.25 / 6B≈1.68
-    const dsz   = Math.max(2.2, width * tight);             // 粒径（縁が羽化＝芯≒width）
-    const sp    = Math.max(0.45, dsz * 0.12);               // 密＝連続した線に見せる
-    const perStamp = baseA * G.a * D * 0.11;                // 1粒は薄く／累積で濃く
-
-    ctx.save();
-    let carry = 0;
-    for (let k = 1; k < n; k++) {
-        const a0 = pts[k-1], p0 = pts[k];
-        const segd = Math.hypot(p0.x - a0.x, p0.y - a0.y);
-        if (segd < 0.001) continue;
-        const ux = (p0.x - a0.x) / segd, uy = (p0.y - a0.y) / segd;
-        const spd = Math.min(1, segd / 16);
-        const gA  = (q[k-1] + q[k]) / 2;
-        const al  = perStamp * gA * (1 - spd * 0.35);       // この区間の1粒の濃さ
-        for (let t = carry; t < segd; t += sp) {
-            if (al <= 0.004) continue;
-            const x = a0.x + ux * t, y = a0.y + uy * t;
-            ctx.globalAlpha = Math.min(1, al);
-            ctx.drawImage(dab, (x - dsz/2) | 0, (y - dsz/2) | 0, dsz | 0, dsz | 0);
-        }
-        carry = Math.max(0, carry + Math.ceil((segd - carry) / sp) * sp - segd);
-    }
-    ctx.globalAlpha = 1;
-    ctx.restore();
-}
-
-function renderStrokePencil(obj) {
-    const { pts, lw } = obj.data;
-    if (!pts || pts.length < 2) return;
-    const f = _fadeStroke(obj.data.stroke || _pencilInk(), 0);
-    const r = f ? f.r : 58, g = f ? f.g : 58, b = f ? f.b : 56;
-    const baseA = f ? f.alpha : 1;
-    (PENCIL_GRAIN ? _drawPencilLine : _drawPencilPath)(pts, lw || 2.5, r, g, b, baseA, obj.data.ptA, obj.data.grade, obj.data.dark);
-    if (obj.selected) {
-        const bb = strokeBBox(pts);
-        selBox(bb.x, bb.y, bb.w, bb.h);
-        drawAnchors(obj);
-    }
-}
-
 function renderStroke(obj) {
-    if (obj.data.mode === 'pencil') return renderStrokePencil(obj);
     if ((obj.data.mode || 'classic') === 'fude') return renderStrokeFude(obj);
     const { pts, lw, closed, fill, strokeOff } = obj.data;
     if (pts.length < 2) return;
@@ -4696,13 +4332,6 @@ function renderPenInProgress() {
     if (S.tool !== 'pen' || S.penPts.length < 2) return;
     const pts = S.penPts;
     ctx.save();
-    if (S.drawMode === 'pencil') {                 // 追加：鉛筆の描画中プレビュー
-        const f = _fadeStroke(_pencilInk(), 0);
-        (PENCIL_GRAIN ? _drawPencilLine : _drawPencilPath)(pts, S.lineWidth, f ? f.r : 58, f ? f.g : 58, f ? f.b : 56, 1);
-        ctx.restore();
-        renderPenSnapIndicator();
-        return;
-    }
     if (S.drawMode === 'fude') {
         const outline = _buildFudeOutline(pts, S.lineWidth);
         if (outline.length >= 3) {
@@ -4904,8 +4533,7 @@ function commitPath(closed) {
         const id = genId();
         const obj = {
             id, type: 'stroke',
-            data: { pts: flat, lw: S.lineWidth, rotation: 0, fill: null, closed: !!closed, mode: S.drawMode,
-                ...(S.drawMode === 'pencil' ? { grade: PENCIL_GRADE, dark: PENCIL_DARK } : {}) },
+            data: { pts: flat, lw: S.lineWidth, rotation: 0, fill: null, closed: !!closed, mode: S.drawMode },
             selected: false,
         };
         S.objects.push(obj);
@@ -5277,109 +4905,9 @@ function moveObj(obj, dx, dy) {
 }
 
 function eraseAt(p, extraPad = 0) {
-    if (_settleMode) return _eraseSoft(p, extraPad);   // settle: 黒板消しの手触り
     const before = S.objects.length;
     S.objects = S.objects.filter(o => !hitTest(o, p.x, p.y, extraPad));
     if (S.objects.length !== before) { saveHistory(); redrawAll(); }
-}
-
-// ── settle: 一度では消えない消しゴム ─────────────────────────────
-// obj.data.stroke を rgba にして alpha を落とすだけ。描画側は触らない
-// （描画は `obj.data.stroke || getStrokeColor()` を読むso、rgbaがそのまま効く）
-function _fadeStroke(col, step) {
-    if (!col) return null;
-    let r, g, b, a = 1;
-    let m = String(col).match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);
-    if (m) { r = +m[1]; g = +m[2]; b = +m[3]; a = (m[4] != null) ? +m[4] : 1; }
-    else {
-        let h = String(col).trim().replace('#', '');
-        if (h.length === 3) h = h.split('').map(c => c + c).join('');
-        if (h.length !== 6 || /[^0-9a-f]/i.test(h)) return null;
-        r = parseInt(h.slice(0,2),16); g = parseInt(h.slice(2,4),16); b = parseInt(h.slice(4,6),16);
-    }
-    const na = Math.max(0, a - step);
-    return { css: `rgba(${r},${g},${b},${na})`, alpha: na, r, g, b };
-}
-
-function _eraseSoft(p, extraPad = 0) {
-    const now = Date.now();
-    if (now - _lastFadeT < ERASE_COOLDOWN) return;   // 同一フレームの多重発火だけ防ぐ
-    // ⭐なぞった距離で削る ─ 止めたままでは消えない／動かした分だけ連続で薄くなる
-    if (_lastErasePt) {
-        const dm = Math.hypot(p.x - _lastErasePt.x, p.y - _lastErasePt.y);
-        if (dm < ERASE_MIN_DIST) return;
-    }
-    const _prevErasePt = _lastErasePt;   // ⭐弾き出し方向用に直前の点を先に確保
-    _lastErasePt = { x: p.x, y: p.y };
-    _lastFadeT = now;
-    // 消しゴムの進行方向（左右に弾く向きに使う）
-    let edx = 0, edy = 0;
-    if (_prevErasePt) { edx = p.x - _prevErasePt.x; edy = p.y - _prevErasePt.y;
-        const el = Math.hypot(edx, edy) || 1; edx /= el; edy /= el; }
-    let removedTotal = 0;
-    _erasedWidthMax = 0;   // ⭐毎回リセット＝消しカスの大きさは「今まさに消してる線の太さ」だけを反映
-    let touched = false;
-    const survivors = [];
-    for (const o of S.objects) {
-        if (!hitTest(o, p.x, p.y, extraPad)) { survivors.push(o); continue; }
-        touched = true;
-        const base = (o.data && o.data.stroke) || (typeof getStrokeColor === 'function' ? getStrokeColor() : '#ffffff');
-        // ⭐太い線ほど消えにくい（Thin1.5→3回 / Medium2.5→5回 / Thick4.0→8回）
-        const lw   = (o.data && o.data.lw) || 2.5;
-        const step = Math.min(0.5, ERASE_STEP * (2.5 / Math.max(0.5, lw)));
-
-        // ⭐鉛筆(enpitsu)のストロークは「触れた場所だけ」薄くする＝線全体は消えない
-        //   classic/fude は描画がMASTERで点ごとの濃さを持てないため、従来どおり全体を薄くする
-        if (o.type === 'stroke' && o.data && o.data.mode === 'pencil' && Array.isArray(o.data.pts)) {
-            // ⭐線の幅ぶん消しゴムの届く範囲を広げる（太い6Bは中心線の外まで黒鉛が乗るため）。
-            //   renderer と同じ式で幅を出す：width=lw*(0.5+G.w*0.75)、粒は width*tight まで広がる。
-            const Ge   = PENCIL_GRADES[o.data.grade || 'hb'] || PENCIL_GRADES.hb;
-            const wEff = Math.max(1.2, (o.data.lw || 2.5) * (0.5 + Ge.w * 0.75));
-            const tightE = 1.25 + (0.62 - Ge.thr) * 1.6;
-            const halfExtent = wEff * tightE * 0.5;          // 中心線から黒鉛が乗る半幅
-            const R = ERASE_RADIUS + extraPad + halfExtent;  // その分 届く範囲を広げる
-            _erasedWidthMax = Math.max(_erasedWidthMax || 0, wEff);   // 消しカスの大きさに使う
-            _erasedCScale = Ge.cScale != null ? Ge.cScale : 1.0;      // ⭐芯ごとの消しカス大きさ
-            _erasedCFreq  = Ge.cFreq  != null ? Ge.cFreq  : 0.8;      // ⭐芯ごとの消しカス出やすさ
-            // ⭐芯ごとに消す力を変える：濃い6Bは黒鉛が多いので強く、薄い2Hは弱く。
-            // ⭐芯ごとの消す力（全部消えるよう最低0.3を保証）
-            const pStep = Math.max(0.3, (Ge.eStep != null ? Ge.eStep : 0.5));
-            if (!Array.isArray(o.data.ptA) || o.data.ptA.length !== o.data.pts.length) {
-                o.data.ptA = new Array(o.data.pts.length).fill(1);
-            }
-            for (let i = 0; i < o.data.pts.length; i++) {
-                const q = o.data.pts[i];
-                const dd = Math.hypot(q.x - p.x, q.y - p.y);
-                if (dd > R) continue;
-                const fall = 1 - (dd / R);                       // 中心ほど強く削れる
-                const cur  = (o.data.ptA[i] != null) ? o.data.ptA[i] : 1;
-                // ⭐芯ごとの下限 eFloor まで消える（濃い5B/6Bは薄く跡が残って消し切れない）
-                const eF   = (Ge.eFloor != null) ? Ge.eFloor : 0;
-                const nv   = Math.max(eF, cur - pStep * fall);
-                removedTotal += (cur - nv);                      // 実際に剥がした黒鉛量
-                o.data.ptA[i] = nv;
-            }
-            survivors.push(o);
-            continue;
-        }
-        const f = _fadeStroke(base, step);
-        if (!f) continue;                      // 色が読めない形式なら従来どおり消す
-        // ⭐完全には消えない ─ 下限で止めて「黒板消しの跡」として残す
-        const na = Math.max(ERASE_FLOOR, f.alpha);
-        if (o.data) o.data.stroke = `rgba(${f.r},${f.g},${f.b},${na})`;
-        survivors.push(o);
-    }
-    if (!touched) return;
-    // ⭐ある程度こすって黒鉛が溜まってから、ちょこっと出す（いきなり出さない）。
-    _eraseAccum += removedTotal;
-    // ⭐芯ごとに出やすさが変わる（柔らかい6Bはカスが出やすい／硬い2Hは出にくい）
-    const crumbTh = ERASE_CRUMB_THRESHOLD / Math.max(0.3, _erasedCFreq);
-    while (_eraseAccum >= crumbTh) {
-        _eraseAccum -= crumbTh;
-        _spawnEraseCrumbs(p.x, p.y, edx, edy, 0.3);
-    }
-    S.objects = survivors;
-    saveHistory(); redrawAll();
 }
 
 function strokeBBox(pts) {
@@ -7956,94 +7484,15 @@ function runCommand(val) {
     if (head==='fude'||head==='brush') {
         if (S.drawMode==='fude') { printRaw('[SYSTEM] already in fude mode.','t-dim'); return; }
         S.drawMode='fude'; try{localStorage.setItem('bm_drawMode','fude');}catch{}
-        document.body.classList.remove('bm-paper');    // ⭐板を元に戻す
         redrawAll();
         enqueue(`$ ${head}`,['→ stroke render: 筆 (fude)','→ next strokes use smooth tapered fill','→ classic で master に戻る']);
-        return;
-    }
-    // ── enpitsu ─ 紙の目に引っかかる鉛筆（追加モード。classic/fude はそのまま） ──
-    // ⭐paper ─ 板そのものを「紙のノート」に切り替える（鉛筆＋紙の地＋定着 を一括）
-    //   バラバラのコマンドを覚えなくていい。道具が変わる、という1つの体験にする。
-    if (head==='enpitsu'||head==='graphite'||head==='paper') {
-        const wasOn = (S.drawMode === 'pencil');
-        S.drawMode='pencil'; try{localStorage.setItem('bm_drawMode','pencil');}catch{}
-        document.body.classList.add('bm-paper');       // ⭐板そのものを紙にする
-        _settleMode = true; try{localStorage.setItem('bm_settle','1');}catch{}  // ⭐消せない紙
-        redrawAll(); updateUndoRedoBtns();
-        const _m = (SETTLE_MS >= 60000) ? (Math.round(SETTLE_MS/60000)+' min') : (Math.round(SETTLE_MS/1000)+' sec');
-        enqueue(`$ ${head}`, wasOn
-            ? ['→ paper board on（すでに鉛筆モードでした）', '  ink fixes after ' + _m]
-            : ['→ 紙のノートに切り替えました',
-               '  ・鉛筆（紙の目に乗るざらつき）',
-               '  ・書いたものは ' + _m + ' で定着して消せなくなる',
-               '  ・消しゴムはこすった所だけ薄くなり、跡が残る',
-               '→ board / classic で黒板に戻る']);
-        return;
-    }
-    // ⭐鉛筆の芯グレード（2H〜6B）。紙モードで打つと硬さ＝濃さ/太さ/紙目の拾い方が変わる
-    if (PENCIL_GRADES[head]) {
-        PENCIL_GRADE = head; try{localStorage.setItem('bm_grade', head);}catch{}
-        if (S.drawMode!=='pencil') { S.drawMode='pencil'; try{localStorage.setItem('bm_drawMode','pencil');}catch{} document.body.classList.add('bm-paper'); }
-        redrawAll();
-        enqueue(`$ ${head}`, ['→ 鉛筆: ' + PENCIL_GRADES[head].name,
-                              '  2h / h / hb / 2b / 4b / 5b / 6b で切替']);
-        return;
-    }
-
-    // ⭐鉛筆の濃さ（0〜200・スライダー相当。ユーザーの感覚で調整）
-    if (head==='dark'||head==='nosa'||head==='濃さ') {
-        const a = rest.trim();
-        if (a==='' || a==='status') {
-            enqueue('$ dark', ['→ 濃さ: ' + Math.round(PENCIL_DARK*100),
-                               '  dark 60 / dark 130 で変更（0〜200）']);
-            return;
-        }
-        const v = parseFloat(a);
-        if (!Number.isFinite(v) || v < 0 || v > 200) {
-            printRaw('dark: usage → dark 90（0〜200）', 't-err'); return;
-        }
-        PENCIL_DARK = Math.max(0.1, v / 100);
-        try{localStorage.setItem('bm_dark', String(PENCIL_DARK));}catch{}
-        redrawAll();
-        enqueue(`$ dark ${v}`, ['→ 濃さ: ' + Math.round(PENCIL_DARK*100)]);
-        return;
-    }
-
-    // ⭐消しゴムの当たり半径を変える（紙モードの部分消し用）
-    if (head==='eraser'||head==='kesigomu') {
-        const a = rest.trim().toLowerCase();
-        if (a==='' || a==='status') {
-            enqueue('$ eraser', ['→ eraser radius: ' + ERASE_RADIUS + 'px',
-                                 '  usage: eraser 8 / eraser 20（2〜200）',
-                                 '  小さいほど「線の一部だけ」を削れる']);
-            return;
-        }
-        const v = parseInt(a, 10);
-        if (!Number.isFinite(v) || v < 2 || v > 200) {
-            printRaw('eraser: usage → eraser 8 / eraser 20（2〜200）', 't-err');
-            return;
-        }
-        ERASE_RADIUS = v; try{localStorage.setItem('bm_eraseR', String(v));}catch{}
-        enqueue(`$ eraser ${v}`, ['→ eraser radius: ' + v + 'px']);
-        return;
-    }
-
-    // 紙 → 元の板に戻す（分かりやすい別名）
-    if (head==='board'||head==='kokuban') {
-        S.drawMode='classic'; try{localStorage.setItem('bm_drawMode','classic');}catch{}
-        document.body.classList.remove('bm-paper');
-        _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}
-        redrawAll(); updateUndoRedoBtns();
-        enqueue(`$ ${head}`,['→ 元の板に戻しました（classic / undo も通常どおり）']);
         return;
     }
     if (head==='classic'||head==='pencil'||head==='master') {
         if (S.drawMode==='classic') { printRaw('[SYSTEM] already in classic mode.','t-dim'); return; }
         S.drawMode='classic'; try{localStorage.setItem('bm_drawMode','classic');}catch{}
-        document.body.classList.remove('bm-paper');    // ⭐板を元に戻す
-        _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}   // 定着も解除
-        redrawAll(); updateUndoRedoBtns();
-        enqueue(`$ ${head}`,['→ stroke render: classic (master)','→ next strokes use the original pencil renderer','→ undo も通常どおりに戻りました']);
+        redrawAll();
+        enqueue(`$ ${head}`,['→ stroke render: classic (master)','→ next strokes use the original pencil renderer']);
         return;
     }
 
@@ -8065,40 +7514,6 @@ function runCommand(val) {
             return;
         }
         printRaw('volume: usage → volume on / volume off / volume', 't-err');
-        return;
-    }
-
-    // ── settle on/off — 書きなぐりモード（時間で定着＝undo不可 + 消しゴムが薄くする） ──
-    if (head==='settle') {
-        const args = rest.trim().toLowerCase().split(/\s+/).filter(Boolean);
-        const sub  = args[0] || '';
-        const dur  = args[1] || '';
-        const _mins = () => (SETTLE_MS >= 60000)
-            ? (Math.round(SETTLE_MS/60000) + ' min')
-            : (Math.round(SETTLE_MS/1000) + ' sec');
-        if (sub==='on'||sub==='1') {
-            const m = dur.match(/^(\d+)(s|m)?$/);
-            if (m) SETTLE_MS = (+m[1]) * (m[2]==='s' ? 1000 : 60000);
-            _settleMode = true; try{localStorage.setItem('bm_settle','1');}catch{}
-            enqueue(`$ settle on${dur?' '+dur:''}`, [
-                '→ settle mode ON',
-                '  strokes fix after ' + _mins() + ' (undo disabled)',
-                '  eraser fades instead of deleting'
-            ]);
-            updateUndoRedoBtns();
-            return;
-        }
-        if (sub==='off'||sub==='0') {
-            _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}
-            enqueue('$ settle off', ['→ settle mode OFF (normal undo / eraser)']);
-            updateUndoRedoBtns();
-            return;
-        }
-        if (sub===''||sub==='status') {
-            enqueue('$ settle', ['→ settle: ' + (_settleMode ? ('ON — ' + _mins()) : 'OFF')]);
-            return;
-        }
-        printRaw('settle: usage → settle on / settle on 30s / settle off / settle', 't-err');
         return;
     }
 
@@ -9492,8 +8907,6 @@ function setTool(tool) {
     }
     S.pathHover = null; S.pathSnapClose = false; S.pathDrag = null;
     S.hoveredId = null; S.lastAnchorPt = null; document.body.style.cursor = '';
-    // ⭐別ツールに切り替えたら鉛筆ポップオーバーを閉じる（pen のままなら開いたまま）
-    if (tool !== 'pen' && typeof closePenPopover === 'function') closePenPopover();
     S.tool = tool;
     // Update [data-tool] active states (excludes #shapeBtn which has no data-tool)
     document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool===tool));
@@ -9522,114 +8935,12 @@ const HISTORY_MAX = 60;
 const _history  = [JSON.stringify([])];  // initial empty state
 let   _histIdx  = 0;
 
-// ── SETTLE MODE（書きなぐりモード・追加機能／既定はOFF＝従来どおり） ──
-// 思想：消せないから書きなぐれる。時間が経つと定着して undo できなくなる。
-// 消しゴムも一度では消えず、こするたびに薄くなる（黒板消しの手触り）。
-let   _settleMode = (typeof localStorage !== 'undefined' && localStorage.getItem('bm_settle') === '1');
-let   SETTLE_MS   = 10 * 60 * 1000;      // 定着までの猶予（settle on 30s / 5m で変更可）
-const _histTime   = [Date.now()];        // _history と同じ長さを保つ
-const ERASE_STEP  = 0.17;                // 消しゴム1回で薄くなる量（弱すぎると消えない・強すぎると一瞬で消える。中庸）
-// ⚠️eraseAt は onDown と onMove の両方から呼ばれ、ドラッグ中は毎フレーム発火する。
-// そのままだと数フレームで消えてしまうので、時間で間引いて「こすった回数」に変える。
-// ⚠️時間で間引くと「こすっても消えない」になる。実際の黒板消しと同じく“動いた距離”で数える。
-//   止めたまま押し続けても消えない／なぞった分だけ連続で薄くなる。
-const ERASE_MIN_DIST = 5;                // px — これだけ動くごとに1回削る
-let   _lastErasePt = null;
-const ERASE_COOLDOWN = 16;               // ms — 同一フレームの多重発火だけ防ぐ
-const ERASE_FLOOR = 0.04;                // ⭐なぞればほぼ消える（うっすら跡だけ残す）。0.12は残りすぎだった
-// ⭐消しカス(debris)：消した黒鉛を巻き込んだゴム片。消しゴムの左右に弾き出される（線の上に残らない）。
-//   ワールド座標で紙の上に残る。黒め・不規則・毎回ちがう形。
-let _eraseDebris = [];
-const ERASE_DEBRIS_MAX = 1600;
-// ⭐消しカスは「ある程度こすって黒鉛が溜まってから」出す。累積が閾値を超えたら1本出して減らす。
-let _eraseAccum = 0;
-let _erasedWidthMax = 0;             // 直近で消した線の最大幅（消しカスの大きさに反映）
-let _erasedCScale = 1.0;             // 直近で消した芯の 消しカス大きさ係数（芯ごと）
-let _erasedCFreq = 0.8;              // 直近で消した芯の 消しカス出やすさ（芯ごと）
-const ERASE_CRUMB_THRESHOLD = 5.0;   // これだけ黒鉛を剥がすと1本カスが出る（大きいほど少ない）
-// 消しカスを弾き出す（進行方向の直交＝左右へ・消しゴム半径の外へ）
-function _spawnEraseCrumbs(px, py, dirx, diry, amount) {
-    if (!(dirx || diry)) return;
-    const nx = -diry, ny = dirx;                       // 進行方向の直交＝左右
-    // ⭐消しカスは「散る」でなく「寄り集まって縒れた紐状の塊」になる（研究[7]）。
-    //   消しゴムの後方（進行の逆）＋左右の縁に、たまに1本 溜まる。頻度は控えめ。
-    if (Math.random() > 0.35 + amount * 1.5) return;   // 毎回は出ない
-    const side = Math.random() < 0.5 ? -1 : 1;
-    const bx = px - dirx * ERASE_RADIUS * (0.4 + Math.random() * 0.5)   // 後方
-             + nx * side * ERASE_RADIUS * (0.4 + Math.random() * 0.6);  // 縁へ寄る
-    const by = py - diry * ERASE_RADIUS * (0.4 + Math.random() * 0.5)
-             + ny * side * ERASE_RADIUS * (0.4 + Math.random() * 0.6);
-    // ⭐細く鋭くくねった破片。真っ黒。丸連結でなく、テーパーした帯（中央太く端は細い）。
-    //   太い線(6B)を消したカスは大きい＝直近の消した幅を反映。
-    // ⭐芯ごとの消しカス大きさ係数（2H小さい〜6B大きい）。線幅も少し加味。
-    const wScale = (_erasedCScale || 1.0) * (0.85 + Math.min(0.6, (_erasedWidthMax || 2.5) / 12));
-    const segN = 4 + (Math.random() * 4 | 0);
-    const tone = 8 + (Math.random() * Math.random()) * 45;   // ほぼ真っ黒
-    const baseW = (0.9 + Math.random() * 1.3) * wScale;      // 帯の最大太さ（太い線ほど大きい）
-    let cx = bx, cy = by;
-    let ang = Math.atan2(diry, dirx) + (Math.random() - 0.5) * 1.4;
-    const worm = { crumb: true, tone: tone | 0, a: 0.65 + Math.random() * 0.35, pts: [] };
-    for (let s = 0; s < segN; s++) {
-        const tt = s / (segN - 1);                           // 0..1
-        const taper = Math.sin(tt * Math.PI);                // 端が細く中央が太い＝破片らしい
-        worm.pts.push({ x: cx, y: cy, w: Math.max(0.25, baseW * (0.25 + 0.75 * taper)) });
-        ang += (Math.random() - 0.5) * 1.6;                  // 鋭くくねる
-        const stepLen = baseW * (1.3 + Math.random() * 1.0);
-        cx += Math.cos(ang) * stepLen;
-        cy += Math.sin(ang) * stepLen;
-    }
-    _eraseDebris.push(worm);
-    if (_eraseDebris.length > ERASE_DEBRIS_MAX) _eraseDebris.splice(0, _eraseDebris.length - ERASE_DEBRIS_MAX);
-}
-
-// 消しカスを紙の上に描く（細く鋭い黒い破片＝テーパーした帯）
-function _drawEraseDebris() {
-    if (!_eraseDebris.length) return;
-    ctx.save();
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    for (const d of _eraseDebris) {
-        const t = d.tone != null ? d.tone : 30;
-        ctx.strokeStyle = `rgba(${t},${t},${t + 2},${d.a})`;
-        const P = d.pts;
-        if (P && P.length >= 2) {
-            // 太さを変えながら帯として繋ぐ（テーパー＝端が細い破片）
-            for (let i = 1; i < P.length; i++) {
-                ctx.lineWidth = (P[i-1].w + P[i].w) / 2;
-                ctx.beginPath();
-                ctx.moveTo(P[i-1].x, P[i-1].y);
-                ctx.lineTo(P[i].x, P[i].y);
-                ctx.stroke();
-            }
-        } else if (P && P.length === 1) {
-            ctx.fillStyle = ctx.strokeStyle;
-            ctx.beginPath(); ctx.arc(P[0].x, P[0].y, P[0].w || 1, 0, 6.2832); ctx.fill();
-        }
-    }
-    ctx.restore();
-}
-// ⭐消しゴムが触れる半径。26 は広すぎて線が丸ごと消えたので既定を 12 に。
-//   `eraser 20` のように打って変えられる（localStorage に残る）。
-let ERASE_RADIUS = (() => {
-    try { const v = parseInt(localStorage.getItem('bm_eraseR'), 10);
-          return (Number.isFinite(v) && v >= 2 && v <= 200) ? v : 12; } catch { return 12; }
-})();
-let   _lastFadeT  = 0;
-
-// いま undo しようとしている操作が「定着済み」か
-function _isSettled() {
-    if (!_settleMode) return false;
-    const t = _histTime[_histIdx];
-    return (t != null) && (Date.now() - t > SETTLE_MS);
-}
-
 function saveHistory() {
     const snap = JSON.stringify(S.objects);
     if (_history[_histIdx] === snap) return; // no change
     _history.splice(_histIdx + 1);           // drop redo branch
-    _histTime.splice(_histIdx + 1);          // settle: 時刻も同じ形に保つ
     _history.push(snap);
-    _histTime.push(Date.now());              // settle: この操作の時刻
-    if (_history.length > HISTORY_MAX) { _history.shift(); _histTime.shift(); }
+    if (_history.length > HISTORY_MAX) _history.shift();
     else _histIdx++;
     updateUndoRedoBtns();
     _scheduleCanvasSave();
@@ -9843,7 +9154,6 @@ function _restoreHistory() {
 
 function undo() {
     if (_histIdx <= 0) return;
-    if (_isSettled()) { updateUndoRedoBtns(); return; }  // settle: 定着済みは戻せない
     _histIdx--;
     _restoreHistory();
 }
@@ -9933,7 +9243,7 @@ function updateUndoRedoBtns() {
     const u = document.getElementById('undoBtn');
     const r = document.getElementById('redoBtn');
     const d = document.getElementById('dupBtn');
-    if (u) u.disabled = _histIdx <= 0 || _isSettled();  // settle: 定着したら静かに無効化
+    if (u) u.disabled = _histIdx <= 0;
     if (r) r.disabled = _histIdx >= _history.length - 1;
     if (d) d.disabled = !S.selectedId && !(S.multiSelected && S.multiSelected.length);
 }
@@ -10031,7 +9341,6 @@ penBtn.addEventListener('click', e => {
     closeShapePopover(); closeFillPopover();
     if (wasOpen) { closePenPopover(); return; }
     openPenPopover();
-    if (typeof _syncPencilUI === 'function') _syncPencilUI();   // ⭐鉛筆UIの表示/値を同期
 });
 
 function setLineWidth(w) {
@@ -10044,46 +9353,6 @@ penPopover.querySelectorAll('.w-btn').forEach(btn => {
         e.stopPropagation(); playClick(false);
         setLineWidth(parseFloat(btn.dataset.w));
         closePenPopover();
-    });
-});
-
-// ⭐鉛筆モードの太さ・濃さスライダー＋芯グレード（ポップオーバー内・pencil時のみ表示）
-const _pencilExtra = document.getElementById('pencilExtra');
-const _pencilWidth = document.getElementById('pencilWidth');
-const _pencilDark  = document.getElementById('pencilDark');
-function _syncPencilUI() {
-    const on = (S.drawMode === 'pencil');
-    if (_pencilExtra) _pencilExtra.style.display = on ? 'block' : 'none';
-    if (!on) return;
-    if (_pencilWidth) _pencilWidth.value = S.lineWidth;
-    if (_pencilDark)  _pencilDark.value  = Math.round(PENCIL_DARK * 100);
-    document.querySelectorAll('#pencilGrades .g-btn').forEach(b =>
-        b.classList.toggle('active', b.dataset.g === PENCIL_GRADE));
-}
-if (_pencilWidth) {
-    _pencilWidth.addEventListener('input', e => {
-        e.stopPropagation();
-        S.lineWidth = parseFloat(_pencilWidth.value);
-        document.querySelectorAll('.w-btn').forEach(b => b.classList.remove('active'));
-    });
-    // ⚠️操作後フォーカスを外す（残るとSpaceパン等のキーを吸う）
-    _pencilWidth.addEventListener('change', () => _pencilWidth.blur());
-}
-if (_pencilDark) {
-    _pencilDark.addEventListener('input', e => {
-        e.stopPropagation();
-        // ⭐次に描く線の濃さだけ変える（過去の線は焼き込み済みなので変わらない）
-        PENCIL_DARK = Math.max(0.1, parseFloat(_pencilDark.value) / 100);
-        try{localStorage.setItem('bm_dark', String(PENCIL_DARK));}catch{}
-    });
-    _pencilDark.addEventListener('change', () => _pencilDark.blur());
-}
-document.querySelectorAll('#pencilGrades .g-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-        e.stopPropagation(); playClick(false);
-        // ⭐次に描く線の芯だけ変える（過去の線は変わらない）
-        PENCIL_GRADE = btn.dataset.g; try{localStorage.setItem('bm_grade', PENCIL_GRADE);}catch{}
-        _syncPencilUI();
     });
 });
 
@@ -10207,14 +9476,7 @@ shapePopover.querySelectorAll('[data-stroke]').forEach(btn => {
 });
 
 // Close all popovers on any outside click
-// ⭐鉛筆ポップオーバーは「描いても閉じない」＝キャンバス描画では閉じない。
-//   内側クリック（スライダー操作）でも閉じない。閉じるのは鉛筆ボタンのトグル or 別ツール選択。
-document.addEventListener('click', (e) => {
-    const inPen    = penPopover && penPopover.contains(e.target);
-    const onCanvas = e.target.closest && e.target.closest('#cp');
-    closeFillPopover(); closeShapePopover(); closeTextStylePopover();
-    if (!inPen && !onCanvas) closePenPopover();
-});
+document.addEventListener('click', () => { closeFillPopover(); closeShapePopover(); closePenPopover(); closeTextStylePopover(); });
 
 // ── Text style popover (font / bold) — applies to the selected text / sticky ──
 const textStyleBtn = document.getElementById('textStyleBtn');
@@ -10410,10 +9672,8 @@ document.addEventListener('keydown', e => {
     // even when the terminal input is focused but empty)
     if (e.code === 'Space' && !e.repeat) {
         const t = e.target;
-        // ⚠️range スライダーは value が常に非空だが「入力中」ではない＝Spaceでパンできるべき
-        const isTextInput = (t.tagName === 'TEXTAREA' || t.isContentEditable
-                             || (t.tagName === 'INPUT' && t.type !== 'range' && t.type !== 'checkbox'));
-        const typingNonEmpty = isTextInput && typeof t.value === 'string' && t.value.length > 0;
+        const typingNonEmpty = (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+                               && typeof t.value === 'string' && t.value.length > 0;
         if (!typingNonEmpty) {
             e.preventDefault();
             S.spaceDown = true;
