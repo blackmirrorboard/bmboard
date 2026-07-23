@@ -169,10 +169,8 @@
             flex-shrink: 0;
             height: 50px;
             /* ⭐フロストガラス化＋艶＋微発光＋透過強め（ターミナルと同じ質感の家族） */
-            /* ⭐ターミナルと同じ壁紙(白リング)を敷く＋暗いオーバーレイで可読性。サイズ/位置は微調整可 */
-            background:
-                linear-gradient(180deg, rgba(13,12,15,0.52) 0%, rgba(13,12,15,0.80) 100%),
-                url('assets/term-bg.png') 28% 48% / 320% auto no-repeat;
+            /* ⭐クリーンな暗いガラス面（画像なし・チェーンで統一） */
+            background: linear-gradient(180deg, rgba(32,30,36,0.97) 0%, rgba(17,16,20,0.98) 100%);
             -webkit-backdrop-filter: blur(26px) saturate(1.35);
             backdrop-filter: blur(26px) saturate(1.35);
             border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -475,9 +473,7 @@
             flex-shrink: 0;
             width: 46px;
             /* ⭐フロストガラス化＋艶＋微発光＋透過強め（左レールも同じ家族） */
-            background:
-                radial-gradient(160% 55% at 50% -6%, rgba(226,226,242,0.26) 0%, rgba(226,226,242,0) 52%),
-                linear-gradient(140deg, rgba(52,49,58,0.96) 0%, rgba(26,24,29,0.97) 45%, rgba(12,11,15,0.98) 100%);
+            background: linear-gradient(180deg, rgba(32,30,36,0.97) 0%, rgba(17,16,20,0.98) 100%);
             -webkit-backdrop-filter: blur(26px) saturate(1.35);
             backdrop-filter: blur(26px) saturate(1.35);
             border-right: 1px solid rgba(255,255,255,0.08);
@@ -1055,6 +1051,20 @@
         }
 
         .t-prompt { color: #8f8f8f; user-select: none; }
+
+        /* ⭐結果チップ（calc等の答え）— ドラッグでボードへ落とせる */
+        .term-result {
+            display: inline-block;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 6px;
+            padding: 1px 8px;
+            color: #f2efe8; font-weight: 600;
+            cursor: grab;
+        }
+        .term-result:hover { background: rgba(255,255,255,0.16); }
+        .term-result:active { cursor: grabbing; }
+        .term-result-hint { color: rgba(255,255,255,0.32); font-size: 10px; }
 
         /* ⭐フロストグラス＋白リング背景での可読性：ごく薄いハロー（字を太らせない） */
         .terminal-panel { text-shadow: 0 0 3px rgba(0,0,0,0.55); }
@@ -1647,9 +1657,7 @@
         }
         body.bm-dark .toolbar,
         body.bm-gray .toolbar {
-            background:
-                radial-gradient(160% 55% at 50% -6%, rgba(226,226,242,0.26) 0%, rgba(226,226,242,0) 52%),
-                linear-gradient(140deg, rgba(52,49,58,0.96) 0%, rgba(26,24,29,0.97) 45%, rgba(12,11,15,0.98) 100%);
+            background: linear-gradient(180deg, rgba(32,30,36,0.97) 0%, rgba(17,16,20,0.98) 100%);
             border-right-color: rgba(255,255,255,0.07);
             border-bottom-color: rgba(255,255,255,0.07);
         }
@@ -1697,10 +1705,8 @@
         /* ── Header theming for dark / gray canvas modes ─────────────── */
         body.bm-dark header,
         body.bm-gray header {
-            /* ⭐ターミナルと同じ壁紙(白リング)を敷く＋暗いオーバーレイで可読性。サイズ/位置は微調整可 */
-            background:
-                linear-gradient(180deg, rgba(13,12,15,0.52) 0%, rgba(13,12,15,0.80) 100%),
-                url('assets/term-bg.png') 28% 48% / 320% auto no-repeat;
+            /* ⭐クリーンな暗いガラス面（画像なし・チェーンで統一） */
+            background: linear-gradient(180deg, rgba(32,30,36,0.97) 0%, rgba(17,16,20,0.98) 100%);
             border-bottom-color: rgba(255,255,255,0.07);
         }
         body.bm-dark .hbtn,
@@ -6492,6 +6498,44 @@ function mk(tag, cls) {
 function scroll() { tb.scrollTop = tb.scrollHeight; }
 function flushTerm() { tb.innerHTML = ''; tQueue = []; tBusy = false; }
 
+// ⭐結果チップ：答えを「ドラッグでボードへ落とせる」チップとして表示（トレイ化の第一歩）
+function printResult(val) {
+    const el = mk('div', 't-out');
+    el.appendChild(document.createTextNode('→ = '));
+    const chip = document.createElement('span');
+    chip.className = 'term-result';
+    chip.textContent = String(val);
+    chip.setAttribute('draggable', 'true');
+    chip.title = 'ドラッグでボードへ · クリックでコピー';
+    chip.addEventListener('dragstart', e => {
+        try { e.dataTransfer.setData('text/plain', String(val)); e.dataTransfer.setData('application/x-bm-drop', '1'); e.dataTransfer.effectAllowed = 'copy'; } catch (_) {}
+    });
+    chip.addEventListener('click', () => { try { navigator.clipboard && navigator.clipboard.writeText(String(val)); } catch (_) {} });
+    el.appendChild(chip);
+    const h = mk('span', 'term-result-hint'); h.textContent = '  ドラッグでボードへ'; el.appendChild(h);
+    tb.appendChild(el); scroll();
+}
+
+// ⭐キャンバスがチップのドロップを受ける → 落とした位置にテキストを置く
+(function initCanvasDrop() {
+    const cv = document.getElementById('c');
+    if (!cv) return;
+    cv.addEventListener('dragover', e => {
+        if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('application/x-bm-drop')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
+    });
+    cv.addEventListener('drop', e => {
+        if (!e.dataTransfer || !Array.from(e.dataTransfer.types).includes('application/x-bm-drop')) return;
+        const txt = e.dataTransfer.getData('text/plain'); if (!txt) return;
+        e.preventDefault();
+        try {
+            const p = (typeof getPos === 'function') ? getPos(e.clientX, e.clientY) : { x: 0, y: 0 };
+            const obj = BM.create('text', { text: txt });
+            obj.data.x = p.x; obj.data.y = p.y;
+            S.selectedId = obj.id; BM.save(); BM.redraw();
+        } catch (_) {}
+    });
+})();
+
 // ══════════════════════════════════════════════════
 // COMMAND LIBRARY
 // ══════════════════════════════════════════════════
@@ -8305,12 +8349,12 @@ function runCommand(val) {
         const expr = clean.startsWith('=') ? clean.slice(1) : rest;
         const v = safeCalc(expr);
         if (v === null) { printRaw('calc: 式が不正（例: calc 12*8 / = 15*1.1）', 't-err'); return; }
-        enqueue(`$ ${clean}`, ['→ = ' + v]);
+        printRaw(clean, 't-cmd'); printResult(v);
         return;
     }
     {   // 数式そのものを打ったら自動で答える（例: 12*8）
         const _cv = safeCalc(clean);
-        if (_cv !== null) { enqueue(`$ ${clean}`, ['→ = ' + _cv]); return; }
+        if (_cv !== null) { printRaw(clean, 't-cmd'); printResult(_cv); return; }
     }
     if (head==='t') {
         const txt = rest.trim();
@@ -9888,7 +9932,7 @@ function centerTermPanel() {
     const listEl  = document.getElementById('cmdkList');
     if (!overlay || !input || !listEl) return;
 
-    let rows = [], sel = 0;
+    let rows = [], sel = 0, awaitingArg = null;
     const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?' };
     const isOpen = () => overlay.classList.contains('open');
     const isSub = (q, s) => { let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return true; } return q.length === 0; };
@@ -9932,15 +9976,28 @@ function centerTermPanel() {
              + `<div class="cmdk-detail-desc">${esc(r.desc || '')}</div><div class="cmdk-detail-foot">↵ で実行</div></div>`;
     }
     function render() {
-        if (!rows.length) { listEl.innerHTML = '<div class="cmdk-empty">該当なし</div>'; return; }
+        if (!rows.length && !awaitingArg) { listEl.innerHTML = '<div class="cmdk-empty">該当なし</div>'; return; }
+        let detail;
+        if (awaitingArg) {
+            detail = `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">${esc(awaitingArg.cmd)}</span><span class="cmdk-badge">入力待ち</span></div>`
+                   + `<div class="cmdk-detail-desc">内容を入力して ↵ で実行。${esc(awaitingArg.hint || '')}</div>`
+                   + `<div class="cmdk-detail-foot">例: ${esc(awaitingArg.cmd)} …</div></div>`;
+        } else {
+            detail = detailHtml(rows[sel]);
+        }
         const listRows = rows.map((r, i) =>
             `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-ico">${esc(r.ico)}</span><span class="cmdk-name">${esc(r.name)}</span><span class="cmdk-sub">${esc(r.desc || '')}</span><span class="cmdk-type">${esc(r.type)}</span></div>`).join('');
-        listEl.innerHTML = detailHtml(rows[sel]) + '<div class="cmdk-sect">候補 · CANDIDATES</div>' + listRows;
+        listEl.innerHTML = detail + (rows.length ? '<div class="cmdk-sect">候補 · CANDIDATES</div>' + listRows : '');
         const s = listEl.querySelector('.cmdk-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
     }
     function refresh() {
-        const full = input.value.trim();
+        const raw = input.value;
+        const full = raw.trim();
         const q = full.split(/\s+/)[0].toLowerCase();
+        const spIdx = raw.indexOf(' ');
+        const argText = spIdx >= 0 ? raw.slice(spIdx + 1).trim() : '';
+        const cmdDef = OMNI_CMDS.find(c => c.cmd === q);
+        awaitingArg = (cmdDef && cmdDef.args && spIdx >= 0 && !argText) ? cmdDef : null;   // "todo " = 引数入力待ち
         const cmds = !q ? OMNI_CMDS.slice()
             : OMNI_CMDS.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = [];
@@ -10679,10 +10736,8 @@ function _loadCanvasFromLocal() {
         try { updateUndoRedoBtns(); } catch(_) {}
         const ago = payload.ts ? _humanAgo(payload.ts) : '';
         try {
-            enqueue('[autosave] restored', [
-                '→ ' + payload.objects.length + ' object(s) loaded from browser storage' + (ago ? ' · ' + ago : ''),
-                '→ all changes will be auto-saved.',
-            ]);
+            // printRaw=ハイライト無し＝</span>を漏らさない（enqueueはハイライタ経由でバグる）
+            printRaw('[autosave] ' + payload.objects.length + ' object(s) restored' + (ago ? ' · ' + ago : ''), 't-ok');
         } catch(_) {}
         // Async: restore image data from IndexedDB for any stripped objects
         _restoreStrippedImages().catch(() => {});
@@ -13166,7 +13221,7 @@ document.addEventListener('selectstart', e => {
     e.preventDefault();
 }, { capture: true });
 document.addEventListener('dragstart', e => {
-    if (e.target.closest('input, textarea, [contenteditable], #usageOverlay')) return;
+    if (e.target.closest('input, textarea, [contenteditable], #usageOverlay, [draggable="true"]')) return;
     e.preventDefault();
 }, { capture: true });
 // Absorb iOS native touch gestures at the lowest layer + clear stale selections.
