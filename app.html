@@ -3885,6 +3885,8 @@ function redrawAll() {
         if (!document.body.classList.contains('bm-paper')) document.body.classList.add('bm-paper');
         _applyPaperGrain();
     }
+    // ⭐消しカスを紙の上に（ワールド座標のまま）
+    if (_eraseDebris.length) _drawEraseDebris();
 
     // Marquee selection rectangle
     if (S.marquee) {
@@ -5280,8 +5282,14 @@ function _eraseSoft(p, extraPad = 0) {
         const dm = Math.hypot(p.x - _lastErasePt.x, p.y - _lastErasePt.y);
         if (dm < ERASE_MIN_DIST) return;
     }
+    const _prevErasePt = _lastErasePt;   // ⭐弾き出し方向用に直前の点を先に確保
     _lastErasePt = { x: p.x, y: p.y };
     _lastFadeT = now;
+    // 消しゴムの進行方向（左右に弾く向きに使う）
+    let edx = 0, edy = 0;
+    if (_prevErasePt) { edx = p.x - _prevErasePt.x; edy = p.y - _prevErasePt.y;
+        const el = Math.hypot(edx, edy) || 1; edx /= el; edy /= el; }
+    let removedTotal = 0;
     let touched = false;
     const survivors = [];
     for (const o of S.objects) {
@@ -5305,7 +5313,9 @@ function _eraseSoft(p, extraPad = 0) {
                 if (dd > R) continue;
                 const fall = 1 - (dd / R);                       // 中心ほど強く削れる
                 const cur  = (o.data.ptA[i] != null) ? o.data.ptA[i] : 1;
-                o.data.ptA[i] = Math.max(ERASE_FLOOR, cur - step * fall);
+                const nv   = Math.max(ERASE_FLOOR, cur - step * fall);
+                removedTotal += (cur - nv);                      // 実際に剥がした黒鉛量
+                o.data.ptA[i] = nv;
             }
             survivors.push(o);
             continue;
@@ -5318,6 +5328,12 @@ function _eraseSoft(p, extraPad = 0) {
         survivors.push(o);
     }
     if (!touched) return;
+    // ⭐ある程度こすって黒鉛が溜まってから、ちょこっと出す（いきなり出さない）。
+    _eraseAccum += removedTotal;
+    while (_eraseAccum >= ERASE_CRUMB_THRESHOLD) {
+        _eraseAccum -= ERASE_CRUMB_THRESHOLD;
+        _spawnEraseCrumbs(p.x, p.y, edx, edy, 0.3);
+    }
     S.objects = survivors;
     saveHistory(); redrawAll();
 }
@@ -9468,7 +9484,7 @@ let   _histIdx  = 0;
 let   _settleMode = (typeof localStorage !== 'undefined' && localStorage.getItem('bm_settle') === '1');
 let   SETTLE_MS   = 10 * 60 * 1000;      // 定着までの猶予（settle on 30s / 5m で変更可）
 const _histTime   = [Date.now()];        // _history と同じ長さを保つ
-const ERASE_STEP  = 0.09;                // 消しゴム1回で薄くなる量（⚠️0.20 は速すぎた＝25px動かすと消え切る）
+const ERASE_STEP  = 0.17;                // 消しゴム1回で薄くなる量（弱すぎると消えない・強すぎると一瞬で消える。中庸）
 // ⚠️eraseAt は onDown と onMove の両方から呼ばれ、ドラッグ中は毎フレーム発火する。
 // そのままだと数フレームで消えてしまうので、時間で間引いて「こすった回数」に変える。
 // ⚠️時間で間引くと「こすっても消えない」になる。実際の黒板消しと同じく“動いた距離”で数える。
@@ -9476,7 +9492,71 @@ const ERASE_STEP  = 0.09;                // 消しゴム1回で薄くなる量�
 const ERASE_MIN_DIST = 5;                // px — これだけ動くごとに1回削る
 let   _lastErasePt = null;
 const ERASE_COOLDOWN = 16;               // ms — 同一フレームの多重発火だけ防ぐ
-const ERASE_FLOOR = 0.12;                // ⭐完全には消えない。ここまで薄くなって「跡」として残る
+const ERASE_FLOOR = 0.04;                // ⭐なぞればほぼ消える（うっすら跡だけ残す）。0.12は残りすぎだった
+// ⭐消しカス(debris)：消した黒鉛を巻き込んだゴム片。消しゴムの左右に弾き出される（線の上に残らない）。
+//   ワールド座標で紙の上に残る。黒め・不規則・毎回ちがう形。
+let _eraseDebris = [];
+const ERASE_DEBRIS_MAX = 1600;
+// ⭐消しカスは「ある程度こすって黒鉛が溜まってから」出す。累積が閾値を超えたら1本出して減らす。
+let _eraseAccum = 0;
+const ERASE_CRUMB_THRESHOLD = 0.9;   // これだけ黒鉛を剥がすと1本カスが出る
+// 消しカスを弾き出す（進行方向の直交＝左右へ・消しゴム半径の外へ）
+function _spawnEraseCrumbs(px, py, dirx, diry, amount) {
+    if (!(dirx || diry)) return;
+    const nx = -diry, ny = dirx;                       // 進行方向の直交＝左右
+    // ⭐消しカスは「散る」でなく「寄り集まって縒れた紐状の塊」になる（研究[7]）。
+    //   消しゴムの後方（進行の逆）＋左右の縁に、たまに1本 溜まる。頻度は控えめ。
+    if (Math.random() > 0.35 + amount * 1.5) return;   // 毎回は出ない
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const bx = px - dirx * ERASE_RADIUS * (0.4 + Math.random() * 0.5)   // 後方
+             + nx * side * ERASE_RADIUS * (0.4 + Math.random() * 0.6);  // 縁へ寄る
+    const by = py - diry * ERASE_RADIUS * (0.4 + Math.random() * 0.5)
+             + ny * side * ERASE_RADIUS * (0.4 + Math.random() * 0.6);
+    // ⭐細く鋭くくねった破片。真っ黒。丸連結でなく、テーパーした帯（中央太く端は細い）。
+    const segN = 4 + (Math.random() * 4 | 0);
+    const tone = 8 + (Math.random() * Math.random()) * 45;   // ほぼ真っ黒
+    const baseW = 0.9 + Math.random() * 1.3;                  // 帯の最大太さ
+    let cx = bx, cy = by;
+    let ang = Math.atan2(diry, dirx) + (Math.random() - 0.5) * 1.4;
+    const worm = { crumb: true, tone: tone | 0, a: 0.65 + Math.random() * 0.35, pts: [] };
+    for (let s = 0; s < segN; s++) {
+        const tt = s / (segN - 1);                           // 0..1
+        const taper = Math.sin(tt * Math.PI);                // 端が細く中央が太い＝破片らしい
+        worm.pts.push({ x: cx, y: cy, w: Math.max(0.25, baseW * (0.25 + 0.75 * taper)) });
+        ang += (Math.random() - 0.5) * 1.6;                  // 鋭くくねる
+        const stepLen = baseW * (1.3 + Math.random() * 1.0);
+        cx += Math.cos(ang) * stepLen;
+        cy += Math.sin(ang) * stepLen;
+    }
+    _eraseDebris.push(worm);
+    if (_eraseDebris.length > ERASE_DEBRIS_MAX) _eraseDebris.splice(0, _eraseDebris.length - ERASE_DEBRIS_MAX);
+}
+
+// 消しカスを紙の上に描く（細く鋭い黒い破片＝テーパーした帯）
+function _drawEraseDebris() {
+    if (!_eraseDebris.length) return;
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const d of _eraseDebris) {
+        const t = d.tone != null ? d.tone : 30;
+        ctx.strokeStyle = `rgba(${t},${t},${t + 2},${d.a})`;
+        const P = d.pts;
+        if (P && P.length >= 2) {
+            // 太さを変えながら帯として繋ぐ（テーパー＝端が細い破片）
+            for (let i = 1; i < P.length; i++) {
+                ctx.lineWidth = (P[i-1].w + P[i].w) / 2;
+                ctx.beginPath();
+                ctx.moveTo(P[i-1].x, P[i-1].y);
+                ctx.lineTo(P[i].x, P[i].y);
+                ctx.stroke();
+            }
+        } else if (P && P.length === 1) {
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath(); ctx.arc(P[0].x, P[0].y, P[0].w || 1, 0, 6.2832); ctx.fill();
+        }
+    }
+    ctx.restore();
+}
 // ⭐消しゴムが触れる半径。26 は広すぎて線が丸ごと消えたので既定を 12 に。
 //   `eraser 20` のように打って変えられる（localStorage に残る）。
 let ERASE_RADIUS = (() => {
