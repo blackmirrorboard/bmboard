@@ -6582,7 +6582,7 @@ function printResult(val) {
         e.preventDefault();
         try {
             const p = (typeof getPos === 'function') ? getPos(e.clientX, e.clientY) : { x: 0, y: 0 };
-            const obj = BM.create('text', { text: txt });
+            const obj = BM.create('text', { text: txt, fontSize: Math.max(8, Math.round(28 / VIEW.scale)) });
             obj.data.x = p.x; obj.data.y = p.y;
             S.selectedId = obj.id; BM.save(); BM.redraw();
         } catch (_) {}
@@ -8412,7 +8412,7 @@ function runCommand(val) {
     if (head==='t') {
         const txt = rest.trim();
         if (!txt) { printRaw('t: テキストを指定（例: t アイデア）', 't-err'); return; }
-        const obj = BM.create('text', { text: txt });
+        const obj = BM.create('text', { text: txt, fontSize: Math.max(8, Math.round(28 / VIEW.scale)) });
         S.selectedId = obj.id;
         BM.save(); BM.redraw();
         enqueue(`$ t ${txt}`, ['→ 中央にテキストを配置（ドラッグで移動 / ダブルクリックで編集）']);
@@ -8421,7 +8421,7 @@ function runCommand(val) {
     if (head==='todo') {
         const txt = rest.trim();
         if (!txt) { printRaw('todo: 内容を指定（例: todo 牛乳）', 't-err'); return; }
-        const obj = BM.create('text', { text: '☐ ' + txt });
+        const obj = BM.create('text', { text: '☐ ' + txt, fontSize: Math.max(8, Math.round(28 / VIEW.scale)) });
         S.selectedId = obj.id;
         BM.save(); BM.redraw();
         enqueue(`$ todo ${txt}`, ['→ 中央に ToDo を配置']);
@@ -9883,13 +9883,13 @@ const OMNI_CMDS = [
     { cmd:'dark',    cat:'board',   hint:'ボードを暗く（黒板）' },
     { cmd:'light',   cat:'board',   hint:'ボードを明るく（紙）' },
     { cmd:'gray',    cat:'board',   hint:'グレー環境' },
-    { cmd:'enpitsu', cat:'draw',    hint:'鉛筆（紙）で描く' },
-    { cmd:'fude',    cat:'draw',    hint:'筆で描く' },
-    { cmd:'classic', cat:'draw',    hint:'クラシックな線' },
-    { cmd:'hb',      cat:'grade',   hint:'芯を HB に' },
-    { cmd:'2b',      cat:'grade',   hint:'芯を 2B に' },
-    { cmd:'4b',      cat:'grade',   hint:'芯を 4B に' },
-    { cmd:'6b',      cat:'grade',   hint:'芯を 6B に' },
+    { cmd:'enpitsu', cat:'draw',    hint:'鉛筆（紙）で描く', kw:'鉛筆 えんぴつ pencil 描き味 draw' },
+    { cmd:'fude',    cat:'draw',    hint:'筆で描く', kw:'筆 ふで brush 描き味 draw' },
+    { cmd:'classic', cat:'draw',    hint:'クラシックな線', kw:'鉛筆 線 classic 描き味 draw' },
+    { cmd:'hb',      cat:'grade',   hint:'芯を HB に', kw:'鉛筆 pencil 芯 しん grade' },
+    { cmd:'2b',      cat:'grade',   hint:'芯を 2B に', kw:'鉛筆 pencil 芯 しん grade' },
+    { cmd:'4b',      cat:'grade',   hint:'芯を 4B に', kw:'鉛筆 pencil 芯 しん grade' },
+    { cmd:'6b',      cat:'grade',   hint:'芯を 6B に', kw:'鉛筆 pencil 芯 しん grade' },
     { cmd:'float',   cat:'panel',   hint:'ターミナルを浮かす' },
     { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す' },
     { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', args:true },
@@ -9934,6 +9934,7 @@ function centerTermPanel() {
         if (c.includes(q)) return 55;
         if (isSub(q, c)) return 32;
         if (it.hint && it.hint.toLowerCase().includes(q)) return 18;
+        if (it.kw && it.kw.toLowerCase().includes(q)) return 15;
         return -1;
     }
     const esc = s => String(s).replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m]));
@@ -9997,6 +9998,7 @@ function centerTermPanel() {
         if (c.includes(q)) return 55;
         if (isSub(q, c)) return 32;
         if (it.hint && it.hint.toLowerCase().includes(q)) return 18;
+        if (it.kw && it.kw.toLowerCase().includes(q)) return 15;
         return -1;
     }
     const esc = s => String(s).replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m]));
