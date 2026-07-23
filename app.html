@@ -1291,20 +1291,24 @@
             overflow: hidden;
             font-family: var(--ui-sans);   /* ⭐Raycast方向：サンセリフでアプリらしく */
         }
+        /* ⭐検索行：先頭に虫眼鏡（Raycast） */
+        .cmdk-search { display: flex; align-items: center; gap: 12px; padding: 0 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .cmdk-search-ico { color: rgba(255,255,255,0.34); flex-shrink: 0; }
         #cmdkInput {
-            background: none; border: none; outline: none;
+            flex: 1; background: none; border: none; outline: none;
             color: #f4f2ec; caret-color: #9aa0ff;
-            font-family: var(--ui-sans); font-size: 17px; font-weight: 400; letter-spacing: -0.01em;
-            padding: 17px 20px; border-bottom: 1px solid rgba(255,255,255,0.07);
+            font-family: var(--ui-sans); font-size: 16.5px; font-weight: 400; letter-spacing: -0.01em;
+            padding: 16px 2px;
         }
-        #cmdkInput::placeholder { color: rgba(255,255,255,0.30); }
-        #cmdkList { overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 1px; }
+        #cmdkInput::placeholder { color: rgba(255,255,255,0.28); }
+        #cmdkList { overflow-y: auto; padding: 7px 8px 9px; display: flex; flex-direction: column; gap: 1px; }
         #cmdkList::-webkit-scrollbar { width: 4px; }
         #cmdkList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
-        .cmdk-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 11px; cursor: pointer; }
-        .cmdk-item:hover { background: rgba(255,255,255,0.05); }
-        .cmdk-item.sel  { background: rgba(255,255,255,0.10); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.07); }
-        .cmdk-name  { color: #f0eee8; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+        /* ⭐Raycast：行はフラット・選択はソリッドな淡いフィル（inset枠なし） */
+        .cmdk-item { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 9px; cursor: pointer; transition: background .08s; }
+        .cmdk-item:hover { background: rgba(255,255,255,0.045); }
+        .cmdk-item.sel  { background: rgba(255,255,255,0.085); }
+        .cmdk-name  { color: #f0eee8; font-size: 13.5px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; }
         .cmdk-badge {
             font-size: 9.5px; letter-spacing: 0.04em; color: rgba(255,255,255,0.62);
             background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.10);
@@ -1319,20 +1323,25 @@
         .cmdk-star:hover { color: #fff; opacity: 1; }
         .cmdk-star.on { opacity: 1; color: rgba(255,255,255,0.92); }
         .cmdk-empty { padding: 18px; text-align: center; color: rgba(255,255,255,0.35); font-size: 12px; }
+        /* ⭐Raycast風フッター：左=ブランド、右=アクション+kbdチップ */
         .cmdk-foot {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.07);
-            font-size: 10.5px; color: rgba(255,255,255,0.4); letter-spacing: 0.04em;
-            background: rgba(0,0,0,0.18);
+            padding: 8px 12px 8px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 0.02em;
+            background: rgba(0,0,0,0.22);
         }
-        .cmdk-foot-r { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.55); }
-        .cmdk-foot .k { display: inline-block; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.7); }
+        .cmdk-foot-l { display: flex; align-items: center; gap: 7px; color: rgba(255,255,255,0.44); font-size: 10.5px; letter-spacing: 0.09em; }
+        .cmdk-foot-mark { color: rgba(255,255,255,0.7); font-size: 9px; }
+        .cmdk-foot-r { display: flex; align-items: center; gap: 9px; color: rgba(255,255,255,0.5); }
+        .cmdk-foot-act { display: inline-flex; align-items: center; gap: 5px; }
+        .cmdk-foot-div { width: 1px; height: 11px; background: rgba(255,255,255,0.12); }
+        .cmdk-foot .k { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 4px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); color: rgba(255,255,255,0.72); font-size: 10px; }
         /* Raycast風：アイコン＋名前＋サブ＋右タイプ */
         /* ⭐アイコンをタイル化（Raycastの"アプリアイコン"感） */
-        .cmdk-ico  { width: 27px; height: 27px; border-radius: 7px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.06); display: inline-flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.72); font-size: 13px; flex-shrink: 0; }
-        .cmdk-item.sel .cmdk-ico { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.10); }
-        .cmdk-sub  { color: rgba(255,255,255,0.45); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-        .cmdk-type { color: rgba(255,255,255,0.34); font-size: 10.5px; letter-spacing: 0.03em; white-space: nowrap; flex-shrink: 0; }
+        .cmdk-ico  { width: 25px; height: 25px; border-radius: 6.5px; background: linear-gradient(180deg, rgba(255,255,255,0.085), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.07); display: inline-flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.74); font-size: 12.5px; flex-shrink: 0; }
+        .cmdk-item.sel .cmdk-ico { background: linear-gradient(180deg, rgba(255,255,255,0.17), rgba(255,255,255,0.11)); border-color: rgba(255,255,255,0.12); color: #fff; }
+        .cmdk-sub  { color: rgba(255,255,255,0.42); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .cmdk-type { color: rgba(255,255,255,0.30); font-size: 10px; letter-spacing: 0.02em; white-space: nowrap; flex-shrink: 0; }
         /* ⭐結果ヒーローカード（calc等） */
         .cmdk-hero { margin: 4px 6px 6px; padding: 13px 14px; border-radius: 12px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.08); }
         .cmdk-hero-cap  { font-size: 9.5px; letter-spacing: 0.12em; color: rgba(255,255,255,0.42); margin-bottom: 11px; }
@@ -1348,7 +1357,8 @@
         .cmdk-detail-name { color: #f2efe8; font-size: 16px; font-weight: 700; white-space: nowrap; }
         .cmdk-detail-desc { color: rgba(255,255,255,0.60); font-size: 12px; line-height: 1.55; }
         .cmdk-detail-foot { margin-top: 10px; font-size: 10px; color: rgba(255,255,255,0.32); letter-spacing: 0.04em; }
-        .cmdk-sect { padding: 4px 11px 6px; font-size: 9.5px; letter-spacing: 0.12em; color: rgba(255,255,255,0.30); }
+        .cmdk-sect { padding: 12px 11px 5px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: rgba(255,255,255,0.34); }
+        #cmdkList > .cmdk-sect:first-child { padding-top: 4px; }
 
         /* ⭐リンク追加フォーム（パレット内サブビュー） */
         #cmdkForm { display: none; padding: 18px 20px 16px; font-family: var(--ui-sans); }
@@ -2664,7 +2674,10 @@
 <!-- ⭐COMMAND PALETTE（omnibox本体）— ⌘K で中央に召喚・検索窓＋カテゴリバッジ -->
 <div id="cmdkOverlay" aria-hidden="true">
     <div class="cmdk-card" role="dialog" aria-label="Command palette">
-        <input id="cmdkInput" type="text" placeholder="コマンドを検索…（calc / dark / t …）" autocomplete="off" spellcheck="false" autocapitalize="off">
+        <div class="cmdk-search">
+            <svg class="cmdk-search-ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg>
+            <input id="cmdkInput" type="text" placeholder="コマンドを検索…（calc / dark / t …）" autocomplete="off" spellcheck="false" autocapitalize="off">
+        </div>
         <div id="cmdkList"></div>
         <!-- ⭐リンク追加フォーム（パレット内サブビュー） -->
         <div id="cmdkForm" aria-hidden="true">
@@ -2674,7 +2687,10 @@
             <div class="lf-field"><label class="lf-lbl">URL</label><input id="lfUrl" type="text" placeholder="例：coolors.co" autocomplete="off" spellcheck="false"></div>
             <div class="lf-actions"><button class="lf-btn ghost" id="lfCancel" type="button">戻る（Esc）</button><button class="lf-btn primary" id="lfSave" type="button">保存して開く（↵）</button></div>
         </div>
-        <div class="cmdk-foot"><span>↑↓ 選択 · Esc 閉じる</span><span class="cmdk-foot-r"><span class="k">↵</span> 実行 · <span class="k">⌘K</span> 開閉</span></div>
+        <div class="cmdk-foot">
+            <span class="cmdk-foot-l"><span class="cmdk-foot-mark">◼</span> BLACK MIRROR</span>
+            <span class="cmdk-foot-r"><span class="cmdk-foot-act">実行 <span class="k">↵</span></span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">閉じる <span class="k">esc</span></span></span>
+        </div>
     </div>
 </div>
 
