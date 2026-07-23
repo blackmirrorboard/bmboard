@@ -2278,7 +2278,7 @@
         </button>
 
         <!-- Eraser -->
-        <button class="tool-btn" data-tool="eraser" title="Eraser (E)">
+        <button class="tool-btn" id="eraserBtn" data-tool="eraser" title="Eraser (E) · tap for size">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <!-- 角丸の消しゴム（斜め） -->
                 <rect x="4.5" y="9" width="15" height="8.2" rx="2" transform="rotate(-45 12 12)"/>
@@ -2672,6 +2672,13 @@
             <button class="g-btn" data-g="6b">6B</button>
         </div>
     </div>
+</div>
+
+<!-- ⭐消しゴムサイズ popover（鉛筆と同じ枠組み・ERASE_RADIUS を調整。描画/操作は不変） -->
+<div id="eraserPopover" class="tool-popover">
+    <span class="pop-label">消しゴム</span>
+    <div class="pop-row"><input id="eraserSize" class="pcl-range" type="range" min="2" max="120" step="1" value="16"></div>
+    <span class="pop-label" id="eraserSizeVal" style="text-align:center">16 px</span>
 </div>
 
 <!-- Shape Popover — ○ △ □ → + Fill (position:fixed, never clipped) -->
@@ -11162,10 +11169,70 @@ shapePopover.querySelectorAll('[data-stroke]').forEach(btn => {
 //   内側クリック（スライダー操作）でも閉じない。閉じるのは鉛筆ボタンのトグル or 別ツール選択。
 document.addEventListener('click', (e) => {
     const inPen    = penPopover && penPopover.contains(e.target);
+    const eraserPop = document.getElementById('eraserPopover');
+    const inEraser = eraserPop && eraserPop.contains(e.target);
+    const onEraserBtn = e.target.closest && e.target.closest('#eraserBtn');
     const onCanvas = e.target.closest && e.target.closest('#cp');
     closeFillPopover(); closeShapePopover(); closeTextStylePopover();
     if (!inPen && !onCanvas) closePenPopover();
+    if (!inEraser && !onEraserBtn && !onCanvas && window._closeEraserPopover) window._closeEraserPopover();
 });
+
+// ⭐消しゴムサイズ popover（鉛筆と同じ枠組み・ERASE_RADIUS を調整。⚠️消しゴムの描画/操作ロジックは不変＝UIを足すだけ）
+(function initEraserPopover() {
+    const eBtn = document.getElementById('eraserBtn');
+    const ePop = document.getElementById('eraserPopover');
+    const eSize = document.getElementById('eraserSize');
+    const eVal  = document.getElementById('eraserSizeVal');
+    if (!eBtn || !ePop) return;
+    window._closeEraserPopover = function () { ePop.style.display = 'none'; };
+    function openEraserPopover() {
+        const r = eBtn.getBoundingClientRect();
+        const mobile = window.innerWidth <= 700;
+        ePop.style.bottom = 'auto';
+        if (mobile) {
+            ePop.style.display = 'flex';
+            const pw = ePop.offsetWidth || 100;
+            let left = r.left;
+            if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+            if (left < 8) left = 8;
+            ePop.style.left = left + 'px';
+            ePop.style.top  = (r.bottom + 4) + 'px';
+        } else {
+            ePop.style.left = (r.right + 4) + 'px';
+            ePop.style.top  = r.top + 'px';
+            ePop.style.display = 'flex';
+        }
+        if (eSize && typeof ERASE_RADIUS !== 'undefined') eSize.value = ERASE_RADIUS;
+        if (eVal && typeof ERASE_RADIUS !== 'undefined') eVal.textContent = ERASE_RADIUS + ' px';
+    }
+    eBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (typeof playClick === 'function') playClick(false);
+        // 選択があれば従来どおり一括削除（消しゴムタップ＝削除・既存UX維持）
+        if (S.multiSelected.length > 0 || S.selectedId !== null) {
+            if (S.multiSelected.length > 0) { S.objects = S.objects.filter(o => !S.multiSelected.includes(o.id)); S.multiSelected = []; }
+            else { S.objects = S.objects.filter(o => o.id !== S.selectedId); S.selectedId = null; }
+            saveHistory(); redrawAll(); return;
+        }
+        const wasOpen = ePop.style.display === 'flex';
+        setTool('eraser');
+        if (typeof closePenPopover === 'function') closePenPopover();
+        if (typeof closeShapePopover === 'function') closeShapePopover();
+        if (typeof closeFillPopover === 'function') closeFillPopover();
+        if (wasOpen) { window._closeEraserPopover(); return; }
+        openEraserPopover();
+    });
+    if (eSize) {
+        eSize.addEventListener('input', () => {
+            const v = Math.max(2, Math.min(200, parseInt(eSize.value, 10) || 16));
+            ERASE_RADIUS = v;
+            try { localStorage.setItem('bm_eraseR', String(v)); } catch (_) {}
+            if (eVal) eVal.textContent = v + ' px';
+        });
+        eSize.addEventListener('change', () => eSize.blur());
+    }
+})();
 
 // ── Text style popover (font / bold) — applies to the selected text / sticky ──
 const textStyleBtn = document.getElementById('textStyleBtn');
@@ -11278,8 +11345,8 @@ if (textStyleBtn && textStylePopover) {
 document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
     // Skip buttons inside popovers — they have their own dedicated listeners
     if (btn.closest('#shapePopover') || btn.closest('#penPopover')) return;
-    // Skip penBtn — handled above with popover logic
-    if (btn.id === 'penBtn') return;
+    // Skip penBtn / eraserBtn — handled with their own popover logic
+    if (btn.id === 'penBtn' || btn.id === 'eraserBtn') return;
     btn.addEventListener('click', () => {
         playClick(false);
         // Eraser tap with active selection → batch-delete (mobile-friendly,
