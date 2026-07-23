@@ -2441,7 +2441,7 @@
     <section class="terminal-panel" id="termPanel">
         <div class="term-hd">
             <div class="term-dots"><span></span><span></span><span></span></div>
-            <span class="term-title">blackmirror — bash</span>
+            <span class="term-title">◼ BLACK MIRROR</span>
         </div>
         <div class="term-body" id="tb"></div>
         <div id="voicePreview" style="display:none">
@@ -11967,38 +11967,9 @@ function clearCanvas() {
 // ══════════════════════════════════════════════════
 
 function boot() {
-    enqueue('blackmirror --init --version 1.2.0 --build 2026-04-16', [
-        'kinoshita studio — all rights reserved',
-        'BLACK MIRROR BOARD v1.2  ( release: 2026-04-16 )',
-        '',
-        'loading kernel...',
-        '  canvas engine      ✓ ready',
-        '  pointer unifier    ✓ mouse + touch + pen',
-        '  pan engine         ✓ space / 2-finger',
-        '  object model       ✓ active',
-        '  rotation engine    ✓ ready',
-        '  anchor system      ✓ 8-handle bbox + vertex',
-        '  hit-test           ✓ segment-aware + 8px pad',
-        '  resize engine      ✓ shift lock · alt center · snap',
-        '  fill engine        ✓ light · dark · gray',
-        '  pen auto-close     ✓ snap ring active',
-        '  shape detector     ✓ listening',
-        '  theme engine       ✓ light / dark / gray online',
-        '  zoom engine        ✓ ready',
-        '  audio engine       ✓ standby',
-        '  syntax highlighter ✓ loaded',
-        '  export / import    ✓ JSON + PNG (alpha) ready',
-        '  terminal daemon    ✓ running',
-        '',
-        'v1.2 ship manifest:',
-        '  · gray mode     — pebble ground (#DCDBD5) / cobalt ink (#1600A2)',
-        '  · hit-test 2.0  — grab thin strokes without pixel-hunting',
-        '  · shift resize  — aspect lock (image: on by default)',
-        '  · alpha png     — transparent export for compositing',
-        '',
-        'Draw. Pan. Save. The mirror responds.',
-        'Type "dark", "light" or "gray" to switch environments.',
-    ]);
+    // ⭐bashの偽ログ(起動シーケンス/manifest)は撤去。静かな挨拶だけ（printRaw=ハイライト無し＝</span>も出ない）。
+    printRaw('BLACK MIRROR BOARD — kinoshita studio', 't-out');
+    printRaw('⌘K でコマンド（calc / dark / t …）  ·  🎤 で声  ·  paper に書きなぐる', 't-dim');
 }
 
 // ── Feedback Modal ─────────────────────────────────────────────────────────
@@ -12036,7 +12007,8 @@ function boot() {
 
 initCanvas();
 boot();
-setTimeout(runAmbient, 22000);
+// ⭐heartbeat等の偽の運用ログ(runAmbient)は撤去。ノイズを消してトレイ化の土台に。
+// setTimeout(runAmbient, 22000);
 
 // ── Export transparent PNG ─────────────────────────────────────────────────
 // Rotation-aware AABB: rotates the unrotated bbox corners around the object
