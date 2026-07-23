@@ -4221,48 +4221,79 @@ function _pencilInk() {
     return (typeof document !== 'undefined' && document.body.classList.contains('bm-paper'))
         ? PENCIL_INK : getStrokeColor();
 }
+// ⭐黒鉛の粒スタンプ（オフスクリーンに1回焼いて使い回す）。
+//   鉛筆は「線」でなく「紙の凸部に乗った黒鉛の粒の集合」＝これを arc-length で連打する。
+//   中心が濃く周縁がかすれ、内部はノイズで抜けた granular なディスク。色ごとにキャッシュ。
+const _dabCache = {};
+function _pencilDab(r, g, b) {
+    const key = r + ',' + g + ',' + b;
+    if (_dabCache[key]) return _dabCache[key];
+    const S = 48, c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g2 = c.getContext('2d');
+    const img = g2.createImageData(S, S);
+    const cx = (S - 1) / 2, cy = (S - 1) / 2, rad = S / 2;
+    for (let y = 0; y < S; y++) {
+        for (let x = 0; x < S; x++) {
+            const dx = (x - cx) / rad, dy = (y - cy) / rad;
+            const d = Math.hypot(dx, dy);
+            let a = 0;
+            if (d < 1) {
+                const fall = Math.pow(1 - d, 1.5);                 // 中心濃・縁かすれ
+                const nz   = _pnoise(x * 1.7 + y * 9.3, y * 2.1 + x * 0.7);
+                const spk  = nz > 0.40 ? 1 : 0.22;                  // 紙の目で粒が抜ける
+                a = fall * spk;
+            }
+            const i = (y * S + x) * 4;
+            img.data[i] = r; img.data[i+1] = g; img.data[i+2] = b;
+            img.data[i+3] = Math.round(a * 255);
+        }
+    }
+    g2.putImageData(img, 0, 0);
+    _dabCache[key] = c;
+    return c;
+}
+
+// ⭐鉛筆ストローク＝粒スタンプの連打。ペン/筆(1本の連続線)との差別化はここ。
+//   ・arc-length で等間隔に粒を置く（研究：Procreate等のスタンプ列方式）
+//   ・紙目の横ジッタでばらける／薄い粒の source-over 累積で overlap が濃くなる（鉛筆の階調）
+//   ・ptA(消し量)が低い所は粒が疎らに抜ける＝かすれ／谷に残った粒＝跡
 function _drawPencilLine(pts, lw, r, g, b, baseA, ptA) {
     const n = pts.length;
     if (n < 2) return;
-    ctx.save();
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.lineWidth = lw;
-    // ⭐濃さの「レベルごと」に重ね描きする。
-    //   区間を分けて描くと、切れ目で quadraticCurveTo の補間がリセットされ形が変わる。
-    //   この方式なら全ての層が同じ補間で全域を通るので、消しても元の形が保たれる。
-    //   消していない所ほど層が多く重なる＝濃い／触れた所は層が減る＝薄い。
     const q = new Array(n);
     for (let i = 0; i < n; i++) {
         const v = (ptA && ptA[i] != null) ? ptA[i] : 1;
         q[i] = Math.max(0, Math.min(1, v));
     }
-    const LEVELS = 5;
-    const layerA = baseA * 0.20;          // 5層フルに重なると ≒0.80 相当
-    for (let L = 1; L <= LEVELS; L++) {
-        // ⚠️閾値は ERASE_FLOOR 〜 1.0 に配る。
-        //   L/LEVELS（0.2〜）にすると、FLOOR(0.12)まで消した点が1層も描かれず「跡」が消える。
-        const th = ERASE_FLOOR + (1 - ERASE_FLOOR) * (L - 1) / (LEVELS - 1);
-        ctx.strokeStyle = `rgba(${r},${g},${b},${layerA})`;
-        ctx.beginPath();
-        let pen = false;
-        for (let k = 1; k < n; k++) {
-            const a0 = pts[k-1], p0 = pts[k];
-            // ⭐重さ ─ ゆっくり引いた所は濃く、速く引いた所は薄くかすれる。
-            //   マウスでは筆圧が取れないので、点の間隔（＝速度）で代用する。
-            //   ⚠️強くしすぎると線がまだらになって読めなくなるので 0.3 まで。
-            const spd = Math.min(1, Math.hypot(p0.x - a0.x, p0.y - a0.y) / 15);
-            const eff = Math.min(q[k-1], q[k]) * (1 - spd * 0.30);
-            if (eff >= th) {
-                if (!pen) { ctx.moveTo(a0.x, a0.y); pen = true; }
-                // ⭐描いた点をそのまま繋ぐ＝手の動きに忠実。
-                //   quadraticCurveTo で滑らかにすると角が丸まって描いた形とズレる。
-                ctx.lineTo(p0.x, p0.y);
-            } else {
-                pen = false;
-            }
+    const dab = _pencilDab(r, g, b);
+    const sz  = Math.max(3, lw * 2.4);       // 粒の直径（縁がかすれるので芯は lw 相当）
+    const hs  = sz / 2;
+    const sp  = Math.max(1, sz * 0.16);      // 粒の間隔（密＝滑らか／疎＝ざらつく）
+
+    ctx.save();
+    let carry = 0;
+    for (let k = 1; k < n; k++) {
+        const a0 = pts[k-1], p0 = pts[k];
+        const segd = Math.hypot(p0.x - a0.x, p0.y - a0.y);
+        if (segd < 0.001) continue;
+        const ux = (p0.x - a0.x) / segd, uy = (p0.y - a0.y) / segd;
+        const spd = Math.min(1, segd / 15);                    // 速い＝かすれ
+        const gA  = (q[k-1] + q[k]) / 2;                        // この区間の黒鉛量
+        for (let t = carry; t < segd; t += sp) {
+            const x = a0.x + ux * t, y = a0.y + uy * t;
+            const fl = _pnoise(x * 2.3 + y * 1.1, y * 2.7 + x * 0.5);   // 紙目のちらつき
+            if (fl > gA + 0.15) continue;                      // 消した所ほど粒が抜ける＝かすれ/跡
+            const jj = (_pnoise(x * 0.9, y * 0.9) - 0.5) * lw * 0.6;    // 横ブレ＝紙目に乗る
+            const px = x - uy * jj, py = y + ux * jj;
+            const al = baseA * gA * (1 - spd * 0.35) * (0.45 + 0.55 * fl);
+            if (al <= 0.008) continue;
+            ctx.globalAlpha = Math.min(1, al);
+            ctx.drawImage(dab, (px - hs) | 0, (py - hs) | 0, sz | 0, sz | 0);
         }
-        ctx.stroke();
+        carry = Math.max(0, carry + Math.ceil((segd - carry) / sp) * sp - segd);
     }
+    ctx.globalAlpha = 1;
     ctx.restore();
 }
 
