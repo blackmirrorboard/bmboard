@@ -8185,6 +8185,19 @@ function bmParseTimerArg(s) {
 }
 
 // ── Main dispatcher — the single entry point for every terminal input ─────
+// ⭐omnibox: 安全な四則演算（許可文字のみ→Functionで評価。識別子/関数呼び出しは通さない）
+function safeCalc(expr) {
+    const e = String(expr == null ? '' : expr).trim();
+    if (!e) return null;
+    if (!/^[0-9.\s+\-*/%()]+$/.test(e)) return null;   // 数字・演算子・括弧のみ
+    if (!/[+\-*/%]/.test(e)) return null;              // 演算子が最低1つ
+    try {
+        const v = Function('"use strict"; return (' + e + ');')();
+        if (typeof v === 'number' && isFinite(v)) return Math.round(v * 1e10) / 1e10;
+    } catch (_) {}
+    return null;
+}
+
 function runCommand(val) {
     if (!val) return;
 
@@ -8209,6 +8222,37 @@ function runCommand(val) {
 
     // Debug: uncomment to verify in terminal
     // printRaw(`[DBG] head="${head}" rest="${rest}" raw="${raw}"`, 't-dim');
+
+    // ── ⭐omnibox actions（毎日触る）: calc / = / 数式自動 / t / todo ──
+    if (head==='calc' || head==='=' || clean.startsWith('=')) {
+        const expr = clean.startsWith('=') ? clean.slice(1) : rest;
+        const v = safeCalc(expr);
+        if (v === null) { printRaw('calc: 式が不正（例: calc 12*8 / = 15*1.1）', 't-err'); return; }
+        enqueue(`$ ${clean}`, ['→ = ' + v]);
+        return;
+    }
+    {   // 数式そのものを打ったら自動で答える（例: 12*8）
+        const _cv = safeCalc(clean);
+        if (_cv !== null) { enqueue(`$ ${clean}`, ['→ = ' + _cv]); return; }
+    }
+    if (head==='t') {
+        const txt = rest.trim();
+        if (!txt) { printRaw('t: テキストを指定（例: t アイデア）', 't-err'); return; }
+        const obj = BM.create('text', { text: txt });
+        S.selectedId = obj.id;
+        BM.save(); BM.redraw();
+        enqueue(`$ t ${txt}`, ['→ 中央にテキストを配置（ドラッグで移動 / ダブルクリックで編集）']);
+        return;
+    }
+    if (head==='todo') {
+        const txt = rest.trim();
+        if (!txt) { printRaw('todo: 内容を指定（例: todo 牛乳）', 't-err'); return; }
+        const obj = BM.create('text', { text: '☐ ' + txt });
+        S.selectedId = obj.id;
+        BM.save(); BM.redraw();
+        enqueue(`$ todo ${txt}`, ['→ 中央に ToDo を配置']);
+        return;
+    }
 
     if (head==='youtube'||head==='yt'||head==='youtube.com') {
         enqueue(`stdin > "${val}"`,['→ keyword match: YOUTUBE','→ triggering easter egg...']);
@@ -9656,6 +9700,9 @@ tiEl.addEventListener('paste', e => {
     if (!ti || !list) return;
 
     const CMDS = [
+        { cmd:'calc',    hint:'計算（calc 12*8）', args:true },
+        { cmd:'t',       hint:'中央にテキスト（t アイデア）', args:true },
+        { cmd:'todo',    hint:'ToDoを置く（todo 牛乳）', args:true },
         { cmd:'dark',    hint:'ボードを暗く（黒板）' },
         { cmd:'light',   hint:'ボードを明るく（紙）' },
         { cmd:'gray',    hint:'グレー環境' },
