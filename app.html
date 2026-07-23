@@ -223,6 +223,7 @@
             width: auto;
             display: block;
             object-fit: contain;
+            filter: invert(1);   /* ⭐白抜き：暗いロゴ→白（暗いガラス面で映える） */
         }
         @media (max-width: 700px) {
             .logo-img { height: 26px; }
@@ -400,7 +401,7 @@
             justify-self: end;
             display: flex;
             align-items: center;
-            gap: 3px;
+            gap: 8px;
             min-width: 0;                   /* let horizontal overflow shrink, not push */
         }
 
@@ -420,7 +421,7 @@
             font-family: inherit;
             font-size: 8px;
             letter-spacing: 0.14em;
-            padding: 4px 5px;
+            padding: 6px 7px;
             cursor: pointer;
             transition: border-color 0.12s, color 0.12s;
             touch-action: manipulation;
@@ -490,8 +491,8 @@
         }
 
         .tool-btn {
-            width: 36px;
-            height: 34px;
+            width: 40px;
+            height: 40px;
             background: none;
             border: 1px solid transparent;
             color: rgba(235,235,240,0.70);
@@ -511,6 +512,11 @@
         .tool-btn svg { pointer-events: none; }
         /* ⭐アイコン統一：SF Symbols風モノライン（鉛筆=fill / 消しゴムは確定済みで据置き） */
         .toolbar .tool-btn:not([data-tool="pen"]):not([data-tool="eraser"]) svg { stroke-width: 1.7; }
+        /* ⭐アイコン拡大：上バーはバー高さいっぱい寄り／左レールも一回り大きく */
+        .header-right .hbtn svg { width: 21px; height: 21px; }
+        .toolbar .tool-btn svg  { width: 19px; height: 19px; }
+        /* 上バー端の3つ(FLUSH/USAGE/OVERVIEW)は非表示 → 設定(歯車)に集約 */
+        .hbtn-flush, .hbtn-usage, .hlink-overview { display: none !important; }
         .tool-btn:hover  { border-color: rgba(255,255,255,0.12); color: #fff; background: rgba(255,255,255,0.06); }
         .tool-btn.active { border-color: rgba(255,255,255,0.16); color: #fff; background: rgba(255,255,255,0.10); }
         /* Suppress click-induced focus ring; keep keyboard-only focus for a11y */
@@ -2227,6 +2233,10 @@
         <a class="hbtn hlink-overview" href="overview.html" title="Overview" aria-label="Overview">
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.6" y="2.6" width="4.6" height="4.6" rx="1"/><rect x="8.8" y="2.6" width="4.6" height="4.6" rx="1"/><rect x="2.6" y="8.8" width="4.6" height="4.6" rx="1"/><rect x="8.8" y="8.8" width="4.6" height="4.6" rx="1"/></svg>
         </a>
+        <!-- ⭐設定（歯車）— 端3つの代わりにここに集約（⌘, でも開く） -->
+        <button class="hbtn" onclick="window._toggleSettings && window._toggleSettings(); this.blur();" title="設定 (⌘,)" aria-label="Settings">
+            <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.3"/><path d="M8 1.6 V3.3 M8 12.7 V14.4 M1.6 8 H3.3 M12.7 8 H14.4 M3.5 3.5 L4.7 4.7 M11.3 11.3 L12.5 12.5 M12.5 3.5 L11.3 4.7 M4.7 11.3 L3.5 12.5"/></svg>
+        </button>
     </div>
 </header>
 
