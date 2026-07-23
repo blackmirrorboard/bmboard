@@ -1280,8 +1280,8 @@
         }
         #cmdkOverlay.open { display: flex; }
         .cmdk-card {
-            width: min(580px, 92vw);
-            max-height: 68vh;
+            width: min(640px, 92vw);
+            max-height: 66vh;
             display: flex; flex-direction: column;
             /* ⭐Raycast風：暗いグラデ＋わずかな上端ハイライト */
             background: linear-gradient(180deg, rgba(33,31,37,0.975) 0%, rgba(19,18,22,0.982) 46%, rgba(14,13,17,0.985) 100%);
@@ -1293,9 +1293,9 @@
         }
         #cmdkInput {
             background: none; border: none; outline: none;
-            color: #f2efe8; caret-color: #f2efe8;
-            font-family: inherit; font-size: 17px;
-            padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+            color: #f4f2ec; caret-color: #9aa0ff;
+            font-family: var(--ui-sans); font-size: 17px; font-weight: 400; letter-spacing: -0.01em;
+            padding: 17px 20px; border-bottom: 1px solid rgba(255,255,255,0.07);
         }
         #cmdkInput::placeholder { color: rgba(255,255,255,0.30); }
         #cmdkList { overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 1px; }
@@ -1323,7 +1323,9 @@
         .cmdk-foot-r { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.55); }
         .cmdk-foot .k { display: inline-block; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.7); }
         /* Raycast風：アイコン＋名前＋サブ＋右タイプ */
-        .cmdk-ico  { width: 18px; text-align: center; color: rgba(255,255,255,0.52); font-size: 14px; flex-shrink: 0; }
+        /* ⭐アイコンをタイル化（Raycastの"アプリアイコン"感） */
+        .cmdk-ico  { width: 27px; height: 27px; border-radius: 7px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.06); display: inline-flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.72); font-size: 13px; flex-shrink: 0; }
+        .cmdk-item.sel .cmdk-ico { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.10); }
         .cmdk-sub  { color: rgba(255,255,255,0.45); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
         .cmdk-type { color: rgba(255,255,255,0.34); font-size: 10.5px; letter-spacing: 0.03em; white-space: nowrap; flex-shrink: 0; }
         /* ⭐結果ヒーローカード（calc等） */
@@ -1344,14 +1346,20 @@
         .cmdk-sect { padding: 4px 11px 6px; font-size: 9.5px; letter-spacing: 0.12em; color: rgba(255,255,255,0.30); }
 
         /* ⭐リンク追加フォーム（パレット内サブビュー） */
-        #cmdkForm { display: none; padding: 16px 18px 8px; }
-        .lf-title { font-size: 11px; letter-spacing: 0.12em; color: rgba(255,255,255,0.55); margin-bottom: 15px; }
-        .lf-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .lf-label { width: 38px; font-size: 11px; color: rgba(255,255,255,0.45); flex-shrink: 0; }
-        #cmdkForm input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 9px; padding: 9px 12px; color: #f2efe8; caret-color: #f2efe8; font-family: inherit; font-size: 13px; outline: none; }
-        #cmdkForm input:focus { border-color: rgba(255,255,255,0.30); background: rgba(255,255,255,0.08); }
-        #cmdkForm input::placeholder { color: rgba(255,255,255,0.30); }
-        .lf-hint { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 8px; letter-spacing: 0.03em; }
+        #cmdkForm { display: none; padding: 18px 20px 16px; font-family: var(--ui-sans); }
+        .lf-title { font-size: 15px; font-weight: 600; color: #f0eee8; margin-bottom: 4px; }
+        .lf-desc { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 16px; line-height: 1.5; }
+        .lf-field { margin-bottom: 13px; }
+        .lf-lbl { display: block; font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+        #cmdkForm input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 9px; padding: 11px 13px; color: #f2efe8; caret-color: #9aa0ff; font-family: var(--ui-sans); font-size: 14px; outline: none; }
+        #cmdkForm input:focus { border-color: rgba(255,255,255,0.32); background: rgba(255,255,255,0.08); }
+        #cmdkForm input::placeholder { color: rgba(255,255,255,0.3); }
+        .lf-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+        .lf-btn { border-radius: 9px; padding: 9px 16px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--ui-sans); border: 1px solid transparent; }
+        .lf-btn.ghost { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.6); }
+        .lf-btn.ghost:hover { color: #fff; background: rgba(255,255,255,0.09); }
+        .lf-btn.primary { background: #f2efe8; color: #111; }
+        .lf-btn.primary:hover { background: #fff; }
 
         /* ══════════════════════════════════
            LINK PANEL — ボード上に任意URLをiframeで開く（window往復を殺す）
@@ -1382,6 +1390,14 @@
         .lp-note { position: absolute; left: 12px; bottom: 10px; font-size: 10px; color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; pointer-events: none; opacity: 0; transition: opacity .3s; }
         .lp-note.show { opacity: 1; }
         .lp-grip { position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; cursor: nwse-resize; z-index: 2; border-right: 2px solid rgba(255,255,255,0.24); border-bottom: 2px solid rgba(255,255,255,0.24); border-bottom-right-radius: 10px; }
+        /* ⭐埋め込み拒否サイトの明示（白画面でなく「新規タブで開く」を出す） */
+        .lp-blocked { position: absolute; inset: 34px 0 0 0; z-index: 3; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 9px; padding: 24px; text-align: center; background: rgba(18,16,20,0.99); font-family: var(--ui-sans); }
+        .lp-blocked.show { display: flex; }
+        .lp-blocked-ico { font-size: 28px; opacity: 0.75; }
+        .lp-blocked-t { color: rgba(255,255,255,0.86); font-size: 13px; font-weight: 600; }
+        .lp-blocked-s { color: rgba(255,255,255,0.45); font-size: 11px; line-height: 1.5; max-width: 320px; }
+        .lp-blocked-btn { margin-top: 6px; background: #f2efe8; color: #111; border: none; border-radius: 9px; padding: 9px 18px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--ui-sans); }
+        .lp-blocked-btn:hover { background: #fff; }
 
         /* ══════════════════════════════════
            IMAGE CONTEXT MENU
@@ -2566,6 +2582,12 @@
             </div>
         </div>
         <iframe id="lpFrame" src="about:blank" referrerpolicy="no-referrer" allow="clipboard-write; fullscreen"></iframe>
+        <div class="lp-blocked" id="lpBlocked">
+            <div class="lp-blocked-ico">⛔︎</div>
+            <div class="lp-blocked-t" id="lpBlockedT">このサイトは埋め込みを許可していません</div>
+            <div class="lp-blocked-s">Google / Figma / X / Notion などは iframe をブロックします（Tauri版で解禁予定）</div>
+            <button class="lp-blocked-btn" id="lpBlockedBtn" type="button">↗ 新規タブで開く</button>
+        </div>
         <div class="lp-note" id="lpNote">表示されない場合は ↗ で新規タブ（そのサイトが埋め込みを許可していません）</div>
         <div class="lp-grip" id="lpGrip"></div>
     </div>
@@ -2641,10 +2663,11 @@
         <div id="cmdkList"></div>
         <!-- ⭐リンク追加フォーム（パレット内サブビュー） -->
         <div id="cmdkForm" aria-hidden="true">
-            <div class="lf-title">↗ リンクを追加 / ADD LINK</div>
-            <div class="lf-row"><span class="lf-label">名前</span><input id="lfName" type="text" placeholder="ex（呼び出す名前）" autocomplete="off" spellcheck="false"></div>
-            <div class="lf-row"><span class="lf-label">URL</span><input id="lfUrl" type="text" placeholder="example.com" autocomplete="off" spellcheck="false"></div>
-            <div class="lf-hint">保存すると ⌘K から名前で呼び出せます · ↵ 保存 · Esc 戻る</div>
+            <div class="lf-title">↗ リンクを追加</div>
+            <div class="lf-desc">よく使うURLを登録すると、⌘K から名前で呼び出してボード上に開けます。</div>
+            <div class="lf-field"><label class="lf-lbl">名前（呼び出す言葉）</label><input id="lfName" type="text" placeholder="例：カラー / 資料 / yt" autocomplete="off" spellcheck="false"></div>
+            <div class="lf-field"><label class="lf-lbl">URL</label><input id="lfUrl" type="text" placeholder="例：coolors.co" autocomplete="off" spellcheck="false"></div>
+            <div class="lf-actions"><button class="lf-btn ghost" id="lfCancel" type="button">戻る（Esc）</button><button class="lf-btn primary" id="lfSave" type="button">保存して開く（↵）</button></div>
         </div>
         <div class="cmdk-foot"><span>↑↓ 選択 · Esc 閉じる</span><span class="cmdk-foot-r"><span class="k">↵</span> 実行 · <span class="k">⌘K</span> 開閉</span></div>
     </div>
@@ -10080,6 +10103,8 @@ function centerTermPanel() {
     const form    = document.getElementById('cmdkForm');
     const lfName  = document.getElementById('lfName');
     const lfUrl   = document.getElementById('lfUrl');
+    const lfSave  = document.getElementById('lfSave');
+    const lfCancel= document.getElementById('lfCancel');
     if (!overlay || !input || !listEl) return;
 
     let rows = [], sel = 0, awaitingArg = null, mode = 'list', _favCount = 0;
@@ -10226,6 +10251,8 @@ function centerTermPanel() {
         if (e.key === 'Enter') { e.preventDefault(); saveForm(); }
         else if (e.key === 'Escape') { e.preventDefault(); exitForm(); }
     });
+    if (lfSave) lfSave.addEventListener('click', () => saveForm());
+    if (lfCancel) lfCancel.addEventListener('click', () => exitForm());
     listEl.addEventListener('mousedown', e => { const el = e.target.closest('.cmdk-item'); if (!el) return; e.preventDefault(); sel = +el.dataset.i; runSel(); });
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
 
@@ -10250,10 +10277,23 @@ function centerTermPanel() {
     const note    = document.getElementById('lpNote');
     const btnTab  = document.getElementById('lpTab');
     const btnClose= document.getElementById('lpClose');
+    const blocked = document.getElementById('lpBlocked');
+    const blockedT= document.getElementById('lpBlockedT');
+    const blockedBtn = document.getElementById('lpBlockedBtn');
     if (!mainEl || !panel || !frame) return;
 
     const LINKS_KEY = 'bm_links';
-    function normUrl(u) { u = String(u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; return u; }
+    // 埋め込みを拒否する主要サイト（X-Frame-Options / CSP）。ここは白画面でなく「新規タブ」を案内。
+    const BLOCKED = ['google.com','figma.com','x.com','twitter.com','instagram.com','facebook.com','notion.so','notion.site','github.com','linkedin.com','openai.com','chatgpt.com','claude.ai','youtube.com','amazon.co.jp','amazon.com'];
+    function normUrl(u) {
+        u = String(u || '').trim();
+        if (!u) return '';
+        if (/^https?:\/\//i.test(u)) return u;                       // 既にURL
+        if (/^[^\s]+\.[^\s]+$/.test(u)) return 'https://' + u;        // ドメインっぽい（example.com）
+        if (/^[^\s.]+$/.test(u)) return 'https://' + u + '.com';     // 単語1つ（google → google.com）
+        return 'https://www.google.com/search?q=' + encodeURIComponent(u);  // それ以外は検索
+    }
+    function isBlocked(u) { try { const h = new URL(u).hostname.replace(/^www\./, ''); return BLOCKED.some(d => h === d || h.endsWith('.' + d)); } catch (_) { return false; } }
     function getLinks() { try { return JSON.parse(localStorage.getItem(LINKS_KEY) || '{}'); } catch (_) { return {}; } }
     function saveLink(name, url) { const o = getLinks(); o[name] = normUrl(url); try { localStorage.setItem(LINKS_KEY, JSON.stringify(o)); } catch (_) {} }
     function rmLink(name) { const o = getLinks(); delete o[name]; try { localStorage.setItem(LINKS_KEY, JSON.stringify(o)); } catch (_) {} }
@@ -10271,15 +10311,24 @@ function centerTermPanel() {
         }
         titleEl.textContent = title || u.replace(/^https?:\/\//, '');
         panel.dataset.url = u;
-        frame.src = u;
         panel.classList.add('open');
-        if (note) { note.classList.add('show'); clearTimeout(_noteTimer); _noteTimer = setTimeout(() => note.classList.remove('show'), 4200); }
+        if (isBlocked(u)) {   // 埋め込み拒否 → 白画面でなく明示＋新規タブ案内
+            try { if (blockedT) blockedT.textContent = new URL(u).hostname + ' は埋め込みを許可していません'; } catch (_) {}
+            if (blocked) blocked.classList.add('show');
+            frame.src = 'about:blank';
+            if (note) note.classList.remove('show');
+        } else {
+            if (blocked) blocked.classList.remove('show');
+            frame.src = u;
+            if (note) { note.classList.add('show'); clearTimeout(_noteTimer); _noteTimer = setTimeout(() => note.classList.remove('show'), 4200); }
+        }
     }
     window._openLink = openLink;
 
-    function closePanel() { panel.classList.remove('open'); frame.src = 'about:blank'; }
+    function closePanel() { panel.classList.remove('open'); frame.src = 'about:blank'; if (blocked) blocked.classList.remove('show'); }
     if (btnClose) btnClose.addEventListener('click', closePanel);
     if (btnTab) btnTab.addEventListener('click', () => { const u = panel.dataset.url; if (u) window.open(u, '_blank', 'noopener'); });
+    if (blockedBtn) blockedBtn.addEventListener('click', () => { const u = panel.dataset.url; if (u) window.open(u, '_blank', 'noopener'); });
 
     // ── ヘッダードラッグで移動 ──
     let drag = false, sx = 0, sy = 0, ox = 0, oy = 0;
