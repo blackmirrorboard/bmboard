@@ -1290,6 +1290,26 @@
             padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.06);
             font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.04em;
         }
+        /* Raycast風：アイコン＋名前＋サブ＋右タイプ */
+        .cmdk-ico  { width: 18px; text-align: center; color: rgba(255,255,255,0.50); font-size: 13px; flex-shrink: 0; }
+        .cmdk-sub  { color: rgba(255,255,255,0.40); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .cmdk-type { color: rgba(255,255,255,0.32); font-size: 10px; letter-spacing: 0.05em; white-space: nowrap; flex-shrink: 0; }
+        /* ⭐結果ヒーローカード（calc等） */
+        .cmdk-hero { margin: 4px 6px 6px; padding: 13px 14px; border-radius: 12px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.08); }
+        .cmdk-hero-cap  { font-size: 9.5px; letter-spacing: 0.12em; color: rgba(255,255,255,0.42); margin-bottom: 11px; }
+        .cmdk-hero-body { display: flex; align-items: center; gap: 14px; }
+        .cmdk-hero-col  { flex: 1; text-align: center; min-width: 0; }
+        .cmdk-hero-expr { font-size: 19px; color: #f2efe8; word-break: break-all; }
+        .cmdk-hero-val  { font-size: 25px; font-weight: 700; color: #fff; word-break: break-all; }
+        .cmdk-hero-lab  { font-size: 9px; letter-spacing: 0.1em; color: rgba(255,255,255,0.35); margin-top: 6px; }
+        .cmdk-hero-arrow{ color: rgba(255,255,255,0.4); font-size: 18px; flex-shrink: 0; }
+        /* ⭐選択中コマンドの詳細（説明）カード */
+        .cmdk-detail { margin: 4px 6px 6px; padding: 13px 14px; border-radius: 12px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.08); }
+        .cmdk-detail-top  { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+        .cmdk-detail-name { color: #f2efe8; font-size: 16px; font-weight: 700; white-space: nowrap; }
+        .cmdk-detail-desc { color: rgba(255,255,255,0.60); font-size: 12px; line-height: 1.55; }
+        .cmdk-detail-foot { margin-top: 10px; font-size: 10px; color: rgba(255,255,255,0.32); letter-spacing: 0.04em; }
+        .cmdk-sect { padding: 4px 11px 6px; font-size: 9.5px; letter-spacing: 0.12em; color: rgba(255,255,255,0.30); }
 
         /* ══════════════════════════════════
            IMAGE CONTEXT MENU
@@ -9868,7 +9888,8 @@ function centerTermPanel() {
     const listEl  = document.getElementById('cmdkList');
     if (!overlay || !input || !listEl) return;
 
-    let items = [], sel = 0;
+    let rows = [], sel = 0;
+    const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?' };
     const isOpen = () => overlay.classList.contains('open');
     const isSub = (q, s) => { let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return true; } return q.length === 0; };
     function score(q, it) {
@@ -9881,41 +9902,66 @@ function centerTermPanel() {
         return -1;
     }
     const esc = s => String(s).replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m]));
+    const copyText = t => { try { navigator.clipboard && navigator.clipboard.writeText(String(t)); } catch (_) {} };
+
+    function cmdItem(it) {
+        const cat = (typeof OMNI_CATS !== 'undefined' && OMNI_CATS[it.cat]) ? OMNI_CATS[it.cat] : (it.cat || '');
+        return {
+            kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: it.hint || (it.cmd + ' コマンド'),
+            run() {
+                const q = input.value.trim(); const fsp = q.indexOf(' ');
+                const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
+                if (it.args && !typedArgs) { input.value = it.cmd + ' '; refresh(); return; }
+                const cmd = (it.args && typedArgs) ? (it.cmd + ' ' + typedArgs) : it.cmd;
+                close(); try { pushHistory(cmd); } catch (_) {}
+                if (typeof runCommand === 'function') runCommand(cmd);
+            }
+        };
+    }
+    // 選択中アイテムの詳細（calc=結果カード／それ以外=説明）
+    function detailHtml(r) {
+        if (!r) return '';
+        if (r.kind === 'calc') {
+            return `<div class="cmdk-hero"><div class="cmdk-hero-cap">計算 · CALCULATOR</div><div class="cmdk-hero-body">`
+                 + `<div class="cmdk-hero-col"><div class="cmdk-hero-expr">${esc(r.expr)}</div><div class="cmdk-hero-lab">式</div></div>`
+                 + `<div class="cmdk-hero-arrow">→</div>`
+                 + `<div class="cmdk-hero-col"><div class="cmdk-hero-val">${esc(String(r.val))}</div><div class="cmdk-hero-lab">結果</div></div></div>`
+                 + `<div class="cmdk-detail-foot">↵ 答えをコピー</div></div>`;
+        }
+        return `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">${esc(r.name)}</span><span class="cmdk-badge">${esc(r.type)}</span></div>`
+             + `<div class="cmdk-detail-desc">${esc(r.desc || '')}</div><div class="cmdk-detail-foot">↵ で実行</div></div>`;
+    }
     function render() {
-        if (!items.length) { listEl.innerHTML = '<div class="cmdk-empty">該当なし</div>'; return; }
-        listEl.innerHTML = items.map((it, i) => {
-            const badge = (typeof OMNI_CATS !== 'undefined' && OMNI_CATS[it.cat]) ? OMNI_CATS[it.cat] : (it.cat || '');
-            return `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-name">${esc(it.cmd)}</span><span class="cmdk-badge">${esc(badge)}</span><span class="cmdk-hint">${esc(it.hint || '')}</span></div>`;
-        }).join('');
+        if (!rows.length) { listEl.innerHTML = '<div class="cmdk-empty">該当なし</div>'; return; }
+        const listRows = rows.map((r, i) =>
+            `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-ico">${esc(r.ico)}</span><span class="cmdk-name">${esc(r.name)}</span><span class="cmdk-sub">${esc(r.desc || '')}</span><span class="cmdk-type">${esc(r.type)}</span></div>`).join('');
+        listEl.innerHTML = detailHtml(rows[sel]) + '<div class="cmdk-sect">候補 · CANDIDATES</div>' + listRows;
         const s = listEl.querySelector('.cmdk-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
     }
     function refresh() {
-        const q = input.value.trim().split(/\s+/)[0].toLowerCase();
-        if (!q) items = OMNI_CMDS.slice();
-        else items = OMNI_CMDS.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
+        const full = input.value.trim();
+        const q = full.split(/\s+/)[0].toLowerCase();
+        const cmds = !q ? OMNI_CMDS.slice()
+            : OMNI_CMDS.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
+        rows = [];
+        const cv = (typeof safeCalc === 'function') ? safeCalc(full) : null;
+        if (cv !== null) {
+            rows.push({ kind:'calc', ico:'∑', name:'= ' + cv, type:'計算', expr: full, val: cv, desc:`${full} の計算結果。↵ でコピー。`, run() { copyText(cv); close(); } });
+            rows.push({ kind:'action', ico:'✎', name:'ボードに置く', type:'メモ', desc:`結果「${cv}」を中央にテキストで配置`, run() { close(); try { pushHistory('t ' + cv); } catch (_) {} if (typeof runCommand === 'function') runCommand('t ' + cv); } });
+        }
+        rows = rows.concat(cmds.map(cmdItem));
         sel = 0; render();
     }
     function open()  { overlay.classList.add('open'); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
     function close() { overlay.classList.remove('open'); }
     function toggle(){ isOpen() ? close() : open(); }
     window._openCmdK = open; window._toggleCmdK = toggle;
-
-    function runSel() {
-        const it = items[sel]; if (!it) return;
-        const q = input.value.trim();
-        const fsp = q.indexOf(' ');
-        const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
-        if (it.args && !typedArgs) { input.value = it.cmd + ' '; refresh(); return; }   // 引数が要る→補完して留まる
-        const cmd = (it.args && typedArgs) ? (it.cmd + ' ' + typedArgs) : it.cmd;
-        close();
-        try { pushHistory(cmd); } catch (_) {}
-        if (typeof runCommand === 'function') runCommand(cmd);
-    }
+    function runSel() { const r = rows[sel]; if (r && typeof r.run === 'function') r.run(); }
 
     input.addEventListener('input', refresh);
     input.addEventListener('keydown', e => {
-        if (e.key === 'ArrowDown')    { if (items.length) { sel = (sel + 1) % items.length; render(); } e.preventDefault(); }
-        else if (e.key === 'ArrowUp') { if (items.length) { sel = (sel - 1 + items.length) % items.length; render(); } e.preventDefault(); }
+        if (e.key === 'ArrowDown')    { if (rows.length) { sel = (sel + 1) % rows.length; render(); } e.preventDefault(); }
+        else if (e.key === 'ArrowUp') { if (rows.length) { sel = (sel - 1 + rows.length) % rows.length; render(); } e.preventDefault(); }
         else if (e.key === 'Enter')   { e.preventDefault(); runSel(); }
         else if (e.key === 'Escape')  { e.preventDefault(); close(); }
     });
