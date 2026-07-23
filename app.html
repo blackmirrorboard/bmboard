@@ -1336,6 +1336,12 @@
         .cmdk-foot-act { display: inline-flex; align-items: center; gap: 5px; }
         .cmdk-foot-div { width: 1px; height: 11px; background: rgba(255,255,255,0.12); }
         .cmdk-foot .k { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 4px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); color: rgba(255,255,255,0.72); font-size: 10px; }
+        /* ⭐フッターのショートカット割当ボタン/捕捉表示 */
+        .cmdk-foot-btn { cursor: pointer; padding: 2px 7px; border-radius: 5px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.09); color: rgba(255,255,255,0.62); font-size: 10px; white-space: nowrap; }
+        .cmdk-foot-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
+        .cmdk-foot-cap { color: rgba(255,255,255,0.72); }
+        .cmdk-foot-dim { color: rgba(255,255,255,0.36); }
+        .cmdk-foot-warn { color: #f0c674; }
         /* Raycast風：アイコン＋名前＋サブ＋右タイプ */
         /* ⭐アイコンをタイル化（Raycastの"アプリアイコン"感） */
         .cmdk-ico  { width: 25px; height: 25px; border-radius: 6.5px; background: linear-gradient(180deg, rgba(255,255,255,0.085), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.07); display: inline-flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.74); font-size: 12.5px; flex-shrink: 0; }
@@ -2690,7 +2696,7 @@
             <div class="lf-field"><label class="lf-lbl">URL</label><input id="lfUrl" type="text" placeholder="例：coolors.co" autocomplete="off" spellcheck="false"></div>
             <div class="lf-actions"><button class="lf-btn ghost" id="lfCancel" type="button">戻る（Esc）</button><button class="lf-btn primary" id="lfSave" type="button">保存して開く（↵）</button></div>
         </div>
-        <div class="cmdk-foot">
+        <div class="cmdk-foot" id="cmdkFoot">
             <span class="cmdk-foot-l"><span class="cmdk-foot-mark">◼</span> BLACK MIRROR</span>
             <span class="cmdk-foot-r"><span class="cmdk-foot-act">実行 <span class="k">↵</span></span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">閉じる <span class="k">esc</span></span></span>
         </div>
@@ -10129,6 +10135,7 @@ function centerTermPanel() {
     const lfUrl   = document.getElementById('lfUrl');
     const lfSave  = document.getElementById('lfSave');
     const lfCancel= document.getElementById('lfCancel');
+    const footEl  = document.getElementById('cmdkFoot');
     if (!overlay || !input || !listEl) return;
 
     let rows = [], sel = 0, awaitingArg = null, mode = 'list', _favCount = 0;
@@ -10138,6 +10145,33 @@ function centerTermPanel() {
     function getFavs() { try { return JSON.parse(localStorage.getItem(FAVS_KEY) || '[]'); } catch (_) { return []; } }
     function isFav(k) { return getFavs().indexOf(k) >= 0; }
     function toggleFav(k) { if (!k) return; const a = getFavs(); const i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else a.unshift(k); try { localStorage.setItem(FAVS_KEY, JSON.stringify(a)); } catch (_) {} }
+    // ⭐ユーザー割当ショートカット（bm_user_sc: { コマンド名: {disp,match} }）。修飾キー必須で1キーツールと衝突しない
+    const USC_KEY = 'bm_user_sc';
+    function getUsc() { try { return JSON.parse(localStorage.getItem(USC_KEY) || '{}'); } catch (_) { return {}; } }
+    function setUsc(cmd, combo) { const m = getUsc(); if (combo) { for (const k in m) { if (m[k] && m[k].match === combo.match) delete m[k]; } m[cmd] = combo; } else delete m[cmd]; try { localStorage.setItem(USC_KEY, JSON.stringify(m)); } catch (_) {} }
+    // イベント→コンボ（修飾必須・修飾キー単体は無効）。表示用disp と 照合用match を返す
+    function comboOf(e) {
+        const k = e.key;
+        if (!k || k === 'Meta' || k === 'Control' || k === 'Alt' || k === 'Shift') return null;
+        if (!(e.metaKey || e.ctrlKey || e.altKey)) return null;   // 修飾キー必須
+        const low = k.toLowerCase();
+        let disp = '';
+        if (e.metaKey) disp += '⌘';
+        if (e.ctrlKey) disp += '⌃';
+        if (e.altKey)  disp += '⌥';
+        if (e.shiftKey) disp += '⇧';
+        disp += (k.length === 1 ? k.toUpperCase() : k);
+        const mods = []; if (e.metaKey) mods.push('m'); if (e.ctrlKey) mods.push('c'); if (e.altKey) mods.push('a'); if (e.shiftKey) mods.push('s');
+        return { disp, match: mods.sort().join('') + ':' + low };
+    }
+    // 既存の⌘系ショートカットは予約（Undo/コピー/⌘K 等）＝ユーザーは割り当て不可
+    function reservedCombo(e) {
+        if (!(e.metaKey || e.ctrlKey)) return false;
+        const k = (e.key || '').toLowerCase();
+        if (e.shiftKey) return ['z', 'c', 'b'].indexOf(k) >= 0;
+        return ['z', 'y', 'a', 'c', 'x', 'v', 'd', 'k', 'b', ','].indexOf(k) >= 0;
+    }
+    let capSc = null, capMsg = '';   // 捕捉中のコマンド名 / 警告文
     const isOpen = () => overlay.classList.contains('open');
     const isSub = (q, s) => { let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return true; } return q.length === 0; };
     function score(q, it) {
@@ -10169,8 +10203,11 @@ function centerTermPanel() {
             return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: it.hint || it._url, favKey, fav,
                 run() { close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
         }
+        const usc = getUsc()[it.cmd];
         return {
-            kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: it.hint || (it.cmd + ' コマンド'), sc: it.sc || '', favKey, fav,
+            kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: it.hint || (it.cmd + ' コマンド'),
+            sc: (usc && usc.disp) || it.sc || '', favKey, fav,
+            cmdStr: it.cmd, args: !!it.args, assignable: !it.args,   // 引数なしコマンドだけ割当可
             run() {
                 const q = input.value.trim(); const fsp = q.indexOf(' ');
                 const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
@@ -10219,6 +10256,24 @@ function centerTermPanel() {
         });
         listEl.innerHTML = top + listHtml;
         const s = listEl.querySelector('.cmdk-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
+        updateFoot();
+    }
+    // ⭐フッターをコンテキスト化：選択コマンドのショートカット割当（Raycast流アクション）
+    function updateFoot() {
+        if (!footEl) return;
+        const brand = '<span class="cmdk-foot-l"><span class="cmdk-foot-mark">◼</span> BLACK MIRROR</span>';
+        let right;
+        const r = rows[sel];
+        if (capSc) {
+            right = `<span class="cmdk-foot-r"><span class="cmdk-foot-cap">「${esc(capSc)}」に割り当てるキーを押す… <span class="cmdk-foot-dim">⌘/⌥/⌃＋キー · Esc取消</span>${capMsg ? ' <span class="cmdk-foot-warn">' + esc(capMsg) + '</span>' : ''}</span></span>`;
+        } else if (r && r.assignable) {
+            const usc = getUsc()[r.cmdStr];
+            const cur = usc ? `<span class="k">${esc(usc.disp)}</span> <span class="cmdk-foot-btn" data-act="clearsc">解除</span>` : '';
+            right = `<span class="cmdk-foot-r">${cur}<span class="cmdk-foot-btn" data-act="setsc">⌨ ショートカット${usc ? '変更' : '割当'}</span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">実行 <span class="k">↵</span></span></span>`;
+        } else {
+            right = '<span class="cmdk-foot-r"><span class="cmdk-foot-act">実行 <span class="k">↵</span></span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">閉じる <span class="k">esc</span></span></span>';
+        }
+        footEl.innerHTML = brand + right;
     }
     function refresh() {
         const raw = input.value;
@@ -10269,15 +10324,36 @@ function centerTermPanel() {
         close();
         if (window._openLink) window._openLink(u, n);   // 登録したらそのまま開く
     }
-    function open()  { overlay.classList.add('open'); showList(); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
-    function close() { overlay.classList.remove('open'); showList(); }
+    function open()  { capSc = null; capMsg = ''; overlay.classList.add('open'); showList(); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
+    function close() { capSc = null; capMsg = ''; overlay.classList.remove('open'); showList(); }
     function toggle(){ isOpen() ? close() : open(); }
     window._openCmdK = open; window._toggleCmdK = toggle;
     function runSel() { const r = rows[sel]; if (r && typeof r.run === 'function') r.run(); }
 
+    // ⭐フッターの割当/解除ボタン（mousedownでフォーカスを保持）
+    if (footEl) footEl.addEventListener('mousedown', e => {
+        const btn = e.target.closest('.cmdk-foot-btn'); if (!btn) return;
+        e.preventDefault(); e.stopPropagation();
+        const r = rows[sel]; if (!r || !r.assignable) return;
+        if (btn.dataset.act === 'setsc') { capSc = r.cmdStr; capMsg = ''; updateFoot(); }
+        else if (btn.dataset.act === 'clearsc') { setUsc(r.cmdStr, null); refresh(); }
+        input.focus();
+    });
+
     input.addEventListener('input', refresh);
     input.addEventListener('keydown', e => {
         if (e.isComposing || e.keyCode === 229) return;   // ⭐IME変換中のEnterでは実行しない（漢字変換確定で誤発火を防ぐ）
+        // ⭐ショートカット捕捉モード：次の修飾キー入力をこのコマンドに割り当て
+        if (capSc) {
+            e.preventDefault(); e.stopPropagation();
+            if (e.key === 'Escape') { capSc = null; capMsg = ''; updateFoot(); return; }
+            if (e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift') return;
+            if (reservedCombo(e)) { capMsg = 'その組合せは使用中'; updateFoot(); return; }
+            const c = comboOf(e);
+            if (!c) { capMsg = '⌘/⌥/⌃ と組合せて'; updateFoot(); return; }
+            setUsc(capSc, c); capSc = null; capMsg = ''; refresh();
+            return;
+        }
         if (e.key === 'ArrowDown')    { if (rows.length) { sel = (sel + 1) % rows.length; render(); } e.preventDefault(); }
         else if (e.key === 'ArrowUp') { if (rows.length) { sel = (sel - 1 + rows.length) % rows.length; render(); } e.preventDefault(); }
         else if (e.key === 'Enter')   { e.preventDefault(); runSel(); }
@@ -10310,7 +10386,20 @@ function centerTermPanel() {
     window.addEventListener('keydown', e => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && !e.shiftKey && !e.altKey) { e.preventDefault(); toggle(); return; }
         // ⌘⇧B → フローティング窓を中央配置
-        if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'b' && !e.altKey) { e.preventDefault(); if (typeof centerTermPanel === 'function') centerTermPanel(); }
+        if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'b' && !e.altKey) { e.preventDefault(); if (typeof centerTermPanel === 'function') centerTermPanel(); return; }
+        // ⭐ユーザー割当ショートカットの発火（パレット非表示時・入力欄外のみ）
+        if (isOpen()) return;
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        if (reservedCombo(e)) return;
+        const c = comboOf(e); if (!c) return;
+        const m = getUsc();
+        let hit = null;
+        for (const k in m) { if (m[k] && m[k].match === c.match) { hit = k; break; } }
+        if (!hit) return;
+        e.preventDefault(); e.stopPropagation();
+        try { pushHistory(hit); } catch (_) {}
+        if (typeof runCommand === 'function') runCommand(hit);
     }, true);
 })();
 
