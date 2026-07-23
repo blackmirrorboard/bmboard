@@ -1215,6 +1215,35 @@
         }
 
         /* ══════════════════════════════════
+           OMNIBOX — ターミナル入力の候補ドロップダウン（打つと候補）
+        ══════════════════════════════════ */
+        #omniList {
+            position: absolute;
+            left: 10px; right: 10px; bottom: 44px;
+            z-index: 55;
+            display: none; flex-direction: column; gap: 1px;
+            max-height: 48%; overflow-y: auto;
+            padding: 5px;
+            background: rgba(20,18,23,0.96);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 12px;
+            box-shadow: 0 14px 44px rgba(0,0,0,0.55);
+            -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+        }
+        #omniList.open { display: flex; }
+        #omniList::-webkit-scrollbar { width: 3px; }
+        #omniList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+        .omni-item {
+            display: flex; align-items: baseline; gap: 9px;
+            padding: 6px 9px; border-radius: 8px; cursor: pointer;
+        }
+        .omni-item:hover { background: rgba(255,255,255,0.07); }
+        .omni-item.sel  { background: rgba(255,255,255,0.13); }
+        .omni-cmd  { color: #e8e6e0; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        .omni-hint { color: rgba(255,255,255,0.42); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .omni-item.sel .omni-hint { color: rgba(255,255,255,0.60); }
+
+        /* ══════════════════════════════════
            IMAGE CONTEXT MENU
         ══════════════════════════════════ */
         #imgCtxMenu {
@@ -2351,6 +2380,8 @@
             <span class="vp-hint">↵ 実行　Esc キャンセル</span>
             <input type="text" id="vpInput" autocomplete="off" spellcheck="false">
         </div>
+        <!-- ⭐omnibox：打つと候補が出るドロップダウン（入力行の上に浮く） -->
+        <div id="omniList" aria-hidden="true"></div>
         <div class="term-input-row">
             <span class="t-prompt">❯</span>
             <input type="text" id="ti" placeholder="type a command… (try: youtube)" autocomplete="off" spellcheck="false">
@@ -9612,6 +9643,92 @@ tiEl.addEventListener('paste', e => {
 
     // 起動時：保存済み壁紙を復元
     try { if (localStorage.getItem('bm_wall') === 'red') { const wall = document.getElementById('termWall'); if (wall) wall.style.backgroundImage = "url('assets/term-bg-red.png')"; } } catch (_) {}
+})();
+
+// ══════════════════════════════════════════════════
+// OMNIBOX — ターミナル入力の候補ドロップダウン（打つと候補・Raycast型）
+//   既存の runCommand の上に「発見しやすさ」を被せる層。入力/送信/履歴/IME は壊さない。
+//   capture フェーズで候補ナビだけ横取りし、実行は既存 Enter に委ねる。
+// ══════════════════════════════════════════════════
+(function initOmni() {
+    const ti   = document.getElementById('ti');
+    const list = document.getElementById('omniList');
+    if (!ti || !list) return;
+
+    const CMDS = [
+        { cmd:'dark',    hint:'ボードを暗く（黒板）' },
+        { cmd:'light',   hint:'ボードを明るく（紙）' },
+        { cmd:'gray',    hint:'グレー環境' },
+        { cmd:'enpitsu', hint:'鉛筆（紙）で描く' },
+        { cmd:'fude',    hint:'筆で描く' },
+        { cmd:'classic', hint:'クラシックな線' },
+        { cmd:'float',   hint:'ターミナルを浮かす' },
+        { cmd:'dock',    hint:'ターミナルを右に戻す' },
+        { cmd:'panel',   hint:'分割幅（panel 30 / float / dock）', args:true },
+        { cmd:'clear',   hint:'ボードを消す' },
+        { cmd:'flush',   hint:'ターミナルのログを消す' },
+        { cmd:'export',  hint:'書き出し（png / svg / pptx / data）', args:true },
+        { cmd:'share',   hint:'URLで画面を共有' },
+        { cmd:'save',    hint:'プロジェクト保存', args:true },
+        { cmd:'load',    hint:'プロジェクト読込', args:true },
+        { cmd:'tpl',     hint:'テンプレを置く', args:true },
+        { cmd:'sticky',  hint:'付箋を置く', args:true },
+        { cmd:'bgm',     hint:'BGM（bgm on / off）', args:true },
+        { cmd:'usage',   hint:'使い方 / ヘルプ' },
+        { cmd:'hb',      hint:'芯を HB に' },
+        { cmd:'2b',      hint:'芯を 2B に' },
+        { cmd:'4b',      hint:'芯を 4B に' },
+        { cmd:'6b',      hint:'芯を 6B に' },
+    ];
+
+    let items = [], sel = -1;
+    const isSub = (q, s) => { let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return true; } return q.length === 0; };
+    function score(q, it) {
+        const c = it.cmd.toLowerCase();
+        if (c === q) return 100;
+        if (c.startsWith(q)) return 80 - (c.length - q.length) * 0.4;
+        if (c.includes(q)) return 55;
+        if (isSub(q, c)) return 32;
+        if (it.hint && it.hint.toLowerCase().includes(q)) return 18;
+        return -1;
+    }
+    const esc = s => String(s).replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m]));
+    function render() {
+        list.innerHTML = items.map((it, i) =>
+            `<div class="omni-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="omni-cmd">${esc(it.cmd)}</span><span class="omni-hint">${esc(it.hint || '')}</span></div>`).join('');
+        list.classList.toggle('open', items.length > 0);
+        const s = list.querySelector('.omni-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
+    }
+    function hide() { items = []; sel = -1; list.classList.remove('open'); list.innerHTML = ''; }
+    function refresh() {
+        const t = ti.value;
+        if (!t.trim() || t.includes(' ')) { hide(); return; }   // コマンド語を打ってる間だけ（引数入力中は出さない）
+        const q = t.trim().toLowerCase();
+        items = CMDS.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0)
+            .sort((a, b) => b.sc - a.sc).slice(0, 7).map(x => x.it);
+        sel = items.length ? 0 : -1;
+        render();
+    }
+
+    ti.addEventListener('input', refresh);
+    ti.addEventListener('blur', () => setTimeout(hide, 130));   // クリック選択の猶予
+    ti.addEventListener('keydown', e => {
+        if (!list.classList.contains('open')) return;           // 閉じてるなら既存処理（履歴/送信）に委ねる
+        if (e.key === 'ArrowDown')      { sel = (sel + 1) % items.length; render(); e.preventDefault(); e.stopImmediatePropagation(); }
+        else if (e.key === 'ArrowUp')   { sel = (sel - 1 + items.length) % items.length; render(); e.preventDefault(); e.stopImmediatePropagation(); }
+        else if (e.key === 'Tab')       { if (items[sel]) { ti.value = items[sel].cmd + (items[sel].args ? ' ' : ''); refresh(); } e.preventDefault(); e.stopImmediatePropagation(); }
+        else if (e.key === 'Escape')    { hide(); e.preventDefault(); e.stopImmediatePropagation(); }
+        else if (e.key === 'Enter')     { if (items[sel] && !ti.value.includes(' ')) ti.value = items[sel].cmd; hide(); /* stopしない→既存Enterが実行 */ }
+    }, true);   // ⭐capture：履歴/送信より先に候補ナビを処理
+
+    list.addEventListener('mousedown', e => {
+        const el = e.target.closest('.omni-item'); if (!el) return;
+        e.preventDefault();                                    // フォーカスを奪わない
+        const it = items[+el.dataset.i]; if (!it) return;
+        hide();
+        if (it.args) { ti.value = it.cmd + ' '; ti.focus(); }  // 引数コマンドは補完だけして続けて入力
+        else { ti.value = ''; try { pushHistory(it.cmd); } catch (_) {} if (typeof runCommand === 'function') runCommand(it.cmd); }
+    });
 })();
 
 // ══════════════════════════════════════════════════
