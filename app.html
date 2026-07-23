@@ -1333,16 +1333,23 @@
         /* ── PAPER BOARD（enpitsu モードのときだけ付く。他モードには影響しない） ──
            板そのものを紙にする。生成りの地＋極薄のノイズ＝触ると分かる程度のざらつき。
            ⚠️濃くすると鉛筆の線が埋もれて読めなくなるので 0.05 前後に留める。 */
-        body.bm-paper .canvas-panel { background: #EBE8E2; }
-        body.bm-paper .canvas-panel::before { opacity: .3; }   /* 方眼を紙に沈める */
+        /* ⭐紙の地：わずかに温かい生成り＋縦横グラデで手漉きの紙のムラを出す */
+        body.bm-paper .canvas-panel {
+            background:
+                radial-gradient(120% 90% at 30% 20%, #F1EEE7 0%, #E9E5DD 55%, #E4DFD5 100%);
+        }
+        body.bm-paper .canvas-panel::before { opacity: .22; }   /* 方眼を紙に沈める */
+        /* 粗い紙の目（低周波の陰影）＝触ると分かる程度のムラ */
         body.bm-paper .canvas-panel::after {
             content: '';
             position: absolute;
             inset: 0;
             pointer-events: none;
             z-index: 2;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='pn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pn)' opacity='0.55'/%3E%3C/svg%3E");
-            opacity: .05;
+            background-image:
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='pf'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.016' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pf)' opacity='0.6'/%3E%3C/svg%3E"),
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='pn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pn)' opacity='0.5'/%3E%3C/svg%3E");
+            opacity: .08;
             mix-blend-mode: multiply;
         }
 
@@ -4109,10 +4116,12 @@ function _ensureGrain() {
     const img = g2.createImageData(N, N);
     for (let y = 0; y < N; y++) {
         for (let x = 0; x < N; x++) {
-            const n1 = _pnoise(x * 1.7 + y * 5.3, y * 0.9);   // 2周波を重ねて紙の繊維に
-            const n2 = _pnoise(x * 0.6 + y * 1.1, x * 0.4);
-            const n  = n1 * 0.68 + n2 * 0.32;
-            const a  = n > 0.58 ? Math.min(200, (n - 0.58) * 200 * 2.2) : 0;  // 抜きすぎない
+            // ⭐紙の目(tooth)＝大きめの繊維セル + 細かいディテールの2周波。
+            //   線に小さな白粒がくっきり抜ける。抜きすぎると散るので中庸に。
+            const n1 = _pnoise(x * 0.7 + y * 0.25, y * 0.7);   // tooth の凸凹（大きめ）
+            const n2 = _pnoise(x * 2.4 - y * 1.1, x * 0.5 + y * 2.2);  // 繊維の細かさ
+            const n  = n1 * 0.64 + n2 * 0.36;
+            const a  = n > 0.60 ? Math.min(150, (n - 0.60) * 150 * 2.6) : 0;
             const i  = (y * N + x) * 4;
             img.data[i] = 0; img.data[i+1] = 0; img.data[i+2] = 0; img.data[i+3] = a;
         }
@@ -4239,10 +4248,8 @@ function _pencilDab(r, g, b) {
             const d = Math.hypot(dx, dy);
             let a = 0;
             if (d < 1) {
-                const fall = Math.pow(1 - d, 1.5);                 // 中心濃・縁かすれ
-                const nz   = _pnoise(x * 1.7 + y * 9.3, y * 2.1 + x * 0.7);
-                const spk  = nz > 0.40 ? 1 : 0.22;                  // 紙の目で粒が抜ける
-                a = fall * spk;
+                // ⭐滑らかな soft disc（=shape）。粒々は grain 側で抜くのでここでは付けない。
+                a = Math.pow(1 - d, 1.6);
             }
             const i = (y * S + x) * 4;
             img.data[i] = r; img.data[i+1] = g; img.data[i+2] = b;
@@ -4254,10 +4261,44 @@ function _pencilDab(r, g, b) {
     return c;
 }
 
-// ⭐鉛筆ストローク＝粒スタンプの連打。ペン/筆(1本の連続線)との差別化はここ。
-//   ・arc-length で等間隔に粒を置く（研究：Procreate等のスタンプ列方式）
-//   ・紙目の横ジッタでばらける／薄い粒の source-over 累積で overlap が濃くなる（鉛筆の階調）
-//   ・ptA(消し量)が低い所は粒が疎らに抜ける＝かすれ／谷に残った粒＝跡
+// ⭐鉛筆の芯グレード（三菱ハイユニ/ステッドラー等の 2H〜6B）。
+//   硬いほど薄く細く尖り、柔らかいほど濃く太く紙目を拾う。コマンド 2h/hb/2b/5b/6b で切替。
+// thr = 紙目の閾値（高いほど白い粒が多く残る＝硬い鉛筆）。a = 濃さ。w = 太さ係数。
+const PENCIL_GRADES = {
+    '2h': { w: 0.60, a: 0.42, thr: 0.60, name: '2H（硬い・薄い）' },
+    'h':  { w: 0.72, a: 0.50, thr: 0.55, name: 'H' },
+    'hb': { w: 0.88, a: 0.62, thr: 0.50, name: 'HB（標準）' },
+    '2b': { w: 1.10, a: 0.74, thr: 0.45, name: '2B' },
+    '4b': { w: 1.30, a: 0.85, thr: 0.41, name: '4B' },
+    '5b': { w: 1.48, a: 0.92, thr: 0.38, name: '5B（ハイユニ）' },
+    '6b': { w: 1.70, a: 1.00, thr: 0.35, name: '6B（柔らかい・濃い）' },
+};
+let PENCIL_GRADE = (() => {
+    try { const v = localStorage.getItem('bm_grade'); return PENCIL_GRADES[v] ? v : 'hb'; }
+    catch { return 'hb'; }
+})();
+
+// ⭐紙の目（tooth）＝キャンバス座標に固定された決定論ノイズ。
+//   ここが鉛筆とスプレーの分かれ目：粒ごとにランダム＝スプレー／紙の位置に固定＝鉛筆。
+//   同じ紙の点は必ず同じ濃さ＝黒鉛が紙の凸部にだけ引っかかる。
+function _tooth(x, y) {
+    const n1 = _pnoise(x * 0.85 + y * 0.30, y * 0.85 + x * 0.12);
+    const n2 = _pnoise(x * 2.60 - y * 1.10, x * 0.40 + y * 2.10);
+    return n1 * 0.6 + n2 * 0.4;
+}
+
+// ⭐濃さ（ユーザー可変・スライダー/コマンドで調整）。0.1〜2.0。既定は濃いめ。
+let PENCIL_DARK = (() => {
+    try { const v = parseFloat(localStorage.getItem('bm_dark'));
+          return (v >= 0.1 && v <= 2) ? v : 0.9; } catch { return 0.9; }
+})();
+
+// ⭐鉛筆ストローク ── 研究 finding[4][5]：Shape(連続した外形) の内側に Grain(紙目) を入れる。
+//   ①ここでは「連続した滑らかな線(shape)」を dab の密連打で作る（穴を開けない）
+//   ②紙目の白い粒は redrawAll の _applyPaperGrain（キャンバス固定 grain）が後から抜く
+//   →「濃い連続線＋細かい白粒」＝本物の鉛筆。tooth で線をスキップすると散らばった点になる(失敗)
+//   ・1粒は薄く source-over で累積＝overlapで濃くなる階調（研究[3]）
+//   ・ptA(消し量)が低い所は薄くなる＝かすれ・跡（消しゴムと接続）
 function _drawPencilLine(pts, lw, r, g, b, baseA, ptA) {
     const n = pts.length;
     if (n < 2) return;
@@ -4266,10 +4307,12 @@ function _drawPencilLine(pts, lw, r, g, b, baseA, ptA) {
         const v = (ptA && ptA[i] != null) ? ptA[i] : 1;
         q[i] = Math.max(0, Math.min(1, v));
     }
-    const dab = _pencilDab(r, g, b);
-    const sz  = Math.max(3, lw * 2.4);       // 粒の直径（縁がかすれるので芯は lw 相当）
-    const hs  = sz / 2;
-    const sp  = Math.max(1, sz * 0.16);      // 粒の間隔（密＝滑らか／疎＝ざらつく）
+    const G     = PENCIL_GRADES[PENCIL_GRADE] || PENCIL_GRADES.hb;
+    const dab   = _pencilDab(r, g, b);
+    const width = Math.max(1.2, lw * (0.5 + G.w * 0.75));   // 線幅（グレードで太さ変化）
+    const dsz   = Math.max(2.5, width * 1.7);               // 粒径（縁が羽化＝芯≒width）
+    const sp    = Math.max(0.5, dsz * 0.13);                // 密＝連続した線に見せる
+    const perStamp = baseA * G.a * PENCIL_DARK * 0.11;      // 1粒は薄く／累積で濃く
 
     ctx.save();
     let carry = 0;
@@ -4278,18 +4321,14 @@ function _drawPencilLine(pts, lw, r, g, b, baseA, ptA) {
         const segd = Math.hypot(p0.x - a0.x, p0.y - a0.y);
         if (segd < 0.001) continue;
         const ux = (p0.x - a0.x) / segd, uy = (p0.y - a0.y) / segd;
-        const spd = Math.min(1, segd / 15);                    // 速い＝かすれ
-        const gA  = (q[k-1] + q[k]) / 2;                        // この区間の黒鉛量
+        const spd = Math.min(1, segd / 16);
+        const gA  = (q[k-1] + q[k]) / 2;
+        const al  = perStamp * gA * (1 - spd * 0.35);       // この区間の1粒の濃さ
         for (let t = carry; t < segd; t += sp) {
+            if (al <= 0.004) continue;
             const x = a0.x + ux * t, y = a0.y + uy * t;
-            const fl = _pnoise(x * 2.3 + y * 1.1, y * 2.7 + x * 0.5);   // 紙目のちらつき
-            if (fl > gA + 0.15) continue;                      // 消した所ほど粒が抜ける＝かすれ/跡
-            const jj = (_pnoise(x * 0.9, y * 0.9) - 0.5) * lw * 0.6;    // 横ブレ＝紙目に乗る
-            const px = x - uy * jj, py = y + ux * jj;
-            const al = baseA * gA * (1 - spd * 0.35) * (0.45 + 0.55 * fl);
-            if (al <= 0.008) continue;
             ctx.globalAlpha = Math.min(1, al);
-            ctx.drawImage(dab, (px - hs) | 0, (py - hs) | 0, sz | 0, sz | 0);
+            ctx.drawImage(dab, (x - dsz/2) | 0, (y - dsz/2) | 0, dsz | 0, dsz | 0);
         }
         carry = Math.max(0, carry + Math.ceil((segd - carry) / sp) * sp - segd);
     }
@@ -7842,6 +7881,35 @@ function runCommand(val) {
                '→ board / classic で黒板に戻る']);
         return;
     }
+    // ⭐鉛筆の芯グレード（2H〜6B）。紙モードで打つと硬さ＝濃さ/太さ/紙目の拾い方が変わる
+    if (PENCIL_GRADES[head]) {
+        PENCIL_GRADE = head; try{localStorage.setItem('bm_grade', head);}catch{}
+        if (S.drawMode!=='pencil') { S.drawMode='pencil'; try{localStorage.setItem('bm_drawMode','pencil');}catch{} document.body.classList.add('bm-paper'); }
+        redrawAll();
+        enqueue(`$ ${head}`, ['→ 鉛筆: ' + PENCIL_GRADES[head].name,
+                              '  2h / h / hb / 2b / 4b / 5b / 6b で切替']);
+        return;
+    }
+
+    // ⭐鉛筆の濃さ（0〜200・スライダー相当。ユーザーの感覚で調整）
+    if (head==='dark'||head==='nosa'||head==='濃さ') {
+        const a = rest.trim();
+        if (a==='' || a==='status') {
+            enqueue('$ dark', ['→ 濃さ: ' + Math.round(PENCIL_DARK*100),
+                               '  dark 60 / dark 130 で変更（0〜200）']);
+            return;
+        }
+        const v = parseFloat(a);
+        if (!Number.isFinite(v) || v < 0 || v > 200) {
+            printRaw('dark: usage → dark 90（0〜200）', 't-err'); return;
+        }
+        PENCIL_DARK = Math.max(0.1, v / 100);
+        try{localStorage.setItem('bm_dark', String(PENCIL_DARK));}catch{}
+        redrawAll();
+        enqueue(`$ dark ${v}`, ['→ 濃さ: ' + Math.round(PENCIL_DARK*100)]);
+        return;
+    }
+
     // ⭐消しゴムの当たり半径を変える（紙モードの部分消し用）
     if (head==='eraser'||head==='kesigomu') {
         const a = rest.trim().toLowerCase();
