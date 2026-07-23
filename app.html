@@ -1340,6 +1340,36 @@
         .cmdk-sect { padding: 4px 11px 6px; font-size: 9.5px; letter-spacing: 0.12em; color: rgba(255,255,255,0.30); }
 
         /* ══════════════════════════════════
+           LINK PANEL — ボード上に任意URLをiframeで開く（window往復を殺す）
+        ══════════════════════════════════ */
+        #linkPanel {
+            position: absolute; z-index: 60;
+            display: none; flex-direction: column;
+            left: 80px; top: 80px; width: 560px; height: 440px;
+            min-width: 260px; min-height: 180px;
+            background: rgba(18,16,20,0.98);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        #linkPanel.open { display: flex; }
+        .lp-hd {
+            flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+            height: 34px; padding: 0 8px 0 12px;
+            background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.08);
+            cursor: grab; touch-action: none;
+        }
+        .lp-hd.dragging { cursor: grabbing; }
+        .lp-title { font-size: 11px; color: rgba(255,255,255,0.72); font-family: var(--ui-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lp-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .lp-btn { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 13px; line-height: 1; padding: 4px 6px; border-radius: 6px; }
+        .lp-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        #lpFrame { flex: 1; width: 100%; border: none; background: #fff; }
+        .lp-note { position: absolute; left: 12px; bottom: 10px; font-size: 10px; color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; pointer-events: none; opacity: 0; transition: opacity .3s; }
+        .lp-note.show { opacity: 1; }
+        .lp-grip { position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; cursor: nwse-resize; z-index: 2; border-right: 2px solid rgba(255,255,255,0.24); border-bottom: 2px solid rgba(255,255,255,0.24); border-bottom-right-radius: 10px; }
+
+        /* ══════════════════════════════════
            IMAGE CONTEXT MENU
         ══════════════════════════════════ */
         #imgCtxMenu {
@@ -2511,6 +2541,20 @@
 
     <!-- ⭐マグネット・ドック予告：右端に近づくと白枠で「ここに吸着」を提示 -->
     <div id="termSnapZone" aria-hidden="true"></div>
+
+    <!-- ⭐LINK PANEL — ボード上に任意URLをiframeで開く（open/web/link コマンド・司令官パネルと同じ操作感） -->
+    <div id="linkPanel" aria-hidden="true">
+        <div class="lp-hd" id="lpHd">
+            <span class="lp-title" id="lpTitle">—</span>
+            <div class="lp-actions">
+                <button class="lp-btn" id="lpTab" type="button" title="新規タブで開く（埋め込み不可サイト用）">↗</button>
+                <button class="lp-btn" id="lpClose" type="button" title="閉じる">✕</button>
+            </div>
+        </div>
+        <iframe id="lpFrame" src="about:blank" referrerpolicy="no-referrer" allow="clipboard-write; fullscreen"></iframe>
+        <div class="lp-note" id="lpNote">表示されない場合は ↗ で新規タブ（そのサイトが埋め込みを許可していません）</div>
+        <div class="lp-grip" id="lpGrip"></div>
+    </div>
 </main>
 
 <!-- ── Feedback Modal ─────────────────────────────────────────── -->
@@ -8427,6 +8471,30 @@ function runCommand(val) {
         enqueue(`$ todo ${txt}`, ['→ 中央に ToDo を配置']);
         return;
     }
+    // ── ⭐URL-in-board: open / web / link（任意URLをボード上のiframe窓で開く＝window往復を殺す） ──
+    if (head==='open' || head==='web') {
+        const u = rest.trim();
+        if (!u) { printRaw(head + ': URLを指定（例: ' + head + ' example.com）', 't-err'); return; }
+        if (window._openLink) window._openLink(u);
+        enqueue(`$ ${head} ${u}`, ['→ ボード上に開く（表示されない場合は窓右上の ↗ で新規タブ）']);
+        return;
+    }
+    if (head==='link') {
+        const sub = rest.trim();
+        const links = (window._getLinks && window._getLinks()) || {};
+        const madd = sub.match(/^add\s+(\S+)\s+(.+)$/i);
+        if (madd) { if (window._saveLink) window._saveLink(madd[1], madd[2]); enqueue('$ link add', ['→ お気に入り追加: ' + madd[1] + ' → ' + madd[2], '→ link ' + madd[1] + ' / ⌘Kからも開ける']); return; }
+        const mrm = sub.match(/^(?:rm|remove|del)\s+(\S+)$/i);
+        if (mrm) { if (window._rmLink) window._rmLink(mrm[1]); enqueue('$ link rm', ['→ 削除: ' + mrm[1]]); return; }
+        if (!sub || sub==='list' || sub==='ls') {
+            const names = Object.keys(links);
+            enqueue('$ link', names.length ? ['→ お気に入り: ' + names.join(' · '), '→ link <名前> で開く · link add <名前> <url> で追加'] : ['→ お気に入りは空。link add <名前> <url> で追加']);
+            return;
+        }
+        if (links[sub]) { if (window._openLink) window._openLink(links[sub], sub); enqueue(`$ link ${sub}`, ['→ ' + sub + ' を開く']); return; }
+        printRaw('link: "' + sub + '" は未登録。link add ' + sub + ' <url> で追加', 't-err');
+        return;
+    }
 
     if (head==='youtube'||head==='yt'||head==='youtube.com') {
         enqueue(`stdin > "${val}"`,['→ keyword match: YOUTUBE','→ triggering easter egg...']);
@@ -9875,7 +9943,7 @@ tiEl.addEventListener('paste', e => {
 // ══════════════════════════════════════════════════
 // ⭐omnibox 共有カタログ：ターミナル補完 と ⌘Kパレット が同じ1ソースを使う。
 //   cat＝⌘Kパレットのバッジ（何の機能かひと目で分かる）。
-const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ' };
+const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク' };
 const OMNI_CMDS = [
     { cmd:'calc',    cat:'calc',    hint:'計算（calc 12*8）', args:true },
     { cmd:'t',       cat:'capture', hint:'中央にテキスト（t アイデア）', args:true },
@@ -9903,6 +9971,8 @@ const OMNI_CMDS = [
     { cmd:'sticky',  cat:'insert',  hint:'付箋を置く', args:true },
     { cmd:'bgm',     cat:'media',   hint:'BGM（bgm on / off）', args:true },
     { cmd:'usage',   cat:'help',    hint:'使い方 / ヘルプ' },
+    { cmd:'open',    cat:'link',    hint:'URLをボードに開く（open example.com）', args:true, kw:'url web リンク 開く browser サイト' },
+    { cmd:'link',    cat:'link',    hint:'お気に入りURL（link add 名前 url / link 名前）', args:true, kw:'url web お気に入り リンク favorite ブックマーク' },
 ];
 // ⭐フローティング窓を画面中央へ（⌘⇧B / `panel center`）
 function centerTermPanel() {
@@ -9988,7 +10058,7 @@ function centerTermPanel() {
     if (!overlay || !input || !listEl) return;
 
     let rows = [], sel = 0, awaitingArg = null;
-    const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?' };
+    const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?', link:'↗' };
     const isOpen = () => overlay.classList.contains('open');
     const isSub = (q, s) => { let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return true; } return q.length === 0; };
     function score(q, it) {
@@ -10006,6 +10076,10 @@ function centerTermPanel() {
 
     function cmdItem(it) {
         const cat = (typeof OMNI_CATS !== 'undefined' && OMNI_CATS[it.cat]) ? OMNI_CATS[it.cat] : (it.cat || '');
+        if (it._url) {   // ⭐お気に入りリンク → 選ぶとボード上のiframe窓で開く
+            return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: it.hint || it._url,
+                run() { close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
+        }
         return {
             kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: it.hint || (it.cmd + ' コマンド'),
             run() {
@@ -10055,8 +10129,12 @@ function centerTermPanel() {
         const argText = spIdx >= 0 ? raw.slice(spIdx + 1).trim() : '';
         const cmdDef = OMNI_CMDS.find(c => c.cmd === q);
         awaitingArg = (cmdDef && cmdDef.args && spIdx >= 0 && !argText) ? cmdDef : null;   // "todo " = 引数入力待ち
-        const cmds = !q ? OMNI_CMDS.slice()
-            : OMNI_CMDS.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
+        // ⭐お気に入りリンクを候補プールに合流（⌘Kから直接開ける）
+        const linksObj = (window._getLinks && window._getLinks()) || {};
+        const linkPool = Object.keys(linksObj).map(n => ({ cmd: n, cat: 'link', hint: linksObj[n], _url: linksObj[n], kw: 'link リンク url お気に入り' }));
+        const POOL = OMNI_CMDS.concat(linkPool);
+        const cmds = !q ? POOL.slice()
+            : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = [];
         const cv = (typeof safeCalc === 'function') ? safeCalc(full) : null;
         if (cv !== null) {
@@ -10088,6 +10166,96 @@ function centerTermPanel() {
         // ⌘⇧B → フローティング窓を中央配置
         if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'b' && !e.altKey) { e.preventDefault(); if (typeof centerTermPanel === 'function') centerTermPanel(); }
     }, true);
+})();
+
+// ══════════════════════════════════════════════════
+// LINK PANEL — ボード上に任意URLをiframeで開く（open/web/link）。window往復を殺す第一版。
+//   ⚠️描画コアには触れない。埋め込み拒否サイトは ↗ で新規タブへ。
+// ══════════════════════════════════════════════════
+(function initLinkPanel() {
+    const mainEl  = document.querySelector('main');
+    const panel   = document.getElementById('linkPanel');
+    const hd      = document.getElementById('lpHd');
+    const frame   = document.getElementById('lpFrame');
+    const titleEl = document.getElementById('lpTitle');
+    const grip    = document.getElementById('lpGrip');
+    const note    = document.getElementById('lpNote');
+    const btnTab  = document.getElementById('lpTab');
+    const btnClose= document.getElementById('lpClose');
+    if (!mainEl || !panel || !frame) return;
+
+    const LINKS_KEY = 'bm_links';
+    function normUrl(u) { u = String(u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; return u; }
+    function getLinks() { try { return JSON.parse(localStorage.getItem(LINKS_KEY) || '{}'); } catch (_) { return {}; } }
+    function saveLink(name, url) { const o = getLinks(); o[name] = normUrl(url); try { localStorage.setItem(LINKS_KEY, JSON.stringify(o)); } catch (_) {} }
+    function rmLink(name) { const o = getLinks(); delete o[name]; try { localStorage.setItem(LINKS_KEY, JSON.stringify(o)); } catch (_) {} }
+    window._getLinks = getLinks; window._saveLink = saveLink; window._rmLink = rmLink;
+
+    let _noteTimer = null;
+    function openLink(url, title) {
+        const u = normUrl(url); if (!u) return;
+        if (!panel.classList.contains('open')) {
+            const mr = mainEl.getBoundingClientRect();
+            const w = Math.min(560, mr.width - 40), h = Math.min(440, mr.height - 40);
+            panel.style.width = w + 'px'; panel.style.height = h + 'px';
+            panel.style.left = Math.max(20, Math.round((mr.width - w) / 2)) + 'px';
+            panel.style.top  = Math.max(20, Math.round((mr.height - h) / 2)) + 'px';
+        }
+        titleEl.textContent = title || u.replace(/^https?:\/\//, '');
+        panel.dataset.url = u;
+        frame.src = u;
+        panel.classList.add('open');
+        if (note) { note.classList.add('show'); clearTimeout(_noteTimer); _noteTimer = setTimeout(() => note.classList.remove('show'), 4200); }
+    }
+    window._openLink = openLink;
+
+    function closePanel() { panel.classList.remove('open'); frame.src = 'about:blank'; }
+    if (btnClose) btnClose.addEventListener('click', closePanel);
+    if (btnTab) btnTab.addEventListener('click', () => { const u = panel.dataset.url; if (u) window.open(u, '_blank', 'noopener'); });
+
+    // ── ヘッダードラッグで移動 ──
+    let drag = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    if (hd) {
+        hd.addEventListener('pointerdown', e => {
+            if (e.target.closest('.lp-btn')) return;
+            drag = true; sx = e.clientX; sy = e.clientY;
+            ox = parseFloat(panel.style.left) || 0; oy = parseFloat(panel.style.top) || 0;
+            hd.classList.add('dragging');
+            try { hd.setPointerCapture(e.pointerId); } catch (_) {}
+            e.preventDefault();
+        });
+        hd.addEventListener('pointermove', e => {
+            if (!drag) return;
+            const mr = mainEl.getBoundingClientRect();
+            let nx = ox + (e.clientX - sx), ny = oy + (e.clientY - sy);
+            nx = Math.max(-(panel.offsetWidth - 80), Math.min(nx, mr.width - 80));
+            ny = Math.max(0, Math.min(ny, mr.height - 34));
+            panel.style.left = nx + 'px'; panel.style.top = ny + 'px';
+            e.preventDefault();
+        });
+        const endDrag = () => { drag = false; hd.classList.remove('dragging'); };
+        hd.addEventListener('pointerup', endDrag);
+        hd.addEventListener('pointercancel', endDrag);
+    }
+    // ── グリップで拡縮 ──
+    if (grip) {
+        let rz = false, rsx = 0, rsy = 0, rw = 0, rh = 0;
+        grip.addEventListener('pointerdown', e => {
+            rz = true; rsx = e.clientX; rsy = e.clientY;
+            rw = panel.offsetWidth; rh = panel.offsetHeight;
+            try { grip.setPointerCapture(e.pointerId); } catch (_) {}
+            e.preventDefault(); e.stopPropagation();
+        });
+        grip.addEventListener('pointermove', e => {
+            if (!rz) return;
+            panel.style.width  = Math.max(260, rw + (e.clientX - rsx)) + 'px';
+            panel.style.height = Math.max(180, rh + (e.clientY - rsy)) + 'px';
+            e.preventDefault();
+        });
+        const endRz = () => { rz = false; };
+        grip.addEventListener('pointerup', endRz);
+        grip.addEventListener('pointercancel', endRz);
+    }
 })();
 
 // ══════════════════════════════════════════════════
