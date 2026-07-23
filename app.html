@@ -1902,9 +1902,11 @@
 
         <!-- Pen (click = opens pen-popover with width options) -->
         <button class="tool-btn" id="penBtn" data-tool="pen" title="Pen (P) · tap for width">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9.5 1.5L12.5 4.5L5 12L1 13L2 9L9.5 1.5Z"/>
-                <line x1="7.5" y1="3.5" x2="10.5" y2="6.5"/>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <!-- 鉛筆の芯側（角丸の先） -->
+                <path d="M15.9 4.1 a2.9 2.9 0 0 1 4.1 4.1 l-1.7 1.7 -4.1-4.1 z"/>
+                <!-- 軸 -->
+                <path d="M12.9 7.1 l4.1 4.1 -9.0 9.0 -5.0 1.6 a0.6 0.6 0 0 1 -0.76-0.76 l1.6-5.0 z"/>
             </svg>
         </button>
 
@@ -1920,9 +1922,11 @@
 
         <!-- Eraser -->
         <button class="tool-btn" data-tool="eraser" title="Eraser (E)">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 10L5.5 5L11 5L8.5 10Z"/>
-                <line x1="1.5" y1="12.5" x2="12.5" y2="12.5"/>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <!-- 角丸の消しゴム（斜め） -->
+                <rect x="4.5" y="9" width="15" height="8.2" rx="2" transform="rotate(-45 12 12)"/>
+                <!-- 消しゴムの分割線 -->
+                <line x1="9.7" y1="7.4" x2="15.5" y2="13.2"/>
             </svg>
         </button>
         <div class="tool-sep"></div>
@@ -1935,8 +1939,8 @@
             </svg>
         </button>
 
-        <!-- Fill — paint bucket with drip, opens #toolPopover -->
-        <button class="tool-btn" id="fillBtn" title="Fill (F)">
+        <!-- Fill — paint bucket with drip, opens #toolPopover （非表示：ツールから削除） -->
+        <button class="tool-btn" id="fillBtn" title="Fill (F)" style="display:none">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <!-- bucket body -->
                 <path d="M3 5.5 L2.2 11 L11.8 11 L11 5.5 Z"/>
@@ -1953,7 +1957,7 @@
 
         <!-- Text -->
         <button class="tool-btn" data-tool="text" title="Text (T)">T</button>
-        <button class="tool-btn" id="textStyleBtn" title="Text style — font / bold (selected text or sticky)">Aa</button>
+        <button class="tool-btn" id="textStyleBtn" title="Text style — font / bold (selected text or sticky)" style="display:none">Aa</button>
         <div class="tool-sep"></div>
 
         <!-- Upload Image -->
