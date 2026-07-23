@@ -1309,6 +1309,8 @@
             padding: 1.5px 6px; border-radius: 5px; white-space: nowrap; flex-shrink: 0;
         }
         .cmdk-hint  { color: rgba(255,255,255,0.40); font-size: 11px; margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 8px; }
+        /* ⭐項目右のショートカット バッジ（控えめに） */
+        .cmdk-sc { font-size: 9.5px; color: rgba(255,255,255,0.42); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.10); border-radius: 4px; padding: 1px 5px; white-space: nowrap; flex-shrink: 0; }
         .cmdk-empty { padding: 18px; text-align: center; color: rgba(255,255,255,0.35); font-size: 12px; }
         .cmdk-foot {
             display: flex; align-items: center; justify-content: space-between;
@@ -1338,6 +1340,16 @@
         .cmdk-detail-desc { color: rgba(255,255,255,0.60); font-size: 12px; line-height: 1.55; }
         .cmdk-detail-foot { margin-top: 10px; font-size: 10px; color: rgba(255,255,255,0.32); letter-spacing: 0.04em; }
         .cmdk-sect { padding: 4px 11px 6px; font-size: 9.5px; letter-spacing: 0.12em; color: rgba(255,255,255,0.30); }
+
+        /* ⭐リンク追加フォーム（パレット内サブビュー） */
+        #cmdkForm { display: none; padding: 16px 18px 8px; }
+        .lf-title { font-size: 11px; letter-spacing: 0.12em; color: rgba(255,255,255,0.55); margin-bottom: 15px; }
+        .lf-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .lf-label { width: 38px; font-size: 11px; color: rgba(255,255,255,0.45); flex-shrink: 0; }
+        #cmdkForm input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 9px; padding: 9px 12px; color: #f2efe8; caret-color: #f2efe8; font-family: inherit; font-size: 13px; outline: none; }
+        #cmdkForm input:focus { border-color: rgba(255,255,255,0.30); background: rgba(255,255,255,0.08); }
+        #cmdkForm input::placeholder { color: rgba(255,255,255,0.30); }
+        .lf-hint { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 8px; letter-spacing: 0.03em; }
 
         /* ══════════════════════════════════
            LINK PANEL — ボード上に任意URLをiframeで開く（window往復を殺す）
@@ -2625,6 +2637,13 @@
     <div class="cmdk-card" role="dialog" aria-label="Command palette">
         <input id="cmdkInput" type="text" placeholder="コマンドを検索…（calc / dark / t …）" autocomplete="off" spellcheck="false" autocapitalize="off">
         <div id="cmdkList"></div>
+        <!-- ⭐リンク追加フォーム（パレット内サブビュー） -->
+        <div id="cmdkForm" aria-hidden="true">
+            <div class="lf-title">↗ リンクを追加 / ADD LINK</div>
+            <div class="lf-row"><span class="lf-label">名前</span><input id="lfName" type="text" placeholder="ex（呼び出す名前）" autocomplete="off" spellcheck="false"></div>
+            <div class="lf-row"><span class="lf-label">URL</span><input id="lfUrl" type="text" placeholder="example.com" autocomplete="off" spellcheck="false"></div>
+            <div class="lf-hint">保存すると ⌘K から名前で呼び出せます · ↵ 保存 · Esc 戻る</div>
+        </div>
         <div class="cmdk-foot"><span>↑↓ 選択 · Esc 閉じる</span><span class="cmdk-foot-r"><span class="k">↵</span> 実行 · <span class="k">⌘K</span> 開閉</span></div>
     </div>
 </div>
@@ -9958,8 +9977,8 @@ const OMNI_CMDS = [
     { cmd:'2b',      cat:'grade',   hint:'芯を 2B に', kw:'鉛筆 pencil 芯 しん grade' },
     { cmd:'4b',      cat:'grade',   hint:'芯を 4B に', kw:'鉛筆 pencil 芯 しん grade' },
     { cmd:'6b',      cat:'grade',   hint:'芯を 6B に', kw:'鉛筆 pencil 芯 しん grade' },
-    { cmd:'float',   cat:'panel',   hint:'ターミナルを浮かす' },
-    { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す' },
+    { cmd:'float',   cat:'panel',   hint:'ターミナルを浮かす', sc:'⌘B' },
+    { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す', sc:'⌘B' },
     { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', args:true },
     { cmd:'clear',   cat:'edit',    hint:'ボードを消す' },
     { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す' },
@@ -9971,6 +9990,7 @@ const OMNI_CMDS = [
     { cmd:'sticky',  cat:'insert',  hint:'付箋を置く', args:true },
     { cmd:'bgm',     cat:'media',   hint:'BGM（bgm on / off）', args:true },
     { cmd:'usage',   cat:'help',    hint:'使い方 / ヘルプ' },
+    { cmd:'settings',cat:'help',    hint:'設定を開く（ボード/描き味/芯/壁紙）', sc:'⌘,', _settings:true, kw:'設定 setting 環境 preferences 歯車' },
     { cmd:'open',    cat:'link',    hint:'URLをボードに開く（open example.com）', args:true, kw:'url web リンク 開く browser サイト' },
     { cmd:'link',    cat:'link',    hint:'お気に入りURL（link add 名前 url / link 名前）', args:true, kw:'url web お気に入り リンク favorite ブックマーク' },
 ];
@@ -10055,9 +10075,12 @@ function centerTermPanel() {
     const overlay = document.getElementById('cmdkOverlay');
     const input   = document.getElementById('cmdkInput');
     const listEl  = document.getElementById('cmdkList');
+    const form    = document.getElementById('cmdkForm');
+    const lfName  = document.getElementById('lfName');
+    const lfUrl   = document.getElementById('lfUrl');
     if (!overlay || !input || !listEl) return;
 
-    let rows = [], sel = 0, awaitingArg = null;
+    let rows = [], sel = 0, awaitingArg = null, mode = 'list';
     const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?', link:'↗' };
     const isOpen = () => overlay.classList.contains('open');
     const isSub = (q, s) => { let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return true; } return q.length === 0; };
@@ -10076,12 +10099,20 @@ function centerTermPanel() {
 
     function cmdItem(it) {
         const cat = (typeof OMNI_CATS !== 'undefined' && OMNI_CATS[it.cat]) ? OMNI_CATS[it.cat] : (it.cat || '');
+        if (it._form) {   // ⭐パレット内フォームへ（リンク追加＝ターミナルに打たず⌘Kだけで完結）
+            return { kind:'form', ico:'＋', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '',
+                run() { enterForm(); } };
+        }
+        if (it._settings) {   // ⭐設定パネルを開く
+            return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '',
+                run() { close(); if (window._toggleSettings) window._toggleSettings(); } };
+        }
         if (it._url) {   // ⭐お気に入りリンク → 選ぶとボード上のiframe窓で開く
             return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: it.hint || it._url,
                 run() { close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
         }
         return {
-            kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: it.hint || (it.cmd + ' コマンド'),
+            kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: it.hint || (it.cmd + ' コマンド'), sc: it.sc || '',
             run() {
                 const q = input.value.trim(); const fsp = q.indexOf(' ');
                 const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
@@ -10116,7 +10147,7 @@ function centerTermPanel() {
             top = detailHtml(rows[0]);   // calc は結果ヒーローだけ上に（通常コマンドはクリーンなリスト＝Raycast）
         }
         const listRows = rows.map((r, i) =>
-            `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-ico">${esc(r.ico)}</span><span class="cmdk-name">${esc(r.name)}</span><span class="cmdk-sub">${esc(r.desc || '')}</span><span class="cmdk-type">${esc(r.type)}</span></div>`).join('');
+            `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-ico">${esc(r.ico)}</span><span class="cmdk-name">${esc(r.name)}</span><span class="cmdk-sub">${esc(r.desc || '')}</span>${r.sc ? '<span class="cmdk-sc">' + esc(r.sc) + '</span>' : ''}<span class="cmdk-type">${esc(r.type)}</span></div>`).join('');
         const sect = rows.length ? `<div class="cmdk-sect">${top ? 'アクション · ACTIONS' : (input.value.trim() ? 'コマンド · COMMANDS' : 'すべて · ALL')}</div>` : '';
         listEl.innerHTML = top + sect + listRows;
         const s = listEl.querySelector('.cmdk-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
@@ -10132,7 +10163,8 @@ function centerTermPanel() {
         // ⭐お気に入りリンクを候補プールに合流（⌘Kから直接開ける）
         const linksObj = (window._getLinks && window._getLinks()) || {};
         const linkPool = Object.keys(linksObj).map(n => ({ cmd: n, cat: 'link', hint: linksObj[n], _url: linksObj[n], kw: 'link リンク url お気に入り' }));
-        const POOL = OMNI_CMDS.concat(linkPool);
+        const formCmd = { cmd:'リンク追加', cat:'link', hint:'お気に入りURLをフォームで登録（⌘Kだけで完結）', _form:true, kw:'link add リンク 追加 お気に入り url favorite ブックマーク' };
+        const POOL = OMNI_CMDS.concat([formCmd], linkPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = [];
@@ -10144,8 +10176,26 @@ function centerTermPanel() {
         rows = rows.concat(cmds.map(cmdItem));
         sel = 0; render();
     }
-    function open()  { overlay.classList.add('open'); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
-    function close() { overlay.classList.remove('open'); }
+    function showList() { mode = 'list'; if (form) form.style.display = 'none'; if (listEl) listEl.style.display = ''; if (input) input.style.display = ''; }
+    function enterForm() {
+        mode = 'form';
+        if (form) form.style.display = 'block';
+        if (listEl) listEl.style.display = 'none';
+        if (input) input.style.display = 'none';
+        if (lfName) lfName.value = ''; if (lfUrl) lfUrl.value = '';
+        setTimeout(() => lfName && lfName.focus(), 0);
+    }
+    function exitForm() { showList(); if (input) input.focus(); refresh(); }
+    function saveForm() {
+        const n = ((lfName && lfName.value) || '').trim();
+        const u = ((lfUrl && lfUrl.value) || '').trim();
+        if (!n || !u) { if (!n && lfName) lfName.focus(); else if (lfUrl) lfUrl.focus(); return; }
+        if (window._saveLink) window._saveLink(n, u);
+        close();
+        if (window._openLink) window._openLink(u, n);   // 登録したらそのまま開く
+    }
+    function open()  { overlay.classList.add('open'); showList(); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
+    function close() { overlay.classList.remove('open'); showList(); }
     function toggle(){ isOpen() ? close() : open(); }
     window._openCmdK = open; window._toggleCmdK = toggle;
     function runSel() { const r = rows[sel]; if (r && typeof r.run === 'function') r.run(); }
@@ -10157,6 +10207,17 @@ function centerTermPanel() {
         else if (e.key === 'ArrowUp') { if (rows.length) { sel = (sel - 1 + rows.length) % rows.length; render(); } e.preventDefault(); }
         else if (e.key === 'Enter')   { e.preventDefault(); runSel(); }
         else if (e.key === 'Escape')  { e.preventDefault(); close(); }
+    });
+    // ⭐リンク追加フォームのキー操作（名前→URL→保存 / Esc で一覧に戻る）
+    if (lfName) lfName.addEventListener('keydown', e => {
+        if (e.isComposing || e.keyCode === 229) return;
+        if (e.key === 'Enter') { e.preventDefault(); if (lfUrl) lfUrl.focus(); }
+        else if (e.key === 'Escape') { e.preventDefault(); exitForm(); }
+    });
+    if (lfUrl) lfUrl.addEventListener('keydown', e => {
+        if (e.isComposing || e.keyCode === 229) return;
+        if (e.key === 'Enter') { e.preventDefault(); saveForm(); }
+        else if (e.key === 'Escape') { e.preventDefault(); exitForm(); }
     });
     listEl.addEventListener('mousedown', e => { const el = e.target.closest('.cmdk-item'); if (!el) return; e.preventDefault(); sel = +el.dataset.i; runSel(); });
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
