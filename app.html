@@ -1313,6 +1313,11 @@
         .cmdk-hint  { color: rgba(255,255,255,0.40); font-size: 11px; margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 8px; }
         /* ⭐項目右のショートカット バッジ（控えめに） */
         .cmdk-sc { font-size: 9.5px; color: rgba(255,255,255,0.42); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.10); border-radius: 4px; padding: 1px 5px; white-space: nowrap; flex-shrink: 0; }
+        /* ⭐お気に入り★（ワンクリックでトグル・モノクロ） */
+        .cmdk-star { font-size: 13px; color: rgba(255,255,255,0.3); cursor: pointer; opacity: 0; transition: opacity .12s, color .12s; flex-shrink: 0; padding: 0 2px; line-height: 1; }
+        .cmdk-item:hover .cmdk-star, .cmdk-item.sel .cmdk-star { opacity: 0.55; }
+        .cmdk-star:hover { color: #fff; opacity: 1; }
+        .cmdk-star.on { opacity: 1; color: rgba(255,255,255,0.92); }
         .cmdk-empty { padding: 18px; text-align: center; color: rgba(255,255,255,0.35); font-size: 12px; }
         .cmdk-foot {
             display: flex; align-items: center; justify-content: space-between;
@@ -10131,20 +10136,22 @@ function centerTermPanel() {
 
     function cmdItem(it) {
         const cat = (typeof OMNI_CATS !== 'undefined' && OMNI_CATS[it.cat]) ? OMNI_CATS[it.cat] : (it.cat || '');
+        const favKey = it._url ? ('link:' + it.cmd) : it.cmd;
+        const fav = isFav(favKey);
         if (it._form) {   // ⭐パレット内フォームへ（リンク追加＝ターミナルに打たず⌘Kだけで完結）
-            return { kind:'form', ico:'＋', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '',
+            return { kind:'form', ico:'＋', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '', favKey, fav, noFav: true,
                 run() { enterForm(); } };
         }
         if (it._settings) {   // ⭐設定パネルを開く
-            return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '',
+            return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '', favKey, fav,
                 run() { close(); if (window._toggleSettings) window._toggleSettings(); } };
         }
         if (it._url) {   // ⭐お気に入りリンク → 選ぶとボード上のiframe窓で開く
-            return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: it.hint || it._url,
+            return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: it.hint || it._url, favKey, fav,
                 run() { close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
         }
         return {
-            kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: it.hint || (it.cmd + ' コマンド'), sc: it.sc || '',
+            kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: it.hint || (it.cmd + ' コマンド'), sc: it.sc || '', favKey, fav,
             run() {
                 const q = input.value.trim(); const fsp = q.indexOf(' ');
                 const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
@@ -10178,10 +10185,20 @@ function centerTermPanel() {
         } else if (rows[0] && rows[0].kind === 'calc') {
             top = detailHtml(rows[0]);   // calc は結果ヒーローだけ上に（通常コマンドはクリーンなリスト＝Raycast）
         }
-        const listRows = rows.map((r, i) =>
-            `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-ico">${esc(r.ico)}</span><span class="cmdk-name">${esc(r.name)}</span><span class="cmdk-sub">${esc(r.desc || '')}</span>${r.sc ? '<span class="cmdk-sc">' + esc(r.sc) + '</span>' : ''}<span class="cmdk-type">${esc(r.type)}</span></div>`).join('');
-        const sect = rows.length ? `<div class="cmdk-sect">${top ? 'アクション · ACTIONS' : (input.value.trim() ? 'コマンド · COMMANDS' : 'すべて · ALL')}</div>` : '';
-        listEl.innerHTML = top + sect + listRows;
+        let listHtml = '';
+        const restLabel = input.value.trim() ? 'コマンド · COMMANDS' : 'すべて · ALL';
+        rows.forEach((r, i) => {
+            if (top) { if (i === 0) listHtml += '<div class="cmdk-sect">候補 · ACTIONS</div>'; }
+            else if (_favCount > 0) {
+                if (i === 0) listHtml += '<div class="cmdk-sect">お気に入り · FAVORITES</div>';
+                if (i === _favCount) listHtml += '<div class="cmdk-sect">' + restLabel + '</div>';
+            } else if (i === 0) {
+                listHtml += '<div class="cmdk-sect">' + restLabel + '</div>';
+            }
+            const star = r.noFav ? '' : `<span class="cmdk-star${r.fav ? ' on' : ''}" data-fav="${esc(r.favKey || '')}" title="お気に入り（右クリックでも）">${r.fav ? '★' : '☆'}</span>`;
+            listHtml += `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-ico">${esc(r.ico)}</span><span class="cmdk-name">${esc(r.name)}</span><span class="cmdk-sub">${esc(r.desc || '')}</span>${r.sc ? '<span class="cmdk-sc">' + esc(r.sc) + '</span>' : ''}${star}<span class="cmdk-type">${esc(r.type)}</span></div>`;
+        });
+        listEl.innerHTML = top + listHtml;
         const s = listEl.querySelector('.cmdk-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
     }
     function refresh() {
@@ -10199,13 +10216,20 @@ function centerTermPanel() {
         const POOL = OMNI_CMDS.concat([formCmd], linkPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
-        rows = [];
+        rows = []; _favCount = 0;
         const cv = (typeof safeCalc === 'function') ? safeCalc(full) : null;
         if (cv !== null) {
             rows.push({ kind:'calc', ico:'∑', name:'= ' + cv, type:'計算', expr: full, val: cv, desc:`${full} の計算結果。↵ でコピー。`, run() { copyText(cv); close(); } });
             rows.push({ kind:'action', ico:'✎', name:'ボードに置く', type:'メモ', desc:`結果「${cv}」を中央にテキストで配置`, run() { close(); try { pushHistory('t ' + cv); } catch (_) {} if (typeof runCommand === 'function') runCommand('t ' + cv); } });
+            rows = rows.concat(cmds.map(cmdItem));
+        } else {
+            // ⭐お気に入りを先頭に固めて表示（FAVORITES欄）
+            const items = cmds.map(cmdItem);
+            const favRows = items.filter(r => r.fav);
+            const rest = items.filter(r => !r.fav);
+            _favCount = favRows.length;
+            rows = favRows.concat(rest);
         }
-        rows = rows.concat(cmds.map(cmdItem));
         sel = 0; render();
     }
     function showList() { mode = 'list'; if (form) form.style.display = 'none'; if (listEl) listEl.style.display = ''; if (input) input.style.display = ''; }
@@ -10253,7 +10277,15 @@ function centerTermPanel() {
     });
     if (lfSave) lfSave.addEventListener('click', () => saveForm());
     if (lfCancel) lfCancel.addEventListener('click', () => exitForm());
-    listEl.addEventListener('mousedown', e => { const el = e.target.closest('.cmdk-item'); if (!el) return; e.preventDefault(); sel = +el.dataset.i; runSel(); });
+    listEl.addEventListener('mousedown', e => {
+        const star = e.target.closest('.cmdk-star');
+        if (star) { e.preventDefault(); e.stopPropagation(); toggleFav(star.dataset.fav); refresh(); return; }
+        const el = e.target.closest('.cmdk-item'); if (!el) return; e.preventDefault(); sel = +el.dataset.i; runSel();
+    });
+    listEl.addEventListener('contextmenu', e => {   // ⭐右クリックでお気に入り追加/解除
+        const el = e.target.closest('.cmdk-item'); if (!el) return; e.preventDefault();
+        const r = rows[+el.dataset.i]; if (r && !r.noFav && r.favKey) { toggleFav(r.favKey); refresh(); }
+    });
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
 
     window.addEventListener('keydown', e => {
