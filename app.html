@@ -284,11 +284,13 @@
         .logo-fallback .logo-ver  { font-size: 8px; color: #bbb; letter-spacing: 0.1em; margin-left: 2px; }
 
         /* ── Feedback modal ── */
+        /* ⭐SwiftUI風フロストに統一（設定/ボイス/⌘Kと同じ暗いガラスカード） */
         #feedbackOverlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(8,8,8,0.55);
+            background: rgba(0,0,0,0.42);
+            -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
             z-index: 10000;
             align-items: center;
             justify-content: center;
@@ -296,10 +298,12 @@
         #feedbackOverlay.open { display: flex; }
 
         #feedbackModal {
-            background: var(--wb);
-            border: 1px solid #111;
-            padding: 28px 32px 24px;
-            max-width: 400px;
+            background: linear-gradient(180deg, rgba(31,29,35,0.97) 0%, rgba(16,15,19,0.985) 100%);
+            border: 1px solid rgba(255,255,255,0.11);
+            border-radius: 16px;
+            box-shadow: 0 32px 100px rgba(0,0,0,0.66), inset 0 1px 0 rgba(255,255,255,0.06);
+            padding: 26px 28px 22px;
+            max-width: 420px;
             width: calc(100% - 48px);
             position: relative;
             font-family: var(--ui-mono);
@@ -307,38 +311,38 @@
 
         .fm-close {
             position: absolute;
-            top: 12px; right: 14px;
+            top: 13px; right: 15px;
             background: none;
             border: none;
-            font-size: 16px;
+            font-size: 15px;
             line-height: 1;
             cursor: pointer;
-            color: #888;
+            color: rgba(255,255,255,0.5);
             touch-action: manipulation;
             padding: 4px;
         }
-        .fm-close:hover { color: #111; }
+        .fm-close:hover { color: #fff; }
 
         .fm-eyebrow {
             font-size: 8px;
             letter-spacing: 0.22em;
-            color: #aaa;
+            color: rgba(255,255,255,0.4);
             margin-bottom: 14px;
         }
         .fm-title {
             font-size: 13px;
             font-weight: bold;
             letter-spacing: 0.1em;
-            color: #111;
+            color: #f2efe8;
             margin-bottom: 10px;
         }
         .fm-body {
             font-size: 11px;
             line-height: 1.8;
-            color: #555;
+            color: rgba(255,255,255,0.6);
             margin-bottom: 22px;
         }
-        .fm-body strong { color: #111; }
+        .fm-body strong { color: #fff; }
 
         .fm-mail-btn {
             display: flex;
@@ -347,9 +351,10 @@
             gap: 8px;
             width: 100%;
             min-height: 44px;
-            background: #111;
-            color: #FAFAF8;
+            background: #f2efe8;
+            color: #111;
             border: none;
+            border-radius: 10px;
             font-family: var(--ui-mono);
             font-size: 9px;
             letter-spacing: 0.2em;
@@ -359,11 +364,11 @@
             -webkit-tap-highlight-color: transparent;
             transition: background 0.15s;
         }
-        .fm-mail-btn:hover { background: #333; }
+        .fm-mail-btn:hover { background: #fff; }
 
         .fm-note {
             font-size: 8px;
-            color: #aaa;
+            color: rgba(255,255,255,0.35);
             letter-spacing: 0.1em;
             margin-top: 12px;
             text-align: center;
@@ -383,18 +388,20 @@
             gap: 7px;
             min-height: 44px;
             text-decoration: none;
-            color: #aaa;
+            color: rgba(255,255,255,0.5);
             font-family: var(--ui-mono);
             font-size: 9px;
             letter-spacing: 0.16em;
-            border: 1px solid #e0e0e0;
-            transition: color 0.15s, border-color 0.15s;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 9px;
+            background: rgba(255,255,255,0.03);
+            transition: color 0.15s, border-color 0.15s, background 0.15s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             overflow: hidden;
         }
         .fm-social-btn:hover,
-        .fm-ig-link:hover { color: #111; border-color: #999; }
+        .fm-ig-link:hover { color: #fff; border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.06); }
 
         .header-right {
             grid-column: 2;                 /* right column of header grid */
