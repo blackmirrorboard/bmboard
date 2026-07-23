@@ -1920,16 +1920,31 @@
             }
 
             .terminal-panel {
+                position: static;   /* ⭐モバイルは列フローに戻す（絶対配置だと全面を覆う＝崩れの原因） */
                 width: 100%;
                 flex: 1 1 auto;
                 min-height: 60px;
                 display: flex;
                 flex-direction: column;
+                background: rgba(14,13,16,0.96);
+                border-left: none;
+                box-shadow: none;
                 /* Kill the transform-based glitch animation on mobile —
                    a transformed ancestor becomes the containing block for
                    position:fixed descendants, which breaks the pinned input. */
                 animation: none !important;
             }
+            /* ⭐モバイルは背後の壁紙オーバーレイを出さない（絶対配置で全面を覆うため） */
+            #termWall { display: none !important; }
+            /* ⭐モバイルはフロート無効＝常に列ドック（デスクトップのfloat状態が残っても崩れない） */
+            body.bm-term-float .terminal-panel,
+            body.bm-term-float #termWall {
+                position: static !important;
+                inset: auto !important;
+                width: 100% !important; height: auto !important;
+                border-radius: 0 !important;
+            }
+            body.bm-term-float .resize-handle { display: flex !important; }
 
             /* Input row is pinned to the viewport bottom on mobile so resizing
                the canvas/terminal split never hides it. */
