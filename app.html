@@ -545,6 +545,20 @@
 
         .w-btn:hover  { background: #f4f4f4; border-color: #ddd; }
         .w-btn.active { background: #efefef; border-color: #999; color: var(--wb-icon-active); }
+        /* ⭐鉛筆スライダー＆グレード */
+        .pcl-range { -webkit-appearance:none; appearance:none; width:120px; height:3px; border-radius:2px;
+            background:#ccc; outline:none; margin:2px 0; }
+        .pcl-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px;
+            border-radius:50%; background:#1a1a18; cursor:pointer; }
+        .pcl-range::-moz-range-thumb { width:14px; height:14px; border:none; border-radius:50%; background:#1a1a18; cursor:pointer; }
+        .g-btn { min-width:30px; height:26px; padding:0 6px; font-family:'Space Mono',monospace; font-size:.6rem;
+            border:1px solid #ddd; border-radius:5px; background:#fff; color:#555; cursor:pointer; }
+        .g-btn:hover { background:#f4f4f4; }
+        .g-btn.active { background:#1a1a18; color:#fff; border-color:#1a1a18; }
+        body.bm-dark .pcl-range, body.bm-gray .pcl-range { background:var(--bm-tb-border); }
+        body.bm-dark .pcl-range::-webkit-slider-thumb, body.bm-gray .pcl-range::-webkit-slider-thumb { background:var(--bm-tb-icon); }
+        body.bm-dark .g-btn, body.bm-gray .g-btn { background:transparent; color:var(--bm-tb-icon); border-color:var(--bm-tb-border); }
+        body.bm-dark .g-btn.active, body.bm-gray .g-btn.active { background:var(--bm-accent); color:#fff; border-color:var(--bm-accent); }
 
         .w-dot {
             border-radius: 50%;
@@ -2202,6 +2216,22 @@
             <span class="w-dot" style="width:10px;height:10px"></span>
         </button>
     </div>
+    <!-- ⭐鉛筆モードのときだけ出る：太さ・濃さスライダー＋芯グレード -->
+    <div id="pencilExtra" style="display:none;">
+        <div class="pop-sep-line"></div>
+        <span class="pop-label">太さ</span>
+        <div class="pop-row"><input id="pencilWidth" class="pcl-range" type="range" min="1" max="9" step="0.5" value="2.5"></div>
+        <span class="pop-label">濃さ</span>
+        <div class="pop-row"><input id="pencilDark" class="pcl-range" type="range" min="10" max="200" step="5" value="90"></div>
+        <span class="pop-label">しん（芯）</span>
+        <div class="pop-row" id="pencilGrades">
+            <button class="g-btn" data-g="2h">2H</button>
+            <button class="g-btn" data-g="hb">HB</button>
+            <button class="g-btn" data-g="2b">2B</button>
+            <button class="g-btn" data-g="5b">5B</button>
+            <button class="g-btn" data-g="6b">6B</button>
+        </div>
+    </div>
 </div>
 
 <!-- Shape Popover — ○ △ □ → + Fill (position:fixed, never clipped) -->
@@ -3815,7 +3845,8 @@ function onUp() {
             const eps = 1.4 / VIEW.scale;
             let pts = rdpSimplify(raw, eps);
             if (closed && pts.length > 1) pts[pts.length - 1] = { ...pts[0] };
-            const obj = { id, type: 'stroke', data: { pts, lw: S.lineWidth, rotation: 0, fill: null, closed, mode: S.drawMode }, selected: false };
+            const obj = { id, type: 'stroke', data: { pts, lw: S.lineWidth, rotation: 0, fill: null, closed, mode: S.drawMode,
+                ...(S.drawMode === 'pencil' ? { grade: PENCIL_GRADE, dark: PENCIL_DARK } : {}) }, selected: false };
             S.objects.push(obj);
             if (!closed) {
                 clearTimeout(detectTimer);
@@ -4121,7 +4152,7 @@ function _ensureGrain() {
             const n1 = _pnoise(x * 0.7 + y * 0.25, y * 0.7);   // tooth の凸凹（大きめ）
             const n2 = _pnoise(x * 2.4 - y * 1.1, x * 0.5 + y * 2.2);  // 繊維の細かさ
             const n  = n1 * 0.64 + n2 * 0.36;
-            const a  = n > 0.60 ? Math.min(150, (n - 0.60) * 150 * 2.6) : 0;
+            const a  = n > 0.58 ? Math.min(200, (n - 0.58) * 200 * 3.0) : 0;   // 白粒を強くくっきり
             const i  = (y * N + x) * 4;
             img.data[i] = 0; img.data[i+1] = 0; img.data[i+2] = 0; img.data[i+3] = a;
         }
@@ -4137,32 +4168,33 @@ function _applyPaperGrain() {
     if (!pat) return;
     const dpr = window.devicePixelRatio || 1;
     ctx.save();
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // ⭐ワールド（紙）座標で紙目を掛ける＝パン/ズームで紙ごと動く。
+    //   画面固定だと線を動かしたとき「grainが上に乗ってる」感が出る（木下の指摘）。
+    ctx.setTransform(VIEW.scale * dpr, 0, 0, VIEW.scale * dpr, VIEW.tx * dpr, VIEW.ty * dpr);
 
-    // ⭐画像・付箋は削らない ─ 紙の目は「鉛筆が乗る面」に対するもので、
-    //   貼った写真までザラつかせると別物になる。evenodd で穴を空けて除外する。
+    // 画像・付箋は削らない（ワールド座標そのまま）
     const holes = [];
     for (const o of S.objects) {
         if (o.type !== 'image' && o.type !== 'sticky') continue;
         const b = (typeof getObjBounds === 'function') ? getObjBounds(o) : null;
         if (b) holes.push(b);
     }
+    // 可視ワールド矩形
+    const x0 = -VIEW.tx / VIEW.scale, y0 = -VIEW.ty / VIEW.scale;
+    const vw = CW / VIEW.scale, vh = CH / VIEW.scale;
     if (holes.length) {
         ctx.beginPath();
-        ctx.rect(0, 0, CW, CH);
+        ctx.rect(x0, y0, vw, vh);
         for (const b of holes) {
-            const pad = 1;   // 端に薄い縁が出ないよう少し広げる
-            ctx.rect(b.x * VIEW.scale + VIEW.tx - pad,
-                     b.y * VIEW.scale + VIEW.ty - pad,
-                     b.w * VIEW.scale + pad * 2,
-                     b.h * VIEW.scale + pad * 2);
+            const pad = 1 / VIEW.scale;
+            ctx.rect(b.x - pad, b.y - pad, b.w + pad * 2, b.h + pad * 2);
         }
         ctx.clip('evenodd');
     }
 
     ctx.globalCompositeOperation = 'destination-out';
     ctx.fillStyle = pat;
-    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillRect(x0, y0, vw, vh);
     ctx.restore();
 }
 
@@ -4248,8 +4280,8 @@ function _pencilDab(r, g, b) {
             const d = Math.hypot(dx, dy);
             let a = 0;
             if (d < 1) {
-                // ⭐滑らかな soft disc（=shape）。粒々は grain 側で抜くのでここでは付けない。
-                a = Math.pow(1 - d, 1.6);
+                // ⭐硬い芯＋小さな羽化＝縁がくっきり（見本カスタム）。羽化しすぎると線がぼやける。
+                a = d < 0.58 ? 1 : Math.pow(1 - (d - 0.58) / 0.42, 1.2);
             }
             const i = (y * S + x) * 4;
             img.data[i] = r; img.data[i+1] = g; img.data[i+2] = b;
@@ -4299,7 +4331,7 @@ let PENCIL_DARK = (() => {
 //   →「濃い連続線＋細かい白粒」＝本物の鉛筆。tooth で線をスキップすると散らばった点になる(失敗)
 //   ・1粒は薄く source-over で累積＝overlapで濃くなる階調（研究[3]）
 //   ・ptA(消し量)が低い所は薄くなる＝かすれ・跡（消しゴムと接続）
-function _drawPencilLine(pts, lw, r, g, b, baseA, ptA) {
+function _drawPencilLine(pts, lw, r, g, b, baseA, ptA, grade, dark) {
     const n = pts.length;
     if (n < 2) return;
     const q = new Array(n);
@@ -4307,12 +4339,18 @@ function _drawPencilLine(pts, lw, r, g, b, baseA, ptA) {
         const v = (ptA && ptA[i] != null) ? ptA[i] : 1;
         q[i] = Math.max(0, Math.min(1, v));
     }
-    const G     = PENCIL_GRADES[PENCIL_GRADE] || PENCIL_GRADES.hb;
+    // ⭐グレード/濃さは「その線が描かれた時の値」を使う（未指定なら現在のペン設定）。
+    //   ＝過去の線は当時の芯・濃さのまま。設定変更を遡って反映しない。
+    const G     = PENCIL_GRADES[grade || PENCIL_GRADE] || PENCIL_GRADES.hb;
+    const D     = (dark != null) ? dark : PENCIL_DARK;
     const dab   = _pencilDab(r, g, b);
     const width = Math.max(1.2, lw * (0.5 + G.w * 0.75));   // 線幅（グレードで太さ変化）
-    const dsz   = Math.max(2.5, width * 1.7);               // 粒径（縁が羽化＝芯≒width）
-    const sp    = Math.max(0.5, dsz * 0.13);                // 密＝連続した線に見せる
-    const perStamp = baseA * G.a * PENCIL_DARK * 0.11;      // 1粒は薄く／累積で濃く
+    // ⭐硬い芯(2H)ほど粒を締めてシャープに／柔らかい芯(6B)ほど広げて滲む。
+    //   thr が高い=硬い→係数を小さく。鮮明さは芯で変わる。
+    const tight = 1.25 + (0.62 - G.thr) * 1.6;             // 2H≈1.25 / 6B≈1.68
+    const dsz   = Math.max(2.2, width * tight);             // 粒径（縁が羽化＝芯≒width）
+    const sp    = Math.max(0.45, dsz * 0.12);               // 密＝連続した線に見せる
+    const perStamp = baseA * G.a * D * 0.11;                // 1粒は薄く／累積で濃く
 
     ctx.save();
     let carry = 0;
@@ -4342,7 +4380,7 @@ function renderStrokePencil(obj) {
     const f = _fadeStroke(obj.data.stroke || _pencilInk(), 0);
     const r = f ? f.r : 58, g = f ? f.g : 58, b = f ? f.b : 56;
     const baseA = f ? f.alpha : 1;
-    (PENCIL_GRAIN ? _drawPencilLine : _drawPencilPath)(pts, lw || 2.5, r, g, b, baseA, obj.data.ptA);
+    (PENCIL_GRAIN ? _drawPencilLine : _drawPencilPath)(pts, lw || 2.5, r, g, b, baseA, obj.data.ptA, obj.data.grade, obj.data.dark);
     if (obj.selected) {
         const bb = strokeBBox(pts);
         selBox(bb.x, bb.y, bb.w, bb.h);
@@ -4837,7 +4875,8 @@ function commitPath(closed) {
         const id = genId();
         const obj = {
             id, type: 'stroke',
-            data: { pts: flat, lw: S.lineWidth, rotation: 0, fill: null, closed: !!closed, mode: S.drawMode },
+            data: { pts: flat, lw: S.lineWidth, rotation: 0, fill: null, closed: !!closed, mode: S.drawMode,
+                ...(S.drawMode === 'pencil' ? { grade: PENCIL_GRADE, dark: PENCIL_DARK } : {}) },
             selected: false,
         };
         S.objects.push(obj);
@@ -9393,6 +9432,8 @@ function setTool(tool) {
     }
     S.pathHover = null; S.pathSnapClose = false; S.pathDrag = null;
     S.hoveredId = null; S.lastAnchorPt = null; document.body.style.cursor = '';
+    // ⭐別ツールに切り替えたら鉛筆ポップオーバーを閉じる（pen のままなら開いたまま）
+    if (tool !== 'pen' && typeof closePenPopover === 'function') closePenPopover();
     S.tool = tool;
     // Update [data-tool] active states (excludes #shapeBtn which has no data-tool)
     document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool===tool));
@@ -9860,6 +9901,7 @@ penBtn.addEventListener('click', e => {
     closeShapePopover(); closeFillPopover();
     if (wasOpen) { closePenPopover(); return; }
     openPenPopover();
+    if (typeof _syncPencilUI === 'function') _syncPencilUI();   // ⭐鉛筆UIの表示/値を同期
 });
 
 function setLineWidth(w) {
@@ -9872,6 +9914,46 @@ penPopover.querySelectorAll('.w-btn').forEach(btn => {
         e.stopPropagation(); playClick(false);
         setLineWidth(parseFloat(btn.dataset.w));
         closePenPopover();
+    });
+});
+
+// ⭐鉛筆モードの太さ・濃さスライダー＋芯グレード（ポップオーバー内・pencil時のみ表示）
+const _pencilExtra = document.getElementById('pencilExtra');
+const _pencilWidth = document.getElementById('pencilWidth');
+const _pencilDark  = document.getElementById('pencilDark');
+function _syncPencilUI() {
+    const on = (S.drawMode === 'pencil');
+    if (_pencilExtra) _pencilExtra.style.display = on ? 'block' : 'none';
+    if (!on) return;
+    if (_pencilWidth) _pencilWidth.value = S.lineWidth;
+    if (_pencilDark)  _pencilDark.value  = Math.round(PENCIL_DARK * 100);
+    document.querySelectorAll('#pencilGrades .g-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.g === PENCIL_GRADE));
+}
+if (_pencilWidth) {
+    _pencilWidth.addEventListener('input', e => {
+        e.stopPropagation();
+        S.lineWidth = parseFloat(_pencilWidth.value);
+        document.querySelectorAll('.w-btn').forEach(b => b.classList.remove('active'));
+    });
+    // ⚠️操作後フォーカスを外す（残るとSpaceパン等のキーを吸う）
+    _pencilWidth.addEventListener('change', () => _pencilWidth.blur());
+}
+if (_pencilDark) {
+    _pencilDark.addEventListener('input', e => {
+        e.stopPropagation();
+        // ⭐次に描く線の濃さだけ変える（過去の線は焼き込み済みなので変わらない）
+        PENCIL_DARK = Math.max(0.1, parseFloat(_pencilDark.value) / 100);
+        try{localStorage.setItem('bm_dark', String(PENCIL_DARK));}catch{}
+    });
+    _pencilDark.addEventListener('change', () => _pencilDark.blur());
+}
+document.querySelectorAll('#pencilGrades .g-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+        e.stopPropagation(); playClick(false);
+        // ⭐次に描く線の芯だけ変える（過去の線は変わらない）
+        PENCIL_GRADE = btn.dataset.g; try{localStorage.setItem('bm_grade', PENCIL_GRADE);}catch{}
+        _syncPencilUI();
     });
 });
 
@@ -9995,7 +10077,14 @@ shapePopover.querySelectorAll('[data-stroke]').forEach(btn => {
 });
 
 // Close all popovers on any outside click
-document.addEventListener('click', () => { closeFillPopover(); closeShapePopover(); closePenPopover(); closeTextStylePopover(); });
+// ⭐鉛筆ポップオーバーは「描いても閉じない」＝キャンバス描画では閉じない。
+//   内側クリック（スライダー操作）でも閉じない。閉じるのは鉛筆ボタンのトグル or 別ツール選択。
+document.addEventListener('click', (e) => {
+    const inPen    = penPopover && penPopover.contains(e.target);
+    const onCanvas = e.target.closest && e.target.closest('#cp');
+    closeFillPopover(); closeShapePopover(); closeTextStylePopover();
+    if (!inPen && !onCanvas) closePenPopover();
+});
 
 // ── Text style popover (font / bold) — applies to the selected text / sticky ──
 const textStyleBtn = document.getElementById('textStyleBtn');
@@ -10191,8 +10280,10 @@ document.addEventListener('keydown', e => {
     // even when the terminal input is focused but empty)
     if (e.code === 'Space' && !e.repeat) {
         const t = e.target;
-        const typingNonEmpty = (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
-                               && typeof t.value === 'string' && t.value.length > 0;
+        // ⚠️range スライダーは value が常に非空だが「入力中」ではない＝Spaceでパンできるべき
+        const isTextInput = (t.tagName === 'TEXTAREA' || t.isContentEditable
+                             || (t.tagName === 'INPUT' && t.type !== 'range' && t.type !== 'checkbox'));
+        const typingNonEmpty = isTextInput && typeof t.value === 'string' && t.value.length > 0;
         if (!typingNonEmpty) {
             e.preventDefault();
             S.spaceDown = true;
