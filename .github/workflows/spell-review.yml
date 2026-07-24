@@ -1,0 +1,67 @@
+name: 魔法の自動一次審査 / Spell auto-review
+
+# 魔法(spell)が提出されたら機械チェックして結果をコメントする。
+# ⚠️自動マージはしない。最終判断は必ず人が行う。
+on:
+  issues:
+    types: [opened, edited, labeled]
+
+# 必要最小限（Issueにコメント/ラベルを付けるだけ）
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  review:
+    # spell-submission ラベルが付いているものだけ
+    if: contains(github.event.issue.labels.*.name, 'spell-submission')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 審査する
+        id: review
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          OUT_FILE: review-comment.md
+        run: node .github/scripts/review-spell.mjs
+
+      - name: 結果をコメントする
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('review-comment.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            // 前回の自動チェックコメントがあれば更新する（何度も増やさない）
+            const mark = '<!-- spell-auto-review -->';
+            const list = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
+            const mine = list.data.find(c => c.user.type === 'Bot' && c.body.includes(mark));
+            const payload = mark + '\n' + body;
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body: payload });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: payload });
+            }
+
+            // 通らなかったものは needs-changes を付けて、通ったら外す
+            const passed = '${{ steps.review.outputs.passed }}' === 'true';
+            const LABEL = 'needs-changes';
+            const cur = (context.payload.issue.labels || []).map(l => l.name);
+            try {
+              if (!passed && !cur.includes(LABEL)) {
+                await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [LABEL] });
+              } else if (passed && cur.includes(LABEL)) {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number, name: LABEL });
+              }
+            } catch (e) {
+              // ラベルが未作成でも審査自体は成立させる（コメントは既に付いている）
+              core.info('ラベル操作をスキップ: ' + e.message);
+            }

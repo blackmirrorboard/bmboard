@@ -50,6 +50,26 @@ sakura のような手続き的アニメ。`action` に JavaScript 本文を入�
 
 ---
 
+## 自動チェック / Automatic review
+
+提出すると **すぐに自動チェックが走って結果がコメントされます**（`.github/workflows/spell-review.yml`）。
+直すところがあれば `needs-changes` が付きます。本文を編集すれば再チェックされます。
+
+Submitting triggers an **automatic check** that comments the result right away. If something needs fixing you'll get the `needs-changes` label — edit the issue body and it re-runs.
+
+見ているもの / What it checks:
+- JSON として読めるか・`name` が使える文字か・**既存の魔法と名前がかぶっていないか**
+- 宣言的(`ops`)なら `type` が白リスト（`square` / `sticky` / `text` / `circle` / `triangle` / `arrow`）だけか
+- コード(`action`)なら **禁止API**（`fetch` / `document` / `localStorage` / `eval` / `new Function` / `navigator` / `location` など）を使っていないか
+- `BM.` で呼んでいるものが **BM API に実在するか**
+- 構文が通るか（**実行はしません**）
+- ⚠️ `setInterval` を使うなら `window._<name>Id` に id を持たせて**2回目の実行で止まるトグル**になっているか
+
+⚠️ **通過しても自動では公開されません。** 最終判断は必ず人が行います（特にコード魔法は中身を読んでから）。
+⚠️ **Passing does not publish it.** A human always makes the final call.
+
+---
+
 ## 提出のしかた / How to submit
 
 1. アプリで魔法を作る（**設定 → 魔法タブ → ✨ コードから作る**、または選択して `spell 名前`）
