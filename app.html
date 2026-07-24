@@ -9015,6 +9015,8 @@ function safeCalc(expr) {
     return null;
 }
 
+// ⭐runtimeメッセージ用の簡易 言語ヘルパ（printRaw/enqueue の中で使う）
+function _L(ja, en) { return (typeof LANG !== 'undefined' && LANG === 'en') ? en : ja; }
 function runCommand(val) {
     if (!val) return;
 
@@ -9172,7 +9174,7 @@ function runCommand(val) {
         const map = getSnips();
         if (verb === 'list' || !sub) {
             const ks = Object.keys(map);
-            printRaw(!ks.length ? (en?'no snippets — try: snip add hello こんにちは':'スニペット無し — 例: snip add 挨拶 こんにちは')
+            printRaw(!ks.length ? (en?'no snippets — try: snip add hi hello':'スニペット無し — 例: snip add 挨拶 こんにちは')
                                 : (en?'snippets: ':'スニペット: ') + ks.join(' · '), 't-dim');
             return;
         }
@@ -9229,7 +9231,7 @@ function runCommand(val) {
         const obj = BM.create('text', { text: txt, fontSize: Math.max(8, Math.round(28 / VIEW.scale)) });
         S.selectedId = obj.id;
         BM.save(); BM.redraw();
-        enqueue(`$ t ${txt}`, ['→ 中央にテキストを配置（ドラッグで移動 / ダブルクリックで編集）']);
+        enqueue(`$ t ${txt}`, [_L('→ 中央にテキストを配置（ドラッグで移動 / ダブルクリックで編集）','→ placed text at center (drag to move / double-click to edit)')]);
         return;
     }
     if (head==='todo') {
@@ -9238,7 +9240,7 @@ function runCommand(val) {
         const obj = BM.create('text', { text: '☐ ' + txt, fontSize: Math.max(8, Math.round(28 / VIEW.scale)) });
         S.selectedId = obj.id;
         BM.save(); BM.redraw();
-        enqueue(`$ todo ${txt}`, ['→ 中央に ToDo を配置']);
+        enqueue(`$ todo ${txt}`, [_L('→ 中央に ToDo を配置','→ placed a to-do at center')]);
         return;
     }
     // ── ⭐URL-in-board: open / web / link（任意URLをボード上のiframe窓で開く＝window往復を殺す） ──
@@ -9246,14 +9248,14 @@ function runCommand(val) {
         const u = rest.trim();
         if (!u) { printRaw(head + ': URLを指定（例: ' + head + ' example.com）', 't-err'); return; }
         if (window._openLink) window._openLink(u);
-        enqueue(`$ ${head} ${u}`, ['→ ボード上に開く（表示されない場合は窓右上の ↗ で新規タブ）']);
+        enqueue(`$ ${head} ${u}`, [_L('→ ボード上に開く（表示されない場合は窓右上の ↗ で新規タブ）','→ opened on the board (if blank, use ↗ at the top-right to open a new tab)')]);
         return;
     }
     if (head==='link') {
         const sub = rest.trim();
         const links = (window._getLinks && window._getLinks()) || {};
         const madd = sub.match(/^add\s+(\S+)\s+(.+)$/i);
-        if (madd) { if (window._saveLink) window._saveLink(madd[1], madd[2]); enqueue('$ link add', ['→ お気に入り追加: ' + madd[1] + ' → ' + madd[2], '→ link ' + madd[1] + ' / ⌘Kからも開ける']); return; }
+        if (madd) { if (window._saveLink) window._saveLink(madd[1], madd[2]); enqueue('$ link add', [_L('→ お気に入り追加: ','→ favorite added: ') + madd[1] + ' → ' + madd[2], '→ link ' + madd[1] + _L(' / ⌘Kからも開ける',' / also from ⌘K')]); return; }
         const mrm = sub.match(/^(?:rm|remove|del)\s+(\S+)$/i);
         if (mrm) { if (window._rmLink) window._rmLink(mrm[1]); enqueue('$ link rm', ['→ 削除: ' + mrm[1]]); return; }
         if (!sub || sub==='list' || sub==='ls') {
@@ -9261,7 +9263,7 @@ function runCommand(val) {
             enqueue('$ link', names.length ? ['→ お気に入り: ' + names.join(' · '), '→ link <名前> で開く · link add <名前> <url> で追加'] : ['→ お気に入りは空。link add <名前> <url> で追加']);
             return;
         }
-        if (links[sub]) { if (window._openLink) window._openLink(links[sub], sub); enqueue(`$ link ${sub}`, ['→ ' + sub + ' を開く']); return; }
+        if (links[sub]) { if (window._openLink) window._openLink(links[sub], sub); enqueue(`$ link ${sub}`, [_L('→ ',_L('→ ','→ open ')) + sub + _L(' を開く','')]); return; }
         printRaw('link: "' + sub + '" は未登録。link add ' + sub + ' <url> で追加', 't-err');
         return;
     }
@@ -9339,12 +9341,12 @@ function runCommand(val) {
         const sub = rest.trim().toLowerCase();
         const floating = !!(window._termIsFloat && window._termIsFloat());
         if (sub===''||sub==='?'||sub==='status') {
-            enqueue('$ panel', [`→ mode: ${floating ? 'floating window' : 'docked right'}`, floating ? '→ ヘッダーをドラッグで移動 · 右下で拡縮 · panel dock で戻す' : `→ terminal width: ${getTermWidthPct()}%`, '→ panel <15-75> · panel reset · panel float · panel dock']);
+            enqueue('$ panel', [`→ mode: ${floating ? 'floating window' : 'docked right'}`, floating ? _L('→ ヘッダーをドラッグで移動 · 右下で拡縮 · panel dock で戻す','→ drag the header to move · resize at bottom-right · panel dock to redock') : `→ terminal width: ${getTermWidthPct()}%`, '→ panel <15-75> · panel reset · panel float · panel dock']);
             return;
         }
         if (sub==='float') {
             if (window._termFloat) window._termFloat();
-            enqueue('$ panel float', ['→ terminal: floating window', '→ ヘッダーをドラッグで移動 · 右下グリップで拡縮 · ダブルクリック/panel dock で戻す']);
+            enqueue('$ panel float', ['→ terminal: floating window', _L('→ ヘッダーをドラッグで移動 · 右下グリップで拡縮 · ダブルクリック/panel dock で戻す','→ drag header to move · grip to resize · double-click / panel dock to redock')]);
             return;
         }
         if (sub==='dock') {
@@ -9384,7 +9386,7 @@ function runCommand(val) {
     // ── float / dock 単体エイリアス ──
     if (head==='float') {
         if (window._termFloat) window._termFloat();
-        enqueue('$ float', ['→ terminal: floating window', '→ ヘッダーをドラッグで移動 · 右下グリップで拡縮 · dock で戻す']);
+        enqueue('$ float', ['→ terminal: floating window', _L('→ ヘッダーをドラッグで移動 · 右下グリップで拡縮 · dock で戻す','→ drag header to move · grip to resize · dock to redock')]);
         return;
     }
     if (head==='dock') {
@@ -9426,8 +9428,8 @@ function runCommand(val) {
         PENCIL_GRADE = head; try{localStorage.setItem('bm_grade', head);}catch{}
         if (S.drawMode!=='pencil') { S.drawMode='pencil'; try{localStorage.setItem('bm_drawMode','pencil');}catch{} document.body.classList.add('bm-paper'); }
         redrawAll();
-        enqueue(`$ ${head}`, ['→ 鉛筆: ' + PENCIL_GRADES[head].name,
-                              '  2h / h / hb / 2b / 4b / 5b / 6b で切替']);
+        enqueue(`$ ${head}`, [_L('→ 鉛筆: ','→ pencil: ') + _L(PENCIL_GRADES[head].name, head.toUpperCase()),
+                              _L('  2h / h / hb / 2b / 4b / 5b / 6b で切替','  switch with 2h / h / hb / 2b / 4b / 5b / 6b')]);
         return;
     }
 
