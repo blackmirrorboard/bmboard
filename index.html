@@ -3,36 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BMBOARD — where designer's intuition meets hacker's command</title>
-<meta name="description" content="An infinite canvas terminal. Draw. Speak. Cast. Every command is a spell — JSON-portable, shareable, remixable. Black Mirror Board v1.2.">
-<meta property="og:title" content="BMBOARD — draw, speak, cast">
-<meta property="og:description" content="Where a designer's intuition meets a hacker's command. One HTML file. Zero dependencies.">
+<title>BM BOARD — A whiteboard that feels like paper and pencil ／ 紙と鉛筆の手ざわりで考えるホワイトボード</title>
+<meta name="description" content="BM BOARD は、紙と鉛筆の手ざわりでデジタルを使うためのホワイトボード（無限キャンバス）です。鉛筆で書きなぐり、紙を裏返し、消しカスを払う。覚えるのは ⌘K ひとつだけ。ブラウザだけで動き、アカウント登録もサーバーも不要、オフラインでも使えて無料。よく使う操作は「魔法」として保存し、他の人に配れます。— A whiteboard that feels like paper and pencil. Scribble, flip the sheet over, sweep away the crumbs. One shortcut to remember: ⌘K. No account, no server, works offline, free.">
+<meta name="keywords" content="ホワイトボード,無限キャンバス,手書き,鉛筆,ペン,アイデア出し,図解,ブレスト,無料,オフライン,whiteboard,infinite canvas,drawing,sketching">
+<meta property="og:title" content="BM BOARD — 紙と鉛筆の手ざわりで考える、ブラウザのホワイトボード">
+<meta property="og:description" content="鉛筆で書きなぐり、紙を裏返し、消しカスを払う。覚えるのは ⌘K ひとつ。アカウント不要・オフラインで動くホワイトボード。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://bmboard.studio/">
 <meta property="og:image" content="https://bmboard.studio/og-image.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:site_name" content="BMBOARD">
+<meta property="og:site_name" content="BM BOARD">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="BMBOARD — draw, speak, cast">
-<meta name="twitter:description" content="Where a designer's intuition meets a hacker's command. One HTML file. Zero dependencies.">
+<meta name="twitter:title" content="BM BOARD — A whiteboard that feels like paper and pencil">
+<meta name="twitter:description" content="Scribble in pencil, flip the sheet over, sweep away the crumbs. One shortcut to remember: ⌘K. No account, no server, works offline.">
 <meta name="twitter:image" content="https://bmboard.studio/og-image.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Black Mirror Board",
-  "alternateName": "BMBOARD",
+  "name": "BM BOARD",
+  "alternateName": ["Black Mirror Board", "BMBOARD", "ブラックミラーボード"],
   "url": "https://bmboard.studio/",
-  "description": "Where a designer's intuition meets a hacker's command. An infinite canvas terminal — draw, speak, cast spells.",
+  "inLanguage": ["ja", "en"],
+  "description": "紙と鉛筆の手ざわりでデジタルを使うためのホワイトボード。鉛筆で書きなぐり、紙を裏返し、消しカスを払える。覚えるのは ⌘K のコマンドパレットひとつだけ。ブラウザだけで動き、アカウント登録もサーバーも不要で、描いたデータは端末の中に残る。よく使う操作は「魔法」として保存でき、他の人に配ることもできる。",
+  "abstract": "A whiteboard that feels like paper and pencil. Runs entirely in the browser — no account, no server, works offline.",
   "applicationCategory": "DesignApplication",
-  "operatingSystem": "Any",
+  "applicationSubCategory": "Whiteboard / Infinite canvas",
+  "operatingSystem": "Any (web browser)",
+  "browserRequirements": "Requires a modern browser. Works offline. No installation.",
+  "softwareVersion": "1.4",
+  "featureList": [
+    "鉛筆と紙の描き味（芯の濃さ・紙目・消しカス）",
+    "紙を裏返して裏面に書ける（表がうっすら透ける）",
+    "⌘K コマンドパレット（お気に入り・最近使った・自分でショートカットを割り当て）",
+    "キーボードだけで図形を置いて動かして矢印でつなげる",
+    "付箋・テキスト・図形・画像・GIF",
+    "PNG / SVG / PowerPoint / GIF / 動画 で書き出し",
+    "「魔法」を自分で作って保存・書き出し・他の人に配る",
+    "STORE から他の人が作った魔法をインストール",
+    "アカウント不要・サーバー不要・オフラインで動く",
+    "日本語 / English"
+  ],
   "offers": {
     "@type": "Offer",
     "price": "0",
-    "priceCurrency": "USD"
+    "priceCurrency": "JPY"
   },
+  "isAccessibleForFree": true,
   "author": {
     "@type": "Person",
     "name": "木下 貴博",
@@ -51,6 +72,63 @@
       "addressCountry": "JP"
     }
   }
+}
+</script>
+<!-- ⭐「BM BOARDとは何か」を機械可読で言い切る。AIや検索にターミナル管理ツールと誤解されないための一次情報 -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "BM BOARD とは何ですか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ブラウザで動くホワイトボード（無限キャンバス）です。紙と鉛筆の手ざわりでデジタルを使えることを目指して作られていて、鉛筆で書きなぐる、紙を裏返して裏に書く、消しカスを払う、といったことができます。アイデア出し・図解・下書き・議事のための「考える面」です。ターミナルのコマンド管理ツールではありません。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "何ができますか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "手で描く、付箋やテキストを置く、図形を並べて矢印でつなぐ、画像やGIFを貼る、PNG・SVG・PowerPoint・GIF・動画で書き出す、といったことができます。絵を描くのが苦手な人のために、キーボードだけで図形を選んで動かして整列させて図解を組み立てることもできます。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "コマンドやターミナルは必須ですか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "いいえ。ペンで描くだけでも使えます。コマンドは「メニューを探さなくていい近道」として用意されているもので、⌘K を押して思いついた言葉を打てば候補が出るので、覚える必要はありません。ターミナル表示は隠せます。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "「魔法（spell）」とは何ですか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ボードの上でできることを、名前を付けて保存したものです。たとえば選んだ図形の並びを保存して何度でも置き直したり、桜を降らせるような動きのあるものを作ったりできます。JSON として書き出せるので、他の人に配ったり、STORE に提出して全員が使えるようにしたりできます。AI に JSON を書いてもらって貼り付けることもできます。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "アカウント登録やお金は必要ですか？データはどこに保存されますか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "どちらも不要で、無料です。サーバーにアップロードされず、描いたデータはあなたの端末の中（ブラウザのローカル保存）に残ります。オフラインでも動きます。他の端末に持っていきたいときは .json ファイルとして保存します。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "誰が作っていますか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "滋賀県のデザインスタジオ「kinoshita studio（木下スタジオ）」の木下貴博が個人で作っています。"
+      }
+    }
+  ]
 }
 </script>
 <!-- Favicons (logo-based: black smiley on white) -->
@@ -446,6 +524,21 @@ html[data-theme="light"] .hero-logo { filter: none; }
     text-align: center;
 }
 .hero-tagline em { font-style: normal; color: var(--ink); font-weight: 700; }
+/* ⭐正体を言い切る一行。詩的なタグラインの下に置く＝人にもAIにも「何であるか」が最初に伝わる */
+.hero-define {
+    font-size: clamp(13px, 1.5vw, 15.5px);
+    line-height: 2;
+    letter-spacing: 0.02em;
+    color: var(--dim);
+    opacity: 0.72;
+    max-width: 56ch;
+    margin: 22px auto 0;
+    text-align: center;
+    text-wrap: balance;          /* 行末で語が割れないように */
+    word-break: keep-all;        /* 日本語で「ホワイトボー／ド」を防ぐ */
+    overflow-wrap: anywhere;     /* 狭い画面では最終手段として折る */
+}
+.hero-define b { font-weight: 400; color: var(--ink); opacity: 0.92; }
 .hero-cta {
     display: inline-flex; align-items: center; gap: 14px;
     font-size: 12px; letter-spacing: 0.26em;
@@ -997,6 +1090,9 @@ footer {
     <p class="hero-tagline lang-en">Where Designer's Intuition<br><em>meets</em> Hacker's Command.</p>
     <p class="hero-tagline lang-ja">デザイナーの直感と、<em>ハッカーの</em>コマンドが<br>交差する場所。</p>
 
+    <p class="hero-define lang-en"><b>A whiteboard that feels like paper and pencil.</b><br>Scribble in pencil, flip the sheet over, sweep away the crumbs.<br>No account. No server. Works offline. Free.</p>
+    <p class="hero-define lang-ja"><b>紙と鉛筆の手ざわりで考える、ブラウザのホワイトボード。</b><br>鉛筆で書きなぐり、紙を裏返し、消しカスを払う。<br>アカウント登録なし・オフラインでも動く・無料。</p>
+
     <a class="hero-cta" href="./app" data-launch>launch</a>
 
     <div class="hero-meta">
@@ -1024,10 +1120,12 @@ footer {
 
     <div class="split">
         <div>
-            <p class="en lang-en">A pressure-sensitive pen engine. Strokes snap to close. Eight anchors bend every shape. Rotation feels like Illustrator — not a browser demo. Nothing stutters at 60fps.</p>
-            <p class="jp lang-ja">筆圧の重みを読む鉛筆。始点近くで止めれば線は自動で閉じる。8つのアンカーが形を曲げ、回転は Illustrator のそれに近い。ブラウザのデモではなく、道具の仕事。60fps で止まらない。</p>
-            <p class="en lang-en">Themes are a single word: <code>dark</code>, <code>light</code>, <code>gray</code>. Your file is yours — no account, no server, no upload.</p>
-            <p class="jp lang-ja">テーマは一語で切り替わる。<code>dark</code>, <code>light</code>, <code>gray</code>。アカウントは無い。サーバーも無い。あなたのファイルは、あなたのディスクに。</p>
+            <p class="en lang-en">It opens as pencil on paper. The lead catches the grain, the pressure reads as weight, and the crumbs stay where you rubbed. Sweep them away, or <em>flip the sheet over</em> and keep writing on the back — the front bleeds through, faintly, the way it does on real paper.</p>
+            <p class="jp lang-ja">開くと、鉛筆と紙です。芯が紙の目に引っかかり、筆圧が重さになり、消した所には消しカスが残る。払ってもいいし、<em>紙を裏返して</em>裏に書き続けてもいい。表がうっすら透けるところまで、本物の紙と同じように。</p>
+            <p class="en lang-en">Prefer a clean line? One word — <code>classic</code> — and the pencil becomes a pen, the paper becomes a board. Strokes snap closed, anchors bend every shape, rotation feels like Illustrator. 60fps, no stutter.</p>
+            <p class="jp lang-ja">かっちり描きたい時は一語、<code>classic</code>。鉛筆がペンになり、紙が板に戻ります。始点近くで止めれば線は閉じ、アンカーが形を曲げ、回転は Illustrator のそれに近い。60fps で止まりません。</p>
+            <p class="en lang-en">Themes are a single word: <code>dark</code>, <code>light</code>, <code>gray</code> — the board changes color, not the room around it. Your file is yours: no account, no server, no upload.</p>
+            <p class="jp lang-ja">テーマも一語。<code>dark</code>, <code>light</code>, <code>gray</code>。色が変わるのはボード自身で、まわりの道具は動きません。アカウントは無い。サーバーも無い。描いたものは、あなたの端末の中に。</p>
         </div>
 
         <div class="demo-frame board-demo" aria-hidden="true">
@@ -1064,10 +1162,12 @@ footer {
         </div>
 
         <div>
-            <p class="en lang-en">Paste a JSON payload. A new spell installs. Type its name. Your canvas bends to its will. Spells live in IndexedDB — portable, remixable, yours.</p>
-            <p class="jp lang-ja">JSON をペーストする。新しい呪文がインストールされ、名前を呼べばキャンバスは従う。呪文は IndexedDB に眠り、いつでも他人と交換できる。</p>
+            <p class="en lang-en"><b>You never have to memorise any of this.</b> Press <code>⌘K</code> and type what you want — the palette suggests the rest, remembers what you used last, and lets you bind your own shortcuts. The terminal is for people who like typing; everything it does is reachable by hand, too.</p>
+            <p class="jp lang-ja"><b>これを覚える必要は、ありません。</b><code>⌘K</code> を押して、やりたいことを打つ。候補が出て、最近使ったものが上に並び、自分でショートカットも割り当てられます。ターミナルは打つのが好きな人のためのもので、同じことは全部、手でも届きます。</p>
+            <p class="en lang-en">Save what you just arranged as a <b>spell</b> — a name for something the board can do. Paste a JSON payload and a new one installs. Spells are portable, remixable, and yours to hand out.</p>
+            <p class="jp lang-ja">いま並べたものは <b>魔法</b> として保存できます。ボードの上でできることに、名前を付けたもの。JSON を貼れば新しい魔法が入り、書き出して人に配ることもできます。</p>
             <p class="en lang-en"><b>Features are not bought. They are shared as spells.</b></p>
-            <p class="jp lang-ja"><b>機能は買うものではない。呪文として共有するものだ。</b></p>
+            <p class="jp lang-ja"><b>機能は買うものではない。魔法として共有するものだ。</b></p>
             <p class="en lang-en">An AI can write your next spell. Paste the BM API into Claude or ChatGPT, describe what you want, get back a JSON. The ecosystem grows one sentence at a time.</p>
             <p class="jp lang-ja">次の呪文は AI に書かせられる。BM API を Claude や ChatGPT に貼り、自然言語で依頼すれば、動く JSON が返ってくる。エコシステムは、一文ずつ育つ。</p>
         </div>
@@ -1102,10 +1202,12 @@ footer {
         <div class="persp">
             <h3><span class="lang-en">Hacker</span><span class="lang-ja">ハッカー</span></h3>
             <ul>
-                <li class="lang-en">Terminal, JSON, spells — the mind commands</li>
-                <li class="lang-ja">ターミナル、JSON、呪文 — 知性が命じる</li>
+                <li class="lang-en">⌘K, JSON, spells — the mind commands</li>
+                <li class="lang-ja">⌘K、JSON、魔法 — 知性が命じる</li>
+                <li class="lang-en"><b>Can't draw? Build the diagram with the keyboard alone</b> — Tab to select, arrows to nudge, <code>connect</code> to link, <code>align</code> to tidy</li>
+                <li class="lang-ja"><b>絵が描けなくても、キーボードだけで図解できる</b> — Tab で選び、矢印で動かし、<code>connect</code> でつなぎ、<code>align</code> で揃える</li>
                 <li class="lang-en">Register a spell in one line of JS</li>
-                <li class="lang-ja">1 行の JS で、新しい呪文を登録できる</li>
+                <li class="lang-ja">1 行の JS で、新しい魔法を登録できる</li>
                 <li class="lang-en">Paste from SNS, drop a .json, bundle everything</li>
                 <li class="lang-ja">SNS から拾い、ファイルで配り、まとめて運ぶ</li>
                 <li class="lang-en">IndexedDB persistence · offline · forever yours</li>
@@ -2214,8 +2316,8 @@ function bmClear() {
 function bmVersion() {
     const ja = currentLang() === 'ja';
     printEntry(ja
-        ? 'BMBOARD スプラッシュ v1.2 · エンジン本体は app.html に同梱'
-        : 'BMBOARD splash v1.2 · engine bundled as app.html', 'ok');
+        ? 'BM BOARD スプラッシュ v1.4 · エンジン本体は app.html に同梱'
+        : 'BM BOARD splash v1.4 · engine bundled as app.html', 'ok');
     printEntry(ja
         ? '— プリセット: scatter · grid-3x3 · sticky-3x3 · sakura · rain · leaf · snow · powerpoint · biwako-blue · make-img · monoclo · svg'
         : '— presets: scatter · grid-3x3 · sticky-3x3 · sakura · rain · leaf · snow · powerpoint · biwako-blue · make-img · monoclo · svg', 'dim');
