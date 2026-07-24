@@ -2954,6 +2954,7 @@
                 <div class="set-submit-actions">
                     <span class="set-cmdbtn" id="spellSubmitCopy" data-i18n="submit.copy">JSONをコピー</span>
                     <span class="set-cmdbtn" id="spellSubmitDl" data-i18n="submit.download">JSONを保存</span>
+                    <span class="set-cmdbtn primary" id="spellSubmitGh" data-i18n="submit.github">🐙 GitHubで公開申請</span>
                 </div>
             </div>
         </div>
@@ -10866,6 +10867,33 @@ tiEl.addEventListener('paste', e => {
       if (dlb) dlb.addEventListener('click', () => {
           if (!ta || !box) return;
           if (typeof bmDeliverJson === 'function') bmDeliverJson(ta.value, `bmstore-entry-${box.dataset.name || 'spell'}.json`);
+      });
+      const gh = overlay.querySelector('#spellSubmitGh');
+      if (gh) gh.addEventListener('click', () => {
+          if (!ta || !box) return;
+          const REPO = 'blackmirrorboard/bmboard';   // STORE(catalog.json)のリポジトリ
+          const name = box.dataset.name || 'spell';
+          const isCode = /"action"\s*:/.test(ta.value);
+          const body = [
+              '## 魔法の提出 / Spell submission',
+              '',
+              '**name:** `' + name + '`',
+              isCode ? '⚠️ **コード魔法（JS）です。実行時にコードが走ります。** レビューをお願いします。' : '',
+              '',
+              '下の JSON を `store/catalog.json` の `spells` に追記してください（author はご自身の名前に）。',
+              '',
+              '```json',
+              ta.value,
+              '```',
+          ].filter(x => x !== null).join('\n');
+          const url = 'https://github.com/' + REPO + '/issues/new?title=' + encodeURIComponent('[spell] ' + name) + '&labels=' + encodeURIComponent('spell-submission') + '&body=' + encodeURIComponent(body);
+          if (url.length > 7500) {   // URL長すぎ＝GitHubが弾く可能性→コピーに誘導
+              try { navigator.clipboard && navigator.clipboard.writeText(ta.value); } catch (_) {}
+              window.open('https://github.com/' + REPO + '/issues/new?title=' + encodeURIComponent('[spell] ' + name) + '&labels=spell-submission&body=' + encodeURIComponent('JSON をコピー済みです。ここに貼り付けてください。\n\n```json\n（ここに貼る）\n```'), '_blank', 'noopener');
+              if (typeof printRaw === 'function') printRaw('JSONが長いのでクリップボードにコピーしました。開いたIssueに貼ってください', 't-dim');
+          } else {
+              window.open(url, '_blank', 'noopener');
+          }
       }); }
     // ⭐コードから魔法を作る（AI→貼付→登録して試す）
     const _AI_PROMPT = [
@@ -11009,7 +11037,7 @@ const I18N = {
         'spells.fromSelf': '自作', 'spells.fromStore': 'STORE', 'spells.fromImport': '読込', 'spells.fromCode': 'コード', 'spells.edit': '編集', 'create.descPh': '説明',
         'submit.title': '📤 STOREに提出する',
         'submit.steps': '① 下のJSON（アイコン/説明/コード全部入り）をコピー　② 管理者にGitHub PR か メールで送る　③ 承認されるとSTOREに並びます（author を自分の名前に）',
-        'submit.copy': 'JSONをコピー', 'submit.download': 'JSONを保存',
+        'submit.copy': 'JSONをコピー', 'submit.download': 'JSONを保存', 'submit.github': '🐙 GitHubで公開申請',
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
         'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
         'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
@@ -11052,7 +11080,7 @@ const I18N = {
         'spells.fromSelf': 'mine', 'spells.fromStore': 'STORE', 'spells.fromImport': 'imported', 'spells.fromCode': 'code', 'spells.edit': 'Edit', 'create.descPh': 'description',
         'submit.title': '📤 Submit to STORE',
         'submit.steps': '① Copy the JSON below (icon/desc/code all included)　② Send it to a maintainer via GitHub PR or email　③ Once approved it appears in the STORE (set author to your name)',
-        'submit.copy': 'Copy JSON', 'submit.download': 'Save JSON',
+        'submit.copy': 'Copy JSON', 'submit.download': 'Save JSON', 'submit.github': '🐙 Submit via GitHub',
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
         'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
         'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
