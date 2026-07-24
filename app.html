@@ -689,11 +689,10 @@
         /* ⭐紙をひっくり返す：ミラーは canvas 描画側で実施（入力/pan/zoom も一致）。ここは紙裏オーバーレイのみ */
         #flipOverlay {
             position: absolute; inset: 0; z-index: 11; display: none;
-            background: rgba(250,248,242,0.8);   /* ⭐裏写りは薄め＝紙裏を濃くして表の透けを弱く */
-            pointer-events: none;   /* ⭐入力透過＝裏面でも pan/zoom できる（ヒントだけ拾う） */
+            background: transparent;   /* ⭐フェードはオブジェクト単位(redrawAll)で行う＝裏で描いた線は濃いまま */
+            pointer-events: none;      /* 入力透過＝裏面でも pan/zoom できる（ヒントだけ拾う） */
         }
         #cp.bm-flipped #flipOverlay { display: block; }
-        body.bm-dark #flipOverlay, body.bm-gray #flipOverlay { background: rgba(18,18,20,0.8); }
         .flip-hint {
             position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
             display: inline-flex; align-items: center; gap: 8px;
@@ -3335,8 +3334,10 @@ const BOARD_SIZES = {
 let BOARD_SIZE = 'free';
 try { BOARD_SIZE = localStorage.getItem('bm_board_size') || 'free'; } catch (_) {}
 if (!(BOARD_SIZE in BOARD_SIZES)) BOARD_SIZE = 'free';
-// ⭐紙をひっくり返す（v1＝見る：CSS水平ミラー＋紙裏オーバーレイで"表が薄く透ける"。描画/保存/入力コアは不変）
+// ⭐紙をひっくり返す（canvas描画側でX反転＝入力/pan/zoom一致）。各オブジェクトは描いた側(side)を持ち、
+//   "見ていない側"だけ薄く裏写り＝表↔裏で対称。裏で描いた線は裏を見てる間は濃いまま。
 let BOARD_FLIPPED = false;
+const FLIP_BLEED_ALPHA = 0.16;     // 見えない側の透け具合（小さいほど薄い）
 // 裏返す前に、内容（ボードサイズ指定時はページ）を画面にフィット＝"どこ行った"を防ぐ
 function fitContentView() {
     if (BOARD_SIZE !== 'free') { fitBoardView(); if (typeof redrawAll === 'function') redrawAll(); return; }
@@ -3361,6 +3362,9 @@ function toggleBoardFlip(force) {
     const cp = document.getElementById('cp'); if (!cp) return;
     const want = (typeof force === 'boolean') ? force : !cp.classList.contains('bm-flipped');
     if (want && !BOARD_FLIPPED) fitContentView();   // ⭐裏返す時だけ内容を画面中央にフィット（見失わない）
+    // ⭐今いる側で描いた未タグのオブジェクトを、その側でタグ付け（以後は"見えない側"で薄くなる）
+    const oldSide = BOARD_FLIPPED ? 'back' : 'front';
+    if (S.objects) S.objects.forEach(o => { if (!o.side) o.side = oldSide; });
     if (want) {   // ⭐裏面に入る＝表の選択を解除（裏だから選択ハンドルを残さない）
         S.selectedId = null; S.multiSelected = [];
         if (S.objects) S.objects.forEach(o => { o.selected = false; });
@@ -4729,7 +4733,12 @@ function redrawAll() {
     else
         ctx.setTransform(VIEW.scale*dpr, 0, 0, VIEW.scale*dpr, VIEW.tx*dpr, VIEW.ty*dpr);
     drawBoardFrame();   // ⭐紙の枠（ボードサイズ指定時のみ・オブジェクトの背後）
-    for (const obj of S.objects) renderObject(obj);
+    const _viewSide = BOARD_FLIPPED ? 'back' : 'front';
+    for (const obj of S.objects) {
+        const _objSide = obj.side || _viewSide;   // 未タグ＝今いる側
+        if (_objSide !== _viewSide) { ctx.save(); ctx.globalAlpha = FLIP_BLEED_ALPHA; renderObject(obj); ctx.restore(); }   // 見えない側＝薄く裏写り
+        else renderObject(obj);
+    }
     if (S.isDown && isShapeTool(S.tool) && S.startPt && S.curPt) renderPreview();
     // Pen stroke in-progress (snap state changes trigger full redraw)
     if (S.tool === 'pen' && S.penPts.length > 1) renderPenInProgress();
@@ -11893,6 +11902,47 @@ function duplicateSelection() {
     const dx = 20 / VIEW.scale, dy = 20 / VIEW.scale;
     _cloneInto(tpls, dx, dy);
 }
+
+// ══════════════════════════════════════════════════
+// ⭐魔法(spell)＝ボード上でできることを1コマンド化。STORE で配れるよう
+//   「宣言的なボードデータ」だけを保存（任意JSは含めない＝安全に共有可）。
+//   v1: 選択したオブジェクトを魔法として保存 → 実行でビュー中心にスタンプ。
+// ══════════════════════════════════════════════════
+const SPELLS_KEY = 'bm_spells';
+function getSpells() { try { return JSON.parse(localStorage.getItem(SPELLS_KEY) || '[]'); } catch (_) { return []; } }
+function saveSpells(a) { try { localStorage.setItem(SPELLS_KEY, JSON.stringify(a)); } catch (_) {} }
+function _spellBounds(objs) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const o of objs) { const b = getObjBounds(o); if (!b) continue; minX = Math.min(minX, b.x); minY = Math.min(minY, b.y); maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h); }
+    if (!isFinite(minX)) return null;
+    return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, w: maxX - minX, h: maxY - minY };
+}
+function addSpellFromSelection(name) {
+    const ids = _selectedIds();
+    if (!ids.length) return { ok: false, reason: 'no-selection' };
+    const objs = S.objects.filter(o => ids.includes(o.id)).map(o => { const c = JSON.parse(JSON.stringify(o)); delete c.selected; delete c.id; return c; });
+    const nm = (name || '').trim() || ('魔法' + (getSpells().length + 1));
+    const a = getSpells();
+    a.unshift({ v: 1, name: nm, objects: objs, count: objs.length, created: Date.now() });
+    saveSpells(a);
+    return { ok: true, name: nm, count: objs.length };
+}
+function runSpell(spell) {
+    if (!spell || !Array.isArray(spell.objects) || !spell.objects.length) return;
+    const tpls = spell.objects.map(o => JSON.parse(JSON.stringify(o)));   // id は _cloneInto が付与
+    const b = _spellBounds(tpls);
+    const vc = (typeof BM !== 'undefined' && BM.viewCenter) ? BM.viewCenter() : { x: 0, y: 0 };
+    const dx = b ? (vc.x - b.cx) : 0, dy = b ? (vc.y - b.cy) : 0;
+    _cloneInto(tpls, dx, dy);   // ビュー中心にスタンプ（新ID・選択状態）
+}
+function forgetSpell(name) {
+    const a = getSpells(); const i = a.findIndex(s => s.name === name);
+    if (i < 0) return false; a.splice(i, 1); saveSpells(a); return true;
+}
+window._getSpells = getSpells;
+window._runSpell = runSpell;
+window._addSpellFromSelection = addSpellFromSelection;
+window._forgetSpell = forgetSpell;
 
 // ── Select all (Cmd+A) ─ pulls every object on the board into multi-select ──
 function selectAllObjects() {
