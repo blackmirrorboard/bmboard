@@ -2836,7 +2836,7 @@
         <button class="fm-close" id="feedbackClose" aria-label="Close">✕</button>
         <div class="fm-eyebrow">KINOSHITA STUDIO — BLACK MIRROR v1.3</div>
         <div class="fm-title" id="feedbackTitle">◼ FEEDBACK &amp; CONTACT</div>
-        <div class="fm-body">
+        <div class="fm-body" data-i18n-html="fb.body">
             このプロトタイプへの<strong>要望・アイデア・バグ報告</strong>を歓迎します。<br>
             あなたの声が次のバージョンを形づくります。<br><br>
             <strong>Draw to Build.</strong> — 一緒に育てましょう。
@@ -2850,7 +2850,7 @@
             </svg>
             SEND FEEDBACK — hello@kinoshitastudio.com
         </a>
-        <div class="fm-note">メーラーが起動します · no tracking · local only</div>
+        <div class="fm-note" data-i18n="fb.note">メーラーが起動します · no tracking · local only</div>
         <div class="fm-social-row">
             <a class="fm-social-btn"
                href="https://x.com/bmboards"
@@ -10274,7 +10274,9 @@ const I18N = {
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
         'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
         'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
-        'setcmd.cName': '名前', 'setcmd.cDesc': '説明', 'setcmd.cHot': 'ショートカット'
+        'setcmd.cName': '名前', 'setcmd.cDesc': '説明', 'setcmd.cHot': 'ショートカット',
+        'fb.body': 'このプロトタイプへの<strong>要望・アイデア・バグ報告</strong>を歓迎します。<br>あなたの声が次のバージョンを形づくります。<br><br><strong>Draw to Build.</strong> — 一緒に育てましょう。',
+        'fb.note': 'メーラーが起動します · no tracking · local only'
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
@@ -10296,13 +10298,16 @@ const I18N = {
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
         'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
         'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
-        'setcmd.cName': 'Name', 'setcmd.cDesc': 'Description', 'setcmd.cHot': 'Hotkey'
+        'setcmd.cName': 'Name', 'setcmd.cDesc': 'Description', 'setcmd.cHot': 'Hotkey',
+        'fb.body': 'We welcome your <strong>requests, ideas, and bug reports</strong> for this prototype.<br>Your voice shapes the next version.<br><br><strong>Draw to Build.</strong> — let’s grow it together.',
+        'fb.note': 'Opens your mail app · no tracking · local only'
     }
 };
 function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
 function getLang() { return LANG; }
 function applyLang() {
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n-html')); });   // 自前辞書のみ（信頼済HTML）
     document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
     document.querySelectorAll('[data-i18n-title]').forEach(el => { el.setAttribute('title', t(el.getAttribute('data-i18n-title'))); });
     document.documentElement.setAttribute('lang', LANG);
@@ -10608,8 +10613,9 @@ function centerTermPanel() {
         rows = []; _favCount = 0; _recentCount = 0;
         const cv = (typeof safeCalc === 'function') ? safeCalc(full) : null;
         if (cv !== null) {
-            rows.push({ kind:'calc', ico:'∑', name:'= ' + cv, type:'計算', expr: full, val: cv, desc:`${full} の計算結果。↵ でコピー。`, run() { copyText(cv); close(); } });
-            rows.push({ kind:'action', ico:'✎', name:'ボードに置く', type:'メモ', desc:`結果「${cv}」を中央にテキストで配置`, run() { close(); try { pushHistory('t ' + cv); } catch (_) {} if (typeof runCommand === 'function') runCommand('t ' + cv); } });
+            const enL = (LANG === 'en');
+            rows.push({ kind:'calc', ico:'∑', name:'= ' + cv, type: catLabel('calc'), expr: full, val: cv, desc: enL ? `Result of ${full}. ↵ to copy.` : `${full} の計算結果。↵ でコピー。`, run() { copyText(cv); close(); } });
+            rows.push({ kind:'action', ico:'✎', name: enL ? 'Place on board' : 'ボードに置く', type: catLabel('capture'), desc: enL ? `Place “${cv}” as text at center` : `結果「${cv}」を中央にテキストで配置`, run() { close(); try { pushHistory('t ' + cv); } catch (_) {} if (typeof runCommand === 'function') runCommand('t ' + cv); } });
             rows = rows.concat(cmds.map(cmdItem));
         } else {
             const items = cmds.map(cmdItem);
