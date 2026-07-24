@@ -216,7 +216,7 @@ nav.stuck{border-bottom-color:var(--line);background:rgba(8,8,10,.82)}
 .pill{
   display:inline-flex;align-items:center;gap:9px;font-size:12px;color:var(--dim);
   padding:6px 15px;border-radius:100px;border:1px solid var(--line);
-  background:rgba(255,255,255,.04);backdrop-filter:blur(10px);margin-bottom:30px;
+  background:rgba(255,255,255,.04);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin-bottom:30px;
 }
 .pill b{color:var(--warm);font-weight:500}
 h1{
@@ -232,7 +232,7 @@ h1 .grad{background:linear-gradient(120deg,var(--accent),var(--accent2) 52%,var(
 .btn2{
   padding:12px 24px;border-radius:11px;font-size:14px;font-weight:600;
   border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);
-  backdrop-filter:blur(12px);transition:.22s;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:.22s;
 }
 .btn2:hover{background:rgba(255,255,255,.11);transform:translateY(-1px)}
 .btn1{
@@ -353,6 +353,18 @@ footer{border-top:1px solid var(--line);padding:44px 0;font-size:12.5px;color:va
   .duo.rev .txt{order:0}
   section{padding:82px 0}
   .win{transform:none}
+}
+/* ⭐モバイル：オーロラが vw 基準だと小さすぎて、パネルの背後に refract する光が無くなる。
+   画面いっぱいに広げて縦にも散らし、パネルはわずかに薄くして光を通す */
+@media(max-width:880px){
+  .aurora i{filter:blur(70px);opacity:.62}
+  .aurora i:nth-child(1){width:125vw;height:125vw;left:-38vw;top:-30vh}
+  .aurora i:nth-child(2){width:110vw;height:110vw;right:-42vw;top:24vh}
+  .aurora i:nth-child(3){width:115vw;height:115vw;left:-30vw;top:62vh}
+  .typer,.card,.final .box{background:rgba(22,22,26,.46)}
+  nav{background:rgba(8,8,10,.5)}
+  nav.stuck{background:rgba(8,8,10,.72)}
+  .btn2{background:rgba(255,255,255,.07)}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
