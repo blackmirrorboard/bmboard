@@ -9062,7 +9062,8 @@ function runCommand(val) {
         return;
     }
     // ⭐ボードサイズ（board a4 / a3 / b5 / letter / square / a4l / free）
-    if (head==='board' || head==='size') {
+    // ⭐引数なしの `board` は既存の「紙→黒板に戻す」を残す（size は引数ありのときだけ）
+    if ((head==='board' && rest.trim() !== '') || head==='size') {
         const k = rest.trim().toLowerCase().replace(/\s+/g, '');
         const alias = { a4landscape:'a4l', 'a4横':'a4l', 横:'a4l', 正方形:'square', 無限:'free', none:'free', なし:'free' };
         const key = (typeof BOARD_SIZES !== 'undefined' && BOARD_SIZES.hasOwnProperty(k)) ? k : (alias[k] || '');
@@ -9313,7 +9314,8 @@ function runCommand(val) {
         printRaw('bgm: usage → bgm 1 on / bgm 2 on / bgm 3 on / bgm off', 't-err');
         return;
     }
-    if (head==='dark'||low==='dark mode') { if(MODE==='dark'){printRaw('[SYSTEM] already in dark mode.','t-dim');return;} enqueue('[SYSTEM] Switching to DARK MODE...',['[SYSTEM] inverting color matrix...','[SYSTEM] canvas: #000000  stroke: #F0EDE6','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('dark'),220); return; }
+    // ⭐`dark 90` は鉛筆の濃さ（下の handler）に譲る。引数なしの `dark` だけがテーマ切替
+    if ((head==='dark' && !/^\d/.test(rest.trim()))||low==='dark mode') { if(MODE==='dark'){printRaw('[SYSTEM] already in dark mode.','t-dim');return;} enqueue('[SYSTEM] Switching to DARK MODE...',['[SYSTEM] inverting color matrix...','[SYSTEM] canvas: #000000  stroke: #F0EDE6','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('dark'),220); return; }
     if (head==='light'||low==='light mode') { if(MODE==='light'){printRaw('[SYSTEM] already in light mode.','t-dim');return;} enqueue('[SYSTEM] Switching to LIGHT MODE...',['[SYSTEM] restoring color matrix...','[SYSTEM] canvas: #FAFAF8  stroke: #0c0c0c','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('light'),220); return; }
     if (head==='gray'||head==='grey'||low==='gray mode'||low==='grey mode') { if(MODE==='gray'){printRaw('[SYSTEM] already in gray mode.','t-dim');return;} enqueue('[SYSTEM] Initializing Studio Environment...',['[SYSTEM] canvas: #DCDBD5  accent: #1600A2','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('gray'),220); return; }
     if (head==='usage'||head==='man'||head==='docs') { enqueue(`$ ${head}`,['→ loading manual...','[SYSTEM] USAGE summoned — Esc to dismiss.'],'t-dim'); setTimeout(openUsage,260); return; }
@@ -9385,6 +9387,7 @@ function runCommand(val) {
         if (S.drawMode==='fude') { printRaw('[SYSTEM] already in fude mode.','t-dim'); return; }
         S.drawMode='fude'; try{localStorage.setItem('bm_drawMode','fude');}catch{}
         document.body.classList.remove('bm-paper');    // ⭐板を元に戻す
+        if (typeof _syncPencilUI === 'function') _syncPencilUI();   // ⭐紙の機能ボタン/描き味の選択状態を同期
         redrawAll();
         enqueue(`$ ${head}`,[_L('→ 描き味: 筆 (fude)','→ stroke: brush (fude)'), _L('→ 次の線はなめらかにテーパー','→ next strokes use smooth tapered fill'), _L('→ classic で通常ペンに戻る','→ classic to go back to the pen')]);
         return;
@@ -9396,6 +9399,7 @@ function runCommand(val) {
         const wasOn = (S.drawMode === 'pencil');
         S.drawMode='pencil'; try{localStorage.setItem('bm_drawMode','pencil');}catch{}
         document.body.classList.add('bm-paper');       // ⭐板そのものを紙にする
+        if (typeof _syncPencilUI === 'function') _syncPencilUI();   // ⭐紙の機能ボタン/描き味の選択状態を同期
         _settleMode = true; try{localStorage.setItem('bm_settle','1');}catch{}  // ⭐消せない紙
         redrawAll(); updateUndoRedoBtns();
         const _m = (SETTLE_MS >= 60000) ? (Math.round(SETTLE_MS/60000)+' min') : (Math.round(SETTLE_MS/1000)+' sec');
@@ -9408,6 +9412,7 @@ function runCommand(val) {
     if (PENCIL_GRADES[head]) {
         PENCIL_GRADE = head; try{localStorage.setItem('bm_grade', head);}catch{}
         if (S.drawMode!=='pencil') { S.drawMode='pencil'; try{localStorage.setItem('bm_drawMode','pencil');}catch{} document.body.classList.add('bm-paper'); }
+        if (typeof _syncPencilUI === 'function') _syncPencilUI();   // ⭐紙の機能ボタン/描き味の選択状態を同期
         redrawAll();
         enqueue(`$ ${head}`, [_L('→ 鉛筆: ','→ pencil: ') + _L(PENCIL_GRADES[head].name, head.toUpperCase()),
                               _L('  2h / h / hb / 2b / 4b / 5b / 6b で切替','  switch with 2h / h / hb / 2b / 4b / 5b / 6b')]);
@@ -9418,18 +9423,18 @@ function runCommand(val) {
     if (head==='dark'||head==='nosa'||head==='濃さ') {
         const a = rest.trim();
         if (a==='' || a==='status') {
-            enqueue('$ dark', ['→ 濃さ: ' + Math.round(PENCIL_DARK*100),
-                               '  dark 60 / dark 130 で変更（0〜200）']);
+            enqueue('$ dark', [_L('→ 濃さ: ','→ darkness: ') + Math.round(PENCIL_DARK*100),
+                               _L('  dark 60 / dark 130 で変更（0〜200）','  change with dark 60 / dark 130 (0-200)')]);
             return;
         }
         const v = parseFloat(a);
         if (!Number.isFinite(v) || v < 0 || v > 200) {
-            printRaw('dark: usage → dark 90（0〜200）', 't-err'); return;
+            printRaw(_L('dark: usage → dark 90（0〜200）','dark: usage → dark 90 (0-200)'), 't-err'); return;
         }
         PENCIL_DARK = Math.max(0.1, v / 100);
         try{localStorage.setItem('bm_dark', String(PENCIL_DARK));}catch{}
         redrawAll();
-        enqueue(`$ dark ${v}`, ['→ 濃さ: ' + Math.round(PENCIL_DARK*100)]);
+        enqueue(`$ dark ${v}`, [_L('→ 濃さ: ','→ darkness: ') + Math.round(PENCIL_DARK*100)]);
         return;
     }
 
@@ -9437,18 +9442,18 @@ function runCommand(val) {
     if (head==='eraser'||head==='kesigomu') {
         const a = rest.trim().toLowerCase();
         if (a==='' || a==='status') {
-            enqueue('$ eraser', ['→ eraser radius: ' + ERASE_RADIUS + 'px',
-                                 '  usage: eraser 8 / eraser 20（2〜200）',
-                                 '  小さいほど「線の一部だけ」を削れる']);
+            enqueue('$ eraser', [_L('→ 消しゴムの当たり: ','→ eraser radius: ') + ERASE_RADIUS + 'px',
+                                 _L('  eraser 8 / eraser 20 で変更（2〜200）','  change with eraser 8 / eraser 20 (2-200)'),
+                                 _L('  小さいほど「線の一部だけ」を削れる','  smaller = erase just part of a stroke')]);
             return;
         }
         const v = parseInt(a, 10);
         if (!Number.isFinite(v) || v < 2 || v > 200) {
-            printRaw('eraser: usage → eraser 8 / eraser 20（2〜200）', 't-err');
+            printRaw(_L('eraser: usage → eraser 8 / eraser 20（2〜200）','eraser: usage → eraser 8 / eraser 20 (2-200)'), 't-err');
             return;
         }
         ERASE_RADIUS = v; try{localStorage.setItem('bm_eraseR', String(v));}catch{}
-        enqueue(`$ eraser ${v}`, ['→ eraser radius: ' + v + 'px']);
+        enqueue(`$ eraser ${v}`, [_L('→ 消しゴムの当たり: ','→ eraser radius: ') + v + 'px']);
         return;
     }
 
@@ -9456,6 +9461,7 @@ function runCommand(val) {
     if (head==='board'||head==='kokuban') {
         S.drawMode='classic'; try{localStorage.setItem('bm_drawMode','classic');}catch{}
         document.body.classList.remove('bm-paper');
+        if (typeof _syncPencilUI === 'function') _syncPencilUI();   // ⭐紙の機能ボタン/描き味の選択状態を同期
         _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}
         redrawAll(); updateUndoRedoBtns();
         enqueue(`$ ${head}`,[_L('→ 元の板に戻しました（classic / undo も通常どおり）','→ back to the normal board (classic / undo works as usual)')]);
@@ -9465,9 +9471,10 @@ function runCommand(val) {
         if (S.drawMode==='classic') { printRaw('[SYSTEM] already in classic mode.','t-dim'); return; }
         S.drawMode='classic'; try{localStorage.setItem('bm_drawMode','classic');}catch{}
         document.body.classList.remove('bm-paper');    // ⭐板を元に戻す
+        if (typeof _syncPencilUI === 'function') _syncPencilUI();   // ⭐紙の機能ボタン/描き味の選択状態を同期
         _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}   // 定着も解除
         redrawAll(); updateUndoRedoBtns();
-        enqueue(`$ ${head}`,['→ stroke render: classic (master)','→ next strokes use the original pencil renderer', _L('→ undo も通常どおりに戻りました','→ undo works normally again')]);
+        enqueue(`$ ${head}`,[_L('→ 描き味: クラシック（標準ペン）','→ stroke render: classic (master)'), _L('→ ボードも通常の板に戻りました','→ the board is back to normal too'), _L('→ undo も通常どおりに戻りました','→ undo works normally again')]);
         return;
     }
 
