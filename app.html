@@ -10029,6 +10029,8 @@ tiEl.addEventListener('paste', e => {
 // ⭐omnibox 共有カタログ：ターミナル補完 と ⌘Kパレット が同じ1ソースを使う。
 //   cat＝⌘Kパレットのバッジ（何の機能かひと目で分かる）。
 const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク' };
+const OMNI_CATS_EN = { calc:'Calc', capture:'Note', board:'Board', draw:'Draw', grade:'Grade', panel:'Panel', edit:'Edit', io:'I/O', insert:'Insert', media:'Sound', help:'Help', link:'Link' };
+function catLabel(c) { const m = (typeof LANG !== 'undefined' && LANG === 'en') ? OMNI_CATS_EN : OMNI_CATS; return m[c] || c || ''; }
 // ══════════════════════════════════════════════════
 // i18n — EN/JP 切替（追加コードのみ・既存の描画/操作/保存には触れない）
 //   静的markup: data-i18n / data-i18n-ph / data-i18n-title を applyLang() が走査
@@ -10083,37 +10085,37 @@ function setLang(l) {
 window.setLang = setLang; window.getLang = getLang; window.t = t; window.applyLang = applyLang;
 
 const OMNI_CMDS = [
-    { cmd:'calc',    cat:'calc',    hint:'計算（calc 12*8）', args:true },
-    { cmd:'t',       cat:'capture', hint:'中央にテキスト（t アイデア）', args:true },
-    { cmd:'todo',    cat:'capture', hint:'ToDoを置く（todo 牛乳）', args:true },
-    { cmd:'dark',    cat:'board',   hint:'ボードを暗く（黒板）' },
-    { cmd:'light',   cat:'board',   hint:'ボードを明るく（紙）' },
-    { cmd:'gray',    cat:'board',   hint:'グレー環境' },
-    { cmd:'enpitsu', cat:'draw',    hint:'鉛筆（紙）で描く', kw:'鉛筆 えんぴつ pencil 描き味 draw' },
-    { cmd:'fude',    cat:'draw',    hint:'筆で描く', kw:'筆 ふで brush 描き味 draw' },
-    { cmd:'classic', cat:'draw',    hint:'クラシックな線', kw:'鉛筆 線 classic 描き味 draw' },
-    { cmd:'hb',      cat:'grade',   hint:'芯を HB に', kw:'鉛筆 pencil 芯 しん grade' },
-    { cmd:'2b',      cat:'grade',   hint:'芯を 2B に', kw:'鉛筆 pencil 芯 しん grade' },
-    { cmd:'4b',      cat:'grade',   hint:'芯を 4B に', kw:'鉛筆 pencil 芯 しん grade' },
-    { cmd:'6b',      cat:'grade',   hint:'芯を 6B に', kw:'鉛筆 pencil 芯 しん grade' },
-    { cmd:'float',   cat:'panel',   hint:'ターミナルを浮かす', sc:'⌘B' },
-    { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す', sc:'⌘B' },
-    { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', args:true },
-    { cmd:'clear',   cat:'edit',    hint:'ボードを消す' },
-    { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す' },
-    { cmd:'export',  cat:'io',      hint:'書き出し（png / svg / pptx / data）', args:true },
-    { cmd:'share',   cat:'io',      hint:'URLで画面を共有' },
-    { cmd:'save',    cat:'io',      hint:'プロジェクト保存', args:true },
-    { cmd:'load',    cat:'io',      hint:'プロジェクト読込', args:true },
-    { cmd:'tpl',     cat:'insert',  hint:'テンプレを置く', args:true },
-    { cmd:'sticky',  cat:'insert',  hint:'付箋を置く', args:true },
-    { cmd:'bgm',     cat:'media',   hint:'BGM（bgm on / off）', args:true },
-    { cmd:'usage',   cat:'help',    hint:'使い方 / ヘルプ' },
+    { cmd:'calc',    cat:'calc',    hint:'計算（calc 12*8）', hintEn:'Calculate (calc 12*8)', args:true },
+    { cmd:'t',       cat:'capture', hint:'中央にテキスト（t アイデア）', hintEn:'Drop text at center (t idea)', args:true },
+    { cmd:'todo',    cat:'capture', hint:'ToDoを置く（todo 牛乳）', hintEn:'Place a to-do (todo milk)', args:true },
+    { cmd:'dark',    cat:'board',   hint:'ボードを暗く（黒板）', hintEn:'Darken the board (blackboard)' },
+    { cmd:'light',   cat:'board',   hint:'ボードを明るく（紙）', hintEn:'Lighten the board (paper)' },
+    { cmd:'gray',    cat:'board',   hint:'グレー環境', hintEn:'Gray environment' },
+    { cmd:'enpitsu', cat:'draw',    hint:'鉛筆（紙）で描く', hintEn:'Draw with pencil (paper)', kw:'鉛筆 えんぴつ pencil 描き味 draw' },
+    { cmd:'fude',    cat:'draw',    hint:'筆で描く', hintEn:'Draw with brush', kw:'筆 ふで brush 描き味 draw' },
+    { cmd:'classic', cat:'draw',    hint:'クラシックな線', hintEn:'Classic stroke', kw:'鉛筆 線 classic 描き味 draw' },
+    { cmd:'hb',      cat:'grade',   hint:'芯を HB に', hintEn:'Set lead to HB', kw:'鉛筆 pencil 芯 しん grade' },
+    { cmd:'2b',      cat:'grade',   hint:'芯を 2B に', hintEn:'Set lead to 2B', kw:'鉛筆 pencil 芯 しん grade' },
+    { cmd:'4b',      cat:'grade',   hint:'芯を 4B に', hintEn:'Set lead to 4B', kw:'鉛筆 pencil 芯 しん grade' },
+    { cmd:'6b',      cat:'grade',   hint:'芯を 6B に', hintEn:'Set lead to 6B', kw:'鉛筆 pencil 芯 しん grade' },
+    { cmd:'float',   cat:'panel',   hint:'ターミナルを浮かす', hintEn:'Float the terminal', sc:'⌘B' },
+    { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す', hintEn:'Dock the terminal to the right', sc:'⌘B' },
+    { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', hintEn:'Split width (panel 30 / float / dock / center)', args:true },
+    { cmd:'clear',   cat:'edit',    hint:'ボードを消す', hintEn:'Clear the board' },
+    { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す', hintEn:'Clear the terminal log' },
+    { cmd:'export',  cat:'io',      hint:'書き出し（png / svg / pptx / data）', hintEn:'Export (png / svg / pptx / data)', args:true },
+    { cmd:'share',   cat:'io',      hint:'URLで画面を共有', hintEn:'Share the canvas via URL' },
+    { cmd:'save',    cat:'io',      hint:'プロジェクト保存', hintEn:'Save the project', args:true },
+    { cmd:'load',    cat:'io',      hint:'プロジェクト読込', hintEn:'Load a project', args:true },
+    { cmd:'tpl',     cat:'insert',  hint:'テンプレを置く', hintEn:'Insert a template', args:true },
+    { cmd:'sticky',  cat:'insert',  hint:'付箋を置く', hintEn:'Place a sticky note', args:true },
+    { cmd:'bgm',     cat:'media',   hint:'BGM（bgm on / off）', hintEn:'Background music (bgm on / off)', args:true },
+    { cmd:'usage',   cat:'help',    hint:'使い方 / ヘルプ', hintEn:'How to use / help' },
     { cmd:'settings',cat:'help',    hint:'設定を開く（ボード/描き味/芯/壁紙）', hintEn:'Open settings (board / draw / grade / wallpaper)', sc:'⌘,', _settings:true, kw:'設定 setting 環境 preferences 歯車' },
     { cmd:'english', cat:'help',    hint:'表示を英語に切替', hintEn:'Switch UI to English', _lang:'en', kw:'en english 英語 language lang 言語 切替' },
     { cmd:'日本語',  cat:'help',    hint:'表示を日本語に切替', hintEn:'Switch UI to Japanese', _lang:'ja', kw:'ja jp japanese 日本語 language lang 言語 切替' },
-    { cmd:'open',    cat:'link',    hint:'URLをボードに開く（open example.com）', args:true, kw:'url web リンク 開く browser サイト' },
-    { cmd:'link',    cat:'link',    hint:'お気に入りURL（link add 名前 url / link 名前）', args:true, kw:'url web お気に入り リンク favorite ブックマーク' },
+    { cmd:'open',    cat:'link',    hint:'URLをボードに開く（open example.com）', hintEn:'Open a URL on the board (open example.com)', args:true, kw:'url web リンク 開く browser サイト' },
+    { cmd:'link',    cat:'link',    hint:'お気に入りURL（link add 名前 url / link 名前）', hintEn:'Favorite URLs (link add name url / link name)', args:true, kw:'url web お気に入り リンク favorite ブックマーク' },
 ];
 // ⭐フローティング窓を画面中央へ（⌘⇧B / `panel center`）
 function centerTermPanel() {
@@ -10150,8 +10152,10 @@ function centerTermPanel() {
     }
     const esc = s => String(s).replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m]));
     function render() {
-        list.innerHTML = items.map((it, i) =>
-            `<div class="omni-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="omni-cmd">${esc(it.cmd)}</span><span class="omni-hint">${esc(it.hint || '')}</span></div>`).join('');
+        list.innerHTML = items.map((it, i) => {
+            const h = (typeof LANG !== 'undefined' && LANG === 'en' && it.hintEn) ? it.hintEn : (it.hint || '');
+            return `<div class="omni-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="omni-cmd">${esc(it.cmd)}</span><span class="omni-hint">${esc(h)}</span></div>`;
+        }).join('');
         list.classList.toggle('open', items.length > 0);
         const s = list.querySelector('.omni-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
     }
@@ -10254,7 +10258,7 @@ function centerTermPanel() {
     const copyText = t => { try { navigator.clipboard && navigator.clipboard.writeText(String(t)); } catch (_) {} };
 
     function cmdItem(it) {
-        const cat = (typeof OMNI_CATS !== 'undefined' && OMNI_CATS[it.cat]) ? OMNI_CATS[it.cat] : (it.cat || '');
+        const cat = catLabel(it.cat);
         const favKey = it._url ? ('link:' + it.cmd) : it.cmd;
         const fav = isFav(favKey);
         if (it._form) {   // ⭐パレット内フォームへ（リンク追加＝ターミナルに打たず⌘Kだけで完結）
