@@ -10,3 +10,8 @@ Thumbs.db
 
 # Local backups (don't ship to public repo)
 *_backup_*.html
+# backups / scratch (本番に含めない)
+*.bak
+*.bak-*
+*-mockups.html
+*-mockup.html
