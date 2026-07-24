@@ -3337,9 +3337,30 @@ try { BOARD_SIZE = localStorage.getItem('bm_board_size') || 'free'; } catch (_) 
 if (!(BOARD_SIZE in BOARD_SIZES)) BOARD_SIZE = 'free';
 // ⭐紙をひっくり返す（v1＝見る：CSS水平ミラー＋紙裏オーバーレイで"表が薄く透ける"。描画/保存/入力コアは不変）
 let BOARD_FLIPPED = false;
+// 裏返す前に、内容（ボードサイズ指定時はページ）を画面にフィット＝"どこ行った"を防ぐ
+function fitContentView() {
+    if (BOARD_SIZE !== 'free') { fitBoardView(); if (typeof redrawAll === 'function') redrawAll(); return; }
+    if (!S.objects || !S.objects.length || !CW || !CH) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const o of S.objects) {
+        const b = (typeof getObjBounds === 'function') ? getObjBounds(o) : null;
+        if (!b) continue;
+        minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+        maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h);
+    }
+    if (!isFinite(minX)) return;
+    const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+    const pad = 0.82;
+    VIEW.scale = Math.max(0.02, Math.min(40, pad * Math.min(CW / w, CH / h)));
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    VIEW.tx = CW / 2 - cx * VIEW.scale; VIEW.ty = CH / 2 - cy * VIEW.scale;
+    if (typeof updateZoomLabel === 'function') updateZoomLabel();
+    if (typeof redrawAll === 'function') redrawAll();
+}
 function toggleBoardFlip(force) {
     const cp = document.getElementById('cp'); if (!cp) return;
     const want = (typeof force === 'boolean') ? force : !cp.classList.contains('bm-flipped');
+    if (want) fitContentView();   // ⭐裏返す前に内容を画面中央にフィット（見失わない）
     cp.classList.toggle('bm-flipped', want);
     BOARD_FLIPPED = want;
     if (typeof _syncBoardSizeUI === 'function') _syncBoardSizeUI();
