@@ -3337,7 +3337,7 @@ if (!(BOARD_SIZE in BOARD_SIZES)) BOARD_SIZE = 'free';
 // ⭐紙をひっくり返す（canvas描画側でX反転＝入力/pan/zoom一致）。各オブジェクトは描いた側(side)を持ち、
 //   "見ていない側"だけ薄く裏写り＝表↔裏で対称。裏で描いた線は裏を見てる間は濃いまま。
 let BOARD_FLIPPED = false;
-const FLIP_BLEED_ALPHA = 0.16;     // 見えない側の透け具合（小さいほど薄い）
+const FLIP_BLEED_ALPHA = 0.09;     // 見えない側の透け具合（小さいほど薄い）
 // 裏返す前に、内容（ボードサイズ指定時はページ）を画面にフィット＝"どこ行った"を防ぐ
 function fitContentView() {
     if (BOARD_SIZE !== 'free') { fitBoardView(); if (typeof redrawAll === 'function') redrawAll(); return; }
