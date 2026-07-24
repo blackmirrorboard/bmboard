@@ -2567,13 +2567,13 @@
             <div class="crop-card">
                 <div class="crop-hd">
                     <b>▮ CROP</b>
-                    <span>ドラッグで範囲 · ハンドルで調整 · Enter 適用 · Esc キャンセル</span>
+                    <span data-i18n="crop.hint">ドラッグで範囲 · ハンドルで調整 · Enter 適用 · Esc キャンセル</span>
                 </div>
                 <canvas id="cropCanvas"></canvas>
                 <div class="crop-ft">
-                    <button id="cropResetBtn">リセット</button>
-                    <button id="cropCancelBtn">キャンセル</button>
-                    <button id="cropApplyBtn">適用</button>
+                    <button id="cropResetBtn" data-i18n="crop.reset">リセット</button>
+                    <button id="cropCancelBtn" data-i18n="crop.cancel">キャンセル</button>
+                    <button id="cropApplyBtn" data-i18n="crop.apply">適用</button>
                 </div>
             </div>
         </div>
@@ -2649,7 +2649,7 @@
         </div>
         <div class="term-body" id="tb"></div>
         <div id="voicePreview" style="display:none">
-            <span class="vp-hint">↵ 実行　Esc キャンセル</span>
+            <span class="vp-hint" data-i18n="voice.hint">↵ 実行　Esc キャンセル</span>
             <input type="text" id="vpInput" autocomplete="off" spellcheck="false">
         </div>
         <!-- ⭐omnibox：打つと候補が出るドロップダウン（入力行の上に浮く） -->
@@ -10276,7 +10276,9 @@ const I18N = {
         'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
         'setcmd.cName': '名前', 'setcmd.cDesc': '説明', 'setcmd.cHot': 'ショートカット',
         'fb.body': 'このプロトタイプへの<strong>要望・アイデア・バグ報告</strong>を歓迎します。<br>あなたの声が次のバージョンを形づくります。<br><br><strong>Draw to Build.</strong> — 一緒に育てましょう。',
-        'fb.note': 'メーラーが起動します · no tracking · local only'
+        'fb.note': 'メーラーが起動します · no tracking · local only',
+        'crop.hint': 'ドラッグで範囲 · ハンドルで調整 · Enter 適用 · Esc キャンセル', 'crop.reset': 'リセット', 'crop.cancel': 'キャンセル', 'crop.apply': '適用',
+        'voice.hint': '↵ 実行　Esc キャンセル'
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
@@ -10300,7 +10302,9 @@ const I18N = {
         'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
         'setcmd.cName': 'Name', 'setcmd.cDesc': 'Description', 'setcmd.cHot': 'Hotkey',
         'fb.body': 'We welcome your <strong>requests, ideas, and bug reports</strong> for this prototype.<br>Your voice shapes the next version.<br><br><strong>Draw to Build.</strong> — let’s grow it together.',
-        'fb.note': 'Opens your mail app · no tracking · local only'
+        'fb.note': 'Opens your mail app · no tracking · local only',
+        'crop.hint': 'Drag to select · handles to adjust · Enter to apply · Esc to cancel', 'crop.reset': 'Reset', 'crop.cancel': 'Cancel', 'crop.apply': 'Apply',
+        'voice.hint': '↵ run　Esc cancel'
     }
 };
 function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
