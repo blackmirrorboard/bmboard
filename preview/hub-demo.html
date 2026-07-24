@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<title>BMBoard × KAIBOU — 図形がエフェクトに繋がる（可視化）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --void:#0b0b0e; --void2:#15151a; --glass:rgba(26,26,32,.66); --line:rgba(255,255,255,.09);
+  --paper:#ece9e0; --paper-line:#cbc6b8; --pencil:#33333a;
+  --ink:#f3f2ee; --dim:#9d9da8; --faint:#6b6b76;
+  --wire:#3b6fe0; --wire-soft:rgba(59,111,224,.16); --hot:#e0674a;
+  --mono:"SF Mono","JetBrains Mono",ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--void);color:var(--ink);font-family:var(--sans);line-height:1.7;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:44px 22px 80px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
+h1{font-size:clamp(24px,4vw,40px);line-height:1.15;letter-spacing:-.02em;font-weight:700;margin:14px 0;text-wrap:balance}
+.lead{color:var(--dim);max-width:60ch;font-size:15.5px}
+.lead b{color:var(--ink);font-weight:600}
+em.w{font-style:normal;color:var(--wire);font-weight:600}
+
+/* stage */
+.frame{margin-top:30px;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+  box-shadow:0 40px 100px rgba(0,0,0,.5);background:var(--void2)}
+.tbar{display:flex;align-items:center;gap:7px;padding:11px 15px;border-bottom:1px solid var(--line)}
+.tbar i{width:11px;height:11px;border-radius:50%;background:#3a3a42}
+.tbar b{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.14em;margin-left:8px;font-weight:400}
+.grid{display:grid;grid-template-columns:1fr 1fr;position:relative}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+.pane{position:relative;min-height:340px;display:flex;flex-direction:column}
+.pane.board{background:
+    linear-gradient(var(--paper-line) 1px,transparent 1px) 0 0/24px 24px,
+    linear-gradient(90deg,var(--paper-line) 1px,transparent 1px) 0 0/24px 24px, var(--paper);
+  background-blend-mode:soft-light,soft-light,normal}
+.pane.kaibou{background:var(--glass);backdrop-filter:blur(20px);border-left:1px solid var(--line)}
+.plabel{position:absolute;top:11px;left:13px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;z-index:3}
+.pane.board .plabel{color:var(--faint)}
+.pane.kaibou .plabel{color:var(--wire)}
+canvas{width:100%;height:100%;display:block;flex:1;touch-action:none}
+.cv-wrap{flex:1;position:relative}
+
+/* kaibou chain */
+.chain{position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;padding:12px 13px;
+  border-top:1px solid var(--line);background:rgba(10,10,14,.5);z-index:3}
+.node{flex:1;text-align:center;font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;
+  color:var(--faint);padding:6px 2px;border-radius:6px;border:1px solid var(--line);
+  transition:all .3s;line-height:1.3}
+.node.on{color:var(--ink);border-color:var(--wire);background:var(--wire-soft);box-shadow:0 0 14px var(--wire-soft)}
+.node.tape.on{border-color:var(--hot);background:rgba(224,103,74,.16);box-shadow:0 0 14px rgba(224,103,74,.2)}
+
+/* flow puck */
+.puck{position:absolute;width:34px;height:34px;border-radius:8px;z-index:5;pointer-events:none;
+  opacity:0;box-shadow:0 6px 20px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.25);
+  background-size:cover;background-position:center}
+
+/* controls */
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:13px 15px;border-top:1px solid var(--line)}
+button{font-family:var(--sans);font-size:13px;font-weight:600;border-radius:9px;cursor:pointer;
+  padding:9px 16px;border:1px solid var(--line);background:var(--void2);color:var(--ink);transition:.2s}
+button:hover{border-color:var(--wire)}
+button.pri{background:linear-gradient(135deg,var(--wire),#5b8cff);border-color:transparent;color:#fff}
+button.pri:hover{box-shadow:0 6px 20px var(--wire-soft)}
+button:disabled{opacity:.4;cursor:default}
+.hint{font-family:var(--mono);font-size:11px;color:var(--faint);margin-left:auto}
+.status{font-family:var(--mono);font-size:11.5px;color:var(--wire);min-width:120px}
+
+.note{margin-top:22px;font-size:13.5px;color:var(--dim);max-width:64ch}
+.note b{color:var(--ink)}
+.warn{margin-top:12px;font-size:12.5px;color:var(--faint);border-left:2px solid var(--hot);padding-left:12px}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">段階3の可視化 — 説明ではなく、実際に動く</div>
+  <h1>板に描いた図形が、KAIBOU を通って変わって戻る。</h1>
+  <p class="lead">左の板に描く（もう描いてあります）。<b>KAIBOUにかける</b>を押すと、図形が右へ飛び、
+    木下のチェーン（サンプラー→…→<em class="w">テープ</em>）を通って処理され、<b>板に戻ってくる。</b>
+    これが「板と楽器が会話する」の実物です。</p>
+
+  <div class="frame">
+    <div class="tbar"><i></i><i></i><i></i><b>BM BOARD × KAIBOU</b></div>
+    <div class="grid" id="grid">
+      <div class="pane board">
+        <span class="plabel">BOARD — 紙</span>
+        <div class="cv-wrap"><canvas id="board"></canvas></div>
+      </div>
+      <div class="pane kaibou">
+        <span class="plabel">KAIBOU — 画像チェーン</span>
+        <div class="cv-wrap"><canvas id="kaibou"></canvas></div>
+        <div class="chain" id="chain">
+          <div class="node" data-k="in">取り込み</div>
+          <div class="node" data-k="disp">うねり</div>
+          <div class="node" data-k="chr">色ずれ</div>
+          <div class="node" data-k="scan">走査線</div>
+          <div class="node tape" data-k="tape">テープ</div>
+        </div>
+      </div>
+      <div class="puck" id="puck"></div>
+    </div>
+    <div class="bar">
+      <button class="pri" id="run">▶ KAIBOUにかける</button>
+      <button id="clear">板をクリア</button>
+      <span class="status mono" id="status">板に自由に描けます</span>
+      <span class="hint">← 左の板は指/マウスで描けます</span>
+    </div>
+  </div>
+
+  <p class="note"><b>今この場で起きていること：</b>板のピクセルを KAIBOU が受け取り、うねり・色ずれ・走査線・テープの
+    チェーンを実際に画像処理して、結果を板の下に置いています。<b>サーバーもTauriも使っていません</b>（Web標準のpostMessage相当）。</p>
+  <p class="warn">正確に言うと：KAIBOUは<b style="color:var(--ink)">画像</b>を処理する楽器なので、渡すのは「線そのもの」ではなく「線を画像にしたもの」。
+    戻ってくるのも処理後の画像です。ベクターのまま繋ぎ続けるわけではありません。</p>
+</div>
+
+<script>
+(function(){
+  var board=document.getElementById('board'), bctx=board.getContext('2d');
+  var kai=document.getElementById('kaibou'), kctx=kai.getContext('2d');
+  var puck=document.getElementById('puck');
+  var status=document.getElementById('status');
+  var runBtn=document.getElementById('run'), clearBtn=document.getElementById('clear');
+  var chainNodes=[].slice.call(document.querySelectorAll('#chain .node'));
+  var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var DPR=Math.min(2,window.devicePixelRatio||1);
+
+  function fit(cv,ctx){
+    var r=cv.parentElement.getBoundingClientRect();
+    cv.width=r.width*DPR; cv.height=r.height*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    return {w:r.width,h:r.height};
+  }
+  var B,K;
+  function sizeAll(){ B=fit(board,bctx); K=fit(kai,kctx); paper(); }
+  function paper(){ bctx.clearRect(0,0,B.w,B.h); }
+
+  // ── 初期の図形（手描き風の円＋波＋三角） ──
+  function demoStroke(){
+    paper();
+    bctx.strokeStyle='#33333a'; bctx.lineWidth=2.4; bctx.lineCap='round'; bctx.lineJoin='round';
+    var cx=B.w*0.5, cy=B.h*0.42, rx=B.w*0.26, ry=B.h*0.24;
+    bctx.beginPath();
+    for(var a=-0.2;a<=6.5;a+=0.12){ var x=cx+Math.cos(a)*rx+(Math.random()-.5)*3, y=cy+Math.sin(a)*ry+(Math.random()-.5)*3; a===-0.2?bctx.moveTo(x,y):bctx.lineTo(x,y); }
+    bctx.stroke();
+    bctx.beginPath();
+    for(var i=0;i<=40;i++){ var xx=B.w*0.2+i*(B.w*0.6/40), yy=B.h*0.78+Math.sin(i/4)*10; i===0?bctx.moveTo(xx,yy):bctx.lineTo(xx,yy); }
+    bctx.stroke();
+    bctx.font='700 15px -apple-system,"Hiragino Sans"'; bctx.fillStyle='#2a2a2e';
+    bctx.fillText('形 A', B.w*0.2, B.h*0.62);
+  }
+
+  // ── 板で描く ──
+  var drawing=false, last=null;
+  function pos(e){ var r=board.getBoundingClientRect(); var t=e.touches?e.touches[0]:e; return {x:t.clientX-r.left,y:t.clientY-r.top}; }
+  board.addEventListener('pointerdown',function(e){ drawing=true; last=pos(e); board.setPointerCapture(e.pointerId); status.textContent='描いています…'; });
+  board.addEventListener('pointermove',function(e){ if(!drawing)return; var p=pos(e);
+    bctx.strokeStyle='#33333a'; bctx.lineWidth=2.4; bctx.lineCap='round'; bctx.lineJoin='round';
+    bctx.beginPath(); bctx.moveTo(last.x,last.y); bctx.lineTo(p.x,p.y); bctx.stroke(); last=p; });
+  window.addEventListener('pointerup',function(){ if(drawing){drawing=false; status.textContent='KAIBOUにかけられます';} });
+
+  clearBtn.onclick=function(){ paper(); kctx.clearRect(0,0,K.w,K.h); status.textContent='板をクリアしました'; };
+
+  // ── KAIBOU 画像処理チェーン ──
+  function processImage(src, amt){   // amt 0..1 でエフェクトの強さ
+    var w=src.width, h=src.height;
+    var out=kctx.createImageData(w,h);
+    var s=src.data, o=out.data;
+    for(var y=0;y<h;y++){
+      var sh=Math.sin(y/9 + amt*6)* (10*amt);      // うねり
+      for(var x=0;x<w;x++){
+        var sx=Math.max(0,Math.min(w-1, Math.round(x+sh)));
+        var di=(y*w+x)*4;
+        // 色ずれ（R/Bを左右にずらす）
+        var rx=Math.max(0,Math.min(w-1,sx+Math.round(4*amt)));
+        var bx=Math.max(0,Math.min(w-1,sx-Math.round(4*amt)));
+        var ri=(y*w+rx)*4, gi=(y*w+sx)*4, bi=(y*w+bx)*4;
+        var r=s[ri], g=s[gi+1], b=s[bi+2], a=s[gi+3];
+        // テープ（コントラスト＋わずかに温色）
+        r=Math.min(255,(r-128)*(1+0.5*amt)+128 + 12*amt);
+        b=Math.min(255,(b-128)*(1+0.5*amt)+128 - 8*amt);
+        // 走査線
+        if(y%3===0){ r*=1-0.25*amt; g*=1-0.25*amt; b*=1-0.25*amt; }
+        o[di]=r; o[di+1]=g; o[di+2]=b; o[di+3]=a;
+      }
+    }
+    return out;
+  }
+
+  function wait(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+
+  async function run(){
+    runBtn.disabled=true; clearBtn.disabled=true;
+    chainNodes.forEach(function(n){n.classList.remove('on');});
+    // 板の中身を画像として取り出す（＝「線を画像にする」）
+    var snap=document.createElement('canvas'); snap.width=B.w; snap.height=B.h;
+    var sctx=snap.getContext('2d');
+    sctx.fillStyle='#ece9e0'; sctx.fillRect(0,0,B.w,B.h);
+    sctx.drawImage(board,0,0,B.w,B.h);
+    var url=snap.toDataURL();
+
+    // ① 板→KAIBOU へ飛ぶ
+    status.textContent='取り込み中…';
+    chainNodes[0].classList.add('on');
+    var g=document.getElementById('grid').getBoundingClientRect();
+    var bp=board.getBoundingClientRect(), kp=kai.getBoundingClientRect();
+    puck.style.backgroundImage='url('+url+')';
+    puck.style.left=(bp.left-g.left+bp.width/2-17)+'px';
+    puck.style.top=(bp.top-g.top+bp.height/2-17)+'px';
+    puck.style.opacity='1';
+    puck.style.transition=RM?'none':'left .8s cubic-bezier(.5,0,.2,1),top .8s cubic-bezier(.5,0,.2,1),transform .8s';
+    await wait(30);
+    puck.style.left=(kp.left-g.left+kp.width/2-17)+'px';
+    puck.style.top=(kp.top-g.top+kp.height*0.4-17)+'px';
+    puck.style.transform='rotate(8deg) scale(1.1)';
+    await wait(RM?0:820);
+    puck.style.opacity='0';
+
+    // ② KAIBOUに描いて、チェーンを1段ずつ効かせる
+    var img=new Image();
+    await new Promise(function(res){ img.onload=res; img.src=url; });
+    var base=document.createElement('canvas'); base.width=Math.round(K.w); base.height=Math.round(K.h*0.72);
+    var basectx=base.getContext('2d');
+    basectx.drawImage(img,0,0,base.width,base.height);
+    var srcData=basectx.getImageData(0,0,base.width,base.height);
+
+    var stages=[
+      {node:1,label:'うねりをかける…',amt:.35},
+      {node:2,label:'色をずらす…',amt:.6},
+      {node:3,label:'走査線を通す…',amt:.8},
+      {node:4,label:'テープに通す…',amt:1.0}
+    ];
+    for(var i=0;i<stages.length;i++){
+      var st=stages[i];
+      chainNodes[st.node].classList.add('on');
+      status.textContent=st.label;
+      var pd=processImage(srcData, st.amt);
+      var tmp=document.createElement('canvas'); tmp.width=base.width; tmp.height=base.height;
+      tmp.getContext('2d').putImageData(pd,0,0);
+      kctx.clearRect(0,0,K.w,K.h);
+      kctx.drawImage(tmp,0,K.h*0.06,K.w,K.h*0.72);
+      await wait(RM?0:420);
+    }
+
+    // ③ 結果を板に戻す（下に置く）
+    status.textContent='板に戻しています…';
+    var result=kctx.getImageData(0,0,K.w,K.h);
+    var rtmp=document.createElement('canvas'); rtmp.width=K.w; rtmp.height=K.h;
+    rtmp.getContext('2d').putImageData(result,0,0);
+    var rurl=rtmp.toDataURL();
+    puck.style.backgroundImage='url('+rurl+')';
+    puck.style.transition='none'; puck.style.transform='rotate(8deg) scale(1.1)';
+    puck.style.left=(kp.left-g.left+kp.width/2-17)+'px';
+    puck.style.top=(kp.top-g.top+kp.height*0.4-17)+'px';
+    puck.style.opacity='1';
+    await wait(30);
+    puck.style.transition=RM?'none':'left .8s cubic-bezier(.5,0,.2,1),top .8s cubic-bezier(.5,0,.2,1),transform .8s';
+    puck.style.left=(bp.left-g.left+bp.width*0.5-17)+'px';
+    puck.style.top=(bp.top-g.top+bp.height*0.72-17)+'px';
+    puck.style.transform='rotate(0) scale(1)';
+    await wait(RM?0:820);
+    // 板の下半分に結果を貼る
+    var rimg=new Image();
+    await new Promise(function(res){ rimg.onload=res; rimg.src=rurl; });
+    bctx.drawImage(rimg, B.w*0.16, B.h*0.5, B.w*0.68, B.h*0.42);
+    bctx.font='700 12px "SF Mono",monospace'; bctx.fillStyle='#3b6fe0';
+    bctx.fillText('← KAIBOU をかけた 形 A', B.w*0.16, B.h*0.5-6);
+    puck.style.opacity='0';
+    status.textContent='✓ 板に戻りました';
+    runBtn.disabled=false; clearBtn.disabled=false;
+  }
+  runBtn.onclick=run;
+
+  window.addEventListener('resize',function(){ clearTimeout(window._rz); window._rz=setTimeout(sizeAll,150); });
+  sizeAll(); demoStroke(); status.textContent='KAIBOUにかけられます（左の板は描けます）';
+})();
+</script>
+</body></html>
