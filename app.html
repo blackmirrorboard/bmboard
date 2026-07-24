@@ -1227,7 +1227,7 @@
         }
         #settingsOverlay.open { display: flex; }
         .settings-card {
-            width: min(440px, 88vw);
+            width: min(600px, 92vw);   /* ⭐固定幅：タブ切替で跳ねさせない（一般/コマンド共通） */
             /* ⭐透過フロスト（ボイスUIと同じ質感） */
             background: rgba(18,16,20,0.58);
             -webkit-backdrop-filter: blur(34px) saturate(1.35); backdrop-filter: blur(34px) saturate(1.35);
@@ -1321,7 +1321,7 @@
         .set-cmdrec { grid-column: 4 / -1; text-align: right; color: #f0c674; font-size: 10.5px; white-space: nowrap; }
         .set-cmds-empty { padding: 24px; text-align: center; color: rgba(255,255,255,0.35); font-size: 12px; }
         /* コマンドタブでカードを広げる（Raycastの横長テーブル感） */
-        .settings-card.cmds-wide { width: min(760px, 94vw); }
+        /* ⭐幅はタブで変えない（固定幅・.settings-card に集約） */
 
         /* ══════════════════════════════════
            OMNIBOX — ターミナル入力の候補ドロップダウン（打つと候補）
@@ -10300,7 +10300,7 @@ tiEl.addEventListener('paste', e => {
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
         if (panes.general)  panes.general.hidden  = (name !== 'general');
         if (panes.commands) panes.commands.hidden = (name !== 'commands');
-        if (setCard) setCard.classList.toggle('cmds-wide', name === 'commands');   // ⭐横長テーブル
+        // 幅は固定（.settings-card に集約）＝タブ切替で跳ねさせない
         if (name === 'commands') { recCmd = null; recMsg = ''; renderCmds(); setTimeout(() => cmdSearch && cmdSearch.focus(), 0); }
     }
     tabs.forEach(tb => tb.addEventListener('click', () => switchTab(tb.dataset.tab)));
