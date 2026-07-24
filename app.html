@@ -1350,6 +1350,15 @@
         .set-spellact { display: flex; gap: 5px; opacity: 0; }
         .set-spellrow:hover .set-spellact { opacity: 1; }
         .set-spellact .set-cmdbtn[data-del]:hover { color: #ff8b8b; border-color: rgba(255,80,80,0.4); }
+        /* ⭐提出パネル */
+        .set-submit { margin: 4px 16px 14px; padding: 12px 13px; border-radius: 10px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1); font-family: var(--ui-sans); }
+        .set-submit[hidden] { display: none; }
+        .set-submit-hd { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: #f0eee8; margin-bottom: 7px; }
+        .set-submit-steps { font-size: 11px; color: rgba(255,255,255,0.55); line-height: 1.65; margin-bottom: 9px; }
+        #spellSubmitJson { width: 100%; height: 120px; resize: vertical; background: rgba(0,0,0,0.28); color: #cfe6cf;
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 10px; font-family: var(--ui-mono); font-size: 11px; outline: none; }
+        .set-submit-actions { display: flex; gap: 6px; margin-top: 8px; justify-content: flex-end; }
         /* コマンドタブでカードを広げる（Raycastの横長テーブル感） */
         /* ⭐幅はタブで変えない（固定幅・.settings-card に集約） */
 
@@ -2870,6 +2879,15 @@
                 <span class="set-spell-actions"><span class="set-cmdbtn" id="spellImportBtn" data-i18n="spells.import">読み込む</span><span class="set-cmdbtn" id="spellExportAllBtn" data-i18n="spells.exportAll">全部書き出す</span></span>
             </div>
             <div id="setSpellList" class="set-cmds-list"></div>
+            <div id="spellSubmit" class="set-submit" hidden>
+                <div class="set-submit-hd"><span data-i18n="submit.title">📤 STOREに提出する</span><span class="set-cmdbtn" id="spellSubmitClose">✕</span></div>
+                <div class="set-submit-steps" data-i18n="submit.steps">① 下のJSONをコピー ② store/catalog.json の spells に貼って追記（PR） または 作者に送る ③ 公開されるとSTOREに並びます</div>
+                <textarea id="spellSubmitJson" readonly spellcheck="false"></textarea>
+                <div class="set-submit-actions">
+                    <span class="set-cmdbtn" id="spellSubmitCopy" data-i18n="submit.copy">JSONをコピー</span>
+                    <span class="set-cmdbtn" id="spellSubmitDl" data-i18n="submit.download">JSONを保存</span>
+                </div>
+            </div>
         </div>
         <div class="set-foot" data-i18n="set.foot">⌘,  で開閉 · Esc で閉じる</div>
     </div>
@@ -10485,7 +10503,7 @@ tiEl.addEventListener('paste', e => {
                  + `<span class="set-cmdname">${esc2(s.name)}</span>`
                  + `<span class="set-cmdhint">${esc2(s.desc || '')}</span>`
                  + `<span class="set-cmdtype">${s.count}${esc2(T('store.units'))} · ${esc2(src)}</span>`
-                 + `<span class="set-spellact"><span class="set-cmdbtn" data-dl="${esc2(s.name)}">⬇</span><span class="set-cmdbtn" data-del="${esc2(s.name)}">✕</span></span></div>`;
+                 + `<span class="set-spellact"><span class="set-cmdbtn" data-sub="${esc2(s.name)}" title="${esc2(T('submit.title'))}">📤</span><span class="set-cmdbtn" data-dl="${esc2(s.name)}">⬇</span><span class="set-cmdbtn" data-del="${esc2(s.name)}">✕</span></span></div>`;
         }).join('');
     }
     function exportOneSpell(name) {
@@ -10493,11 +10511,39 @@ tiEl.addEventListener('paste', e => {
         const s = a.find(x => x.name === name); if (!s) return;
         if (typeof bmDeliverJson === 'function') bmDeliverJson(JSON.stringify({ format:'bmboard-spells', v:1, spells:[s] }, null, 2), `bmspell-${name}.json`);
     }
+    // ⭐提出導線：自作魔法を catalog.json のエントリ形式に変換して見せる（コピー/保存）
+    function toCatalogEntry(s) {
+        const e = { name: s.name, icon: s.icon || '🪄', desc: s.desc || '', author: 'あなたの名前', tag: 'new' };
+        if (Array.isArray(s.ops)) e.ops = s.ops; else if (Array.isArray(s.objects)) e.objects = s.objects;
+        return e;
+    }
+    function openSubmit(name) {
+        const a = (window._getSpells && window._getSpells()) || [];
+        const s = a.find(x => x.name === name); if (!s) return;
+        const box = overlay.querySelector('#spellSubmit'), ta = overlay.querySelector('#spellSubmitJson');
+        if (!box || !ta) return;
+        ta.value = JSON.stringify(toCatalogEntry(s), null, 2);
+        box.hidden = false; box.dataset.name = name;
+        ta.focus(); ta.select();
+    }
     if (spellListEl) spellListEl.addEventListener('click', e => {
+        const sub = e.target.closest('[data-sub]'); if (sub) { openSubmit(sub.getAttribute('data-sub')); return; }
         const dl = e.target.closest('[data-dl]'); if (dl) { exportOneSpell(dl.getAttribute('data-dl')); return; }
         const del = e.target.closest('[data-del]');
         if (del) { if (window._forgetSpell) window._forgetSpell(del.getAttribute('data-del')); renderSpells(); if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen(); }
     });
+    { const box = overlay.querySelector('#spellSubmit'), ta = overlay.querySelector('#spellSubmitJson');
+      const cl = overlay.querySelector('#spellSubmitClose'), cp = overlay.querySelector('#spellSubmitCopy'), dlb = overlay.querySelector('#spellSubmitDl');
+      if (cl) cl.addEventListener('click', () => { if (box) box.hidden = true; });
+      if (cp) cp.addEventListener('click', () => {
+          if (!ta) return; ta.select();
+          try { navigator.clipboard ? navigator.clipboard.writeText(ta.value) : document.execCommand('copy'); } catch (_) {}
+          cp.textContent = '✓'; setTimeout(() => { cp.textContent = (window.t ? window.t('submit.copy') : 'コピー'); }, 1200);
+      });
+      if (dlb) dlb.addEventListener('click', () => {
+          if (!ta || !box) return;
+          if (typeof bmDeliverJson === 'function') bmDeliverJson(ta.value, `bmstore-entry-${box.dataset.name || 'spell'}.json`);
+      }); }
     { const ib = overlay.querySelector('#spellImportBtn'), eb = overlay.querySelector('#spellExportAllBtn');
       if (ib) ib.addEventListener('click', () => { const i = document.getElementById('spellFileInput'); if (i) i.click(); });
       if (eb) eb.addEventListener('click', () => {
@@ -10603,6 +10649,9 @@ const I18N = {
         'spells.head': '保存した魔法（⌘Kから使えます）', 'spells.empty': 'まだ魔法がありません — 選択して「spell 名前」、または store から入れる',
         'spells.import': '読み込む', 'spells.exportAll': '全部書き出す',
         'spells.fromSelf': '自作', 'spells.fromStore': 'STORE', 'spells.fromImport': '読込',
+        'submit.title': '📤 STOREに提出する',
+        'submit.steps': '① 下のJSONをコピー　② store/catalog.json の spells に貼って追記（PR）または作者に送る　③ 公開されるとSTOREに並びます（author を自分の名前に変えてください）',
+        'submit.copy': 'JSONをコピー', 'submit.download': 'JSONを保存',
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
         'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
         'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
@@ -10640,6 +10689,9 @@ const I18N = {
         'spells.head': 'Saved spells (use them from ⌘K)', 'spells.empty': 'No spells yet — select objects then "spell <name>", or install from the store',
         'spells.import': 'Import', 'spells.exportAll': 'Export all',
         'spells.fromSelf': 'mine', 'spells.fromStore': 'STORE', 'spells.fromImport': 'imported',
+        'submit.title': '📤 Submit to STORE',
+        'submit.steps': '① Copy the JSON below　② Append it to spells in store/catalog.json (PR) or send it to the author　③ Once published it appears in the STORE (set author to your name)',
+        'submit.copy': 'Copy JSON', 'submit.download': 'Save JSON',
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
         'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
         'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
