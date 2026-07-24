@@ -8832,6 +8832,28 @@ function runCommand(val) {
         printRaw((typeof LANG!=='undefined'&&LANG==='en') ? `board size → ${key==='free'?'none (infinite)':lbl}` : `ボードサイズ → ${key==='free'?'なし（無限）':lbl}`, 't-dim');
         return;
     }
+    // ⭐選択を魔法(spell)に保存 → ⌘Kで再配置。forget spell <name> で削除、list spell で一覧
+    if (head==='spell') {
+        const en = (typeof LANG!=='undefined'&&LANG==='en');
+        const sub = rest.trim();
+        const w = sub.split(/\s+/); const verb = (w[0]||'').toLowerCase();
+        if (verb === 'forget' || verb === 'delete' || verb === 'rm') {
+            const nm = sub.slice(w[0].length).trim();
+            const ok = (typeof forgetSpell==='function') && forgetSpell(nm);
+            printRaw(ok ? (en?`forgot spell "${nm}"`:`魔法「${nm}」を削除`) : (en?`spell "${nm}" not found`:`魔法「${nm}」が見つからない`), ok?'t-dim':'t-err');
+            return;
+        }
+        if (verb === 'list' || (!sub)) {
+            const a = (typeof getSpells==='function') ? getSpells() : [];
+            if (!a.length) { printRaw(en?'no spells yet — select objects, then: spell <name>':'魔法はまだ無い — 選択して「spell 名前」で保存', 't-dim'); return; }
+            printRaw((en?'spells: ':'魔法: ') + a.map(s=>`${s.name}(${s.count})`).join(' · '), 't-dim');
+            return;
+        }
+        const r = (typeof addSpellFromSelection==='function') ? addSpellFromSelection(sub) : {ok:false,reason:'na'};
+        if (!r.ok) { printRaw(en?'spell: select objects first, then: spell <name>':'spell: 先にオブジェクトを選択 →「spell 名前」', 't-err'); return; }
+        printRaw(en?`saved spell "${r.name}" (${r.count} objects) — run it from ⌘K`:`魔法「${r.name}」を保存（${r.count}個）— ⌘Kから配置できます`, 't-dim');
+        return;
+    }
     // ⭐紙を裏返す（表が薄く透ける・見るv1）
     if (head==='flip' || low==='裏返す' || low==='ひっくり返す') {
         if (typeof toggleBoardFlip === 'function') toggleBoardFlip();
@@ -10454,8 +10476,8 @@ tiEl.addEventListener('paste', e => {
 // ══════════════════════════════════════════════════
 // ⭐omnibox 共有カタログ：ターミナル補完 と ⌘Kパレット が同じ1ソースを使う。
 //   cat＝⌘Kパレットのバッジ（何の機能かひと目で分かる）。
-const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク' };
-const OMNI_CATS_EN = { calc:'Calc', capture:'Note', board:'Board', draw:'Draw', grade:'Grade', panel:'Panel', edit:'Edit', io:'I/O', insert:'Insert', media:'Sound', help:'Help', link:'Link' };
+const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク', spell:'魔法' };
+const OMNI_CATS_EN = { calc:'Calc', capture:'Note', board:'Board', draw:'Draw', grade:'Grade', panel:'Panel', edit:'Edit', io:'I/O', insert:'Insert', media:'Sound', help:'Help', link:'Link', spell:'Spell' };
 function catLabel(c) { const m = (typeof LANG !== 'undefined' && LANG === 'en') ? OMNI_CATS_EN : OMNI_CATS; return m[c] || c || ''; }
 // ══════════════════════════════════════════════════
 // i18n — EN/JP 切替（追加コードのみ・既存の描画/操作/保存には触れない）
@@ -10561,6 +10583,7 @@ const OMNI_CMDS = [
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙' },
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
+    { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic' },
     { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す', hintEn:'Clear the terminal log' },
     { cmd:'export',  cat:'io',      hint:'書き出し（png / svg / pptx / data）', hintEn:'Export (png / svg / pptx / data)', args:true },
     { cmd:'share',   cat:'io',      hint:'URLで画面を共有', hintEn:'Share the canvas via URL' },
@@ -10669,7 +10692,7 @@ function centerTermPanel() {
     if (!overlay || !input || !listEl) return;
 
     let rows = [], sel = 0, awaitingArg = null, mode = 'list', _favCount = 0, _recentCount = 0;
-    const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?', link:'↗' };
+    const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?', link:'↗', spell:'✦' };
     // ⭐お気に入り（パレット上部に固定表示・★/右クリックでトグル）
     const FAVS_KEY = 'bm_favs';
     function getFavs() { try { return JSON.parse(localStorage.getItem(FAVS_KEY) || '[]'); } catch (_) { return []; } }
@@ -10723,7 +10746,7 @@ function centerTermPanel() {
 
     function cmdItem(it) {
         const cat = catLabel(it.cat);
-        const favKey = it._url ? ('link:' + it.cmd) : it.cmd;
+        const favKey = it._url ? ('link:' + it.cmd) : it._spell ? ('spell:' + it.cmd) : it.cmd;
         const fav = isFav(favKey);
         if (it._form) {   // ⭐パレット内フォームへ（リンク追加＝ターミナルに打たず⌘Kだけで完結）
             return { kind:'form', ico:'＋', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '', favKey, fav, noFav: true,
@@ -10741,6 +10764,10 @@ function centerTermPanel() {
         if (it._url) {   // ⭐お気に入りリンク → 選ぶとボード上のiframe窓で開く
             return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: hint || it._url, favKey, fav,
                 run() { recordRecent('link:' + it.cmd); close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
+        }
+        if (it._spell) {   // ⭐魔法 → 選ぶと保存した選択をビュー中心にスタンプ
+            return { kind:'spell', ico: CAT_ICON.spell || '✦', name: it.cmd, type: cat, desc: hint, favKey, fav,
+                run() { recordRecent('spell:' + it.cmd); close(); if (window._runSpell) window._runSpell(it._spell); } };
         }
         const usc = getUsc()[it.cmd];
         return {
@@ -10828,7 +10855,10 @@ function centerTermPanel() {
         const linksObj = (window._getLinks && window._getLinks()) || {};
         const linkPool = Object.keys(linksObj).map(n => ({ cmd: n, cat: 'link', hint: linksObj[n], _url: linksObj[n], kw: 'link リンク url お気に入り' }));
         const formCmd = { cmd:'リンク追加', cat:'link', hint:'お気に入りURLをフォームで登録（⌘Kだけで完結）', _form:true, kw:'link add リンク 追加 お気に入り url favorite ブックマーク' };
-        const POOL = OMNI_CMDS.concat([formCmd], linkPool);
+        // ⭐魔法(spell)を候補プールに合流（保存した選択を⌘Kから再配置）
+        const spellArr = (window._getSpells && window._getSpells()) || [];
+        const spellPool = spellArr.map(s => ({ cmd: s.name, cat: 'spell', hint: (LANG === 'en' ? `spell · ${s.count} objects` : `魔法 · ${s.count}個を配置`), hintEn: `spell · ${s.count} objects`, _spell: s, kw: '魔法 spell スタンプ 配置 ' + s.name }));
+        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = []; _favCount = 0; _recentCount = 0;
