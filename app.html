@@ -689,11 +689,11 @@
         /* ⭐紙をひっくり返す：ミラーは canvas 描画側で実施（入力/pan/zoom も一致）。ここは紙裏オーバーレイのみ */
         #flipOverlay {
             position: absolute; inset: 0; z-index: 11; display: none;
-            background: rgba(250,248,242,0.6);
+            background: rgba(250,248,242,0.8);   /* ⭐裏写りは薄め＝紙裏を濃くして表の透けを弱く */
             pointer-events: none;   /* ⭐入力透過＝裏面でも pan/zoom できる（ヒントだけ拾う） */
         }
         #cp.bm-flipped #flipOverlay { display: block; }
-        body.bm-dark #flipOverlay, body.bm-gray #flipOverlay { background: rgba(18,18,20,0.58); }
+        body.bm-dark #flipOverlay, body.bm-gray #flipOverlay { background: rgba(18,18,20,0.8); }
         .flip-hint {
             position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
             display: inline-flex; align-items: center; gap: 8px;
