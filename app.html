@@ -9182,31 +9182,6 @@ function runCommand(val) {
         printRaw(_L(`→ ${n}本の矢印でつなぎました`, `→ connected with ${n} arrow(s)`), 't-dim');
         return;
     }
-    // ⭐align：選択したものを揃える（left/right/top/bottom/center/middle）
-    if (head==='align') {
-        const ids = (S.multiSelected && S.multiSelected.length) ? S.multiSelected : [];
-        const objs = S.objects.filter(o => ids.includes(o.id));
-        if (objs.length < 2) { printRaw(_L('align: 2つ以上を選択してください','align: select 2 or more objects'), 't-err'); return; }
-        const how = rest.trim().toLowerCase() || 'left';
-        const B = objs.map(o => ({ o, b: getObjBounds(o) })).filter(x => x.b);
-        if (!B.length) return;
-        const minX = Math.min(...B.map(x => x.b.x)), maxX = Math.max(...B.map(x => x.b.x + x.b.w));
-        const minY = Math.min(...B.map(x => x.b.y)), maxY = Math.max(...B.map(x => x.b.y + x.b.h));
-        for (const { o, b } of B) {
-            let dx = 0, dy = 0;
-            if (how === 'left') dx = minX - b.x;
-            else if (how === 'right') dx = maxX - (b.x + b.w);
-            else if (how === 'top') dy = minY - b.y;
-            else if (how === 'bottom') dy = maxY - (b.y + b.h);
-            else if (how === 'center') dx = (minX + maxX) / 2 - (b.x + b.w / 2);
-            else if (how === 'middle') dy = (minY + maxY) / 2 - (b.y + b.h / 2);
-            else { printRaw(_L('align: left / right / top / bottom / center / middle','align: left / right / top / bottom / center / middle'), 't-err'); return; }
-            if (dx || dy) moveObj(o, dx, dy);
-        }
-        saveHistory(); redrawAll();
-        printRaw(_L(`→ ${B.length}個を ${how} で揃えました`, `→ aligned ${B.length} objects (${how})`), 't-dim');
-        return;
-    }
     // ⭐左右入替（利き手対応）：ボードを右に / 左に
     if (head==='swap' || head==='layout' || low==='左右' || low==='入替') {
         const sub = rest.trim().toLowerCase();
