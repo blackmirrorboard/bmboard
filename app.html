@@ -8413,6 +8413,20 @@ function _importLog(result, sourceLabel) {
         enqueue(head, ['→ schema check... ✓', `→ preset protected: $${result.originalName}`, `→ renamed to $${result.name}`, `[OK] spell acquired — run: $${result.name}`]);
     }
 }
+// ⭐⌘K/魔法タブ用：ユーザー/STORE登録のJS魔法（preset以外＝自作 or STORE由来）を列挙
+function getUserJsSpells() {
+    const built = new Set(['fetch-img']);   // 別名などは除外
+    const presetNames = new Set(Object.keys(typeof BM_PRESETS !== 'undefined' ? BM_PRESETS : {}));
+    return Object.keys(BM_CMDS || {}).filter(n => {
+        const v = BM_CMDS[n];
+        return v && v.source !== 'preset' && !presetNames.has(n) && !built.has(n);
+    }).map(n => ({ name: n, source: BM_CMDS[n].source || 'user', action: BM_CMDS[n].action }));
+}
+window._getUserJsSpells = getUserJsSpells;
+window._runJsSpell = (name, args) => { if (typeof runCustomCmd === 'function') runCustomCmd(name, args || ''); };
+window._registerJsSpell = (name, action, source) => (typeof registerCmd === 'function') ? registerCmd(name, action, { source: source || 'user' }) : null;
+window._forgetJsSpell = (name) => { if (typeof BM_CMDS !== 'undefined' && BM_CMDS[name] && BM_CMDS[name].source !== 'preset') { delete BM_CMDS[name]; if (typeof saveCmds === 'function') saveCmds(); return true; } return false; };
+
 function runCustomCmd(name, rawArgs) {
     const cmd = BM_CMDS[name];
     if (!cmd) { printRaw(`$${name}: command not found — type "list" to see registered commands`, 't-err'); return; }
@@ -11151,7 +11165,7 @@ function centerTermPanel() {
 
     function cmdItem(it) {
         const cat = catLabel(it.cat);
-        const favKey = it._url ? ('link:' + it.cmd) : it._spell ? ('spell:' + it.cmd) : (it._snip != null) ? ('snip:' + it.cmd) : it._chain ? ('chain:' + it.cmd) : it.cmd;
+        const favKey = it._url ? ('link:' + it.cmd) : it._spell ? ('spell:' + it.cmd) : (it._snip != null) ? ('snip:' + it.cmd) : it._chain ? ('chain:' + it.cmd) : it._js ? ('js:' + it.cmd) : it.cmd;
         const fav = isFav(favKey);
         if (it._form) {   // ⭐パレット内フォームへ（リンク追加＝ターミナルに打たず⌘Kだけで完結）
             return { kind:'form', ico:'＋', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '', favKey, fav, noFav: true,
@@ -11178,6 +11192,10 @@ function centerTermPanel() {
         if (it._url) {   // ⭐お気に入りリンク → 選ぶとボード上のiframe窓で開く
             return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: hint || it._url, favKey, fav,
                 run() { recordRecent('link:' + it.cmd); close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
+        }
+        if (it._js) {   // ⭐JS魔法（sakura型・コードで動く）→ runCustomCmd
+            return { kind:'js', ico:'⚡', name: it.cmd, type: cat, desc: hint, favKey, fav,
+                run() { recordRecent(it.cmd); close(); try { pushHistory(it.cmd); } catch (_) {} if (window._runJsSpell) window._runJsSpell(it.cmd, ''); } };
         }
         if (it._preset) {   // ⭐内蔵プリセット魔法 → runCustomCmd で実行
             return { kind:'preset', ico: it._picon || '🪄', name: it.cmd, type: cat, desc: hint, favKey, fav,
@@ -11359,7 +11377,11 @@ function centerTermPanel() {
         const presetPool = ((window._getPresetSpells && window._getPresetSpells()) || []).map(p => ({
             cmd: p.name, cat: 'spell', hint: p.desc, hintEn: p.descEn, _preset: p.name, _picon: p.icon,
             kw: '魔法 spell 内蔵 preset プリセット ' + p.name }));
-        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, snipPool, chainPool, presetPool);
+        // ⭐ユーザー/STORE登録のJS魔法（sakura型・コードで動く）
+        const jsPool = ((window._getUserJsSpells && window._getUserJsSpells()) || []).map(j => ({
+            cmd: j.name, cat: 'spell', hint: (j.source === 'store' ? 'STORE' : '自作') + 'のコード魔法', hintEn: 'code spell (' + j.source + ')',
+            _js: j.name, kw: '魔法 spell コード js ' + j.source + ' ' + j.name }));
+        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, snipPool, chainPool, presetPool, jsPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = []; _favCount = 0; _recentCount = 0;
@@ -12554,7 +12576,16 @@ function forgetSpell(name) {
 }
 // 魔法をローカルに取り込む（import / STOREインストール共通）。名前衝突は _2 で回避
 function installSpell(s) {
-    if (!s || typeof s.name !== 'string' || !(Array.isArray(s.objects) || Array.isArray(s.ops))) return null;
+    if (!s || typeof s.name !== 'string') return null;
+    // ⭐JSタイプ（sakura型＝手続き的/アニメ）：既存の register 経路に載せる（runCustomCmdで動く）
+    if (typeof s.action === 'string' && s.action.trim()) {
+        if (typeof registerCmd === 'function') {
+            const nm = registerCmd(s.name, s.action, { source: s.from === 'store' ? 'store' : 'user' });
+            return nm || null;
+        }
+        return null;
+    }
+    if (!(Array.isArray(s.objects) || Array.isArray(s.ops))) return null;
     const cur = getSpells();
     const names = new Set(cur.map(x => x.name));
     let nm = s.name; while (names.has(nm)) nm = nm + '_2';
