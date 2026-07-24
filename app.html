@@ -1382,6 +1382,21 @@
         .set-spellact { display: flex; gap: 5px; opacity: 0; }
         .set-spellrow:hover .set-spellact { opacity: 1; }
         .set-spellact .set-cmdbtn[data-del]:hover { color: #ff8b8b; border-color: rgba(255,80,80,0.4); }
+        /* ⭐届いている申請（GitHubの公開APIを読むだけ） */
+        .inbox-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
+            padding: 0 5px; margin-left: 6px; border-radius: 9px; font-size: 10.5px; font-weight: 600;
+            background: rgba(139,92,246,0.9); color: #fff; vertical-align: 1px; }
+        .inbox-badge[data-zero="1"] { background: rgba(255,255,255,0.14); color: var(--bm-fg-dim); }
+        .inbox-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 10px;
+            padding: 8px 10px; border-radius: 8px; }
+        .inbox-row:hover { background: rgba(255,255,255,0.05); }
+        .inbox-row.unread { box-shadow: inset 2px 0 0 rgba(139,92,246,0.9); }
+        .inbox-row .ib-t { min-width: 0; }
+        .inbox-row .ib-name { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .inbox-row .ib-meta { font-size: 10.5px; color: var(--bm-fg-dim); margin-top: 1px; }
+        .inbox-row .ib-code { color: #f0c674; }
+        .inbox-act { display: flex; gap: 5px; }
+        .inbox-note { padding: 8px 10px; font-size: 11.5px; color: var(--bm-fg-dim); line-height: 1.7; }
         /* ⭐魔法のインライン編集（名前/アイコン/説明） */
         .set-spellrow.editing { grid-template-columns: 44px 130px 1fr auto; background: rgba(154,160,255,0.08); box-shadow: inset 0 0 0 1px rgba(154,160,255,0.28); }
         .set-spell-ei, .set-spell-en, .set-spell-ed { background: rgba(0,0,0,0.3); color: #f2efe8; border: 1px solid rgba(255,255,255,0.14);
@@ -3053,6 +3068,14 @@
                 <div class="set-submit-actions">
                     <span class="set-cmdbtn primary" id="spellCreateRun" data-i18n="create.run">登録して試す</span>
                 </div>
+            </div>
+            <!-- ⭐届いている申請＝GitHubに提出された魔法。公開APIで読むだけ（ログイン不要・サーバー不要） -->
+            <div id="inboxWrap" hidden>
+                <div class="set-spell-head" id="inboxHead">
+                    <span><span data-i18n="inbox.head">📥 届いている申請</span> <b id="inboxCount" class="inbox-badge">0</b></span>
+                    <span class="set-spell-actions"><span class="set-cmdbtn" id="inboxReload" data-i18n="inbox.reload">再読込</span><span class="set-cmdbtn" id="inboxOpen" data-i18n="inbox.openGh">🐙 GitHubで見る</span></span>
+                </div>
+                <div id="inboxList" class="set-cmds-list"></div>
             </div>
             <div id="setSpellList" class="set-cmds-list"></div>
             <div id="spellSubmit" class="set-submit" hidden>
@@ -8462,6 +8485,23 @@ function runCustomCmd(name, rawArgs) {
     }
 }
 
+// ⭐登録せずにその場で1回だけ動かす（申請ボックスの「試す」用）。
+//   未審査の魔法を BM_CMDS に混ぜたくないので、実行だけして何も残さない。
+window._runInlineJsSpell = function (spell) {
+    if (!spell || !spell.action) return false;
+    const nm = spell.name || spell.command || 'spell';
+    try {
+        const fn = new Function('BM', 'args', String(spell.action));
+        fn(window.BM, '');
+        redrawAll();
+        saveHistory();
+        return true;
+    } catch (err) {
+        printRaw(`[${nm}] runtime error: ${err.message}`, 't-err');
+        return false;
+    }
+};
+
 // ── iOS Share + file naming ───────────────────────────────────────────────
 // ── Device detection (for default save filename) ─────────────────────────
 function bmDetectDevice() {
@@ -10913,6 +10953,148 @@ tiEl.addEventListener('paste', e => {
         }
         editingSpell = null; renderSpells(); if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen();
     }
+    /* ⭐届いている申請＝GitHubに提出された魔法を、アプリの中で受け取る。
+       公開REST APIは未ログインでも読める（60回/時）。サーバーもトークンも要らない。
+       GitHubを見に行かなくても、いつも開いているここで気づけるのが狙い。 */
+    const INBOX_REPO  = 'blackmirrorboard/bmboard';
+    const INBOX_LABEL = 'spell-submission';
+    const INBOX_SEEN  = 'bm_inbox_seen';
+    let _inbox = [];
+    const _inboxSeen = () => { try { return JSON.parse(localStorage.getItem(INBOX_SEEN) || '[]'); } catch (_) { return []; } };
+    const _inboxMarkSeen = (nums) => { try { localStorage.setItem(INBOX_SEEN, JSON.stringify([...new Set([..._inboxSeen(), ...nums])].slice(-300))); } catch (_) {} };
+
+    // Issue本文から魔法のJSONを取り出す。```json ブロック → 素の { } の順で試す
+    function _inboxParse(body) {
+        if (!body) return null;
+        const fence = body.match(/```(?:json)?\s*([\s\S]*?)```/);
+        const cands = [];
+        if (fence) cands.push(fence[1]);
+        const brace = body.match(/\{[\s\S]*\}/);
+        if (brace) cands.push(brace[0]);
+        for (const c of cands) {
+            try {
+                const o = JSON.parse(c.trim());
+                if (o && typeof o === 'object' && (o.name || o.command)) return o;
+            } catch (_) {}
+        }
+        return null;
+    }
+
+    function renderInbox() {
+        const wrap = document.getElementById('inboxWrap');
+        const list = document.getElementById('inboxList');
+        const cnt  = document.getElementById('inboxCount');
+        if (!wrap || !list) return;
+        const T = k => (window.t ? window.t(k) : k);
+        const seen = new Set(_inboxSeen());
+        const unread = _inbox.filter(x => !seen.has(x.number)).length;
+        if (cnt) { cnt.textContent = String(unread); cnt.setAttribute('data-zero', unread ? '0' : '1'); }
+        // 0件のときは黙って隠す（普段の邪魔をしない）
+        wrap.hidden = _inbox.length === 0;
+        list.innerHTML = _inbox.map(it => {
+            const s = it.spell || {};
+            const isCode = !!s.action;
+            const icon = _esc2(s.icon || '📥');
+            const nm = _esc2(s.name || s.command || it.title.replace(/^\[spell\]\s*/i, ''));
+            const who = _esc2(s.author || it.user);
+            const kind = isCode ? `<span class="ib-code">${_esc2(T('inbox.code'))}</span>` : _esc2(T('inbox.decl'));
+            const bad = s.name || s.command ? '' : ` · ${_esc2(T('inbox.noJson'))}`;
+            return `<div class="inbox-row${seen.has(it.number) ? '' : ' unread'}" data-num="${it.number}">`
+                 + `<span class="cmdk-ico">${icon}</span>`
+                 + `<span class="ib-t"><div class="ib-name">${nm}</div>`
+                 + `<div class="ib-meta">#${it.number} · ${who} · ${kind}${bad}</div></span>`
+                 + `<span class="inbox-act">`
+                 + (it.spell ? `<span class="set-cmdbtn" data-ib-try="${it.number}" title="${_esc2(T('inbox.try'))}">▶</span>` : '')
+                 + (it.spell ? `<span class="set-cmdbtn" data-ib-copy="${it.number}" title="${_esc2(T('inbox.copy'))}">⧉</span>` : '')
+                 + `<span class="set-cmdbtn" data-ib-open="${it.number}">🐙</span></span></div>`;
+        }).join('');
+    }
+
+    let _inboxAt = 0;
+    const INBOX_TTL = 5 * 60 * 1000;   // ⭐未ログインのGitHub APIは60回/時。設定を開くたびに叩かないよう5分キャッシュ
+    async function loadInbox(force) {
+        const list = document.getElementById('inboxList');
+        const wrap = document.getElementById('inboxWrap');
+        const T = k => (window.t ? window.t(k) : k);
+        if (!wrap) return;
+        if (!force && _inboxAt && (Date.now() - _inboxAt) < INBOX_TTL) { renderInbox(); return; }
+        try {
+            const url = `https://api.github.com/repos/${INBOX_REPO}/issues`
+                      + `?labels=${encodeURIComponent(INBOX_LABEL)}&state=open&per_page=30`;
+            const r = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+            if (r.status === 403) {   // レート制限（未ログインは60回/時）
+                wrap.hidden = false;
+                if (list) list.innerHTML = `<div class="inbox-note">${_esc2(T('inbox.rate'))}</div>`;
+                return;
+            }
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const arr = await r.json();
+            _inboxAt = Date.now();
+            _inbox = (Array.isArray(arr) ? arr : [])
+                .filter(x => !x.pull_request)          // PRはIssue一覧に混ざるので除く
+                .map(x => ({ number: x.number, title: x.title || '', url: x.html_url,
+                             user: (x.user && x.user.login) || '?', spell: _inboxParse(x.body) }));
+            renderInbox();
+        } catch (e) {
+            // オフライン等は黙って隠す（機能が使えないだけでアプリは動く）
+            if (!force) { wrap.hidden = true; return; }
+            wrap.hidden = false;
+            if (list) list.innerHTML = `<div class="inbox-note">${_esc2(T('inbox.err'))}</div>`;
+        }
+    }
+    window._loadInbox = loadInbox;
+
+    const _inboxListEl = document.getElementById('inboxList');
+    if (_inboxListEl) _inboxListEl.addEventListener('click', e => {
+        const T = k => (window.t ? window.t(k) : k);
+        const find = n => _inbox.find(x => x.number === +n);
+        const tryB = e.target.closest('[data-ib-try]');
+        if (tryB) {
+            const it = find(tryB.getAttribute('data-ib-try')); if (!it || !it.spell) return;
+            const run = () => {
+                _inboxMarkSeen([it.number]); renderInbox();
+                close();                                   // 盤面を見せる
+                try {
+                    if (it.spell.action && window._runInlineJsSpell) window._runInlineJsSpell(it.spell);
+                    else if (window._runSpell) window._runSpell(it.spell);
+                    if (typeof printRaw === 'function') printRaw(_L(`→ 申請 #${it.number} をボードで試しました`, `→ ran submission #${it.number} on the board`), 't-dim');
+                } catch (err) {
+                    if (typeof printRaw === 'function') printRaw(_L(`申請 #${it.number} の実行でエラー: `, `error running #${it.number}: `) + String(err).slice(0, 90), 't-err');
+                }
+            };
+            // ⚠️コード魔法＝他人が書いたJSをそのまま走らせる。審査前なので必ず確認を挟む
+            if (it.spell.action && typeof bmConfirm === 'function') {
+                bmConfirm(
+                    _L('未審査のコードを実行します', 'Run unreviewed code?'),
+                    _L(`申請 #${it.number}（${it.user} さん）には JavaScript が含まれています。\n審査前のコードをこのボードで実行します。中身を確認してから進めてください。`,
+                       `Submission #${it.number} (by ${it.user}) contains JavaScript.\nThis runs unreviewed code on your board. Check the code before you proceed.`)
+                ).then(okp => { if (okp) run(); });
+            } else run();
+            return;
+        }
+        const cp = e.target.closest('[data-ib-copy]');
+        if (cp) {
+            const it = find(cp.getAttribute('data-ib-copy')); if (!it || !it.spell) return;
+            const entry = Object.assign({}, it.spell);
+            if (!entry.author) entry.author = it.user;
+            try { navigator.clipboard.writeText(JSON.stringify(entry, null, 2)); } catch (_) {}
+            _inboxMarkSeen([it.number]); renderInbox();
+            if (typeof printRaw === 'function') printRaw(_L('catalog.json 用のJSONをコピーしました', 'Copied the catalog.json entry'), 't-dim');
+            return;
+        }
+        const op = e.target.closest('[data-ib-open]');
+        if (op) {
+            const it = find(op.getAttribute('data-ib-open')); if (!it) return;
+            _inboxMarkSeen([it.number]); renderInbox();
+            window.open(it.url, '_blank', 'noopener');
+        }
+    });
+    const _ibReload = document.getElementById('inboxReload');
+    if (_ibReload) _ibReload.addEventListener('click', () => loadInbox(true));
+    const _ibOpen = document.getElementById('inboxOpen');
+    if (_ibOpen) _ibOpen.addEventListener('click', () =>
+        window.open(`https://github.com/${INBOX_REPO}/issues?q=is%3Aissue+is%3Aopen+label%3A${INBOX_LABEL}`, '_blank', 'noopener'));
+
     if (spellListEl) spellListEl.addEventListener('click', e => {
         const ed = e.target.closest('[data-edit]'); if (ed) { editingSpell = { name: ed.getAttribute('data-edit'), kind: ed.getAttribute('data-kind') }; renderSpells(); const f = spellListEl.querySelector('.editing .set-spell-en'); if (f) f.focus(); return; }
         const cancel = e.target.closest('[data-cancel]'); if (cancel) { editingSpell = null; renderSpells(); return; }
@@ -11069,7 +11251,11 @@ tiEl.addEventListener('paste', e => {
     });
     window._settingsRenderCmds = () => { if (panes.commands && !panes.commands.hidden) renderCmds(); };
 
-    function open()  { overlay.classList.add('open'); sync(); switchTab(curTab); }
+    function open()  {
+        overlay.classList.add('open'); sync(); switchTab(curTab);
+        // ⭐開くたびに申請を取りに行く（失敗しても黙って隠れるだけ＝アプリは止まらない）
+        try { loadInbox(false); } catch (_) {}
+    }
     function close() { overlay.classList.remove('open'); }
     function toggle(){ isOpen() ? close() : open(); }
     window._openSettings = open;
@@ -11123,6 +11309,11 @@ var LANG = (function () { try { return localStorage.getItem('bm_lang') || 'ja'; 
 const I18N = {
     ja: {
         'usage.search': '検索（コマンド・キー・やりたいこと）',
+        'inbox.head': '📥 届いている申請', 'inbox.reload': '再読込', 'inbox.openGh': '🐙 GitHubで見る',
+        'inbox.try': 'ボードで試す', 'inbox.copy': 'catalog.json 用にコピー',
+        'inbox.code': '⚡コード', 'inbox.decl': '図形', 'inbox.noJson': 'JSONが読めません',
+        'inbox.rate': 'GitHubの読み取り上限に達しました（1時間あたり60回）。しばらくしてから再読込してください。',
+        'inbox.err': '申請を読み込めませんでした（オフラインかもしれません）。',
         'lf.title': '↗ リンクを追加', 'lf.desc': 'よく使うURLを登録すると、⌘K から名前で呼び出してボード上に開けます。',
         'lf.name': '名前（呼び出す言葉）', 'lf.nameph': '例：カラー / 資料 / yt', 'lf.urlph': '例：coolors.co',
         'lf.back': '戻る（Esc）', 'lf.save': '保存して開く（↵）',
@@ -11174,6 +11365,11 @@ const I18N = {
     },
     en: {
         'usage.search': 'Search commands, keys, or what you want to do',
+        'inbox.head': '📥 Submissions', 'inbox.reload': 'Reload', 'inbox.openGh': '🐙 View on GitHub',
+        'inbox.try': 'Try it on the board', 'inbox.copy': 'Copy as a catalog.json entry',
+        'inbox.code': '⚡code', 'inbox.decl': 'shapes', 'inbox.noJson': "couldn't read the JSON",
+        'inbox.rate': 'Hit GitHub\u2019s read limit (60/hour). Try reloading in a little while.',
+        'inbox.err': 'Could not load submissions (you may be offline).',
         'lf.title': '↗ Add a link', 'lf.desc': 'Save a URL you use often — then call it up by name from ⌘K and open it on the board.',
         'lf.name': 'Name (what you type)', 'lf.nameph': 'e.g. color / docs / yt', 'lf.urlph': 'e.g. coolors.co',
         'lf.back': 'Back (Esc)', 'lf.save': 'Save & open (↵)',
