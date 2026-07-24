@@ -1,0 +1,57 @@
+name: チェック / Checks
+
+# app.html を触ったら毎回まわす軽い検査。
+# ⚠️狙いは「静かに壊れる」種類のバグを機械で止めること。
+on:
+  push:
+    paths: ['app.html', 'store/catalog.json', '.github/scripts/**', '.github/workflows/checks.yml']
+  pull_request:
+    paths: ['app.html', 'store/catalog.json', '.github/scripts/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ⭐同名コマンドの重複＝後から足した方が前の実装を黙って殺す事故。
+      #   2026-07-24 の1日で3件（align / board / dark）発生したので機械で止める。
+      - name: コマンド名の重複を見る
+        run: node .github/scripts/check-command-dups.mjs
+
+      - name: JS の構文を見る
+        run: |
+          node -e '
+            const fs=require("fs");
+            const src=fs.readFileSync("app.html","utf8");
+            const blocks=[...src.matchAll(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+            try { new Function(blocks.join("\n;\n")); console.log("JS構文OK ("+blocks.length+"ブロック)"); }
+            catch(e){ console.error("構文エラー: "+e.message); process.exit(1); }
+          '
+
+      - name: STORE カタログが壊れていないか見る
+        run: |
+          node -e '
+            const fs=require("fs");
+            const OPS=["square","sticky","text","circle","triangle","arrow"];
+            const cat=JSON.parse(fs.readFileSync("store/catalog.json","utf8"));
+            const sp=cat.spells||cat;
+            const names=new Set(); let bad=0;
+            for(const s of sp){
+              if(!s.name){ console.error("nameが無いエントリがあります"); bad++; continue; }
+              if(names.has(s.name)){ console.error("名前が重複: "+s.name); bad++; }
+              names.add(s.name);
+              if(Array.isArray(s.ops)) for(const o of s.ops)
+                if(!OPS.includes(o.type)){ console.error(`${s.name}: 許可されていない type "${o.type}"`); bad++; }
+              if(!s.ops && !s.action && !s.objects){ console.error(s.name+": ops/action/objects のどれも無い"); bad++; }
+            }
+            if(bad){ process.exit(1); }
+            console.log("カタログOK ("+sp.length+"件)");
+          '
