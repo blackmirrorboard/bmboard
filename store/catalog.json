@@ -1,53 +1,108 @@
 {
   "format": "bmboard-store",
   "v": 1,
-  "note": "BMBoard STORE のカタログ。ここに魔法(spell)を足すだけでアプリのSTOREに並びます（バックエンド不要）。ops は BM.create の白リスト型のみ: square / sticky / text / circle / triangle / arrow。dx,dy はビュー中心からの相対位置。",
+  "note": "BMBoard STORE のカタログ。魔法(spell)を足すだけでアプリのSTOREに並びます（バックエンド不要）。ops は BM.create の白リスト型のみ: square / sticky / text / circle / triangle / arrow。dx,dy はビュー中心からの相対（square/sticky/text=左上, circle=中心, arrow=props の x1,y1,x2,y2 が相対）。",
   "spells": [
     {
-      "name": "3カラム比較",
-      "icon": "🧱",
-      "desc": "3つの枠と見出しで案を並べて比べる",
-      "author": "kinoshita studio",
-      "tag": "featured",
+      "name": "カンバン", "icon": "🗂", "desc": "To Do / Doing / Done の3レーン", "author": "kinoshita studio", "tag": "featured",
       "ops": [
-        { "type": "square", "dx": -510, "dy": -180, "props": { "w": 320, "h": 380 } },
-        { "type": "square", "dx": -160, "dy": -180, "props": { "w": 320, "h": 380 } },
-        { "type": "square", "dx": 190, "dy": -180, "props": { "w": 320, "h": 380 } },
-        { "type": "text", "dx": -500, "dy": -215, "props": { "text": "A", "fontSize": 28 } },
-        { "type": "text", "dx": -150, "dy": -215, "props": { "text": "B", "fontSize": 28 } },
-        { "type": "text", "dx": 200, "dy": -215, "props": { "text": "C", "fontSize": 28 } }
+        { "type": "square", "dx": -510, "dy": -190, "props": { "w": 320, "h": 420 } },
+        { "type": "square", "dx": -160, "dy": -190, "props": { "w": 320, "h": 420 } },
+        { "type": "square", "dx": 190, "dy": -190, "props": { "w": 320, "h": 420 } },
+        { "type": "text", "dx": -498, "dy": -224, "props": { "text": "To Do", "fontSize": 26 } },
+        { "type": "text", "dx": -148, "dy": -224, "props": { "text": "Doing", "fontSize": 26 } },
+        { "type": "text", "dx": 202, "dy": -224, "props": { "text": "Done", "fontSize": 26 } }
       ]
     },
     {
-      "name": "起承転結",
-      "icon": "📜",
-      "desc": "物語の4コマ枠（構成を考える）",
-      "author": "kinoshita studio",
-      "tag": "new",
+      "name": "SWOT分析", "icon": "🧮", "desc": "強み/弱み/機会/脅威の2×2", "author": "kinoshita studio", "tag": "featured",
       "ops": [
-        { "type": "square", "dx": -420, "dy": -230, "props": { "w": 400, "h": 220 } },
-        { "type": "square", "dx": 20, "dy": -230, "props": { "w": 400, "h": 220 } },
-        { "type": "square", "dx": -420, "dy": 10, "props": { "w": 400, "h": 220 } },
-        { "type": "square", "dx": 20, "dy": 10, "props": { "w": 400, "h": 220 } },
-        { "type": "text", "dx": -410, "dy": -255, "props": { "text": "起", "fontSize": 24 } },
-        { "type": "text", "dx": 30, "dy": -255, "props": { "text": "承", "fontSize": 24 } },
-        { "type": "text", "dx": -410, "dy": -15, "props": { "text": "転", "fontSize": 24 } },
-        { "type": "text", "dx": 30, "dy": -15, "props": { "text": "結", "fontSize": 24 } }
+        { "type": "square", "dx": -400, "dy": -210, "props": { "w": 380, "h": 200 } },
+        { "type": "square", "dx": 20, "dy": -210, "props": { "w": 380, "h": 200 } },
+        { "type": "square", "dx": -400, "dy": 10, "props": { "w": 380, "h": 200 } },
+        { "type": "square", "dx": 20, "dy": 10, "props": { "w": 380, "h": 200 } },
+        { "type": "text", "dx": -388, "dy": -240, "props": { "text": "Strengths 強み", "fontSize": 22 } },
+        { "type": "text", "dx": 32, "dy": -240, "props": { "text": "Weaknesses 弱み", "fontSize": 22 } },
+        { "type": "text", "dx": -388, "dy": -20, "props": { "text": "Opportunities 機会", "fontSize": 22 } },
+        { "type": "text", "dx": 32, "dy": -20, "props": { "text": "Threats 脅威", "fontSize": 22 } }
       ]
     },
     {
-      "name": "ムードボード枠",
-      "icon": "🎨",
-      "desc": "画像を貼るための6枠（トーン集め）",
-      "author": "kinoshita studio",
-      "tag": "new",
+      "name": "2軸マトリクス", "icon": "✳️", "desc": "十字の2軸＋4象限ラベル", "author": "kinoshita studio", "tag": "featured",
       "ops": [
-        { "type": "square", "dx": -480, "dy": -200, "props": { "w": 300, "h": 190 } },
-        { "type": "square", "dx": -160, "dy": -200, "props": { "w": 300, "h": 190 } },
-        { "type": "square", "dx": 160, "dy": -200, "props": { "w": 300, "h": 190 } },
-        { "type": "square", "dx": -480, "dy": 10, "props": { "w": 300, "h": 190 } },
-        { "type": "square", "dx": -160, "dy": 10, "props": { "w": 300, "h": 190 } },
-        { "type": "square", "dx": 160, "dy": 10, "props": { "w": 300, "h": 190 } }
+        { "type": "arrow", "props": { "x1": -360, "y1": 0, "x2": 360, "y2": 0 } },
+        { "type": "arrow", "props": { "x1": 0, "y1": 300, "x2": 0, "y2": -300 } },
+        { "type": "text", "dx": 150, "dy": -240, "props": { "text": "◤", "fontSize": 20 } },
+        { "type": "text", "dx": -320, "dy": -240, "props": { "text": "第2象限", "fontSize": 20 } },
+        { "type": "text", "dx": 210, "dy": -240, "props": { "text": "第1象限", "fontSize": 20 } },
+        { "type": "text", "dx": -320, "dy": 220, "props": { "text": "第3象限", "fontSize": 20 } },
+        { "type": "text", "dx": 210, "dy": 220, "props": { "text": "第4象限", "fontSize": 20 } }
+      ]
+    },
+    {
+      "name": "タイムライン", "icon": "🕒", "desc": "横線＋4つの節目", "author": "kinoshita studio", "tag": "new",
+      "ops": [
+        { "type": "arrow", "props": { "x1": -420, "y1": 0, "x2": 440, "y2": 0 } },
+        { "type": "circle", "dx": -300, "dy": 0, "props": { "rx": 12, "ry": 12, "fill": "#111111" } },
+        { "type": "circle", "dx": -100, "dy": 0, "props": { "rx": 12, "ry": 12, "fill": "#111111" } },
+        { "type": "circle", "dx": 100, "dy": 0, "props": { "rx": 12, "ry": 12, "fill": "#111111" } },
+        { "type": "circle", "dx": 300, "dy": 0, "props": { "rx": 12, "ry": 12, "fill": "#111111" } },
+        { "type": "text", "dx": -330, "dy": 30, "props": { "text": "①", "fontSize": 22 } },
+        { "type": "text", "dx": -130, "dy": 30, "props": { "text": "②", "fontSize": 22 } },
+        { "type": "text", "dx": 70, "dy": 30, "props": { "text": "③", "fontSize": 22 } },
+        { "type": "text", "dx": 270, "dy": 30, "props": { "text": "④", "fontSize": 22 } }
+      ]
+    },
+    {
+      "name": "3ステップ フロー", "icon": "➡️", "desc": "3つの箱を矢印でつなぐ", "author": "kinoshita studio", "tag": "new",
+      "ops": [
+        { "type": "square", "dx": -430, "dy": -70, "props": { "w": 240, "h": 140 } },
+        { "type": "square", "dx": -80, "dy": -70, "props": { "w": 240, "h": 140 } },
+        { "type": "square", "dx": 270, "dy": -70, "props": { "w": 240, "h": 140 } },
+        { "type": "arrow", "props": { "x1": -180, "y1": 0, "x2": -90, "y2": 0 } },
+        { "type": "arrow", "props": { "x1": 170, "y1": 0, "x2": 260, "y2": 0 } },
+        { "type": "text", "dx": -400, "dy": -10, "props": { "text": "STEP 1", "fontSize": 22 } },
+        { "type": "text", "dx": -50, "dy": -10, "props": { "text": "STEP 2", "fontSize": 22 } },
+        { "type": "text", "dx": 300, "dy": -10, "props": { "text": "STEP 3", "fontSize": 22 } }
+      ]
+    },
+    {
+      "name": "スマホ ワイヤー", "icon": "📱", "desc": "スマホ枠＋ヘッダ/コンテンツ", "author": "kinoshita studio", "tag": "new",
+      "ops": [
+        { "type": "square", "dx": -150, "dy": -320, "props": { "w": 300, "h": 620 } },
+        { "type": "square", "dx": -130, "dy": -290, "props": { "w": 260, "h": 60, "fill": "rgba(0,0,0,0.08)" } },
+        { "type": "square", "dx": -130, "dy": -210, "props": { "w": 260, "h": 150, "fill": "rgba(0,0,0,0.04)" } },
+        { "type": "square", "dx": -130, "dy": -40, "props": { "w": 120, "h": 120, "fill": "rgba(0,0,0,0.04)" } },
+        { "type": "square", "dx": 10, "dy": -40, "props": { "w": 120, "h": 120, "fill": "rgba(0,0,0,0.04)" } },
+        { "type": "square", "dx": -130, "dy": 200, "props": { "w": 260, "h": 70, "fill": "rgba(0,0,0,0.08)" } }
+      ]
+    },
+    {
+      "name": "優先度マトリクス", "icon": "🎯", "desc": "緊急×重要の2×2", "author": "kinoshita studio", "tag": "new",
+      "ops": [
+        { "type": "square", "dx": -360, "dy": -200, "props": { "w": 340, "h": 190 } },
+        { "type": "square", "dx": 0, "dy": -200, "props": { "w": 340, "h": 190 } },
+        { "type": "square", "dx": -360, "dy": 10, "props": { "w": 340, "h": 190 } },
+        { "type": "square", "dx": 0, "dy": 10, "props": { "w": 340, "h": 190 } },
+        { "type": "text", "dx": -352, "dy": -230, "props": { "text": "重要×緊急 → すぐやる", "fontSize": 18 } },
+        { "type": "text", "dx": 8, "dy": -230, "props": { "text": "重要×not緊急 → 計画", "fontSize": 18 } },
+        { "type": "text", "dx": -352, "dy": -20, "props": { "text": "緊急×not重要 → 任せる", "fontSize": 18 } },
+        { "type": "text", "dx": 8, "dy": -20, "props": { "text": "どちらも低 → やめる", "fontSize": 18 } }
+      ]
+    },
+    {
+      "name": "マインドマップ核", "icon": "🧠", "desc": "中心＋4本の枝", "author": "kinoshita studio", "tag": "new",
+      "ops": [
+        { "type": "circle", "dx": 0, "dy": 0, "props": { "rx": 70, "ry": 46, "fill": "rgba(0,0,0,0.05)" } },
+        { "type": "text", "dx": -34, "dy": -12, "props": { "text": "テーマ", "fontSize": 22 } },
+        { "type": "arrow", "props": { "x1": 60, "y1": -20, "x2": 240, "y2": -140 } },
+        { "type": "arrow", "props": { "x1": 60, "y1": 20, "x2": 240, "y2": 140 } },
+        { "type": "arrow", "props": { "x1": -60, "y1": -20, "x2": -240, "y2": -140 } },
+        { "type": "arrow", "props": { "x1": -60, "y1": 20, "x2": -240, "y2": 140 } },
+        { "type": "sticky", "dx": 240, "dy": -180, "props": { "w": 160, "h": 110, "color": "#FFE873", "text": "" } },
+        { "type": "sticky", "dx": 240, "dy": 90, "props": { "w": 160, "h": 110, "color": "#BEE3FF", "text": "" } },
+        { "type": "sticky", "dx": -400, "dy": -180, "props": { "w": 160, "h": 110, "color": "#FFC1CC", "text": "" } },
+        { "type": "sticky", "dx": -400, "dy": 90, "props": { "w": 160, "h": 110, "color": "#C9F5D0", "text": "" } }
       ]
     }
   ]

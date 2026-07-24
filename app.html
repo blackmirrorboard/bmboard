@@ -12562,6 +12562,23 @@ const STORE_CATALOG = [
     { name: '見出し + 罫線', icon: '📏', desc: '見出しテキストと下線（章の頭に）', author: 'kinoshita studio', tag: 'new',
       ops: [ { type: 'text',   dx: -200, dy: -40, props: { text: '見出し', fontSize: 48 } },
              { type: 'square', dx: -210, dy:  20, props: { w: 420, h: 3, fill: '#111111', strokeOff: true } } ] },
+    { name: 'Y字ダイアグラム', icon: '🔱', desc: '1つの問いから2つの分岐', author: 'kinoshita studio', tag: 'new',
+      ops: [ { type: 'sticky', dx: -90, dy: -220, props: { w: 180, h: 120, color: '#FFE873', text: '' } },
+             { type: 'arrow', props: { x1: -30, y1: -100, x2: -220, y2: 60 } },
+             { type: 'arrow', props: { x1: 30, y1: -100, x2: 220, y2: 60 } },
+             { type: 'sticky', dx: -310, dy: 60, props: { w: 180, h: 120, color: '#BEE3FF', text: '' } },
+             { type: 'sticky', dx: 130, dy: 60, props: { w: 180, h: 120, color: '#FFC1CC', text: '' } } ] },
+    { name: 'Before / After', icon: '↔️', desc: '前後を並べて矢印で対比', author: 'kinoshita studio', tag: 'new',
+      ops: [ { type: 'square', dx: -400, dy: -110, props: { w: 300, h: 220 } },
+             { type: 'square', dx: 100, dy: -110, props: { w: 300, h: 220 } },
+             { type: 'arrow', props: { x1: -80, y1: 0, x2: 80, y2: 0 } },
+             { type: 'text', dx: -390, dy: -145, props: { text: 'Before', fontSize: 24 } },
+             { type: 'text', dx: 110, dy: -145, props: { text: 'After', fontSize: 24 } } ] },
+    { name: '円 3分割ラベル', icon: '🥧', desc: '円＋3つのラベル（構成比の下敷き）', author: 'kinoshita studio', tag: 'new',
+      ops: [ { type: 'circle', dx: 0, dy: 0, props: { rx: 150, ry: 150 } },
+             { type: 'text', dx: 120, dy: -140, props: { text: 'A', fontSize: 28 } },
+             { type: 'text', dx: -190, dy: 0, props: { text: 'B', fontSize: 28 } },
+             { type: 'text', dx: 120, dy: 150, props: { text: 'C', fontSize: 28 } } ] },
 ];
 // ⭐リモートSTORE：静的JSONを置くだけで更新できる（GitHub Pages等・バックエンド不要）
 //   既定は同階層の store/catalog.json。localStorage `bm_store_url` で差し替え可。
