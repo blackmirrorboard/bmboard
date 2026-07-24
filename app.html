@@ -2938,7 +2938,7 @@
     <div class="voice-card" role="dialog" aria-label="Voice input">
         <div class="voice-status"><span class="voice-dot"></span><span>聞いています…</span></div>
         <canvas id="voiceWave" width="520" height="96"></canvas>
-        <textarea id="voiceText" rows="1" autocomplete="off" spellcheck="false" placeholder="話してください…"></textarea>
+        <textarea id="voiceText" rows="1" autocomplete="off" spellcheck="false" placeholder="話してください…" data-i18n-ph="voice.ph"></textarea>
         <div class="voice-hint">↵ 実行　·　Esc 取消　·　🎤 もう一度で再認識</div>
     </div>
 </div>
@@ -3031,7 +3031,7 @@
                 <div class="set-submit-actions" style="justify-content:flex-start">
                     <span class="set-cmdbtn ai" id="spellAiPrompt" data-i18n="create.aiCopy">🤖 AI用プロンプトをコピー</span>
                 </div>
-                <textarea id="spellCreateJson" spellcheck="false" placeholder='{ "name":"confetti", "icon":"🎉", "desc":"紙吹雪", "action":"const vc=BM.viewCenter(); ..." }'></textarea>
+                <textarea id="spellCreateJson" spellcheck="false" placeholder='{ "name":"confetti", "icon":"🎉", "desc":"紙吹雪", "action":"const vc=BM.viewCenter(); ..." }' data-i18n-ph="spell.jsonph"></textarea>
                 <div class="set-submit-actions">
                     <span class="set-cmdbtn primary" id="spellCreateRun" data-i18n="create.run">登録して試す</span>
                 </div>
@@ -3065,11 +3065,11 @@
         <div id="cmdkList"></div>
         <!-- ⭐リンク追加フォーム（パレット内サブビュー） -->
         <div id="cmdkForm" aria-hidden="true">
-            <div class="lf-title">↗ リンクを追加</div>
-            <div class="lf-desc">よく使うURLを登録すると、⌘K から名前で呼び出してボード上に開けます。</div>
-            <div class="lf-field"><label class="lf-lbl">名前（呼び出す言葉）</label><input id="lfName" type="text" placeholder="例：カラー / 資料 / yt" autocomplete="off" spellcheck="false"></div>
-            <div class="lf-field"><label class="lf-lbl">URL</label><input id="lfUrl" type="text" placeholder="例：coolors.co" autocomplete="off" spellcheck="false"></div>
-            <div class="lf-actions"><button class="lf-btn ghost" id="lfCancel" type="button">戻る（Esc）</button><button class="lf-btn primary" id="lfSave" type="button">保存して開く（↵）</button></div>
+            <div class="lf-title" data-i18n="lf.title">↗ リンクを追加</div>
+            <div class="lf-desc" data-i18n="lf.desc">よく使うURLを登録すると、⌘K から名前で呼び出してボード上に開けます。</div>
+            <div class="lf-field"><label class="lf-lbl" data-i18n="lf.name">名前（呼び出す言葉）</label><input id="lfName" type="text" placeholder="例：カラー / 資料 / yt" data-i18n-ph="lf.nameph" autocomplete="off" spellcheck="false"></div>
+            <div class="lf-field"><label class="lf-lbl">URL</label><input id="lfUrl" type="text" placeholder="例：coolors.co" data-i18n-ph="lf.urlph" autocomplete="off" spellcheck="false"></div>
+            <div class="lf-actions"><button class="lf-btn ghost" id="lfCancel" type="button" data-i18n="lf.back">戻る（Esc）</button><button class="lf-btn primary" id="lfSave" type="button" data-i18n="lf.save">保存して開く（↵）</button></div>
         </div>
         <div class="cmdk-foot" id="cmdkFoot">
             <span class="cmdk-foot-l"><span class="cmdk-foot-mark">◼</span> BLACK MIRROR</span>
@@ -11031,6 +11031,11 @@ var LANG = (function () { try { return localStorage.getItem('bm_lang') || 'ja'; 
 const I18N = {
     ja: {
         'usage.search': '検索（コマンド・キー・やりたいこと）',
+        'lf.title': '↗ リンクを追加', 'lf.desc': 'よく使うURLを登録すると、⌘K から名前で呼び出してボード上に開けます。',
+        'lf.name': '名前（呼び出す言葉）', 'lf.nameph': '例：カラー / 資料 / yt', 'lf.urlph': '例：coolors.co',
+        'lf.back': '戻る（Esc）', 'lf.save': '保存して開く（↵）',
+        'voice.ph': '話してください…',
+        'spell.jsonph': '{ "name":"confetti", "icon":"🎉", "desc":"紙吹雪", "action":"const vc=BM.viewCenter(); ..." }',
         'pal.ph': 'コマンドを検索…（calc / dark / t …）',
         'pal.fav': 'お気に入り · FAVORITES', 'pal.recent': '最近使った · RECENT', 'pal.all': 'すべて · ALL', 'pal.cmds': 'コマンド · COMMANDS', 'pal.actions': '候補 · ACTIONS',
         'pal.none': '該当なし', 'pal.wait': '入力待ち', 'pal.run': '実行', 'pal.close': '閉じる',
@@ -11077,6 +11082,11 @@ const I18N = {
     },
     en: {
         'usage.search': 'Search commands, keys, or what you want to do',
+        'lf.title': '↗ Add a link', 'lf.desc': 'Save a URL you use often — then call it up by name from ⌘K and open it on the board.',
+        'lf.name': 'Name (what you type)', 'lf.nameph': 'e.g. color / docs / yt', 'lf.urlph': 'e.g. coolors.co',
+        'lf.back': 'Back (Esc)', 'lf.save': 'Save & open (↵)',
+        'voice.ph': 'Say something…',
+        'spell.jsonph': '{ "name":"confetti", "icon":"🎉", "desc":"confetti", "action":"const vc=BM.viewCenter(); ..." }',
         'pal.ph': 'Search commands…（calc / dark / t …）',
         'pal.fav': 'FAVORITES', 'pal.recent': 'RECENT', 'pal.all': 'ALL', 'pal.cmds': 'COMMANDS', 'pal.actions': 'ACTIONS',
         'pal.none': 'No results', 'pal.wait': 'awaiting input', 'pal.run': 'run', 'pal.close': 'close',
@@ -11139,6 +11149,9 @@ function setLang(l) {
     if (window._settingsSyncLang) window._settingsSyncLang();
     if (window._settingsRenderCmds) window._settingsRenderCmds();
     if (window._settingsRenderSpells) window._settingsRenderSpells();
+    // ⭐起動ヒント行の言語を追従させる
+    const _bh = document.querySelector('[data-boot-hint]');
+    if (_bh) _bh.textContent = _L('⌘K でコマンド（calc / dark / t …）  ·  🎤 で声  ·  paper に書きなぐる', '⌘K for commands (calc / dark / t …)  ·  🎤 for voice  ·  scribble on paper');
     // ⭐usage も開いていれば言語を反映
     const _uo = document.getElementById('usageOverlay');
     if (_uo && _uo.classList.contains('open') && window.renderUsage) {
@@ -14054,7 +14067,7 @@ var USAGE_DOC = [
     ['⌘K','コマンドパレット。全機能がここから出る<small>★お気に入り／最近使った／自分でショートカットを割り当てられる</small>','Command palette — everything lives here<small>Favorites ★ / Recently used / assign your own shortcuts</small>'],
     ['⌘,','設定（一般 / コマンド / 魔法）','Settings (General / Commands / Spells)'],
     ['⌘B','ターミナル窓を ドック ⇔ フロート','Dock / float the terminal window'],
-    ['右クリック|long-press','ボードのメニュー<small>付箋・テキストを置く／複製／魔法に保存／前面・背面／削除</small>','Board context menu<small>sticky · text · duplicate · save as spell · front/back · delete</small>'],
+    ['右クリック|long-press','ボードのメニュー<small>付箋・テキストを置く／複製／魔法に保存／前面・背面／削除</small>','Board context menu<small>sticky · text · duplicate · save as spell · front/back · delete</small>','right-click|long-press'],
     ['help|?','ターミナル内に短い早見表を出す','Quick reference inside the terminal'],
     ['usage|man|docs','この画面','This screen'],
 ]},
@@ -14090,16 +14103,16 @@ var USAGE_DOC = [
     ['connect','選んだ2つ以上を矢印でつなぐ','Connect 2+ selected objects with arrows'],
     ['align left','整列<small>left / center / right / top / middle / bottom</small>','Align<small>left / center / right / top / middle / bottom</small>'],
     ['distribute h|distribute v','3つ以上を等間隔に並べる','Evenly space 3+ objects'],
-    ['範囲選択','空白をドラッグ → 完全に囲んだものが全部選ばれる<small>まとめて移動・○で回転・Del で全削除・Esc で解除</small>','Drag empty canvas → everything fully enclosed is selected<small>move together · ○ rotates · Del deletes all · Esc clears</small>'],
-    ['アンカー','選ぶと青い □ が出る。ドラッグで変形<small>○=半径4点 △=頂点3点 □=四隅+辺の中点 →=両端 ✎=全頂点</small>','Select → blue □ anchors. Drag to deform<small>○ 4 radii · △ 3 vertices · □ corners+midpoints · → endpoints · ✎ every vertex</small>'],
-    ['⇧ (変形中)|⌥ (変形中)','縦横比を固定／中心から拡大','Lock aspect ratio / scale from center'],
+    ['範囲選択','空白をドラッグ → 完全に囲んだものが全部選ばれる<small>まとめて移動・○で回転・Del で全削除・Esc で解除</small>','Drag empty canvas → everything fully enclosed is selected<small>move together · ○ rotates · Del deletes all · Esc clears</small>','Marquee'],
+    ['アンカー','選ぶと青い □ が出る。ドラッグで変形<small>○=半径4点 △=頂点3点 □=四隅+辺の中点 →=両端 ✎=全頂点</small>','Select → blue □ anchors. Drag to deform<small>○ 4 radii · △ 3 vertices · □ corners+midpoints · → endpoints · ✎ every vertex</small>','Anchors'],
+    ['⇧ (変形中)|⌥ (変形中)','縦横比を固定／中心から拡大','Lock aspect ratio / scale from center','⇧ (resizing)|⌥ (resizing)'],
 ]},
 { id:'view', icon:'⊕', ja:'見る・動かす', en:'View',
   items:[
     ['Space + drag','ボードを掴んで動かす','Pan the canvas'],
-    ['2本指ドラッグ','ボードを動かす（トラックパッド／モバイル）','Pan (trackpad / mobile)'],
-    ['ピンチ|ホイール','拡大・縮小','Zoom'],
-    ['ダブルクリック','表示を100%に戻す','Reset view to 100%'],
+    ['2本指ドラッグ','ボードを動かす（トラックパッド／モバイル）','Pan (trackpad / mobile)','2-finger drag'],
+    ['ピンチ|ホイール','拡大・縮小','Zoom','Pinch|Wheel'],
+    ['ダブルクリック','表示を100%に戻す','Reset view to 100%','Double-click'],
     ['swap right|swap left','ボードを右／左に置く（利き手に合わせる）','Put the board on the right / left (handedness)'],
     ['dark|light|gray','テーマ<small>色が変わるのはボード自身。周りのUIは変えない</small>','Theme<small>the board changes color — the chrome stays put</small>'],
     ['bg-pattern dots','背景の柄<small>dots / grid / cross / dotted-grid / stripes ・ bg-opacity 0-100 ・ bg none</small>','Background pattern<small>dots / grid / cross / dotted-grid / stripes · bg-opacity 0-100 · bg none</small>'],
@@ -14108,30 +14121,30 @@ var USAGE_DOC = [
   noteJa:'魔法＝ボードの上でできること。自分で作って、配れる。',
   noteEn:'A spell is something that happens on the board. Make one, hand it out.',
   items:[
-    ['spell &lt;名前&gt;','選んでいるものを魔法として保存 → ⌘K から何度でも置ける','Save the selection as a spell → place it again from ⌘K'],
+    ['spell &lt;名前&gt;','選んでいるものを魔法として保存 → ⌘K から何度でも置ける','Save the selection as a spell → place it again from ⌘K','spell &lt;name&gt;'],
     ['spell export|spell import','魔法を書き出す／読み込む','Export / import spells'],
-    ['tpl &lt;名前&gt;','下書きを一発で置く<small>wireframe / kanban / mindmap / moodboard ・ tpl だけで選択画面</small>','Instant scaffold<small>wireframe / kanban / mindmap / moodboard · bare tpl opens a picker</small>'],
+    ['tpl &lt;名前&gt;','下書きを一発で置く<small>wireframe / kanban / mindmap / moodboard ・ tpl だけで選択画面</small>','Instant scaffold<small>wireframe / kanban / mindmap / moodboard · bare tpl opens a picker</small>','tpl &lt;name&gt;'],
     ['$sakura|$rain|$snow|$leaf','降らせる（もう一度打つと止まる）','Make it fall (run again to stop)'],
     ['$scatter|$grid-3x3|$sticky-3x3','散らす／3×3に並べる／付箋を3×3','Scatter / 3×3 grid / 3×3 stickies'],
     ['$powerpoint','16:9のスライド枠＋タイトル・本文の置き場所','16:9 slide frame with title/body placeholders'],
     ['$biwako-blue|$monoclo','全部の線を #0044CC に／選んだ画像を白黒に','Retint every stroke to #0044CC / grayscale selected images'],
-    ['$make-img &lt;語&gt; &lt;数&gt;','画像を呼ぶ（キー不要・自動でグリッド・最大25枚）','Summon images (no API key · auto grid · max 25)'],
-    ['register &lt;名&gt; &lt;js&gt;','JSの魔法を登録<small>alias 新=旧 ／ list 一覧 ／ forget &lt;名&gt; 削除（内蔵は守られる）</small>','Register a JS spell<small>alias new=old · list · forget &lt;name&gt; (presets protected)</small>'],
-    ['AIに作らせる','ターミナルに JSON を貼るだけで登録される<small>{"command":"名前","action":"JS"} ／ BM API: create/translate/setFill/setStroke/viewCenter/rand/redraw</small>','Paste JSON into the terminal to auto-register<small>{"command":"name","action":"JS"} · BM API: create/translate/setFill/setStroke/viewCenter/rand/redraw</small>'],
+    ['$make-img &lt;語&gt; &lt;数&gt;','画像を呼ぶ（キー不要・自動でグリッド・最大25枚）','Summon images (no API key · auto grid · max 25)','$make-img &lt;kw&gt; &lt;n&gt;'],
+    ['register &lt;名&gt; &lt;js&gt;','JSの魔法を登録<small>alias 新=旧 ／ list 一覧 ／ forget &lt;名&gt; 削除（内蔵は守られる）</small>','Register a JS spell<small>alias new=old · list · forget &lt;name&gt; (presets protected)</small>','register &lt;name&gt; &lt;js&gt;'],
+    ['AIに作らせる','ターミナルに JSON を貼るだけで登録される<small>{"command":"名前","action":"JS"} ／ BM API: create/translate/setFill/setStroke/viewCenter/rand/redraw</small>','Paste JSON into the terminal to auto-register<small>{"command":"name","action":"JS"} · BM API: create/translate/setFill/setStroke/viewCenter/rand/redraw</small>','Let AI write it'],
 ]},
 { id:'store', icon:'🏪', ja:'STORE / 配る', en:'STORE / share',
   noteJa:'作った魔法を出す → 審査 → 全員の STORE に並ぶ。サーバーは要らない。',
   noteEn:'Submit a spell → review → it lands in the STORE for everyone. No server needed.',
   items:[
     ['store','STORE を開く → 詳細を見て ↵ でインストール','Open the STORE → view details → ↵ to install'],
-    ['⌘, → 魔法タブ','自分の魔法の管理<small>名前・アイコン・説明を編集／📤で提出用JSONを出す／⬇単体DL／✕削除</small>','Manage your spells<small>edit name·icon·description · 📤 export submission JSON · ⬇ download · ✕ delete</small>'],
-    ['提出','📤 → 🐙 GitHubで公開申請（Issue が中身入りで開く）','📤 → 🐙 submit on GitHub (the issue opens pre-filled)'],
-    ['share &lt;名&gt;|share','魔法のJSONをコピー／今のボードを再現するURLを作る','Copy a spell as JSON / make a URL that reopens this exact board'],
+    ['⌘, → 魔法タブ','自分の魔法の管理<small>名前・アイコン・説明を編集／📤で提出用JSONを出す／⬇単体DL／✕削除</small>','Manage your spells<small>edit name·icon·description · 📤 export submission JSON · ⬇ download · ✕ delete</small>','⌘, → Spells tab'],
+    ['提出','📤 → 🐙 GitHubで公開申請（Issue が中身入りで開く）','📤 → 🐙 submit on GitHub (the issue opens pre-filled)','Submit'],
+    ['share &lt;名&gt;|share','魔法のJSONをコピー／今のボードを再現するURLを作る','Copy a spell as JSON / make a URL that reopens this exact board','share &lt;name&gt;|share'],
 ]},
 { id:'snip', icon:'⛓', ja:'スニペット・連鎖', en:'Snippets & chains',
   items:[
-    ['snip add &lt;名&gt; &lt;本文&gt;','よく書く文を登録 → snip &lt;名&gt; で付箋になる','Register text → snip &lt;name&gt; drops it as a sticky'],
-    ['chain add &lt;名&gt; a ; b','コマンドを順に実行する自分用マクロ','A macro that runs commands in order'],
+    ['snip add &lt;名&gt; &lt;本文&gt;','よく書く文を登録 → snip &lt;名&gt; で付箋になる','Register text → snip &lt;name&gt; drops it as a sticky','snip add &lt;name&gt; &lt;text&gt;'],
+    ['chain add &lt;名&gt; a ; b','コマンドを順に実行する自分用マクロ','A macro that runs commands in order','chain add &lt;name&gt; a ; b'],
     ['link|open','URLをボードの窓で開く／新しいタブで開く','Open a URL in a board window / new tab'],
 ]},
 { id:'export', icon:'⬇️', ja:'書き出す', en:'Export',
@@ -14139,8 +14152,8 @@ var USAGE_DOC = [
     ['export|X','選択 → 透過PNG','Selection → transparent PNG'],
     ['$svg','選択 → 編集できるSVG（Illustrator / Figma）','Selection → editable SVG (Illustrator / Figma)'],
     ['export pptx','選択 → 編集できる .pptx（PowerPoint / Keynote）','Selection → editable .pptx (PowerPoint / Keynote)'],
-    ['gif [秒]','ボードを GIF にする','Record the board as a GIF'],
-    ['rec [秒]','ボードを 動画(WebM) にする','Record the board as video (WebM)'],
+    ['gif [秒]','ボードを GIF にする','Record the board as a GIF','gif [sec]'],
+    ['rec [秒]','ボードを 動画(WebM) にする','Record the board as video (WebM)','rec [sec]'],
     ['export data|export-all','丸ごと束ねて書き出す（ボード＋魔法）','Bundle everything (board + spells)'],
 ]},
 { id:'save', icon:'💾', ja:'保存する', en:'Save & load',
@@ -14148,7 +14161,7 @@ var USAGE_DOC = [
   noteEn:'⚠ Autosave does <b>not</b> keep image pixels. If your board has images, SAVE before closing.',
   items:[
     ['SAVE|OPEN','.json に書き出す／読み込む<small>ローカルだけ。アップロードもアカウントも要らない。画像も .json には入る</small>','Download / import .json<small>Local only. No upload, no account. Images do live inside the .json</small>'],
-    ['save &lt;名&gt;|ls|load &lt;名&gt;','ブラウザの中に置いておく（IndexedDB・再読込しても残る）','Snapshots inside the browser (IndexedDB · survive reloads)'],
+    ['save &lt;名&gt;|ls|load &lt;名&gt;','ブラウザの中に置いておく（IndexedDB・再読込しても残る）','Snapshots inside the browser (IndexedDB · survive reloads)','save &lt;name&gt;|ls|load &lt;name&gt;'],
 ]},
 { id:'keys', icon:'⌨️', ja:'キーボード', en:'Keyboard',
   items:[
@@ -14177,8 +14190,8 @@ function _usageRows(sec) {
     let h = `<div class="u-sec"><h3>${en ? sec.en : sec.ja}</h3>`;
     const note = en ? sec.noteEn : sec.noteJa;
     if (note) h += `<div class="u-note">${note}</div>`;
-    for (const [k, ja, enTxt] of sec.items) {
-        const chips = k.split('|').map(x => `<kbd class="u-c">${x}</kbd>`).join('');
+    for (const [k, ja, enTxt, kEn] of sec.items) {
+        const chips = ((en && kEn) ? kEn : k).split('|').map(x => `<kbd class="u-c">${x}</kbd>`).join('');
         h += `<div class="u-row"><div class="u-k">${chips}</div><div class="u-d">${en ? enTxt : ja}</div></div>`;
     }
     return h + '</div>';
@@ -14516,6 +14529,8 @@ function boot() {
     // ⭐bashの偽ログ(起動シーケンス/manifest)は撤去。静かな挨拶だけ（printRaw=ハイライト無し＝</span>も出ない）。
     printRaw('BLACK MIRROR BOARD — kinoshita studio', 't-out');
     printRaw((typeof _L === 'function') ? _L('⌘K でコマンド（calc / dark / t …）  ·  🎤 で声  ·  paper に書きなぐる', '⌘K for commands (calc / dark / t …)  ·  🎤 for voice  ·  scribble on paper') : '⌘K for commands', 't-dim');
+    // ⭐起動ヒントだけは言語切替で書き換える（過去ログは履歴なので触らない）
+    if (tb && tb.lastElementChild) tb.lastElementChild.setAttribute('data-boot-hint', '1');
 }
 
 // ── Feedback Modal ─────────────────────────────────────────────────────────
