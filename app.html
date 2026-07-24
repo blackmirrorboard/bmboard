@@ -1548,6 +1548,7 @@
         .st-desc { font-size: 12.5px; color: rgba(255,255,255,0.68); line-height: 1.6; }
         .st-sect { margin-top: 13px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.32); }
         .st-contents { margin-top: 5px; font-size: 12px; color: rgba(255,255,255,0.6); }
+        .st-contents.st-code { color: #f0c674; }
         .st-foot { margin-top: 13px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.07); font-size: 10.5px; color: rgba(255,255,255,0.38); }
         .cmdk-sect { padding: 12px 11px 5px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: rgba(255,255,255,0.34); }
         #cmdkList > .cmdk-sect:first-child { padding-top: 4px; }
@@ -11024,7 +11025,7 @@ const I18N = {
         'store.foot': '↵ で詳細を見る · Esc で戻る',
         'store.install': '⬇ インストール', 'store.reinstall': '⬇ 再インストール', 'store.installed': '導入済',
         'store.units': '要素', 'store.contains': '含まれるもの', 'store.done': 'をインストールしました — ⌘Kから使えます',
-        'store.fail': 'インストールに失敗', 'store.featured': 'おすすめ · FEATURED', 'store.new': '新着 · NEW', 'store.detailFoot': '↵ でインストール · ← / Esc で一覧に戻る'
+        'store.fail': 'インストールに失敗', 'store.featured': 'おすすめ · FEATURED', 'store.new': '新着 · NEW', 'store.detailFoot': '↵ でインストール · ← / Esc で一覧に戻る', 'store.code': 'コード', 'store.codeWarn': '⚡ コードで動く魔法（実行時にコードが走ります）'
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
@@ -11067,7 +11068,7 @@ const I18N = {
         'store.foot': '↵ to show details · Esc to go back',
         'store.install': '⬇ Install', 'store.reinstall': '⬇ Reinstall', 'store.installed': 'Installed',
         'store.units': ' items', 'store.contains': 'What it adds', 'store.done': ' installed — use it from ⌘K',
-        'store.fail': 'Install failed', 'store.featured': 'FEATURED', 'store.new': 'NEW', 'store.detailFoot': '↵ to install · ← / Esc back to list'
+        'store.fail': 'Install failed', 'store.featured': 'FEATURED', 'store.new': 'NEW', 'store.code': 'code', 'store.codeWarn': '⚡ Code spell (runs code when used)', 'store.detailFoot': '↵ to install · ← / Esc back to list'
     }
 };
 function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
@@ -11371,18 +11372,19 @@ function centerTermPanel() {
         }
         if (storeMode && storeDetail) {          // ⭐STORE 詳細画面（もう一段深い）
             const s = storeDetail;
+            const isCode = !!s.action;
             const ops = s.ops || s.objects || [];
             const LBL = { square:'四角', sticky:'付箋', text:'テキスト', circle:'円', triangle:'三角', arrow:'矢印' };
             const cnt = {}; ops.forEach(o => { const k = o.type || 'obj'; cnt[k] = (cnt[k] || 0) + 1; });
-            const contains = Object.keys(cnt).map(k => `${LBL[k] || k} ×${cnt[k]}`).join(' · ') || '—';
-            const have = ((window._getSpells && window._getSpells()) || []).some(x => x.name === s.name);
+            const contains = isCode ? t('store.codeWarn') : (Object.keys(cnt).map(k => `${LBL[k] || k} ×${cnt[k]}`).join(' · ') || '—');
+            const installedNow = ((window._getSpells && window._getSpells()) || []).some(x => x.name === s.name) || ((window._getUserJsSpells && window._getUserJsSpells()) || []).some(x => x.name === s.name);
             top = `<div class="st-detail">`
-                + `<div class="st-hero"><span class="st-ico-lg">${esc(s.icon || '🪄')}</span>`
+                + `<div class="st-hero"><span class="st-ico-lg">${esc(s.icon || (isCode ? '⚡' : '🪄'))}</span>`
                 + `<span class="st-hero-t"><span class="st-name">${esc(s.name)}</span>`
-                + `<span class="st-meta">${esc(s.author || '')}${s.tag ? ' · ' + esc(s.tag) : ''} · ${ops.length}${esc(t('store.units'))}${have ? ' · ' + esc(t('store.installed')) : ''}</span></span></div>`
-                + `<div class="st-preview"><canvas id="stPreview"></canvas></div>`
+                + `<span class="st-meta">${esc(s.author || '')}${s.tag ? ' · ' + esc(s.tag) : ''} · ${isCode ? esc(t('store.code')) : ops.length + esc(t('store.units'))}${installedNow ? ' · ' + esc(t('store.installed')) : ''}</span></span></div>`
+                + (isCode ? '' : `<div class="st-preview"><canvas id="stPreview"></canvas></div>`)
                 + `<div class="st-desc">${esc(s.desc || '')}</div>`
-                + `<div class="st-sect">${esc(t('store.contains'))}</div><div class="st-contents">${esc(contains)}</div>`
+                + `<div class="st-sect">${esc(t('store.contains'))}</div><div class="st-contents${isCode ? ' st-code' : ''}">${esc(contains)}</div>`
                 + `<div class="st-foot">${esc(t('store.detailFoot'))}</div></div>`;
         } else if (storeMode) {   // ⭐STORE 一覧の見出し＋インストール結果
             top = `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">✦ STORE</span><span class="cmdk-badge">${esc(t('store.badge'))}</span></div>`
@@ -11521,8 +11523,8 @@ function centerTermPanel() {
             const list = !ql ? cat0 : cat0.filter(s => (s.name + ' ' + (s.desc || '') + ' ' + (s.author || '')).toLowerCase().indexOf(ql) >= 0);
             const order = list.slice().sort((a, b) => (a.tag === 'featured' ? 0 : 1) - (b.tag === 'featured' ? 0 : 1));
             rows = order.map(s => ({
-                kind: 'store', ico: s.icon || '🪄', name: s.name, type: installedSet.has(s.name) ? t('store.installed') : (s.tag || ''),
-                sc: (s.ops || s.objects || []).length + t('store.units'),
+                kind: 'store', ico: s.icon || (s.action ? '⚡' : '🪄'), name: s.name, type: installedSet.has(s.name) ? t('store.installed') : (s.tag || ''),
+                sc: s.action ? t('store.code') : ((s.ops || s.objects || []).length + t('store.units')),
                 desc: s.desc || '', noFav: true, _s: s,
                 _sect: s.tag === 'featured' ? t('store.featured') : t('store.new'),   // ⭐Featured / New
                 run() { storeDetail = s; refresh(); }   // ↵＝詳細を見る
@@ -12879,6 +12881,7 @@ const STORE_OP_TYPES = ['square', 'sticky', 'text', 'circle', 'triangle', 'arrow
 let _storeRemote = null, _storeFetched = false;
 function validStoreEntry(s) {
     if (!s || typeof s.name !== 'string') return false;
+    if (typeof s.action === 'string' && s.action.trim()) return true;   // ⭐JS(コード)魔法＝審査前提で許可
     if (Array.isArray(s.objects)) return true;
     if (!Array.isArray(s.ops) || !s.ops.length) return false;
     return s.ops.every(o => o && STORE_OP_TYPES.indexOf(o.type) >= 0);
