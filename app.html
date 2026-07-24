@@ -958,7 +958,7 @@
         ══════════════════════════════════ */
         /* ⭐ターミナル背後の暗いグラフィック壁紙（黒＋深い赤の光＋かすかな幾何線）。
            frosted glass がこれをぼかして「透明感」を出す。将来アプリ化で本物の透明に差し替える層。 */
-        /* ⭐ターミナル背景の壁紙＝木下作の画像を当て込む（assets/term-bg.png）。
+        /* ⭐ターミナル背景の壁紙＝木下作の画像を当て込む（assets/term-bg.webp）。
            画像が無いときは黒＋赤グロー（仮）にフォールバック。 */
         #termWall {
             position: absolute;
@@ -969,7 +969,7 @@
             pointer-events: none;
             overflow: hidden;
             background-color: #050506;
-            background-image: url('assets/term-bg.png');   /* ⭐木下作の赤リング */
+            background-image: url('assets/term-bg.webp');   /* ⭐木下作の赤リング */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -10674,7 +10674,7 @@ tiEl.addEventListener('paste', e => {
             else if (group === 'term')  { if (v === 'float') { window._termFloat && window._termFloat(); } else { window._termDock && window._termDock(); } }
             else if (group === 'wall')  {
                 const wall = document.getElementById('termWall');
-                if (wall) wall.style.backgroundImage = "url('assets/term-bg" + (v === 'red' ? '-red' : '') + ".png')";
+                if (wall) wall.style.backgroundImage = "url('assets/term-bg" + (v === 'red' ? '-red' : '') + ".webp')";
                 try { localStorage.setItem('bm_wall', v); } catch (_) {}
             }
         } catch (_) {}
@@ -11016,7 +11016,7 @@ tiEl.addEventListener('paste', e => {
     }, true);
 
     // 起動時：保存済み壁紙を復元
-    try { if (localStorage.getItem('bm_wall') === 'red') { const wall = document.getElementById('termWall'); if (wall) wall.style.backgroundImage = "url('assets/term-bg-red.png')"; } } catch (_) {}
+    try { if (localStorage.getItem('bm_wall') === 'red') { const wall = document.getElementById('termWall'); if (wall) wall.style.backgroundImage = "url('assets/term-bg-red.webp')"; } } catch (_) {}
 })();
 
 // ══════════════════════════════════════════════════
