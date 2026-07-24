@@ -1423,12 +1423,12 @@
             /* ⭐パネル自体を透過フロスト（背後の盤面だけを磨りガラスで透かす） */
             background: linear-gradient(180deg, rgba(33,31,37,0.66) 0%, rgba(19,18,22,0.70) 46%, rgba(14,13,17,0.72) 100%);
             -webkit-backdrop-filter: blur(30px) saturate(1.4); backdrop-filter: blur(30px) saturate(1.4);
-            border: 1px solid rgba(255,255,255,0.13);
+            /* ⭐枠は border でなく inset の内側リングで描く＝backdrop-filter+transform時の右/下端シーム（変な線）を防ぐ */
+            border: 0; background-clip: padding-box;
             border-radius: 15px;
-            box-shadow: 0 32px 100px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
+            box-shadow: 0 32px 100px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.07);
             overflow: hidden;
             font-family: var(--ui-sans);   /* ⭐Raycast方向：サンセリフでアプリらしく */
-            will-change: transform;
         }
         .cmdk-card.dragging { transition: none; cursor: grabbing; }
         .cmdk-search { cursor: grab; }
