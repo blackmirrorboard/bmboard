@@ -1,0 +1,50 @@
+name: 魔法の提出 / Spell submission
+description: BMBoard STORE に魔法(spell)を提出します / Submit a spell to the BMBoard STORE
+title: "[spell] "
+labels: ["spell-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ありがとうございます！BMBoard の魔法を提出できます。
+        アプリの **設定 → 魔法タブ → 📤** から出た JSON をそのまま貼ってください。
+        Thanks! Paste the JSON from the app (**Settings → Spells → 📤**) below.
+  - type: input
+    id: name
+    attributes:
+      label: 魔法の名前 / Spell name
+      placeholder: "confetti"
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: タイプ / Type
+      options:
+        - "宣言的 (ops / objects) — コードは動きません / declarative, no code"
+        - "コード (action / JS) — 実行時にコードが走ります / code spell, runs JS"
+    validations:
+      required: true
+  - type: textarea
+    id: json
+    attributes:
+      label: 魔法の JSON / Spell JSON
+      description: アプリの 📤 からコピーした JSON をそのまま貼ってください / Paste the JSON exactly
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: author
+    attributes:
+      label: 作者名 / Author (公開時に表示 / shown publicly)
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 確認 / Confirm
+      options:
+        - label: "JSON の author を自分の名前にしました / I set the author to my name"
+          required: true
+        - label: "（コード魔法の場合）悪意ある/危険な動作は含みません / (code spells) contains no malicious behavior"
+          required: false
