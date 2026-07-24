@@ -2315,7 +2315,7 @@
         </span>
     </button>
     <div class="header-right">
-        <span class="zoom-label" id="zoomLabel" ondblclick="zoomReset()" title="ダブルクリックで100%" style="cursor:pointer">100%</span>
+        <span class="zoom-label" id="zoomLabel" ondblclick="zoomReset()" title="ダブルクリックで100%" data-i18n-title="tt.zoom100" style="cursor:pointer">100%</span>
         <button class="hbtn" onclick="exportProject()" title="Save project (JSON)" aria-label="Save">
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5 V9"/><path d="M5 6 L8 9 L11 6"/><path d="M3 12.5 h10"/></svg>
         </button>
@@ -2345,7 +2345,7 @@
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.6" y="2.6" width="4.6" height="4.6" rx="1"/><rect x="8.8" y="2.6" width="4.6" height="4.6" rx="1"/><rect x="2.6" y="8.8" width="4.6" height="4.6" rx="1"/><rect x="8.8" y="8.8" width="4.6" height="4.6" rx="1"/></svg>
         </a>
         <!-- ⭐設定（歯車）— 端3つの代わりにここに集約（⌘, でも開く） -->
-        <button class="hbtn" onclick="window._toggleSettings && window._toggleSettings(); this.blur();" title="設定 (⌘,)" aria-label="Settings">
+        <button class="hbtn" onclick="window._toggleSettings && window._toggleSettings(); this.blur();" title="設定 (⌘,)" data-i18n-title="tt.settings" aria-label="Settings">
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.3"/><path d="M8 1.6 V3.3 M8 12.7 V14.4 M1.6 8 H3.3 M12.7 8 H14.4 M3.5 3.5 L4.7 4.7 M11.3 11.3 L12.5 12.5 M12.5 3.5 L11.3 4.7 M4.7 11.3 L3.5 12.5"/></svg>
         </button>
     </div>
@@ -2536,7 +2536,7 @@
         <div id="gif-overlay-layer" aria-hidden="true"></div>
         <div id="textOverlay">
             <textarea id="ti2" rows="1" autocomplete="off" spellcheck="false" placeholder="type…"></textarea>
-            <button id="textDone" type="button" aria-label="確定" title="確定">✓</button>
+            <button id="textDone" type="button" aria-label="確定" title="確定" data-i18n-title="tt.confirm">✓</button>
         </div>
         <textarea id="stickyEditor" spellcheck="false" placeholder="type…"></textarea>
         <div id="bmTimer" class="bm-timer" style="display:none">
@@ -2590,7 +2590,7 @@
             </button>
         </div>
         <!-- ⭐float 時のリサイズグリップ（右下） -->
-        <div id="termGrip" aria-hidden="true" title="ドラッグでサイズ変更"></div>
+        <div id="termGrip" aria-hidden="true" title="ドラッグでサイズ変更" data-i18n-title="tt.resize"></div>
     </section>
 
     <!-- ⭐マグネット・ドック予告：右端に近づくと白枠で「ここに吸着」を提示 -->
@@ -2601,8 +2601,8 @@
         <div class="lp-hd" id="lpHd">
             <span class="lp-title" id="lpTitle">—</span>
             <div class="lp-actions">
-                <button class="lp-btn" id="lpTab" type="button" title="新規タブで開く（埋め込み不可サイト用）">↗</button>
-                <button class="lp-btn" id="lpClose" type="button" title="閉じる">✕</button>
+                <button class="lp-btn" id="lpTab" type="button" title="新規タブで開く（埋め込み不可サイト用）" data-i18n-title="tt.newtab">↗</button>
+                <button class="lp-btn" id="lpClose" type="button" title="閉じる" data-i18n-title="tt.close">✕</button>
             </div>
         </div>
         <iframe id="lpFrame" src="about:blank" referrerpolicy="no-referrer" allow="clipboard-write; fullscreen"></iframe>
@@ -2912,20 +2912,20 @@
 <div id="textStylePopover" class="tool-popover">
     <span class="pop-label">FONT</span>
     <div class="pop-row">
-        <button class="tool-btn" data-font="default" title="標準（等幅）" style="font-family:'Courier New',monospace;font-weight:600;font-size:13px">Aa</button>
-        <button class="tool-btn" data-font="mincho"  title="明朝" style="font-family:'Hiragino Mincho ProN','Yu Mincho','MS PMincho',serif;font-weight:600;font-size:15px">明</button>
+        <button class="tool-btn" data-font="default" title="標準（等幅）" data-i18n-title="tt.fontStd" style="font-family:'Courier New',monospace;font-weight:600;font-size:13px">Aa</button>
+        <button class="tool-btn" data-font="mincho"  title="明朝" data-i18n-title="tt.mincho" style="font-family:'Hiragino Mincho ProN','Yu Mincho','MS PMincho',serif;font-weight:600;font-size:15px">明</button>
         <button class="tool-btn" data-font="noto"    title="Noto Sans JP" style="font-family:'Noto Sans JP','Hiragino Sans',sans-serif;font-weight:700;font-size:14px">あ</button>
     </div>
     <div class="pop-sep-line"></div>
     <span class="pop-label">WEIGHT</span>
     <div class="pop-row">
-        <button class="tool-btn" data-bold="toggle" title="太字 ON / OFF" style="font-weight:900;font-size:15px">B</button>
+        <button class="tool-btn" data-bold="toggle" title="太字 ON / OFF" data-i18n-title="tt.bold" style="font-weight:900;font-size:15px">B</button>
     </div>
     <div class="pop-sep-line"></div>
     <span class="pop-label">FLOW</span>
     <div class="pop-row">
-        <button class="tool-btn" data-vert="off" title="横書き" style="font-weight:700;font-size:15px">横</button>
-        <button class="tool-btn" data-vert="on"  title="縦書き" style="font-weight:700;font-size:15px">縦</button>
+        <button class="tool-btn" data-vert="off" title="横書き" data-i18n-title="tt.horiz" style="font-weight:700;font-size:15px">横</button>
+        <button class="tool-btn" data-vert="on"  title="縦書き" data-i18n-title="tt.vert" style="font-weight:700;font-size:15px">縦</button>
     </div>
 </div>
 
@@ -10050,7 +10050,10 @@ const I18N = {
         'set.title': '設定', 'set.board': 'ボード', 'set.draw': '描き味', 'set.grade': '芯', 'set.term': 'ターミナル', 'set.wall': '壁紙', 'set.lang': '言語',
         'set.pencil': '鉛筆', 'set.brush': '筆', 'set.classic': 'クラシック', 'set.white': '白リング', 'set.red': '赤リング',
         'set.foot': '⌘,  で開閉 · Esc で閉じる',
-        'lang.name': '言語 / LANGUAGE'
+        'lang.name': '言語 / LANGUAGE',
+        'tt.zoom100': 'ダブルクリックで100%', 'tt.settings': '設定 (⌘,)', 'tt.confirm': '確定', 'tt.resize': 'ドラッグでサイズ変更',
+        'tt.newtab': '新規タブで開く（埋め込み不可サイト用）', 'tt.close': '閉じる',
+        'tt.fontStd': '標準（等幅）', 'tt.mincho': '明朝', 'tt.bold': '太字 ON / OFF', 'tt.horiz': '横書き', 'tt.vert': '縦書き'
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
@@ -10064,7 +10067,10 @@ const I18N = {
         'set.title': 'Settings', 'set.board': 'BOARD', 'set.draw': 'DRAW', 'set.grade': 'GRADE', 'set.term': 'TERMINAL', 'set.wall': 'WALLPAPER', 'set.lang': 'LANGUAGE',
         'set.pencil': 'Pencil', 'set.brush': 'Brush', 'set.classic': 'Classic', 'set.white': 'White ring', 'set.red': 'Red ring',
         'set.foot': '⌘,  toggle · Esc to close',
-        'lang.name': '言語 / LANGUAGE'
+        'lang.name': '言語 / LANGUAGE',
+        'tt.zoom100': 'Double-click for 100%', 'tt.settings': 'Settings (⌘,)', 'tt.confirm': 'Confirm', 'tt.resize': 'Drag to resize',
+        'tt.newtab': 'Open in a new tab (for non-embeddable sites)', 'tt.close': 'Close',
+        'tt.fontStd': 'Default (monospace)', 'tt.mincho': 'Mincho (serif)', 'tt.bold': 'Bold ON / OFF', 'tt.horiz': 'Horizontal', 'tt.vert': 'Vertical'
     }
 };
 function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
