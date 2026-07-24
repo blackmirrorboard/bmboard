@@ -3808,38 +3808,110 @@ let prevShapeTs = 0;
 // ══════════════════════════════════════════════════
 // Three preset tracks. `_4kHxtiuM54` etc. are YouTube video IDs of long /
 // 24-7 ambient streams; user can re-edit at runtime by overwriting BGM_TRACKS.
+// ⭐BGM＝自前Web Audioのlo-fiアンビエントをその場生成（YouTube依存を撤去）。
+//   コマンド実行=ユーザー操作起点なので自動再生ブロックを受けない＝確実に鳴る。実音なので波形も本物。
+//   3プリセット＝3つのキー/音色。ゆったりしたパッド＋緩いアルペジオ＋ローパス＋フィードバックディレイ。
 const BGM_TRACKS = {
-    1: 'jfKfPfyJRdk',  // lofi hip hop radio (Lofi Girl, 24/7 stream)
-    2: '4xDzrJKXOOY',  // synthwave radio (Lofi Girl, 24/7 stream)
-    3: 'sjkrrmBnpGE',  // study with me ambient piano
+    1: { name: 'lofi',      root: 220.00, scale: [0, 3, 5, 7, 10], type: 'triangle', cutoff: 900 },  // A minor pentatonic
+    2: { name: 'synth',     root: 174.61, scale: [0, 2, 4, 7, 9],  type: 'sawtooth', cutoff: 1300 }, // F major-ish
+    3: { name: 'ambient',   root: 261.63, scale: [0, 4, 7, 11, 14],type: 'sine',     cutoff: 700 },  // C maj7 airy
 };
-let _bgmFrame = null;
-let _bgmTrack = null;
+let _bgmTrack = null, _bgm = null;
+window._bgmAnalyser = null;   // 波形インジケータ用（本物のAnalyserNode）
+
 function bgmStart(n) {
     bgmStop();
-    const id = BGM_TRACKS[n];
-    if (!id) return false;
-    const f = document.createElement('iframe');
-    // ⚠️opacity:0 / 1px の完全非表示はブラウザに「隠しメディア」と見なされ自動再生を弾かれやすい。
-    //   画面外に置きつつ実サイズを持たせる（見た目は同じく非表示）。
-    f.style.cssText = 'position:fixed;width:200px;height:120px;left:-9999px;top:0;border:0;pointer-events:none;';
-    f.allow = 'autoplay; encrypted-media';
-    f.src = `https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&controls=0&modestbranding=1&playsinline=1`;
-    document.body.appendChild(f);
-    _bgmFrame = f;
+    const tr = BGM_TRACKS[n]; if (!tr) return false;
+    let ac; try { ac = getAC(); } catch (_) { return false; }
+
+    const master = ac.createGain(); master.gain.value = 0;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = tr.cutoff; lp.Q.value = 0.6;
+    // ゆらぎ：ローパスをLFOで緩く動かす
+    const lfo = ac.createOscillator(); lfo.frequency.value = 0.06;
+    const lfoG = ac.createGain(); lfoG.gain.value = tr.cutoff * 0.35;
+    lfo.connect(lfoG).connect(lp.frequency); lfo.start();
+    // フィードバックディレイ（空間）
+    const dl = ac.createDelay(1.2); dl.delayTime.value = 0.42;
+    const fb = ac.createGain(); fb.gain.value = 0.34;
+    const wet = ac.createGain(); wet.gain.value = 0.32;
+    lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(master);
+    lp.connect(master);
+    // 波形取得用アナライザ
+    const an = ac.createAnalyser(); an.fftSize = 256; master.connect(an);
+    master.connect(ac.destination);
+    window._bgmAnalyser = an;
+
+    master.gain.linearRampToValueAtTime(0.16, ac.currentTime + 2.2);   // ふわっと入る
+
+    // パッド：根音＋5度をずっと薄く鳴らす
+    const pads = [];
+    [0, 7].forEach(semi => {
+        const o = ac.createOscillator(); o.type = 'sine';
+        o.frequency.value = tr.root * Math.pow(2, semi / 12) / 2;   // 1オクターブ下
+        const g = ac.createGain(); g.gain.value = 0.5;
+        o.connect(g).connect(lp); o.start(); pads.push(o, g);
+    });
+
+    // アルペジオ：スケールから緩くノートを鳴らす
+    const noteAt = (t, freq, dur) => {
+        const o = ac.createOscillator(); o.type = tr.type;
+        o.frequency.value = freq;
+        const g = ac.createGain(); g.gain.value = 0;
+        o.connect(g).connect(lp);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.22, t + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+        o.start(t); o.stop(t + dur + 0.05);
+    };
+    let step = 0;
+    const tick = () => {
+        if (!_bgm) return;
+        const t = ac.currentTime + 0.02;
+        const deg = tr.scale[(Math.random() * tr.scale.length) | 0];
+        const oct = (Math.random() < 0.35) ? 1 : 0;
+        const freq = tr.root * Math.pow(2, (deg + 12 * oct) / 12);
+        noteAt(t, freq, 1.6 + Math.random() * 1.2);
+        step++;
+    };
+    const iv = setInterval(tick, 900);   // ゆっくり
+    tick();
+
+    _bgm = { master, lfo, iv, nodes: pads, an };
     _bgmTrack = n;
     _bgmIndicator(true);
     return true;
 }
 function bgmStop() {
-    if (_bgmFrame) { try { _bgmFrame.remove(); } catch{} _bgmFrame = null; }
+    if (_bgm) {
+        try { clearInterval(_bgm.iv); } catch (_) {}
+        try { const ac = getAC(); _bgm.master.gain.cancelScheduledValues(ac.currentTime); _bgm.master.gain.linearRampToValueAtTime(0, ac.currentTime + 0.6); } catch (_) {}
+        const b = _bgm; _bgm = null;
+        setTimeout(() => { try { b.lfo.stop(); } catch (_) {} b.nodes.forEach(x => { try { x.stop && x.stop(); x.disconnect && x.disconnect(); } catch (_) {} }); try { b.master.disconnect(); } catch (_) {} }, 700);
+    }
     _bgmTrack = null;
+    window._bgmAnalyser = null;
     _bgmIndicator(false);
 }
-// ⭐上部バーの再生インジケータ（動く波形）の表示切替
+// ⭐上部バーの再生インジケータ（動く波形）。BGM中は本物のAnalyserで振幅に反応させる
 function _bgmIndicator(on) {
     const el = document.getElementById('bgmIndicator');
-    if (el) el.style.display = on ? 'inline-flex' : 'none';
+    if (!el) return;
+    el.style.display = on ? 'inline-flex' : 'none';
+    if (on) _bgmMeterLoop();
+}
+function _bgmMeterLoop() {
+    const el = document.getElementById('bgmIndicator');
+    const an = window._bgmAnalyser;
+    if (!el || el.style.display === 'none' || !an) return;
+    const bars = el.querySelectorAll('.bgm-bars i');
+    const buf = new Uint8Array(an.frequencyBinCount);
+    an.getByteFrequencyData(buf);
+    const bins = buf.length;
+    bars.forEach((b, i) => {
+        const v = buf[Math.min(bins - 1, ((i + 1) * bins / (bars.length + 1)) | 0)] / 255;
+        b.style.height = Math.max(15, Math.min(100, 15 + v * 95)) + '%';
+    });
+    requestAnimationFrame(_bgmMeterLoop);
 }
 
 // ══════════════════════════════════════════════════
@@ -9106,10 +9178,9 @@ function runCommand(val) {
     //   bgm status             → show current
     if (head === 'bgm') {
         const sub = rest.trim().toLowerCase();
-        // Hidden-YouTube-iframe BGM can't autoplay with sound on mobile (browser policy).
-        const _mobBgm = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+        const _tname = (n) => (BGM_TRACKS[n] && BGM_TRACKS[n].name) || String(n);
         if (sub === '' || sub === 'on') {
-            if (bgmStart(1)) enqueue(`$ bgm${sub?' '+sub:''}`, [`→ bgm: track 1 (lofi)`, _mobBgm ? '⚠ モバイルでは音が出ません — ブラウザが YouTube 埋め込みの自動再生をブロックします。PC でご利用ください' : '→ bgm off で停止']);
+            if (bgmStart(1)) enqueue(`$ bgm${sub?' '+sub:''}`, [`→ bgm: ${_tname(1)}（自前生成のアンビエント）`, '→ bgm 2 / bgm 3 で別の雰囲気 · bgm off で停止']);
             return;
         }
         if (sub === 'off') {
