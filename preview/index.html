@@ -86,7 +86,7 @@ nav.stuck{border-bottom-color:var(--line);background:rgba(8,8,10,.82)}
 .cta:hover{transform:translateY(-1px);box-shadow:0 8px 26px rgba(255,255,255,.22)}
 
 /* ── HERO ─────────────────────────────────────────── */
-.hero{padding:186px 0 0;text-align:center}
+.hero{padding:186px 24px 0;text-align:center}   /* ⚠️左右は .shell と同じ余白を保つ（0にすると端に接する） */
 .pill{
   display:inline-flex;align-items:center;gap:9px;font-size:12px;color:var(--dim);
   padding:6px 15px;border-radius:100px;border:1px solid var(--line);
@@ -94,7 +94,7 @@ nav.stuck{border-bottom-color:var(--line);background:rgba(8,8,10,.82)}
 }
 .pill b{color:var(--warm);font-weight:500}
 h1{
-  font-size:clamp(40px,6.6vw,80px);line-height:1.08;letter-spacing:-.03em;font-weight:700;
+  font-size:clamp(29px,6.6vw,80px);line-height:1.12;letter-spacing:-.03em;font-weight:700;
   background:linear-gradient(180deg,#fff 22%,#9a9aa8 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   text-wrap:balance;
