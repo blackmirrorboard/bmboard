@@ -2633,10 +2633,17 @@
 <!-- ⭐SETTINGS PANEL — ⌘, で召喚（パネル以外はブラー） -->
 <div id="settingsOverlay" aria-hidden="true">
     <div class="settings-card" role="dialog" aria-label="Settings">
-        <div class="set-hd"><span>⚙ SETTINGS</span><button class="set-close" type="button" aria-label="close">✕</button></div>
+        <div class="set-hd"><span>⚙ <span data-i18n="set.title">設定</span></span><button class="set-close" type="button" aria-label="close">✕</button></div>
         <div class="set-body">
             <div class="set-row">
-                <div class="set-label">ボード / BOARD</div>
+                <div class="set-label"><span data-i18n="lang.name">言語 / LANGUAGE</span></div>
+                <div class="set-seg" data-set="lang">
+                    <button type="button" data-v="ja">日本語</button>
+                    <button type="button" data-v="en">English</button>
+                </div>
+            </div>
+            <div class="set-row">
+                <div class="set-label" data-i18n="set.board">ボード</div>
                 <div class="set-seg" data-set="mode">
                     <button type="button" data-v="light">Light</button>
                     <button type="button" data-v="dark">Dark</button>
@@ -2644,15 +2651,15 @@
                 </div>
             </div>
             <div class="set-row">
-                <div class="set-label">描き味 / DRAW</div>
+                <div class="set-label" data-i18n="set.draw">描き味</div>
                 <div class="set-seg" data-set="draw">
-                    <button type="button" data-v="pencil">鉛筆</button>
-                    <button type="button" data-v="fude">筆</button>
-                    <button type="button" data-v="classic">クラシック</button>
+                    <button type="button" data-v="pencil" data-i18n="set.pencil">鉛筆</button>
+                    <button type="button" data-v="fude" data-i18n="set.brush">筆</button>
+                    <button type="button" data-v="classic" data-i18n="set.classic">クラシック</button>
                 </div>
             </div>
             <div class="set-row">
-                <div class="set-label">芯 / GRADE</div>
+                <div class="set-label" data-i18n="set.grade">芯</div>
                 <div class="set-seg" data-set="grade">
                     <button type="button" data-v="2h">2H</button>
                     <button type="button" data-v="hb">HB</button>
@@ -2662,21 +2669,21 @@
                 </div>
             </div>
             <div class="set-row">
-                <div class="set-label">ターミナル / TERMINAL</div>
+                <div class="set-label" data-i18n="set.term">ターミナル</div>
                 <div class="set-seg" data-set="term">
                     <button type="button" data-v="dock">Dock</button>
                     <button type="button" data-v="float">Float</button>
                 </div>
             </div>
             <div class="set-row">
-                <div class="set-label">壁紙 / WALLPAPER</div>
+                <div class="set-label" data-i18n="set.wall">壁紙</div>
                 <div class="set-seg" data-set="wall">
-                    <button type="button" data-v="white">白リング</button>
-                    <button type="button" data-v="red">赤リング</button>
+                    <button type="button" data-v="white" data-i18n="set.white">白リング</button>
+                    <button type="button" data-v="red" data-i18n="set.red">赤リング</button>
                 </div>
             </div>
         </div>
-        <div class="set-foot">⌘,  で開閉 · Esc で閉じる</div>
+        <div class="set-foot" data-i18n="set.foot">⌘,  で開閉 · Esc で閉じる</div>
     </div>
 </div>
 
@@ -2685,7 +2692,7 @@
     <div class="cmdk-card" role="dialog" aria-label="Command palette">
         <div class="cmdk-search">
             <svg class="cmdk-search-ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg>
-            <input id="cmdkInput" type="text" placeholder="コマンドを検索…（calc / dark / t …）" autocomplete="off" spellcheck="false" autocapitalize="off">
+            <input id="cmdkInput" type="text" placeholder="コマンドを検索…（calc / dark / t …）" data-i18n-ph="pal.ph" autocomplete="off" spellcheck="false" autocapitalize="off">
         </div>
         <div id="cmdkList"></div>
         <!-- ⭐リンク追加フォーム（パレット内サブビュー） -->
@@ -7163,6 +7170,7 @@ async function shareCanvasAsUrl() {
 
 // Close handlers for share modal
 document.addEventListener('DOMContentLoaded', () => {
+    if (typeof applyLang === 'function') applyLang();   // ⭐保存された言語(bm_lang)を起動時に適用
     const ov = document.getElementById('shareUrlOverlay');
     const cl = document.getElementById('shareUrlClose');
     if (cl) cl.addEventListener('click', () => ov.classList.remove('open'));
@@ -9975,10 +9983,13 @@ tiEl.addEventListener('paste', e => {
         setActive('term',  (window._termIsFloat && window._termIsFloat()) ? 'float' : 'dock');
         let w = 'white'; try { w = localStorage.getItem('bm_wall') || 'white'; } catch (_) {}
         setActive('wall', w);
+        setActive('lang', (window.getLang && window.getLang()) || 'ja');
     }
+    window._settingsSyncLang = sync;   // ⭐言語切替時にアクティブ状態を追従
     function apply(group, v) {
         try {
             if (group === 'mode')       { if (typeof setMode === 'function') setMode(v); }
+            else if (group === 'lang')  { if (window.setLang) window.setLang(v); }
             else if (group === 'draw')  { if (typeof runCommand === 'function') runCommand(v === 'pencil' ? 'enpitsu' : v); }
             else if (group === 'grade') { if (typeof PENCIL_GRADE !== 'undefined') { PENCIL_GRADE = v; try { localStorage.setItem('bm_grade', v); } catch (_) {} } }
             else if (group === 'term')  { if (v === 'float') { window._termFloat && window._termFloat(); } else { window._termDock && window._termDock(); } }
@@ -10018,6 +10029,59 @@ tiEl.addEventListener('paste', e => {
 // ⭐omnibox 共有カタログ：ターミナル補完 と ⌘Kパレット が同じ1ソースを使う。
 //   cat＝⌘Kパレットのバッジ（何の機能かひと目で分かる）。
 const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク' };
+// ══════════════════════════════════════════════════
+// i18n — EN/JP 切替（追加コードのみ・既存の描画/操作/保存には触れない）
+//   静的markup: data-i18n / data-i18n-ph / data-i18n-title を applyLang() が走査
+//   動的描画（パレット等）: t(key) を描画時に呼ぶ → setLang で再描画
+// ══════════════════════════════════════════════════
+var LANG = (function () { try { return localStorage.getItem('bm_lang') || 'ja'; } catch (_) { return 'ja'; } })();
+const I18N = {
+    ja: {
+        'pal.ph': 'コマンドを検索…（calc / dark / t …）',
+        'pal.fav': 'お気に入り · FAVORITES', 'pal.all': 'すべて · ALL', 'pal.cmds': 'コマンド · COMMANDS', 'pal.actions': '候補 · ACTIONS',
+        'pal.none': '該当なし', 'pal.wait': '入力待ち', 'pal.run': '実行', 'pal.close': '閉じる',
+        'pal.enterInput': '内容を入力して ↵ で実行。', 'pal.example': '例',
+        'pal.assign': '⌨ ショートカット割当', 'pal.change': '⌨ ショートカット変更', 'pal.clearSc': '解除',
+        'pal.capTo': 'に割り当てるキーを押す…', 'pal.capHint': '⌘/⌥/⌃＋キー · Esc取消',
+        'pal.warnUsed': 'その組合せは使用中', 'pal.warnMod': '⌘/⌥/⌃ と組合せて',
+        'pal.calcCap': '計算 · CALCULATOR', 'pal.expr': '式', 'pal.result': '結果', 'pal.copyAns': '↵ 答えをコピー', 'pal.doRun': '↵ で実行',
+        'set.title': '設定', 'set.board': 'ボード', 'set.draw': '描き味', 'set.grade': '芯', 'set.term': 'ターミナル', 'set.wall': '壁紙', 'set.lang': '言語',
+        'set.pencil': '鉛筆', 'set.brush': '筆', 'set.classic': 'クラシック', 'set.white': '白リング', 'set.red': '赤リング',
+        'set.foot': '⌘,  で開閉 · Esc で閉じる',
+        'lang.name': '言語 / LANGUAGE'
+    },
+    en: {
+        'pal.ph': 'Search commands…（calc / dark / t …）',
+        'pal.fav': 'FAVORITES', 'pal.all': 'ALL', 'pal.cmds': 'COMMANDS', 'pal.actions': 'ACTIONS',
+        'pal.none': 'No results', 'pal.wait': 'awaiting input', 'pal.run': 'run', 'pal.close': 'close',
+        'pal.enterInput': 'Type your input, then ↵ to run.', 'pal.example': 'e.g.',
+        'pal.assign': '⌨ Assign shortcut', 'pal.change': '⌨ Change shortcut', 'pal.clearSc': 'clear',
+        'pal.capTo': '— press the keys to assign…', 'pal.capHint': '⌘/⌥/⌃＋key · Esc to cancel',
+        'pal.warnUsed': 'That combo is in use', 'pal.warnMod': 'Combine with ⌘/⌥/⌃',
+        'pal.calcCap': 'CALCULATOR', 'pal.expr': 'expr', 'pal.result': 'result', 'pal.copyAns': '↵ copy answer', 'pal.doRun': '↵ to run',
+        'set.title': 'Settings', 'set.board': 'BOARD', 'set.draw': 'DRAW', 'set.grade': 'GRADE', 'set.term': 'TERMINAL', 'set.wall': 'WALLPAPER', 'set.lang': 'LANGUAGE',
+        'set.pencil': 'Pencil', 'set.brush': 'Brush', 'set.classic': 'Classic', 'set.white': 'White ring', 'set.red': 'Red ring',
+        'set.foot': '⌘,  toggle · Esc to close',
+        'lang.name': '言語 / LANGUAGE'
+    }
+};
+function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
+function getLang() { return LANG; }
+function applyLang() {
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => { el.setAttribute('title', t(el.getAttribute('data-i18n-title'))); });
+    document.documentElement.setAttribute('lang', LANG);
+}
+function setLang(l) {
+    if (l !== 'ja' && l !== 'en') return;
+    LANG = l; try { localStorage.setItem('bm_lang', l); } catch (_) {}
+    applyLang();
+    if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen();
+    if (window._settingsSyncLang) window._settingsSyncLang();
+}
+window.setLang = setLang; window.getLang = getLang; window.t = t; window.applyLang = applyLang;
+
 const OMNI_CMDS = [
     { cmd:'calc',    cat:'calc',    hint:'計算（calc 12*8）', args:true },
     { cmd:'t',       cat:'capture', hint:'中央にテキスト（t アイデア）', args:true },
@@ -10045,7 +10109,9 @@ const OMNI_CMDS = [
     { cmd:'sticky',  cat:'insert',  hint:'付箋を置く', args:true },
     { cmd:'bgm',     cat:'media',   hint:'BGM（bgm on / off）', args:true },
     { cmd:'usage',   cat:'help',    hint:'使い方 / ヘルプ' },
-    { cmd:'settings',cat:'help',    hint:'設定を開く（ボード/描き味/芯/壁紙）', sc:'⌘,', _settings:true, kw:'設定 setting 環境 preferences 歯車' },
+    { cmd:'settings',cat:'help',    hint:'設定を開く（ボード/描き味/芯/壁紙）', hintEn:'Open settings (board / draw / grade / wallpaper)', sc:'⌘,', _settings:true, kw:'設定 setting 環境 preferences 歯車' },
+    { cmd:'english', cat:'help',    hint:'表示を英語に切替', hintEn:'Switch UI to English', _lang:'en', kw:'en english 英語 language lang 言語 切替' },
+    { cmd:'日本語',  cat:'help',    hint:'表示を日本語に切替', hintEn:'Switch UI to Japanese', _lang:'ja', kw:'ja jp japanese 日本語 language lang 言語 切替' },
     { cmd:'open',    cat:'link',    hint:'URLをボードに開く（open example.com）', args:true, kw:'url web リンク 開く browser サイト' },
     { cmd:'link',    cat:'link',    hint:'お気に入りURL（link add 名前 url / link 名前）', args:true, kw:'url web お気に入り リンク favorite ブックマーク' },
 ];
@@ -10195,17 +10261,22 @@ function centerTermPanel() {
             return { kind:'form', ico:'＋', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '', favKey, fav, noFav: true,
                 run() { enterForm(); } };
         }
+        const hint = (LANG === 'en' && it.hintEn) ? it.hintEn : (it.hint || '');
         if (it._settings) {   // ⭐設定パネルを開く
-            return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '', favKey, fav,
+            return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: hint, sc: it.sc || '', favKey, fav,
                 run() { close(); if (window._toggleSettings) window._toggleSettings(); } };
         }
+        if (it._lang) {   // ⭐言語切替
+            return { kind:'lang', ico:'🌐', name: it.cmd, type: cat, desc: hint, favKey, fav, noFav: true,
+                run() { close(); if (window.setLang) window.setLang(it._lang); } };
+        }
         if (it._url) {   // ⭐お気に入りリンク → 選ぶとボード上のiframe窓で開く
-            return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: it.hint || it._url, favKey, fav,
+            return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: hint || it._url, favKey, fav,
                 run() { close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
         }
         const usc = getUsc()[it.cmd];
         return {
-            kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: it.hint || (it.cmd + ' コマンド'),
+            kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: hint || (it.cmd + (LANG === 'en' ? ' command' : ' コマンド')),
             sc: (usc && usc.disp) || it.sc || '', favKey, fav,
             cmdStr: it.cmd, args: !!it.args, assignable: !it.args,   // 引数なしコマンドだけ割当可
             run() {
@@ -10222,36 +10293,37 @@ function centerTermPanel() {
     function detailHtml(r) {
         if (!r) return '';
         if (r.kind === 'calc') {
-            return `<div class="cmdk-hero"><div class="cmdk-hero-cap">計算 · CALCULATOR</div><div class="cmdk-hero-body">`
-                 + `<div class="cmdk-hero-col"><div class="cmdk-hero-expr">${esc(r.expr)}</div><div class="cmdk-hero-lab">式</div></div>`
+            return `<div class="cmdk-hero"><div class="cmdk-hero-cap">${esc(t('pal.calcCap'))}</div><div class="cmdk-hero-body">`
+                 + `<div class="cmdk-hero-col"><div class="cmdk-hero-expr">${esc(r.expr)}</div><div class="cmdk-hero-lab">${esc(t('pal.expr'))}</div></div>`
                  + `<div class="cmdk-hero-arrow">→</div>`
-                 + `<div class="cmdk-hero-col"><div class="cmdk-hero-val">${esc(String(r.val))}</div><div class="cmdk-hero-lab">結果</div></div></div>`
-                 + `<div class="cmdk-detail-foot">↵ 答えをコピー</div></div>`;
+                 + `<div class="cmdk-hero-col"><div class="cmdk-hero-val">${esc(String(r.val))}</div><div class="cmdk-hero-lab">${esc(t('pal.result'))}</div></div></div>`
+                 + `<div class="cmdk-detail-foot">${esc(t('pal.copyAns'))}</div></div>`;
         }
         return `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">${esc(r.name)}</span><span class="cmdk-badge">${esc(r.type)}</span></div>`
-             + `<div class="cmdk-detail-desc">${esc(r.desc || '')}</div><div class="cmdk-detail-foot">↵ で実行</div></div>`;
+             + `<div class="cmdk-detail-desc">${esc(r.desc || '')}</div><div class="cmdk-detail-foot">${esc(t('pal.doRun'))}</div></div>`;
     }
     function render() {
-        if (!rows.length && !awaitingArg) { listEl.innerHTML = '<div class="cmdk-empty">該当なし</div>'; return; }
+        if (!rows.length && !awaitingArg) { listEl.innerHTML = `<div class="cmdk-empty">${esc(t('pal.none'))}</div>`; return; }
         let top = '';
         if (awaitingArg) {
-            top = `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">${esc(awaitingArg.cmd)}</span><span class="cmdk-badge">入力待ち</span></div>`
-                + `<div class="cmdk-detail-desc">内容を入力して ↵ で実行。${esc(awaitingArg.hint || '')}</div>`
-                + `<div class="cmdk-detail-foot">例: ${esc(awaitingArg.cmd)} …</div></div>`;
+            const argHint = (LANG === 'en' && awaitingArg.hintEn) ? awaitingArg.hintEn : (awaitingArg.hint || '');
+            top = `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">${esc(awaitingArg.cmd)}</span><span class="cmdk-badge">${esc(t('pal.wait'))}</span></div>`
+                + `<div class="cmdk-detail-desc">${esc(t('pal.enterInput'))}${esc(argHint)}</div>`
+                + `<div class="cmdk-detail-foot">${esc(t('pal.example'))}: ${esc(awaitingArg.cmd)} …</div></div>`;
         } else if (rows[0] && rows[0].kind === 'calc') {
             top = detailHtml(rows[0]);   // calc は結果ヒーローだけ上に（通常コマンドはクリーンなリスト＝Raycast）
         }
         let listHtml = '';
-        const restLabel = input.value.trim() ? 'コマンド · COMMANDS' : 'すべて · ALL';
+        const restLabel = input.value.trim() ? t('pal.cmds') : t('pal.all');
         rows.forEach((r, i) => {
-            if (top) { if (i === 0) listHtml += '<div class="cmdk-sect">候補 · ACTIONS</div>'; }
+            if (top) { if (i === 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.actions')) + '</div>'; }
             else if (_favCount > 0) {
-                if (i === 0) listHtml += '<div class="cmdk-sect">お気に入り · FAVORITES</div>';
-                if (i === _favCount) listHtml += '<div class="cmdk-sect">' + restLabel + '</div>';
+                if (i === 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.fav')) + '</div>';
+                if (i === _favCount) listHtml += '<div class="cmdk-sect">' + esc(restLabel) + '</div>';
             } else if (i === 0) {
-                listHtml += '<div class="cmdk-sect">' + restLabel + '</div>';
+                listHtml += '<div class="cmdk-sect">' + esc(restLabel) + '</div>';
             }
-            const star = r.noFav ? '' : `<span class="cmdk-star${r.fav ? ' on' : ''}" data-fav="${esc(r.favKey || '')}" title="お気に入り（右クリックでも）">${r.fav ? '★' : '☆'}</span>`;
+            const star = r.noFav ? '' : `<span class="cmdk-star${r.fav ? ' on' : ''}" data-fav="${esc(r.favKey || '')}" title="${LANG === 'en' ? 'Favorite (right-click too)' : 'お気に入り（右クリックでも）'}">${r.fav ? '★' : '☆'}</span>`;
             listHtml += `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-ico">${esc(r.ico)}</span><span class="cmdk-name">${esc(r.name)}</span><span class="cmdk-sub">${esc(r.desc || '')}</span>${r.sc ? '<span class="cmdk-sc">' + esc(r.sc) + '</span>' : ''}${star}<span class="cmdk-type">${esc(r.type)}</span><span class="cmdk-enter">↵</span></div>`;
         });
         listEl.innerHTML = top + listHtml;
@@ -10265,13 +10337,13 @@ function centerTermPanel() {
         let right;
         const r = rows[sel];
         if (capSc) {
-            right = `<span class="cmdk-foot-r"><span class="cmdk-foot-cap">「${esc(capSc)}」に割り当てるキーを押す… <span class="cmdk-foot-dim">⌘/⌥/⌃＋キー · Esc取消</span>${capMsg ? ' <span class="cmdk-foot-warn">' + esc(capMsg) + '</span>' : ''}</span></span>`;
+            right = `<span class="cmdk-foot-r"><span class="cmdk-foot-cap">「${esc(capSc)}」${esc(t('pal.capTo'))} <span class="cmdk-foot-dim">${esc(t('pal.capHint'))}</span>${capMsg ? ' <span class="cmdk-foot-warn">' + esc(capMsg) + '</span>' : ''}</span></span>`;
         } else if (r && r.assignable) {
             const usc = getUsc()[r.cmdStr];
-            const cur = usc ? `<span class="k">${esc(usc.disp)}</span> <span class="cmdk-foot-btn" data-act="clearsc">解除</span>` : '';
-            right = `<span class="cmdk-foot-r">${cur}<span class="cmdk-foot-btn" data-act="setsc">⌨ ショートカット${usc ? '変更' : '割当'}</span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">実行 <span class="k">↵</span></span></span>`;
+            const cur = usc ? `<span class="k">${esc(usc.disp)}</span> <span class="cmdk-foot-btn" data-act="clearsc">${esc(t('pal.clearSc'))}</span>` : '';
+            right = `<span class="cmdk-foot-r">${cur}<span class="cmdk-foot-btn" data-act="setsc">${esc(usc ? t('pal.change') : t('pal.assign'))}</span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">${esc(t('pal.run'))} <span class="k">↵</span></span></span>`;
         } else {
-            right = '<span class="cmdk-foot-r"><span class="cmdk-foot-act">実行 <span class="k">↵</span></span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">閉じる <span class="k">esc</span></span></span>';
+            right = `<span class="cmdk-foot-r"><span class="cmdk-foot-act">${esc(t('pal.run'))} <span class="k">↵</span></span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">${esc(t('pal.close'))} <span class="k">esc</span></span></span>`;
         }
         footEl.innerHTML = brand + right;
     }
@@ -10328,6 +10400,7 @@ function centerTermPanel() {
     function close() { capSc = null; capMsg = ''; overlay.classList.remove('open'); showList(); }
     function toggle(){ isOpen() ? close() : open(); }
     window._openCmdK = open; window._toggleCmdK = toggle;
+    window._cmdkRefreshIfOpen = () => { if (isOpen()) refresh(); };   // ⭐言語切替時に開いてれば再描画
     function runSel() { const r = rows[sel]; if (r && typeof r.run === 'function') r.run(); }
 
     // ⭐フッターの割当/解除ボタン（mousedownでフォーカスを保持）
@@ -10348,9 +10421,9 @@ function centerTermPanel() {
             e.preventDefault(); e.stopPropagation();
             if (e.key === 'Escape') { capSc = null; capMsg = ''; updateFoot(); return; }
             if (e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift') return;
-            if (reservedCombo(e)) { capMsg = 'その組合せは使用中'; updateFoot(); return; }
+            if (reservedCombo(e)) { capMsg = t('pal.warnUsed'); updateFoot(); return; }
             const c = comboOf(e);
-            if (!c) { capMsg = '⌘/⌥/⌃ と組合せて'; updateFoot(); return; }
+            if (!c) { capMsg = t('pal.warnMod'); updateFoot(); return; }
             setUsc(capSc, c); capSc = null; capMsg = ''; refresh();
             return;
         }
