@@ -8896,6 +8896,33 @@ function runCommand(val) {
         printRaw((typeof LANG!=='undefined'&&LANG==='en') ? `board size → ${key==='free'?'none (infinite)':lbl}` : `ボードサイズ → ${key==='free'?'なし（無限）':lbl}`, 't-dim');
         return;
     }
+    // ⭐連鎖：chain add 名前 cmd1 ; cmd2 / chain 名前（順に実行）/ chain list / chain forget 名前
+    if (head==='chain') {
+        const en = (typeof LANG!=='undefined'&&LANG==='en');
+        const sub = rest.trim(); const w = sub.split(/\s+/); const verb = (w[0]||'').toLowerCase();
+        if (verb === 'add') {
+            const r2 = sub.slice(w[0].length).trim(); const sp = r2.indexOf(' ');
+            if (sp < 0) { printRaw(en?'chain: usage → chain add <name> cmd1 ; cmd2':'chain: 使い方 → chain add 名前 コマンド1 ; コマンド2', 't-err'); return; }
+            const nm = r2.slice(0, sp).trim();
+            const seq = r2.slice(sp + 1).split(';').map(x => x.trim()).filter(Boolean);
+            if (!nm || !seq.length) { printRaw(en?'chain: usage → chain add <name> cmd1 ; cmd2':'chain: 使い方 → chain add 名前 コマンド1 ; コマンド2', 't-err'); return; }
+            saveChain(nm, seq);
+            printRaw(en?`saved chain "${nm}" (${seq.length} steps) — run it from ⌘K`:`連鎖「${nm}」を保存（${seq.length}手）— ⌘Kから実行できます`, 't-dim'); return;
+        }
+        if (verb === 'forget' || verb === 'rm' || verb === 'delete') {
+            const nm = sub.slice(w[0].length).trim();
+            printRaw(rmChain(nm) ? (en?`forgot chain "${nm}"`:`連鎖「${nm}」を削除`) : (en?`"${nm}" not found`:`「${nm}」が見つからない`), 't-dim'); return;
+        }
+        const cm = getChains();
+        if (verb === 'list' || !sub) {
+            const ks = Object.keys(cm);
+            printRaw(!ks.length ? (en?'no chains — try: chain add tidy sweep ; light':'連鎖なし — 例: chain add 整える sweep ; light')
+                                : (en?'chains: ':'連鎖: ') + ks.map(k=>`${k}(${cm[k].length})`).join(' · '), 't-dim');
+            return;
+        }
+        if (cm[sub]) { printRaw(en?`running chain "${sub}"…`:`連鎖「${sub}」を実行…`, 't-dim'); runChain(cm[sub]); return; }
+        printRaw(en?`chain: "${sub}" not found`:`chain:「${sub}」が見つからない`, 't-err'); return;
+    }
     // ⭐スニペット：snip add 名前 本文 / snip 名前（付箋で配置）/ snip list / snip forget 名前
     if (head==='snip' || head==='snippet') {
         const en = (typeof LANG!=='undefined'&&LANG==='en');
@@ -10645,8 +10672,8 @@ tiEl.addEventListener('paste', e => {
 // ══════════════════════════════════════════════════
 // ⭐omnibox 共有カタログ：ターミナル補完 と ⌘Kパレット が同じ1ソースを使う。
 //   cat＝⌘Kパレットのバッジ（何の機能かひと目で分かる）。
-const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク', spell:'魔法', snippet:'スニペット' };
-const OMNI_CATS_EN = { calc:'Calc', capture:'Note', board:'Board', draw:'Draw', grade:'Grade', panel:'Panel', edit:'Edit', io:'I/O', insert:'Insert', media:'Sound', help:'Help', link:'Link', spell:'Spell', snippet:'Snippet' };
+const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク', spell:'魔法', snippet:'スニペット', chain:'連鎖' };
+const OMNI_CATS_EN = { calc:'Calc', capture:'Note', board:'Board', draw:'Draw', grade:'Grade', panel:'Panel', edit:'Edit', io:'I/O', insert:'Insert', media:'Sound', help:'Help', link:'Link', spell:'Spell', snippet:'Snippet', chain:'Chain' };
 function catLabel(c) { const m = (typeof LANG !== 'undefined' && LANG === 'en') ? OMNI_CATS_EN : OMNI_CATS; return m[c] || c || ''; }
 // ══════════════════════════════════════════════════
 // i18n — EN/JP 切替（追加コードのみ・既存の描画/操作/保存には触れない）
@@ -10778,6 +10805,7 @@ const OMNI_CMDS = [
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
     { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import' },
+    { cmd:'chain',   cat:'chain',   hint:'連鎖（chain add 名前 cmd1 ; cmd2）', hintEn:'Chains (chain add name cmd1 ; cmd2)', args:true, kw:'連鎖 chain マクロ 一括 まとめて 自動 add' },
     { cmd:'snip',    cat:'snippet', hint:'スニペット（snip add 名前 本文 / snip 名前）', hintEn:'Snippets (snip add name text / snip name)', args:true, kw:'スニペット snippet 定型 テンプレ 付箋 add 登録' },
     { cmd:'store',   cat:'spell',   hint:'STORE を開く（魔法をインストール）', hintEn:'Open the STORE (install spells)', _storeView:true, kw:'store ストア 魔法 install インストール ダウンロード 追加 マーケット' },
     { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す', hintEn:'Clear the terminal log' },
@@ -10890,7 +10918,7 @@ function centerTermPanel() {
     let rows = [], sel = 0, awaitingArg = null, mode = 'list', _favCount = 0, _recentCount = 0;
     let storeMode = false, storeMsg = '', storeDetail = null;   // ⭐STORE（一覧→詳細→インストール）
     // ⭐絵文字アイコン（細いグリフは見分けがつかないため）
-    const CAT_ICON = { calc:'🔢', capture:'📝', board:'🌓', draw:'✏️', grade:'🖍', panel:'🪟', edit:'🧹', io:'💾', insert:'➕', media:'🎵', help:'❓', link:'🔗', spell:'🪄', snippet:'📋' };
+    const CAT_ICON = { calc:'🔢', capture:'📝', board:'🌓', draw:'✏️', grade:'🖍', panel:'🪟', edit:'🧹', io:'💾', insert:'➕', media:'🎵', help:'❓', link:'🔗', spell:'🪄', snippet:'📋', chain:'⛓' };
     // ⭐お気に入り（パレット上部に固定表示・★/右クリックでトグル）
     const FAVS_KEY = 'bm_favs';
     function getFavs() { try { return JSON.parse(localStorage.getItem(FAVS_KEY) || '[]'); } catch (_) { return []; } }
@@ -10944,7 +10972,7 @@ function centerTermPanel() {
 
     function cmdItem(it) {
         const cat = catLabel(it.cat);
-        const favKey = it._url ? ('link:' + it.cmd) : it._spell ? ('spell:' + it.cmd) : (it._snip != null) ? ('snip:' + it.cmd) : it.cmd;
+        const favKey = it._url ? ('link:' + it.cmd) : it._spell ? ('spell:' + it.cmd) : (it._snip != null) ? ('snip:' + it.cmd) : it._chain ? ('chain:' + it.cmd) : it.cmd;
         const fav = isFav(favKey);
         if (it._form) {   // ⭐パレット内フォームへ（リンク追加＝ターミナルに打たず⌘Kだけで完結）
             return { kind:'form', ico:'＋', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '', favKey, fav, noFav: true,
@@ -10971,6 +10999,10 @@ function centerTermPanel() {
         if (it._url) {   // ⭐お気に入りリンク → 選ぶとボード上のiframe窓で開く
             return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: hint || it._url, favKey, fav,
                 run() { recordRecent('link:' + it.cmd); close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
+        }
+        if (it._chain) {   // ⭐連鎖 → 選ぶとコマンドを順に実行
+            return { kind:'chain', ico: CAT_ICON.chain || '⛓', name: it.cmd, type: cat, desc: hint, favKey, fav,
+                run() { recordRecent('chain:' + it.cmd); close(); if (window._runChain) window._runChain(it._chain); } };
         }
         if (it._snip != null) {   // ⭐スニペット → 選ぶと付箋で配置
             return { kind:'snippet', ico: CAT_ICON.snippet || '📋', name: it.cmd, type: cat, desc: hint, favKey, fav,
@@ -11139,7 +11171,9 @@ function centerTermPanel() {
         const spellPool = spellArr.map(s => ({ cmd: s.name, cat: 'spell', hint: (LANG === 'en' ? `spell · ${s.count} objects` : `魔法 · ${s.count}個を配置`), hintEn: `spell · ${s.count} objects`, _spell: s, kw: '魔法 spell スタンプ 配置 ' + s.name }));
         const snipObj = (window._getSnips && window._getSnips()) || {};
         const snipPool = Object.keys(snipObj).map(n => ({ cmd: n, cat: 'snippet', hint: String(snipObj[n]).slice(0, 40), _snip: snipObj[n], kw: 'スニペット snippet 定型 付箋 ' + n }));
-        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, snipPool);
+        const chainObj = (window._getChains && window._getChains()) || {};
+        const chainPool = Object.keys(chainObj).map(n => ({ cmd: n, cat: 'chain', hint: (chainObj[n]||[]).join(' → ').slice(0, 46), _chain: chainObj[n], kw: '連鎖 chain マクロ 一括 ' + n }));
+        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, snipPool, chainPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = []; _favCount = 0; _recentCount = 0;
@@ -12350,6 +12384,23 @@ function placeSnip(text) {
     return o;
 }
 window._getSnips = getSnips; window._saveSnip = saveSnip; window._rmSnip = rmSnip; window._placeSnip = placeSnip;
+
+// ⭐連鎖(chain)＝既存コマンドを順に実行する自作マクロ。コマンド名の列だけ＝任意JS無しで安全に配れる
+const CHAINS_KEY = 'bm_chains';
+function getChains() { try { return JSON.parse(localStorage.getItem(CHAINS_KEY) || '{}'); } catch (_) { return {}; } }
+function saveChain(n, arr) { if (!n || !Array.isArray(arr) || !arr.length) return; const m = getChains(); m[n] = arr; try { localStorage.setItem(CHAINS_KEY, JSON.stringify(m)); } catch (_) {} }
+function rmChain(n) { const m = getChains(); if (!(n in m)) return false; delete m[n]; try { localStorage.setItem(CHAINS_KEY, JSON.stringify(m)); } catch (_) {} return true; }
+function runChain(list) {
+    const arr = Array.isArray(list) ? list.slice() : [];
+    let i = 0;
+    (function step() {
+        if (i >= arr.length) return;
+        const c = String(arr[i++] || '').trim();
+        if (c) { try { if (typeof runCommand === 'function') runCommand(c); } catch (_) {} }
+        setTimeout(step, 140);   // 1つずつ間を置いて実行（描画が追いつくように）
+    })();
+}
+window._getChains = getChains; window._saveChain = saveChain; window._rmChain = rmChain; window._runChain = runChain;
 
 // ⭐STORE カタログ（内蔵シード＝サーバー不要）。将来は同形式の静的JSONをGitHub Pagesからfetchに差替え可
 const STORE_CATALOG = [
