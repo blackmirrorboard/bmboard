@@ -10040,7 +10040,7 @@ var LANG = (function () { try { return localStorage.getItem('bm_lang') || 'ja'; 
 const I18N = {
     ja: {
         'pal.ph': 'コマンドを検索…（calc / dark / t …）',
-        'pal.fav': 'お気に入り · FAVORITES', 'pal.all': 'すべて · ALL', 'pal.cmds': 'コマンド · COMMANDS', 'pal.actions': '候補 · ACTIONS',
+        'pal.fav': 'お気に入り · FAVORITES', 'pal.recent': '最近使った · RECENT', 'pal.all': 'すべて · ALL', 'pal.cmds': 'コマンド · COMMANDS', 'pal.actions': '候補 · ACTIONS',
         'pal.none': '該当なし', 'pal.wait': '入力待ち', 'pal.run': '実行', 'pal.close': '閉じる',
         'pal.enterInput': '内容を入力して ↵ で実行。', 'pal.example': '例',
         'pal.assign': '⌨ ショートカット割当', 'pal.change': '⌨ ショートカット変更', 'pal.clearSc': '解除',
@@ -10057,7 +10057,7 @@ const I18N = {
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
-        'pal.fav': 'FAVORITES', 'pal.all': 'ALL', 'pal.cmds': 'COMMANDS', 'pal.actions': 'ACTIONS',
+        'pal.fav': 'FAVORITES', 'pal.recent': 'RECENT', 'pal.all': 'ALL', 'pal.cmds': 'COMMANDS', 'pal.actions': 'ACTIONS',
         'pal.none': 'No results', 'pal.wait': 'awaiting input', 'pal.run': 'run', 'pal.close': 'close',
         'pal.enterInput': 'Type your input, then ↵ to run.', 'pal.example': 'e.g.',
         'pal.assign': '⌨ Assign shortcut', 'pal.change': '⌨ Change shortcut', 'pal.clearSc': 'clear',
@@ -10214,13 +10214,17 @@ function centerTermPanel() {
     const footEl  = document.getElementById('cmdkFoot');
     if (!overlay || !input || !listEl) return;
 
-    let rows = [], sel = 0, awaitingArg = null, mode = 'list', _favCount = 0;
+    let rows = [], sel = 0, awaitingArg = null, mode = 'list', _favCount = 0, _recentCount = 0;
     const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?', link:'↗' };
     // ⭐お気に入り（パレット上部に固定表示・★/右クリックでトグル）
     const FAVS_KEY = 'bm_favs';
     function getFavs() { try { return JSON.parse(localStorage.getItem(FAVS_KEY) || '[]'); } catch (_) { return []; } }
     function isFav(k) { return getFavs().indexOf(k) >= 0; }
     function toggleFav(k) { if (!k) return; const a = getFavs(); const i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else a.unshift(k); try { localStorage.setItem(FAVS_KEY, JSON.stringify(a)); } catch (_) {} }
+    // ⭐最近使用したもの（MRU・実行するたび先頭へ・お気に入りと同じキー形式）
+    const RECENT_KEY = 'bm_recent';
+    function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (_) { return []; } }
+    function recordRecent(k) { if (!k) return; const a = getRecent().filter(x => x !== k); a.unshift(k); if (a.length > 8) a.length = 8; try { localStorage.setItem(RECENT_KEY, JSON.stringify(a)); } catch (_) {} }
     // ⭐ユーザー割当ショートカット（bm_user_sc: { コマンド名: {disp,match} }）。修飾キー必須で1キーツールと衝突しない
     const USC_KEY = 'bm_user_sc';
     function getUsc() { try { return JSON.parse(localStorage.getItem(USC_KEY) || '{}'); } catch (_) { return {}; } }
@@ -10282,7 +10286,7 @@ function centerTermPanel() {
         }
         if (it._url) {   // ⭐お気に入りリンク → 選ぶとボード上のiframe窓で開く
             return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: hint || it._url, favKey, fav,
-                run() { close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
+                run() { recordRecent('link:' + it.cmd); close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
         }
         const usc = getUsc()[it.cmd];
         return {
@@ -10294,6 +10298,7 @@ function centerTermPanel() {
                 const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
                 if (it.args && !typedArgs) { input.value = it.cmd + ' '; refresh(); return; }
                 const cmd = (it.args && typedArgs) ? (it.cmd + ' ' + typedArgs) : it.cmd;
+                recordRecent(it.cmd);   // ⭐使用履歴（最近使ったものを上部に）
                 close(); try { pushHistory(cmd); } catch (_) {}
                 if (typeof runCommand === 'function') runCommand(cmd);
             }
@@ -10325,13 +10330,13 @@ function centerTermPanel() {
         }
         let listHtml = '';
         const restLabel = input.value.trim() ? t('pal.cmds') : t('pal.all');
+        const allStart = _favCount + _recentCount;
         rows.forEach((r, i) => {
             if (top) { if (i === 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.actions')) + '</div>'; }
-            else if (_favCount > 0) {
-                if (i === 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.fav')) + '</div>';
-                if (i === _favCount) listHtml += '<div class="cmdk-sect">' + esc(restLabel) + '</div>';
-            } else if (i === 0) {
-                listHtml += '<div class="cmdk-sect">' + esc(restLabel) + '</div>';
+            else {
+                if (i === 0 && _favCount > 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.fav')) + '</div>';
+                if (i === _favCount && _recentCount > 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.recent')) + '</div>';
+                if (i === allStart && rows.length > allStart) listHtml += '<div class="cmdk-sect">' + esc(restLabel) + '</div>';
             }
             const star = r.noFav ? '' : `<span class="cmdk-star${r.fav ? ' on' : ''}" data-fav="${esc(r.favKey || '')}" title="${LANG === 'en' ? 'Favorite (right-click too)' : 'お気に入り（右クリックでも）'}">${r.fav ? '★' : '☆'}</span>`;
             listHtml += `<div class="cmdk-item${i === sel ? ' sel' : ''}" data-i="${i}"><span class="cmdk-ico">${esc(r.ico)}</span><span class="cmdk-name">${esc(r.name)}</span><span class="cmdk-sub">${esc(r.desc || '')}</span>${r.sc ? '<span class="cmdk-sc">' + esc(r.sc) + '</span>' : ''}${star}<span class="cmdk-type">${esc(r.type)}</span><span class="cmdk-enter">↵</span></div>`;
@@ -10372,19 +10377,31 @@ function centerTermPanel() {
         const POOL = OMNI_CMDS.concat([formCmd], linkPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
-        rows = []; _favCount = 0;
+        rows = []; _favCount = 0; _recentCount = 0;
         const cv = (typeof safeCalc === 'function') ? safeCalc(full) : null;
         if (cv !== null) {
             rows.push({ kind:'calc', ico:'∑', name:'= ' + cv, type:'計算', expr: full, val: cv, desc:`${full} の計算結果。↵ でコピー。`, run() { copyText(cv); close(); } });
             rows.push({ kind:'action', ico:'✎', name:'ボードに置く', type:'メモ', desc:`結果「${cv}」を中央にテキストで配置`, run() { close(); try { pushHistory('t ' + cv); } catch (_) {} if (typeof runCommand === 'function') runCommand('t ' + cv); } });
             rows = rows.concat(cmds.map(cmdItem));
         } else {
-            // ⭐お気に入りを先頭に固めて表示（FAVORITES欄）
             const items = cmds.map(cmdItem);
             const favRows = items.filter(r => r.fav);
-            const rest = items.filter(r => !r.fav);
-            _favCount = favRows.length;
-            rows = favRows.concat(rest);
+            if (!q) {
+                // ⭐空欄時：お気に入り → 最近使ったもの → すべて（MRU上部表示）
+                const usedFav = new Set(favRows.map(r => r.favKey));
+                const recent = getRecent();
+                const recentRows = [];
+                recent.forEach(k => { if (usedFav.has(k)) return; const r = items.find(x => x.favKey === k && recentRows.indexOf(x) < 0 && !x.fav); if (r) recentRows.push(r); });
+                const usedRecent = new Set(recentRows.map(r => r.favKey));
+                const rest = items.filter(r => !r.fav && !usedRecent.has(r.favKey));
+                _favCount = favRows.length; _recentCount = recentRows.length;
+                rows = favRows.concat(recentRows, rest);
+            } else {
+                // 検索中：お気に入りだけ上に固めて、残りはスコア順（最近欄は出さない）
+                const rest = items.filter(r => !r.fav);
+                _favCount = favRows.length;
+                rows = favRows.concat(rest);
+            }
         }
         sel = 0; render();
     }
