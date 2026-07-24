@@ -1054,6 +1054,14 @@
         }
         body.bm-term-float main { padding-bottom: 0 !important; }
 
+        /* ⭐左右入替（利き手対応）：ボードを右に／ターミナルと道具を左に。
+           main を row-reverse にして、絶対配置のターミナル・壁紙・吸着枠を左へ寄せる。 */
+        body.bm-swap main { flex-direction: row-reverse; }
+        body.bm-swap #termWall,
+        body.bm-swap .terminal-panel { right: auto; left: 0; }
+        body.bm-swap .terminal-panel { border-left: 0; border-right: 1px solid rgba(255,255,255,0.07); }
+        body.bm-swap #termSnapZone { right: auto; left: 6px; }
+
         /* マグネット・ドック予告枠（右端に近づくと白枠で吸着先を提示） */
         #termSnapZone {
             position: absolute;
@@ -2884,6 +2892,13 @@
                 <div class="set-seg" data-set="lang">
                     <button type="button" data-v="ja">日本語</button>
                     <button type="button" data-v="en">English</button>
+                </div>
+            </div>
+            <div class="set-row">
+                <div class="set-label" data-i18n="set.layout">レイアウト</div>
+                <div class="set-seg" data-set="swap">
+                    <button type="button" data-v="left" data-i18n="set.boardLeft">ボード左</button>
+                    <button type="button" data-v="right" data-i18n="set.boardRight">ボード右</button>
                 </div>
             </div>
             <div class="set-row">
@@ -7686,6 +7701,7 @@ async function shareCanvasAsUrl() {
 // Close handlers for share modal
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof applyLang === 'function') applyLang();   // ⭐保存された言語(bm_lang)を起動時に適用
+    try { if (localStorage.getItem('bm_swap') === '1') document.body.classList.add('bm-swap'); } catch (_) {}   // ⭐左右入替を復元
     // ⭐既定=鉛筆(紙)。起動時に紙/通常ボードと機能表示(消しカス/裏面)を drawMode に合わせる
     try {
         if (S.drawMode === 'pencil') document.body.classList.add('bm-paper'); else document.body.classList.remove('bm-paper');
@@ -9039,6 +9055,16 @@ function safeCalc(expr) {
 
 // ⭐runtimeメッセージ用の簡易 言語ヘルパ（printRaw/enqueue の中で使う）
 function _L(ja, en) { return (typeof LANG !== 'undefined' && LANG === 'en') ? en : ja; }
+// ⭐左右入替（利き手対応）：ボードを右／左に。保存して次回も維持
+function setPanelSwap(on) {
+    document.body.classList.toggle('bm-swap', !!on);
+    try { localStorage.setItem('bm_swap', on ? '1' : '0'); } catch (_) {}
+    if (typeof resizeCanvas === 'function') resizeCanvas();
+    if (typeof redrawAll === 'function') redrawAll();
+    if (typeof _settingsSyncSwap === 'function') _settingsSyncSwap();
+}
+window.setPanelSwap = setPanelSwap;
+window.getPanelSwap = () => document.body.classList.contains('bm-swap');
 function runCommand(val) {
     if (!val) return;
 
@@ -9137,6 +9163,15 @@ function runCommand(val) {
         if (typeof setBoardSize === 'function') setBoardSize(key);
         const lbl = (typeof BOARD_SIZES !== 'undefined' && BOARD_SIZES[key]) ? BOARD_SIZES[key].label : 'FREE';
         printRaw((typeof LANG!=='undefined'&&LANG==='en') ? `board size → ${key==='free'?'none (infinite)':lbl}` : `ボードサイズ → ${key==='free'?'なし（無限）':lbl}`, 't-dim');
+        return;
+    }
+    // ⭐左右入替（利き手対応）：ボードを右に / 左に
+    if (head==='swap' || head==='layout' || low==='左右' || low==='入替') {
+        const sub = rest.trim().toLowerCase();
+        const want = (sub === 'right') ? true : (sub === 'left') ? false : !document.body.classList.contains('bm-swap');
+        setPanelSwap(want);
+        printRaw(_L(want ? '→ ボードを右へ（道具とターミナルは左）' : '→ ボードを左へ（従来）',
+                    want ? '→ board on the right (tools & terminal on the left)' : '→ board on the left (default)'), 't-dim');
         return;
     }
     // ⭐パレット専用だったものをターミナルからも使えるように（settings / store / english / 日本語）
@@ -10692,12 +10727,14 @@ tiEl.addEventListener('paste', e => {
         let w = 'white'; try { w = localStorage.getItem('bm_wall') || 'white'; } catch (_) {}
         setActive('wall', w);
         setActive('lang', (window.getLang && window.getLang()) || 'ja');
+        setActive('swap', (window.getPanelSwap && window.getPanelSwap()) ? 'right' : 'left');
     }
     window._settingsSyncLang = sync;   // ⭐言語切替時にアクティブ状態を追従
     function apply(group, v) {
         try {
             if (group === 'mode')       { if (typeof setMode === 'function') setMode(v); }
             else if (group === 'lang')  { if (window.setLang) window.setLang(v); }
+            else if (group === 'swap')  { if (window.setPanelSwap) window.setPanelSwap(v === 'right'); }
             else if (group === 'draw')  { if (typeof runCommand === 'function') runCommand(v === 'pencil' ? 'enpitsu' : v); }
             else if (group === 'grade') { if (typeof PENCIL_GRADE !== 'undefined') { PENCIL_GRADE = v; try { localStorage.setItem('bm_grade', v); } catch (_) {} } }
             else if (group === 'term')  { if (v === 'float') { window._termFloat && window._termFloat(); } else { window._termDock && window._termDock(); } }
@@ -11058,7 +11095,7 @@ const I18N = {
         'pal.warnUsed': 'その組合せは使用中', 'pal.warnMod': '⌘/⌥/⌃ と組合せて',
         'pal.calcCap': '計算 · CALCULATOR', 'pal.expr': '式', 'pal.result': '結果', 'pal.copyAns': '↵ 答えをコピー', 'pal.doRun': '↵ で実行',
         'set.title': '設定', 'set.board': 'ボード', 'set.draw': '描き味', 'set.grade': '芯', 'set.term': 'ターミナル', 'set.wall': '壁紙', 'set.lang': '言語',
-        'set.pencil': '鉛筆', 'set.brush': '筆', 'set.classic': 'クラシック', 'set.white': '白リング', 'set.red': '赤リング',
+        'set.layout': 'レイアウト', 'set.boardLeft': 'ボード左', 'set.boardRight': 'ボード右', 'set.pencil': '鉛筆', 'set.brush': '筆', 'set.classic': 'クラシック', 'set.white': '白リング', 'set.red': '赤リング',
         'set.foot': '⌘,  で開閉 · Esc で閉じる',
         'lang.name': '言語 / LANGUAGE',
         'tt.zoom100': 'ダブルクリックで100%', 'tt.settings': '設定 (⌘,)', 'tt.confirm': '確定', 'tt.resize': 'ドラッグでサイズ変更',
@@ -11103,7 +11140,7 @@ const I18N = {
         'pal.warnUsed': 'That combo is in use', 'pal.warnMod': 'Combine with ⌘/⌥/⌃',
         'pal.calcCap': 'CALCULATOR', 'pal.expr': 'expr', 'pal.result': 'result', 'pal.copyAns': '↵ copy answer', 'pal.doRun': '↵ to run',
         'set.title': 'Settings', 'set.board': 'BOARD', 'set.draw': 'DRAW', 'set.grade': 'GRADE', 'set.term': 'TERMINAL', 'set.wall': 'WALLPAPER', 'set.lang': 'LANGUAGE',
-        'set.pencil': 'Pencil', 'set.brush': 'Brush', 'set.classic': 'Classic', 'set.white': 'White ring', 'set.red': 'Red ring',
+        'set.layout': 'Layout', 'set.boardLeft': 'Board left', 'set.boardRight': 'Board right', 'set.pencil': 'Pencil', 'set.brush': 'Brush', 'set.classic': 'Classic', 'set.white': 'White ring', 'set.red': 'Red ring',
         'set.foot': '⌘,  toggle · Esc to close',
         'lang.name': 'Language',
         'tt.zoom100': 'Double-click for 100%', 'tt.settings': 'Settings (⌘,)', 'tt.confirm': 'Confirm', 'tt.resize': 'Drag to resize',
@@ -11180,6 +11217,7 @@ const OMNI_CMDS = [
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙' },
     { cmd:'gif',     cat:'io',      hint:'ボードをGIFに録画（gif 4 で4秒）', hintEn:'Record the board as a GIF (gif 4 = 4s)', args:true, kw:'gif アニメ 録画 書き出し 動画 sakura 共有 export' },
     { cmd:'rec',     cat:'io',      hint:'ボードを動画(WebM)に録画（rec 6 で6秒）', hintEn:'Record the board as video/WebM (rec 6 = 6s)', args:true, kw:'rec 録画 動画 video webm 書き出し キャプチャ capture' },
+    { cmd:'swap',    cat:'panel',   hint:'ボードを右/左に入替（利き手）', hintEn:'Swap board to the right/left (handedness)', args:true, kw:'左右 入替 利き手 swap layout 右利き 左利き right left' },
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
     { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import' },
