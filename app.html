@@ -629,6 +629,14 @@
         .pcl-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px;
             border-radius:50%; background:#1a1a18; cursor:pointer; }
         .pcl-range::-moz-range-thumb { width:14px; height:14px; border:none; border-radius:50%; background:#1a1a18; cursor:pointer; }
+        /* ⭐描き味セレクタ（クラシック/鉛筆/筆） */
+        .mode-row { gap: 4px; }
+        .mode-btn { flex:1; height:28px; padding:0 8px; font-family:var(--ui-mono); font-size:.62rem; letter-spacing:.02em;
+            background:#fff; border:1px solid #ddd; border-radius:5px; color:#333; cursor:pointer; white-space:nowrap; }
+        .mode-btn:hover { background:#f4f4f4; }
+        .mode-btn.active { background:#1a1a18; color:#fff; border-color:#1a1a18; }
+        body.bm-dark .mode-btn, body.bm-gray .mode-btn { background:transparent; color:var(--bm-tb-icon); border-color:var(--bm-tb-border); }
+        body.bm-dark .mode-btn.active, body.bm-gray .mode-btn.active { background:var(--bm-accent); color:#fff; border-color:var(--bm-accent); }
         .g-btn { min-width:30px; height:26px; padding:0 6px; font-family:var(--ui-mono); font-size:.6rem;
             border:1px solid #ddd; border-radius:5px; background:#fff; color:#555; cursor:pointer; }
         .g-btn:hover { background:#f4f4f4; }
@@ -3069,6 +3077,14 @@
 
 <!-- Pen Popover — width options (position:fixed, never clipped) -->
 <div id="penPopover" class="tool-popover">
+    <!-- ⭐描き味の切替（クラシック / 鉛筆 / 筆） -->
+    <span class="pop-label" data-i18n="set.draw">描き味</span>
+    <div class="pop-row mode-row">
+        <button class="mode-btn" data-mode="classic" data-i18n="set.classic">クラシック</button>
+        <button class="mode-btn" data-mode="pencil" data-i18n="set.pencil">鉛筆</button>
+        <button class="mode-btn" data-mode="fude" data-i18n="set.brush">筆</button>
+    </div>
+    <div class="pop-sep-line"></div>
     <span class="pop-label">WIDTH</span>
     <div class="pop-row">
         <button class="w-btn active" data-w="1.5" title="Thin (1)">
@@ -3404,7 +3420,7 @@ Full guide → <b>usage.html §5</b></pre>
 const S = {
     tool:            'select',
     drawMode:        (() => { const v = (typeof localStorage !== 'undefined') ? localStorage.getItem('bm_drawMode') : null;
-                              return (v === 'fude' || v === 'pencil') ? v : 'classic'; })(),
+                              return (v === 'fude' || v === 'classic' || v === 'pencil') ? v : 'pencil'; })(),   // ⭐既定＝鉛筆(紙モード)。classic/筆はバーで切替
     lineWidth:       1.5,
     fillMode:        'none',    // 'none' | 'black' | 'grey' | 'white'
     strokeOff:       false,     // true = no outline on shapes
@@ -7669,6 +7685,11 @@ async function shareCanvasAsUrl() {
 // Close handlers for share modal
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof applyLang === 'function') applyLang();   // ⭐保存された言語(bm_lang)を起動時に適用
+    // ⭐既定=鉛筆(紙)。起動時に紙/通常ボードと機能表示(消しカス/裏面)を drawMode に合わせる
+    try {
+        if (S.drawMode === 'pencil') document.body.classList.add('bm-paper'); else document.body.classList.remove('bm-paper');
+        if (typeof _syncPaperFeatureUI === 'function') _syncPaperFeatureUI();
+    } catch (_) {}
     const ov = document.getElementById('shareUrlOverlay');
     const cl = document.getElementById('shareUrlClose');
     if (cl) cl.addEventListener('click', () => ov.classList.remove('open'));
@@ -9219,6 +9240,7 @@ function runCommand(val) {
     }
     // ⭐紙を裏返す（表が薄く透ける・見るv1）
     if (head==='flip' || low==='裏返す' || low==='ひっくり返す') {
+        if (S.drawMode !== 'pencil') { printRaw(_L('裏返しは紙モード（鉛筆）だけ — enpitsu で切替','flip is paper mode only (pencil) — switch with enpitsu'), 't-dim'); return; }
         if (typeof toggleBoardFlip === 'function') toggleBoardFlip();
         const flipped = (typeof BOARD_FLIPPED !== 'undefined') && BOARD_FLIPPED;
         const en = (typeof LANG!=='undefined'&&LANG==='en');
@@ -13124,12 +13146,35 @@ const _pencilDark  = document.getElementById('pencilDark');
 function _syncPencilUI() {
     const on = (S.drawMode === 'pencil');
     if (_pencilExtra) _pencilExtra.style.display = on ? 'block' : 'none';
+    // ⭐描き味セレクタの選択状態
+    document.querySelectorAll('#penPopover .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === S.drawMode));
+    _syncPaperFeatureUI();
     if (!on) return;
     if (_pencilWidth) _pencilWidth.value = S.lineWidth;
     if (_pencilDark)  _pencilDark.value  = Math.round(PENCIL_DARK * 100);
     document.querySelectorAll('#pencilGrades .g-btn').forEach(b =>
         b.classList.toggle('active', b.dataset.g === PENCIL_GRADE));
 }
+// ⭐紙モード専用の機能（消しカスを払う・裏返し）は通常ボード(classic/fude)では隠す
+function _syncPaperFeatureUI() {
+    const paper = (S.drawMode === 'pencil');
+    const sw = document.getElementById('sweepBtn');
+    const flip = document.getElementById('boardFlipOpt');
+    if (sw) sw.style.display = paper ? '' : 'none';
+    if (flip) flip.style.display = paper ? '' : 'none';
+    // 通常ボードに切替えた時、裏面のままだったら表に戻す
+    if (!paper && typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED && typeof toggleBoardFlip === 'function') toggleBoardFlip(false);
+}
+window._syncPaperFeatureUI = _syncPaperFeatureUI;
+// 描き味の切替（ペンポップオーバーの クラシック/鉛筆/筆）
+document.querySelectorAll('#penPopover .mode-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+        e.stopPropagation(); if (typeof playClick === 'function') playClick(false);
+        const m = btn.dataset.mode;
+        if (typeof runCommand === 'function') runCommand(m === 'pencil' ? 'enpitsu' : m);   // enpitsu=鉛筆+紙, classic=ペン+通常, fude=筆
+        _syncPencilUI();
+    });
+});
 if (_pencilWidth) {
     _pencilWidth.addEventListener('input', e => {
         e.stopPropagation();
