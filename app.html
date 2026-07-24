@@ -131,26 +131,27 @@
         /* ── Studio theme overrides (gray mode) ───────────────────────────
            Warm pebble ground (#DCDBD5) with electric cobalt (#1600A2) ink. */
         body.bm-gray {
+            /* ⭐ボード(canvas)だけグレーに。chrome(レール/ポップオーバー/アイコン)はモード非依存=ダークと同一 */
             --bm-canvas-bg:    #DCDBD5;
-            --bm-canvas-grid:  rgba(22,0,162,0.055);
-            --bm-fg:           #1600A2;
-            --bm-fg-dim:       rgba(22,0,162,0.55);
-            --bm-tb-bg:        #ECEBE6;
-            --bm-tb-border:    #BFBDB3;
-            --bm-tb-icon:      rgba(22,0,162,0.72);
-            --bm-tb-icon-hover:  #1600A2;
-            --bm-tb-icon-active: #1600A2;
-            --bm-tb-hover-bg:  #E4E2DB;
-            --bm-tb-active-bg: #D2D0C6;
-            --bm-pop-bg:       #ECEBE6;
-            --bm-pop-border:   #BFBDB3;
-            --bm-pop-shadow:   0 4px 18px rgba(22,0,162,0.14);
-            --bm-sep:          #BFBDB3;
-            --bm-accent:       #1600A2;
-            --bm-swatch-dark:  #1600A2;   /* black fill → renders accent blue */
-            --bm-swatch-light: #FAFAF8;   /* white choice — neutral vs ground */
-            --bm-swatch-grey:  rgba(22,0,162,0.24);
-            --bm-swatch-grey-stroke: #1600A2;
+            --bm-canvas-grid:  rgba(0,0,0,0.05);
+            --bm-fg:           #F0EDE6;
+            --bm-fg-dim:       rgba(255,255,255,0.62);
+            --bm-tb-bg:        #111111;
+            --bm-tb-border:    #3a3a3a;
+            --bm-tb-icon:      rgba(255,255,255,0.7);
+            --bm-tb-icon-hover:  #ffffff;
+            --bm-tb-icon-active: #ffffff;
+            --bm-tb-hover-bg:  #1f1f1f;
+            --bm-tb-active-bg: #2a2a2a;
+            --bm-pop-bg:       #161616;
+            --bm-pop-border:   #444;
+            --bm-pop-shadow:   0 4px 22px rgba(0,0,0,0.75);
+            --bm-sep:          #2e2e2e;
+            --bm-accent:       #4c9aff;
+            --bm-swatch-dark:  #1a1a18;   /* ⭐中立：グレー板でも黒塗りは黒 */
+            --bm-swatch-light: #FAFAF8;
+            --bm-swatch-grey:  rgba(0,0,0,0.22);
+            --bm-swatch-grey-stroke: #8a8a8a;
         }
 
         html, body { height: 100%; overflow: hidden; }
@@ -755,7 +756,7 @@
             -webkit-tap-highlight-color: rgba(0,0,0,0.08);
         }
         body.bm-dark #textDone { background: rgba(20,20,20,0.92); border-color: #F0EDE6; color: #F0EDE6; }
-        body.bm-gray #textDone { background: rgba(245,243,235,0.92); border-color: #1600A2; color: #1600A2; }
+        body.bm-gray #textDone { background: rgba(245,243,235,0.92); border-color: #333; color: #222; }
         @media (pointer: coarse) {
             #textDone { display: flex; align-items: center; justify-content: center; }
         }
@@ -2114,7 +2115,7 @@
             border: 1px solid var(--bm-pop-border);
         }
         body.bm-dark .shape-hint   { color: rgba(255,255,255,0.22); }
-        body.bm-gray .shape-hint   { color: rgba(22,0,162,0.35); }
+        body.bm-gray .shape-hint   { color: rgba(0,0,0,0.35); }
         body.bm-dark #textOverlay input,
         body.bm-dark #textOverlay textarea {
             border-bottom-color: #F0EDE6;
