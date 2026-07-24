@@ -1341,6 +1341,15 @@
         .set-cmdrow.recording { background: rgba(240,198,116,0.1); box-shadow: inset 0 0 0 1px rgba(240,198,116,0.32); }
         .set-cmdrec { grid-column: 4 / -1; text-align: right; color: #f0c674; font-size: 10.5px; white-space: nowrap; }
         .set-cmds-empty { padding: 24px; text-align: center; color: rgba(255,255,255,0.35); font-size: 12px; }
+        /* ⭐魔法タブ */
+        .set-spell-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 18px 9px;
+            font-size: 11px; color: rgba(255,255,255,0.5); font-family: var(--ui-sans); }
+        .set-spell-actions { display: flex; gap: 6px; }
+        .set-spellrow { display: grid; grid-template-columns: 25px minmax(74px,132px) 1fr minmax(96px,auto) auto; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; }
+        .set-spellrow:hover { background: rgba(255,255,255,0.05); }
+        .set-spellact { display: flex; gap: 5px; opacity: 0; }
+        .set-spellrow:hover .set-spellact { opacity: 1; }
+        .set-spellact .set-cmdbtn[data-del]:hover { color: #ff8b8b; border-color: rgba(255,80,80,0.4); }
         /* コマンドタブでカードを広げる（Raycastの横長テーブル感） */
         /* ⭐幅はタブで変えない（固定幅・.settings-card に集約） */
 
@@ -2792,6 +2801,7 @@
         <div class="set-tabs" role="tablist">
             <button class="set-tab active" type="button" data-tab="general" data-i18n="tab.general">一般</button>
             <button class="set-tab" type="button" data-tab="commands" data-i18n="tab.commands">コマンド</button>
+            <button class="set-tab" type="button" data-tab="spells" data-i18n="tab.spells">魔法</button>
         </div>
         <div class="set-body" data-pane="general">
             <div class="set-row">
@@ -2853,6 +2863,13 @@
             </div>
             <div id="setCmdConflict" class="set-cmds-conflict" hidden></div>
             <div id="setCmdList" class="set-cmds-list"></div>
+        </div>
+        <div class="set-cmds" data-pane="spells" hidden>
+            <div class="set-spell-head">
+                <span data-i18n="spells.head">保存した魔法（⌘Kから使えます）</span>
+                <span class="set-spell-actions"><span class="set-cmdbtn" id="spellImportBtn" data-i18n="spells.import">読み込む</span><span class="set-cmdbtn" id="spellExportAllBtn" data-i18n="spells.exportAll">全部書き出す</span></span>
+            </div>
+            <div id="setSpellList" class="set-cmds-list"></div>
         </div>
         <div class="set-foot" data-i18n="set.foot">⌘,  で開閉 · Esc で閉じる</div>
     </div>
@@ -10376,7 +10393,8 @@ tiEl.addEventListener('paste', e => {
 
     // ══════ ⭐タブ ＋ コマンド/ショートカット一覧（Raycast風マネージャ） ══════
     const tabs    = Array.from(overlay.querySelectorAll('.set-tab'));
-    const panes   = { general: overlay.querySelector('[data-pane="general"]'), commands: overlay.querySelector('[data-pane="commands"]') };
+    const panes   = { general: overlay.querySelector('[data-pane="general"]'), commands: overlay.querySelector('[data-pane="commands"]'), spells: overlay.querySelector('[data-pane="spells"]') };
+    const spellListEl = overlay.querySelector('#setSpellList');
     const cmdList = overlay.querySelector('#setCmdList');
     const cmdSearch = overlay.querySelector('#setCmdSearch');
     const cmdConflict = overlay.querySelector('#setCmdConflict');
@@ -10454,12 +10472,48 @@ tiEl.addEventListener('paste', e => {
         });
         cmdList.innerHTML = html;
     }
+    // ⭐魔法タブ：保存した魔法を一覧・単体DL・削除
+    function renderSpells() {
+        if (!spellListEl) return;
+        const T = k => (window.t ? window.t(k) : k);
+        const esc2 = s => String(s).replace(/[&<>"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+        const a = (window._getSpells && window._getSpells()) || [];
+        if (!a.length) { spellListEl.innerHTML = `<div class="set-cmds-empty">${esc2(T('spells.empty'))}</div>`; return; }
+        spellListEl.innerHTML = a.map(s => {
+            const src = s.from === 'store' ? T('spells.fromStore') : s.from === 'import' ? T('spells.fromImport') : T('spells.fromSelf');
+            return `<div class="set-spellrow"><span class="cmdk-ico">${esc2(s.icon || '🪄')}</span>`
+                 + `<span class="set-cmdname">${esc2(s.name)}</span>`
+                 + `<span class="set-cmdhint">${esc2(s.desc || '')}</span>`
+                 + `<span class="set-cmdtype">${s.count}${esc2(T('store.units'))} · ${esc2(src)}</span>`
+                 + `<span class="set-spellact"><span class="set-cmdbtn" data-dl="${esc2(s.name)}">⬇</span><span class="set-cmdbtn" data-del="${esc2(s.name)}">✕</span></span></div>`;
+        }).join('');
+    }
+    function exportOneSpell(name) {
+        const a = (window._getSpells && window._getSpells()) || [];
+        const s = a.find(x => x.name === name); if (!s) return;
+        if (typeof bmDeliverJson === 'function') bmDeliverJson(JSON.stringify({ format:'bmboard-spells', v:1, spells:[s] }, null, 2), `bmspell-${name}.json`);
+    }
+    if (spellListEl) spellListEl.addEventListener('click', e => {
+        const dl = e.target.closest('[data-dl]'); if (dl) { exportOneSpell(dl.getAttribute('data-dl')); return; }
+        const del = e.target.closest('[data-del]');
+        if (del) { if (window._forgetSpell) window._forgetSpell(del.getAttribute('data-del')); renderSpells(); if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen(); }
+    });
+    { const ib = overlay.querySelector('#spellImportBtn'), eb = overlay.querySelector('#spellExportAllBtn');
+      if (ib) ib.addEventListener('click', () => { const i = document.getElementById('spellFileInput'); if (i) i.click(); });
+      if (eb) eb.addEventListener('click', () => {
+          const a = (window._getSpells && window._getSpells()) || [];
+          if (!a.length) return;
+          if (typeof bmDeliverJson === 'function') bmDeliverJson(JSON.stringify({ format:'bmboard-spells', v:1, spells:a }, null, 2), 'bmboard-spells.json');
+      }); }
+    window._settingsRenderSpells = renderSpells;
+
     const setCard = overlay.querySelector('.settings-card');
     function switchTab(name) {
         curTab = name;
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
         if (panes.general)  panes.general.hidden  = (name !== 'general');
         if (panes.commands) panes.commands.hidden = (name !== 'commands');
+        if (panes.spells)   { panes.spells.hidden = (name !== 'spells'); if (name === 'spells') renderSpells(); }
         // 幅は固定（.settings-card に集約）＝タブ切替で跳ねさせない
         if (name === 'commands') { recCmd = null; recMsg = ''; renderCmds(); setTimeout(() => cmdSearch && cmdSearch.focus(), 0); }
     }
@@ -10545,7 +10599,10 @@ const I18N = {
         'tt.zoom100': 'ダブルクリックで100%', 'tt.settings': '設定 (⌘,)', 'tt.confirm': '確定', 'tt.resize': 'ドラッグでサイズ変更',
         'tt.newtab': '新規タブで開く（埋め込み不可サイト用）', 'tt.close': '閉じる',
         'tt.fontStd': '標準（等幅）', 'tt.mincho': '明朝', 'tt.bold': '太字 ON / OFF', 'tt.horiz': '横書き', 'tt.vert': '縦書き',
-        'tab.general': '一般', 'tab.commands': 'コマンド',
+        'tab.general': '一般', 'tab.commands': 'コマンド', 'tab.spells': '魔法',
+        'spells.head': '保存した魔法（⌘Kから使えます）', 'spells.empty': 'まだ魔法がありません — 選択して「spell 名前」、または store から入れる',
+        'spells.import': '読み込む', 'spells.exportAll': '全部書き出す',
+        'spells.fromSelf': '自作', 'spells.fromStore': 'STORE', 'spells.fromImport': '読込',
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
         'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
         'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
@@ -10579,7 +10636,10 @@ const I18N = {
         'tt.zoom100': 'Double-click for 100%', 'tt.settings': 'Settings (⌘,)', 'tt.confirm': 'Confirm', 'tt.resize': 'Drag to resize',
         'tt.newtab': 'Open in a new tab (for non-embeddable sites)', 'tt.close': 'Close',
         'tt.fontStd': 'Default (monospace)', 'tt.mincho': 'Mincho (serif)', 'tt.bold': 'Bold ON / OFF', 'tt.horiz': 'Horizontal', 'tt.vert': 'Vertical',
-        'tab.general': 'General', 'tab.commands': 'Commands',
+        'tab.general': 'General', 'tab.commands': 'Commands', 'tab.spells': 'Spells',
+        'spells.head': 'Saved spells (use them from ⌘K)', 'spells.empty': 'No spells yet — select objects then "spell <name>", or install from the store',
+        'spells.import': 'Import', 'spells.exportAll': 'Export all',
+        'spells.fromSelf': 'mine', 'spells.fromStore': 'STORE', 'spells.fromImport': 'imported',
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
         'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
         'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
@@ -10614,6 +10674,7 @@ function setLang(l) {
     if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen();
     if (window._settingsSyncLang) window._settingsSyncLang();
     if (window._settingsRenderCmds) window._settingsRenderCmds();
+    if (window._settingsRenderSpells) window._settingsRenderSpells();
 }
 window.setLang = setLang; window.getLang = getLang; window.t = t; window.applyLang = applyLang;
 
