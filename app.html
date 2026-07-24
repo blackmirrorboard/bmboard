@@ -1488,6 +1488,11 @@
         .st-hero-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .st-name { font-size: 19px; font-weight: 700; color: #f4f2ec; letter-spacing: -0.01em; }
         .st-meta { font-size: 11px; color: rgba(255,255,255,0.45); }
+        /* ⭐STORE詳細のプレビュー図（opsから自動生成＝何が置かれるか一目で分かる） */
+        .st-preview { margin: 0 0 13px; height: 132px; border-radius: 10px; overflow: hidden;
+            background: repeating-linear-gradient(45deg, rgba(255,255,255,0.028) 0 10px, rgba(255,255,255,0.05) 10px 20px);
+            border: 1px solid rgba(255,255,255,0.08); }
+        .st-preview canvas { display: block; width: 100%; height: 100%; }
         .st-desc { font-size: 12.5px; color: rgba(255,255,255,0.68); line-height: 1.6; }
         .st-sect { margin-top: 13px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.32); }
         .st-contents { margin-top: 5px; font-size: 12px; color: rgba(255,255,255,0.6); }
@@ -10882,6 +10887,7 @@ function centerTermPanel() {
                 + `<div class="st-hero"><span class="st-ico-lg">${esc(s.icon || '🪄')}</span>`
                 + `<span class="st-hero-t"><span class="st-name">${esc(s.name)}</span>`
                 + `<span class="st-meta">${esc(s.author || '')}${s.tag ? ' · ' + esc(s.tag) : ''} · ${ops.length}${esc(t('store.units'))}${have ? ' · ' + esc(t('store.installed')) : ''}</span></span></div>`
+                + `<div class="st-preview"><canvas id="stPreview"></canvas></div>`
                 + `<div class="st-desc">${esc(s.desc || '')}</div>`
                 + `<div class="st-sect">${esc(t('store.contains'))}</div><div class="st-contents">${esc(contains)}</div>`
                 + `<div class="st-foot">${esc(t('store.detailFoot'))}</div></div>`;
@@ -10910,12 +10916,45 @@ function centerTermPanel() {
         listEl.innerHTML = top + listHtml;
         const s = listEl.querySelector('.cmdk-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
         // ⭐戻るボタンは STORE の階層にいる時だけ出す（虫眼鏡と入替）
+        if (storeMode && storeDetail) drawSpellPreview(document.getElementById('stPreview'), storeDetail);   // ⭐プレビュー図
         const bk = document.getElementById('cmdkBack');
         const mg = overlay.querySelector('.cmdk-search-ico');
         const inStore = !!(storeMode || storeDetail);
         if (bk) bk.style.display = inStore ? 'inline-flex' : 'none';
         if (mg) mg.style.display = inStore ? 'none' : '';
         updateFoot();
+    }
+    // ⭐STORE詳細のプレビュー：ops から簡易図を描く（何が置かれるか一目で分かる）
+    function drawSpellPreview(cv, s) {
+        if (!cv) return;
+        const ops = (s.ops || []).slice();
+        const g = cv.getContext('2d'); if (!g) return;
+        const dpr = window.devicePixelRatio || 1;
+        const W = cv.clientWidth || 300, H = cv.clientHeight || 120;
+        cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+        g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+        if (!ops.length) return;
+        const boxes = ops.map(o => {
+            const p = o.props || {}; const x = o.dx || 0, y = o.dy || 0;
+            let w = p.w || 0, h = p.h || 0;
+            if (o.type === 'text')   { w = Math.max(1, String(p.text || '').length) * (p.fontSize || 20) * 0.6; h = (p.fontSize || 20); }
+            if (o.type === 'circle') { w = (p.rx || 60) * 2; h = (p.ry || 60) * 2; }
+            if (!w) w = 100; if (!h) h = 100;
+            return { type: o.type, x, y, w, h, p };
+        });
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        boxes.forEach(b => { minX = Math.min(minX, b.x); minY = Math.min(minY, b.y); maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h); });
+        const bw = Math.max(1, maxX - minX), bh = Math.max(1, maxY - minY), pad = 12;
+        const sc = Math.min((W - pad * 2) / bw, (H - pad * 2) / bh);
+        const ox = (W - bw * sc) / 2 - minX * sc, oy = (H - bh * sc) / 2 - minY * sc;
+        g.lineWidth = 1;
+        boxes.forEach(b => {
+            const x = b.x * sc + ox, y = b.y * sc + oy, w = Math.max(1, b.w * sc), h = Math.max(1, b.h * sc);
+            if (b.type === 'text') { g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(x, y + h * 0.3, w, Math.max(2, h * 0.42)); }
+            else if (b.type === 'sticky') { g.globalAlpha = 0.85; g.fillStyle = b.p.color || '#FFE873'; g.fillRect(x, y, w, h); g.globalAlpha = 1; g.strokeStyle = 'rgba(0,0,0,0.3)'; g.strokeRect(x, y, w, h); }
+            else if (b.type === 'circle') { g.strokeStyle = 'rgba(255,255,255,0.62)'; g.beginPath(); g.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); g.stroke(); }
+            else { if (b.p.fill) { g.fillStyle = 'rgba(255,255,255,0.10)'; g.fillRect(x, y, w, h); } g.strokeStyle = 'rgba(255,255,255,0.62)'; g.strokeRect(x, y, w, h); }
+        });
     }
     function storeBack() {   // 詳細→一覧→コマンド
         if (storeDetail) { storeDetail = null; refresh(); }
