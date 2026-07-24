@@ -8628,6 +8628,15 @@ function runCommand(val) {
         const _cv = safeCalc(clean);
         if (_cv !== null) { printRaw(clean, 't-cmd'); printResult(_cv); return; }
     }
+    // ⭐消しカスを払う（紙の上の消しカスだけ一掃・描画/保存コアは不変）
+    if (head==='sweep' || head==='dust' || head==='crumbs' || low==='払う' || low==='消しカスを払う') {
+        const n = (typeof _eraseDebris !== 'undefined') ? _eraseDebris.length : 0;
+        if (typeof _eraseDebris !== 'undefined') _eraseDebris.length = 0;
+        try { if (typeof BM !== 'undefined' && BM.redraw) BM.redraw(); else if (typeof redrawAll === 'function') redrawAll(); } catch (_) {}
+        const en = (typeof LANG !== 'undefined' && LANG === 'en');
+        printRaw(en ? `swept ${n} crumb${n === 1 ? '' : 's'} off the paper` : `消しカスを払いました（${n}片）`, 't-dim');
+        return;
+    }
     if (head==='t') {
         const txt = rest.trim();
         if (!txt) { printRaw('t: テキストを指定（例: t アイデア）', 't-err'); return; }
@@ -10344,6 +10353,7 @@ const OMNI_CMDS = [
     { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す', hintEn:'Dock the terminal to the right', sc:'⌘B' },
     { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', hintEn:'Split width (panel 30 / float / dock / center)', args:true },
     { cmd:'clear',   cat:'edit',    hint:'ボードを消す', hintEn:'Clear the board' },
+    { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙' },
     { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す', hintEn:'Clear the terminal log' },
     { cmd:'export',  cat:'io',      hint:'書き出し（png / svg / pptx / data）', hintEn:'Export (png / svg / pptx / data)', args:true },
     { cmd:'share',   cat:'io',      hint:'URLで画面を共有', hintEn:'Share the canvas via URL' },
