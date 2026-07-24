@@ -2538,6 +2538,7 @@
                 <path d="M2.6 11.6 L6 8.4 L8.3 10.4 L10.3 8.7 L13.4 11.6"/>
             </svg>
             <input type="file" id="imgFileInput" accept="image/*" style="display:none">
+            <input type="file" id="spellFileInput" accept=".json,application/json" style="display:none">
         </label>
         <div class="tool-sep"></div>
 
@@ -8843,6 +8844,20 @@ function runCommand(val) {
             printRaw(ok ? (en?`forgot spell "${nm}"`:`魔法「${nm}」を削除`) : (en?`spell "${nm}" not found`:`魔法「${nm}」が見つからない`), ok?'t-dim':'t-err');
             return;
         }
+        if (verb === 'export') {   // ⭐配れる化：魔法パック(.json)を書き出す（1つ or 全部）
+            const a = (typeof getSpells==='function') ? getSpells() : [];
+            const only = sub.slice(w[0].length).trim();
+            const list = only ? a.filter(s => s.name === only) : a;
+            if (!list.length) { printRaw(en?'no spells to export':'書き出す魔法が無い', 't-err'); return; }
+            const pack = { format:'bmboard-spells', v:1, spells:list };
+            if (typeof bmDeliverJson==='function') bmDeliverJson(JSON.stringify(pack, null, 2), only ? `bmspell-${only}.json` : 'bmboard-spells.json');
+            printRaw(en?`exported ${list.length} spell(s)`:`魔法を${list.length}個 書き出し`, 't-dim');
+            return;
+        }
+        if (verb === 'import') {   // ⭐魔法パックを読み込む（ファイル選択）
+            const inp = document.getElementById('spellFileInput'); if (inp) inp.click();
+            return;
+        }
         if (verb === 'list' || (!sub)) {
             const a = (typeof getSpells==='function') ? getSpells() : [];
             if (!a.length) { printRaw(en?'no spells yet — select objects, then: spell <name>':'魔法はまだ無い — 選択して「spell 名前」で保存', 't-dim'); return; }
@@ -11980,10 +11995,43 @@ function forgetSpell(name) {
     const a = getSpells(); const i = a.findIndex(s => s.name === name);
     if (i < 0) return false; a.splice(i, 1); saveSpells(a); return true;
 }
+// 魔法をローカルに取り込む（import / STOREインストール共通）。名前衝突は _2 で回避
+function installSpell(s) {
+    if (!s || typeof s.name !== 'string' || !Array.isArray(s.objects)) return null;
+    const cur = getSpells();
+    const names = new Set(cur.map(x => x.name));
+    let nm = s.name; while (names.has(nm)) nm = nm + '_2';
+    cur.unshift({ v: 1, name: nm, objects: s.objects, count: (s.objects || []).length, created: Date.now(), from: s.from || 'import' });
+    saveSpells(cur);
+    return nm;
+}
 window._getSpells = getSpells;
 window._runSpell = runSpell;
 window._addSpellFromSelection = addSpellFromSelection;
 window._forgetSpell = forgetSpell;
+window._installSpell = installSpell;
+
+// ⭐魔法パック(.json)の読み込み
+(function initSpellImport() {
+    const inp = document.getElementById('spellFileInput');
+    if (!inp) return;
+    inp.addEventListener('change', e => {
+        const f = e.target.files && e.target.files[0]; if (!f) { return; }
+        const rd = new FileReader();
+        rd.onload = () => {
+            try {
+                const data = JSON.parse(rd.result);
+                const arr = Array.isArray(data) ? data : (data && Array.isArray(data.spells) ? data.spells : []);
+                const valid = arr.filter(s => s && typeof s.name === 'string' && Array.isArray(s.objects));
+                if (!valid.length) { if (typeof printRaw === 'function') printRaw('import: 有効な魔法が無い', 't-err'); inp.value = ''; return; }
+                let n = 0; for (const s of valid) { if (installSpell(s)) n++; }
+                if (typeof printRaw === 'function') printRaw(`魔法を ${n} 個 読み込みました（⌘Kから配置できます）`, 't-dim');
+            } catch (_) { if (typeof printRaw === 'function') printRaw('import: JSONが不正', 't-err'); }
+            inp.value = '';
+        };
+        rd.readAsText(f);
+    });
+})();
 
 // ── Select all (Cmd+A) ─ pulls every object on the board into multi-select ──
 function selectAllObjects() {
