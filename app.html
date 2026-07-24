@@ -10875,11 +10875,15 @@ tiEl.addEventListener('paste', e => {
     // ⭐魔法タブ：保存した魔法を一覧・単体DL・削除
     let editingSpell = null;   // { name, kind }
     const _esc2 = s => String(s).replace(/[&<>"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
-    function _allSpells() {   // データ魔法＋JS魔法 を統一形で
+    function _allSpells() {   // ⭐自分で作ったもの全部：データ魔法＋JS魔法＋スニペット＋連鎖
         const T = k => (window.t ? window.t(k) : k);
         const data = ((window._getSpells && window._getSpells()) || []).map(s => ({ name: s.name, icon: s.icon || '🪄', desc: s.desc || '', meta: s.count + T('store.units'), from: s.from, kind: 'data', ref: s }));
         const js = ((window._getUserJsSpells && window._getUserJsSpells()) || []).map(j => ({ name: j.name, icon: j.icon || '⚡', desc: j.desc || '', meta: 'code', from: j.source, kind: 'js', action: j.action }));
-        return data.concat(js);
+        const snipObj = (window._getSnips && window._getSnips()) || {};
+        const snips = Object.keys(snipObj).map(n => ({ name: n, icon: '📋', desc: String(snipObj[n]).slice(0, 60), meta: T('spells.kindSnip'), from: 'self', kind: 'snip', text: snipObj[n] }));
+        const chainObj = (window._getChains && window._getChains()) || {};
+        const chains = Object.keys(chainObj).map(n => ({ name: n, icon: '⛓', desc: (chainObj[n] || []).join(' → '), meta: T('spells.kindChain'), from: 'self', kind: 'chain', steps: chainObj[n] }));
+        return data.concat(js, snips, chains);
     }
     function _findSpell(name, kind) { return _allSpells().find(s => s.name === name && s.kind === kind); }
     function renderSpells() {
@@ -10911,6 +10915,8 @@ tiEl.addEventListener('paste', e => {
     function toShareEntry(s) {
         const e = { name: s.name, icon: s.icon || (s.kind === 'js' ? '⚡' : '🪄'), desc: s.desc || '', author: 'あなたの名前', tag: 'new' };
         if (s.kind === 'js') { e.action = s.action || ''; e.code = true; }
+        else if (s.kind === 'snip') { e.snippet = s.text || ''; }
+        else if (s.kind === 'chain') { e.chain = s.steps || []; }
         else if (s.ref) { if (Array.isArray(s.ref.ops)) e.ops = s.ref.ops; else if (Array.isArray(s.ref.objects)) e.objects = s.ref.objects; }
         return e;
     }
@@ -10933,6 +10939,12 @@ tiEl.addEventListener('paste', e => {
         if (kind === 'data') {
             const arr = (window._getSpells && window._getSpells()) || []; const s = arr.find(x => x.name === oldName);
             if (s) { s.name = name; s.icon = icon; s.desc = desc; if (window._saveSpells) window._saveSpells(arr); }
+        } else if (kind === 'snip') {
+            const cur = (window._getSnips && window._getSnips()) || {}; const body = cur[oldName];
+            if (body != null) { if (name !== oldName && window._rmSnip) window._rmSnip(oldName); if (window._saveSnip) window._saveSnip(name, desc || body); }
+        } else if (kind === 'chain') {
+            const cur = (window._getChains && window._getChains()) || {}; const steps = cur[oldName];
+            if (steps) { if (name !== oldName && window._rmChain) window._rmChain(oldName); if (window._saveChain) window._saveChain(name, desc ? desc.split('→').map(x=>x.trim()).filter(Boolean) : steps); }
         } else {
             const j = _findSpell(oldName, 'js');
             if (j) {
@@ -10949,7 +10961,12 @@ tiEl.addEventListener('paste', e => {
         const sub = e.target.closest('[data-sub]'); if (sub) { openSubmit(sub.getAttribute('data-sub'), sub.getAttribute('data-kind')); return; }
         const dl = e.target.closest('[data-dl]'); if (dl) { exportOneSpell(dl.getAttribute('data-dl'), dl.getAttribute('data-kind')); return; }
         const del = e.target.closest('[data-del]');
-        if (del) { const k = del.getAttribute('data-kind'); const nm = del.getAttribute('data-del'); if (k === 'js') { if (window._forgetJsSpell) window._forgetJsSpell(nm); } else if (window._forgetSpell) window._forgetSpell(nm); renderSpells(); if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen(); }
+        if (del) { const k = del.getAttribute('data-kind'); const nm = del.getAttribute('data-del');
+            if (k === 'js') { if (window._forgetJsSpell) window._forgetJsSpell(nm); }
+            else if (k === 'snip') { if (window._rmSnip) window._rmSnip(nm); }
+            else if (k === 'chain') { if (window._rmChain) window._rmChain(nm); }
+            else if (window._forgetSpell) window._forgetSpell(nm);
+            renderSpells(); if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen(); }
     });
     if (spellListEl) spellListEl.addEventListener('keydown', e => {
         if (!editingSpell) return;
@@ -11149,7 +11166,7 @@ const I18N = {
         'spells.create': '✨ コードから作る', 'create.title': '✨ コードから魔法を作る',
         'create.steps': '① 「AI用プロンプトをコピー」→ ChatGPT等に貼って作ってもらう　② 返ってきた JSON を下に貼る　③「登録して試す」でボードで動作確認（⌘Kにも出ます）',
         'create.aiCopy': '🤖 AI用プロンプトをコピー', 'create.run': '登録して試す',
-        'spells.fromSelf': '自作', 'spells.fromStore': 'STORE', 'spells.fromImport': '読込', 'spells.fromCode': 'コード', 'spells.edit': '編集', 'create.descPh': '説明',
+        'spells.fromSelf': '自作', 'spells.fromStore': 'STORE', 'spells.fromImport': '読込', 'spells.fromCode': 'コード', 'spells.kindSnip': 'スニペット', 'spells.kindChain': '連鎖', 'spells.edit': '編集', 'create.descPh': '説明',
         'submit.title': '📤 STOREに提出する',
         'submit.steps': '① 下のJSON（アイコン/説明/コード全部入り）をコピー　② 管理者にGitHub PR か メールで送る　③ 承認されるとSTOREに並びます（author を自分の名前に）',
         'submit.copy': 'JSONをコピー', 'submit.download': 'JSONを保存', 'submit.github': '🐙 GitHubで公開申請',
@@ -11194,7 +11211,7 @@ const I18N = {
         'spells.create': '✨ Create from code', 'create.title': '✨ Create a spell from code',
         'create.steps': '① Copy the AI prompt → paste into ChatGPT etc.　② Paste the returned JSON below　③ Register & test on the board (also shows in ⌘K)',
         'create.aiCopy': '🤖 Copy AI prompt', 'create.run': 'Register & test',
-        'spells.fromSelf': 'mine', 'spells.fromStore': 'STORE', 'spells.fromImport': 'imported', 'spells.fromCode': 'code', 'spells.edit': 'Edit', 'create.descPh': 'description',
+        'spells.fromSelf': 'mine', 'spells.fromStore': 'STORE', 'spells.fromImport': 'imported', 'spells.fromCode': 'code', 'spells.kindSnip': 'snippet', 'spells.kindChain': 'chain', 'spells.edit': 'Edit', 'create.descPh': 'description',
         'submit.title': '📤 Submit to STORE',
         'submit.steps': '① Copy the JSON below (icon/desc/code all included)　② Send it to a maintainer via GitHub PR or email　③ Once approved it appears in the STORE (set author to your name)',
         'submit.copy': 'Copy JSON', 'submit.download': 'Save JSON', 'submit.github': '🐙 Submit via GitHub',
