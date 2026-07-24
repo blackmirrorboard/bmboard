@@ -3361,6 +3361,10 @@ function toggleBoardFlip(force) {
     const cp = document.getElementById('cp'); if (!cp) return;
     const want = (typeof force === 'boolean') ? force : !cp.classList.contains('bm-flipped');
     if (want && !BOARD_FLIPPED) fitContentView();   // ⭐裏返す時だけ内容を画面中央にフィット（見失わない）
+    if (want) {   // ⭐裏面に入る＝表の選択を解除（裏だから選択ハンドルを残さない）
+        S.selectedId = null; S.multiSelected = [];
+        if (S.objects) S.objects.forEach(o => { o.selected = false; });
+    }
     cp.classList.toggle('bm-flipped', want);
     BOARD_FLIPPED = want;
     if (typeof redrawAll === 'function') redrawAll();   // ミラーの反映（表↔裏 両方向）
@@ -4365,6 +4369,7 @@ function onDown(cx, cy, isTouch = false) {
         // ── 4. Nothing → deselect + marquee ──
         S.objects.forEach(o => o.selected = false);
         S.selectedId = null;
+        if (typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED) { redrawAll(); return; }   // ⭐裏面は選択しない（マーキーも作らない）
         S.marquee = { x1: p.x, y1: p.y, x2: p.x, y2: p.y };
         redrawAll();
         return;
@@ -6019,7 +6024,9 @@ function pointInPoly(px, py, pts) {
     return inside;
 }
 
-function hitTest(obj, x, y, extraPad = 0) {
+function hitTest(obj, x, y, extraPad = 0, allowFlipped = false) {
+    // ⭐裏返し中は表のパスを選択/ホバー/掴み不可（裏だから）。消しゴムだけ allowFlipped=true で通す
+    if (!allowFlipped && typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED) return false;
     // Rotate test point to unrotated space
     const c   = getObjCenter(obj);
     const rot = obj.data.rotation || 0;
@@ -6111,7 +6118,7 @@ function moveObj(obj, dx, dy) {
 function eraseAt(p, extraPad = 0) {
     if (_settleMode) return _eraseSoft(p, extraPad);   // settle: 黒板消しの手触り
     const before = S.objects.length;
-    S.objects = S.objects.filter(o => !hitTest(o, p.x, p.y, extraPad));
+    S.objects = S.objects.filter(o => !hitTest(o, p.x, p.y, extraPad, true));
     if (S.objects.length !== before) { saveHistory(); redrawAll(); }
 }
 
@@ -6153,7 +6160,7 @@ function _eraseSoft(p, extraPad = 0) {
     let touched = false;
     const survivors = [];
     for (const o of S.objects) {
-        if (!hitTest(o, p.x, p.y, extraPad)) { survivors.push(o); continue; }
+        if (!hitTest(o, p.x, p.y, extraPad, true)) { survivors.push(o); continue; }
         touched = true;
         const base = (o.data && o.data.stroke) || (typeof getStrokeColor === 'function' ? getStrokeColor() : '#ffffff');
         // ⭐太い線ほど消えにくい（Thin1.5→3回 / Medium2.5→5回 / Thick4.0→8回）
