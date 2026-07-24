@@ -10556,7 +10556,7 @@ const I18N = {
         'store.foot': '↵ で詳細を見る · Esc で戻る',
         'store.install': '⬇ インストール', 'store.reinstall': '⬇ 再インストール', 'store.installed': '導入済',
         'store.units': '要素', 'store.contains': '含まれるもの', 'store.done': 'をインストールしました — ⌘Kから使えます',
-        'store.fail': 'インストールに失敗', 'store.detailFoot': '↵ でインストール · ← / Esc で一覧に戻る'
+        'store.fail': 'インストールに失敗', 'store.featured': 'おすすめ · FEATURED', 'store.new': '新着 · NEW', 'store.detailFoot': '↵ でインストール · ← / Esc で一覧に戻る'
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
@@ -10590,7 +10590,7 @@ const I18N = {
         'store.foot': '↵ to show details · Esc to go back',
         'store.install': '⬇ Install', 'store.reinstall': '⬇ Reinstall', 'store.installed': 'Installed',
         'store.units': ' items', 'store.contains': 'What it adds', 'store.done': ' installed — use it from ⌘K',
-        'store.fail': 'Install failed', 'store.detailFoot': '↵ to install · ← / Esc back to list'
+        'store.fail': 'Install failed', 'store.featured': 'FEATURED', 'store.new': 'NEW', 'store.detailFoot': '↵ to install · ← / Esc back to list'
     }
 };
 function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
@@ -10812,7 +10812,12 @@ function centerTermPanel() {
         }
         if (it._storeView) {   // ⭐STOREを開く（⌘K内の画面）
             return { kind:'storeview', ico:'🛍', name: it.cmd, type: cat, desc: hint, favKey, fav,
-                run() { storeMode = true; storeMsg = ''; input.value = ''; refresh(); setTimeout(() => input.focus(), 0); } };
+                run() {
+                    storeMode = true; storeMsg = ''; input.value = ''; refresh();
+                    // ⭐リモートカタログ（静的JSON）を取りに行き、来たら再描画
+                    if (window._fetchStoreCatalog) window._fetchStoreCatalog().then(a => { if (a && a.length && storeMode) refresh(); }).catch(() => {});
+                    setTimeout(() => input.focus(), 0);
+                } };
         }
         if (it._lang) {   // ⭐言語切替
             return { kind:'lang', ico:'🌐', name: it.cmd, type: cat, desc: hint, favKey, fav, noFav: true,
@@ -10890,7 +10895,10 @@ function centerTermPanel() {
         const restLabel = storeMode ? t('store.sect') : (input.value.trim() ? t('pal.cmds') : t('pal.all'));
         const allStart = _favCount + _recentCount;
         rows.forEach((r, i) => {
-            if (top) { if (i === 0) listHtml += '<div class="cmdk-sect">' + esc(storeMode ? restLabel : t('pal.actions')) + '</div>'; }
+            if (r._sect) {   // ⭐STORE：Featured / New のセクション分け
+                if (i === 0 || rows[i - 1]._sect !== r._sect) listHtml += '<div class="cmdk-sect">' + esc(r._sect) + '</div>';
+            }
+            else if (top) { if (i === 0) listHtml += '<div class="cmdk-sect">' + esc(storeMode ? restLabel : t('pal.actions')) + '</div>'; }
             else {
                 if (i === 0 && _favCount > 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.fav')) + '</div>';
                 if (i === _favCount && _recentCount > 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.recent')) + '</div>';
@@ -10973,6 +10981,7 @@ function centerTermPanel() {
                 kind: 'store', ico: s.icon || '🪄', name: s.name, type: installedSet.has(s.name) ? t('store.installed') : (s.tag || ''),
                 sc: (s.ops || s.objects || []).length + t('store.units'),
                 desc: s.desc || '', noFav: true, _s: s,
+                _sect: s.tag === 'featured' ? t('store.featured') : t('store.new'),   // ⭐Featured / New
                 run() { storeDetail = s; refresh(); }   // ↵＝詳細を見る
             }));
             sel = 0; render(); return;
@@ -12157,7 +12166,42 @@ const STORE_CATALOG = [
       ops: [ { type: 'text',   dx: -200, dy: -40, props: { text: '見出し', fontSize: 48 } },
              { type: 'square', dx: -210, dy:  20, props: { w: 420, h: 3, fill: '#111111', strokeOff: true } } ] },
 ];
-window._getStoreCatalog = () => STORE_CATALOG;
+// ⭐リモートSTORE：静的JSONを置くだけで更新できる（GitHub Pages等・バックエンド不要）
+//   既定は同階層の store/catalog.json。localStorage `bm_store_url` で差し替え可。
+//   安全：ops は BM.create の白リスト型のみ許可（任意JSは構造的に入らない）
+const STORE_OP_TYPES = ['square', 'sticky', 'text', 'circle', 'triangle', 'arrow'];
+let _storeRemote = null, _storeFetched = false;
+function validStoreEntry(s) {
+    if (!s || typeof s.name !== 'string') return false;
+    if (Array.isArray(s.objects)) return true;
+    if (!Array.isArray(s.ops) || !s.ops.length) return false;
+    return s.ops.every(o => o && STORE_OP_TYPES.indexOf(o.type) >= 0);
+}
+async function fetchStoreCatalog() {
+    if (_storeFetched) return _storeRemote;
+    _storeFetched = true;
+    let url = 'store/catalog.json';
+    try { url = localStorage.getItem('bm_store_url') || url; } catch (_) {}
+    try {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) return null;
+        const j = await r.json();
+        const arr = Array.isArray(j) ? j : (j && Array.isArray(j.spells) ? j.spells : null);
+        if (!arr) return null;
+        _storeRemote = arr.filter(validStoreEntry).map(s => Object.assign({}, s, { remote: true }));
+        return _storeRemote;
+    } catch (_) { return null; }
+}
+function getStoreCatalog() {
+    const base = STORE_CATALOG.slice();
+    if (_storeRemote && _storeRemote.length) {
+        const names = new Set(base.map(s => s.name));
+        for (const s of _storeRemote) if (!names.has(s.name)) base.push(s);
+    }
+    return base;
+}
+window._getStoreCatalog = getStoreCatalog;
+window._fetchStoreCatalog = fetchStoreCatalog;
 window._getSpells = getSpells;
 window._runSpell = runSpell;
 window._addSpellFromSelection = addSpellFromSelection;
