@@ -686,6 +686,24 @@
             -webkit-user-select: none;
             -webkit-touch-callout: none;
         }
+        /* ⭐紙をひっくり返す：canvasを水平ミラー＋紙裏オーバーレイで"表が薄く透ける" */
+        #cp.bm-flipped #c { transform: scaleX(-1); transition: transform 0.35s cubic-bezier(.4,0,.2,1); }
+        #flipOverlay {
+            position: absolute; inset: 0; z-index: 11; display: none;
+            background: rgba(250,248,242,0.6);
+            cursor: default;
+        }
+        #cp.bm-flipped #flipOverlay { display: block; }
+        body.bm-dark #flipOverlay, body.bm-gray #flipOverlay { background: rgba(18,18,20,0.58); }
+        .flip-hint {
+            position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(0,0,0,0.72); color: #f4f2ec; font-family: var(--ui-mono);
+            font-size: 11px; letter-spacing: 0.05em; padding: 7px 14px; border-radius: 20px;
+            cursor: pointer; white-space: nowrap; border: 1px solid rgba(255,255,255,0.14);
+        }
+        .flip-hint:hover { background: rgba(0,0,0,0.85); }
+        body.bm-dark .flip-hint, body.bm-gray .flip-hint { background: rgba(240,240,240,0.85); color: #111; border-color: rgba(0,0,0,0.15); }
 
         #textOverlay {
             position: absolute;
@@ -1287,7 +1305,7 @@
         .set-cmds-conflict { margin: 0 16px 6px; padding: 7px 10px; border-radius: 8px; font-size: 11px;
             color: #ff8b8b; background: rgba(255,80,80,0.09); border: 1px solid rgba(255,80,80,0.28); }
         .set-cmds-conflict[hidden] { display: none; }
-        .set-cmds-list { overflow-y: auto; max-height: 52vh; padding: 0 8px 8px; }
+        .set-cmds-list { overflow-y: auto; height: 50vh; padding: 0 8px 8px; }   /* ⭐固定高：フィルタ(お気に入り/割当済み)で縦幅を跳ねさせない＝大きい方をベース */
         .set-cmds-list::-webkit-scrollbar { width: 4px; }
         .set-cmds-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
         /* ⭐Raycast列グリッド：☆ | 名前 | 説明 | 種類 | ショートカット */
@@ -2436,7 +2454,7 @@
         </a>
         <!-- ⭐設定（歯車）— 端3つの代わりにここに集約（⌘, でも開く） -->
         <button class="hbtn" onclick="window._toggleSettings && window._toggleSettings(); this.blur();" title="設定 (⌘,)" data-i18n-title="tt.settings" aria-label="Settings">
-            <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.3"/><path d="M8 1.6 V3.3 M8 12.7 V14.4 M1.6 8 H3.3 M12.7 8 H14.4 M3.5 3.5 L4.7 4.7 M11.3 11.3 L12.5 12.5 M12.5 3.5 L11.3 4.7 M4.7 11.3 L3.5 12.5"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
         </button>
     </div>
 </header>
@@ -3313,6 +3331,16 @@ const BOARD_SIZES = {
 let BOARD_SIZE = 'free';
 try { BOARD_SIZE = localStorage.getItem('bm_board_size') || 'free'; } catch (_) {}
 if (!(BOARD_SIZE in BOARD_SIZES)) BOARD_SIZE = 'free';
+// ⭐紙をひっくり返す（v1＝見る：CSS水平ミラー＋紙裏オーバーレイで"表が薄く透ける"。描画/保存/入力コアは不変）
+let BOARD_FLIPPED = false;
+function toggleBoardFlip(force) {
+    const cp = document.getElementById('cp'); if (!cp) return;
+    const want = (typeof force === 'boolean') ? force : !cp.classList.contains('bm-flipped');
+    cp.classList.toggle('bm-flipped', want);
+    BOARD_FLIPPED = want;
+    if (typeof _syncBoardSizeUI === 'function') _syncBoardSizeUI();
+}
+window.toggleBoardFlip = toggleBoardFlip;
 function drawBoardFrame() {   // redrawAll から呼ぶ（オブジェクトの背後に）
     if (BOARD_SIZE === 'free') return;
     const pg = BOARD_SIZES[BOARD_SIZE]; if (!pg) return;
@@ -10283,11 +10311,9 @@ tiEl.addEventListener('paste', e => {
                 } else if (hot) {
                     // 割当済み：kbdバッジ＋（ユーザー割当なら）クリア×／内蔵なら「既定」＋上書き記録
                     const clr = hot.user ? `<span class="set-cmdclear" data-clear="${esc(it.cmd)}" title="${esc(T('setcmd.clear'))}">✕</span>` : '';
-                    hotHtml = `<span class="k${hot.user ? '' : ' def'}">${esc(hot.disp)}</span>${clr}${(!hot.user && !it.args) ? `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.record'))}</span>` : ''}`;
-                } else if (!it.args) {
-                    hotHtml = `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.recordHot'))}</span>`;
+                    hotHtml = `<span class="k${hot.user ? '' : ' def'}">${esc(hot.disp)}</span>${clr}${!hot.user ? `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.record'))}</span>` : ''}`;
                 } else {
-                    hotHtml = '';
+                    hotHtml = `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.recordHot'))}</span>`;
                 }
                 html += `<div class="set-cmdrow${isConf ? ' conflict' : ''}${isRec ? ' recording' : ''}">${star}<span class="set-cmdname">${esc(it.cmd)}</span><span class="set-cmdhint">${esc(hint)}</span><span class="set-cmdhot">${hotHtml}</span></div>`;
             });
@@ -10648,7 +10674,7 @@ function centerTermPanel() {
         return {
             kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: hint || (it.cmd + (LANG === 'en' ? ' command' : ' コマンド')),
             sc: (usc && usc.disp) || it.sc || '', favKey, fav,
-            cmdStr: it.cmd, args: !!it.args, assignable: !it.args,   // 引数なしコマンドだけ割当可
+            cmdStr: it.cmd, args: !!it.args, assignable: true,   // 全コマンド割当可（引数ありはキーでパレットを開き引数待ち）
             run() {
                 const q = input.value.trim(); const fsp = q.indexOf(' ');
                 const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
@@ -10879,6 +10905,11 @@ function centerTermPanel() {
         for (const k in m) { if (m[k] && m[k].match === c.match) { hit = k; break; } }
         if (!hit) return;
         e.preventDefault(); e.stopPropagation();
+        const def = (typeof OMNI_CMDS !== 'undefined') ? OMNI_CMDS.find(c => c.cmd === hit) : null;
+        if (def && def.args) {   // ⭐引数コマンドはパレットを開いて「cmd 」まで入れ引数待ちに
+            open(); input.value = hit + ' '; refresh(); setTimeout(() => input.focus(), 0);
+            return;
+        }
         try { pushHistory(hit); } catch (_) {}
         if (typeof runCommand === 'function') runCommand(hit);
     }, true);
