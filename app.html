@@ -10874,18 +10874,20 @@ tiEl.addEventListener('paste', e => {
           const REPO = 'blackmirrorboard/bmboard';   // STORE(catalog.json)のリポジトリ
           const name = box.dataset.name || 'spell';
           const isCode = /"action"\s*:/.test(ta.value);
-          const body = [
-              '## 魔法の提出 / Spell submission',
-              '',
+          const _en = (window.getLang && window.getLang() === 'en');
+          const body = (_en ? [
+              '## Spell submission', '',
+              '**name:** `' + name + '`',
+              isCode ? '⚠️ **This is a code spell (JS). It runs code when used.** Please review.' : '',
+              '', 'Add the JSON below to `spells` in `store/catalog.json` (set author to your name).', '',
+              '```json', ta.value, '```',
+          ] : [
+              '## 魔法の提出 / Spell submission', '',
               '**name:** `' + name + '`',
               isCode ? '⚠️ **コード魔法（JS）です。実行時にコードが走ります。** レビューをお願いします。' : '',
-              '',
-              '下の JSON を `store/catalog.json` の `spells` に追記してください（author はご自身の名前に）。',
-              '',
-              '```json',
-              ta.value,
-              '```',
-          ].filter(x => x !== null).join('\n');
+              '', '下の JSON を `store/catalog.json` の `spells` に追記してください（author はご自身の名前に）。', '',
+              '```json', ta.value, '```',
+          ]).filter(x => x !== null).join('\n');
           const url = 'https://github.com/' + REPO + '/issues/new?title=' + encodeURIComponent('[spell] ' + name) + '&labels=' + encodeURIComponent('spell-submission') + '&body=' + encodeURIComponent(body);
           if (url.length > 7500) {   // URL長すぎ＝GitHubが弾く可能性→コピーに誘導
               try { navigator.clipboard && navigator.clipboard.writeText(ta.value); } catch (_) {}
@@ -10895,36 +10897,49 @@ tiEl.addEventListener('paste', e => {
               window.open(url, '_blank', 'noopener');
           }
       }); }
-    // ⭐コードから魔法を作る（AI→貼付→登録して試す）
-    const _AI_PROMPT = [
-        'あなたはお絵かきボード「BMBoard」の魔法(spell)を作ります。',
-        '出力は JSON 1つだけ：{ "name":"英数字の短い名前", "icon":"絵文字1つ", "desc":"日本語の短い説明", "action":"JavaScript本文" }',
-        'action の中では以下の BM API だけ使えます（それ以外のグローバル/fetch/DOM操作は禁止）：',
-        "・BM.create(type, props) type= 'circle'|'square'|'triangle'|'arrow'|'text'|'sticky'。props例 square/sticky/text:{x,y,w,h,text,fill,color,fontSize} circle:{cx,cy,rx,ry,fill} arrow:{x1,y1,x2,y2}",
-        '・BM.viewCenter() → {x,y}（今の画面中心のワールド座標）／BM.rand(min,max)／BM.all()／BM.getSelected()／BM.translate(obj,dx,dy)／BM.setFill(obj,color)／BM.setStroke(obj,color)／BM.redraw()／BM.log(msg)',
-        'アニメにする場合は requestAnimationFrame を使い、window._<name>Id に id を保持して2回目の実行で停止できるトグルにする（sakura/rain と同様）。',
-        '作ってほしい魔法：「__ここに作りたい内容__」。JSONだけを返してください。'
-    ].join('\n');
+    // ⭐コードから魔法を作る（AI→貼付→登録して試す）。プロンプトは表示言語に合わせる
+    function aiPrompt() {
+        const en = (window.getLang && window.getLang() === 'en');
+        if (en) return [
+            'You write "spells" for the drawing board app "BMBoard".',
+            'Output exactly one JSON: { "name":"short alphanumeric name", "icon":"one emoji", "desc":"short description", "action":"JavaScript body" }',
+            'Inside action you may ONLY use this BM API (no other globals, no fetch, no DOM access):',
+            "・BM.create(type, props) type= 'circle'|'square'|'triangle'|'arrow'|'text'|'sticky'. props e.g. square/sticky/text:{x,y,w,h,text,fill,color,fontSize} circle:{cx,cy,rx,ry,fill} arrow:{x1,y1,x2,y2}",
+            '・BM.viewCenter() → {x,y} (world coords of screen center) / BM.rand(min,max) / BM.all() / BM.getSelected() / BM.translate(obj,dx,dy) / BM.setFill(obj,color) / BM.setStroke(obj,color) / BM.redraw() / BM.log(msg)',
+            'For animation use setInterval and keep the id on window._<name>Id so a second run toggles it off (like sakura/rain).',
+            'The spell I want: "__describe it here__". Return the JSON only.'
+        ].join('\n');
+        return [
+            'あなたはお絵かきボード「BMBoard」の魔法(spell)を作ります。',
+            '出力は JSON 1つだけ：{ "name":"英数字の短い名前", "icon":"絵文字1つ", "desc":"日本語の短い説明", "action":"JavaScript本文" }',
+            'action の中では以下の BM API だけ使えます（それ以外のグローバル/fetch/DOM操作は禁止）：',
+            "・BM.create(type, props) type= 'circle'|'square'|'triangle'|'arrow'|'text'|'sticky'。props例 square/sticky/text:{x,y,w,h,text,fill,color,fontSize} circle:{cx,cy,rx,ry,fill} arrow:{x1,y1,x2,y2}",
+            '・BM.viewCenter() → {x,y}（今の画面中心のワールド座標）／BM.rand(min,max)／BM.all()／BM.getSelected()／BM.translate(obj,dx,dy)／BM.setFill(obj,color)／BM.setStroke(obj,color)／BM.redraw()／BM.log(msg)',
+            'アニメにする場合は setInterval を使い、window._<name>Id に id を保持して2回目の実行で停止できるトグルにする（sakura/rain と同様）。',
+            '作ってほしい魔法：「__ここに作りたい内容__」。JSONだけを返してください。'
+        ].join('\n');
+    }
     { const cb = overlay.querySelector('#spellCreateBtn'), box = overlay.querySelector('#spellCreate');
       const cl = overlay.querySelector('#spellCreateClose'), ai = overlay.querySelector('#spellAiPrompt'), run = overlay.querySelector('#spellCreateRun'), ta = overlay.querySelector('#spellCreateJson');
       if (cb) cb.addEventListener('click', () => { if (box) { box.hidden = !box.hidden; if (!box.hidden && ta) setTimeout(() => ta.focus(), 0); } });
       if (cl) cl.addEventListener('click', () => { if (box) box.hidden = true; });
-      if (ai) ai.addEventListener('click', () => { try { navigator.clipboard && navigator.clipboard.writeText(_AI_PROMPT); ai.textContent = '✓ コピーしました'; setTimeout(() => { ai.textContent = (window.t ? window.t('create.aiCopy') : '🤖 AI用プロンプトをコピー'); }, 1500); } catch (_) {} });
+      if (ai) ai.addEventListener('click', () => { try { navigator.clipboard && navigator.clipboard.writeText(aiPrompt()); ai.textContent = (window.getLang && window.getLang() === 'en') ? '✓ Copied' : '✓ コピーしました'; setTimeout(() => { ai.textContent = (window.t ? window.t('create.aiCopy') : '🤖 AI用プロンプトをコピー'); }, 1500); } catch (_) {} });
       if (run) run.addEventListener('click', () => {
           if (!ta) return;
-          let obj; try { obj = JSON.parse(ta.value); } catch (e) { if (typeof printRaw === 'function') printRaw('魔法JSON: 構文エラー — ' + e.message, 't-err'); return; }
+          const _en = (window.getLang && window.getLang() === 'en');
+          let obj; try { obj = JSON.parse(ta.value); } catch (e) { if (typeof printRaw === 'function') printRaw((_en ? 'spell JSON: syntax error — ' : '魔法JSON: 構文エラー — ') + e.message, 't-err'); return; }
           const name = (obj.name || obj.command || '').trim();
           const action = String(obj.action || '');
-          if (!name || !action) { if (typeof printRaw === 'function') printRaw('魔法JSON: name と action が必要', 't-err'); return; }
+          if (!name || !action) { if (typeof printRaw === 'function') printRaw(_en ? 'spell JSON: needs name and action' : '魔法JSON: name と action が必要', 't-err'); return; }
           const nm = window._registerJsSpell && window._registerJsSpell(name, action, 'user');
-          if (!nm) { if (typeof printRaw === 'function') printRaw('魔法の登録に失敗（名前は英数字）', 't-err'); return; }
+          if (!nm) { if (typeof printRaw === 'function') printRaw(_en ? 'register failed (name must be alphanumeric)' : '魔法の登録に失敗（名前は英数字）', 't-err'); return; }
           if (window._setJsMeta) window._setJsMeta(nm, obj.icon, obj.desc);
           renderSpells();
           if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen();
           if (box) box.hidden = true;
           if (window._toggleSettings) window._toggleSettings();          // 設定を閉じて…
           setTimeout(() => { if (window._runJsSpell) window._runJsSpell(nm, ''); }, 60);   // ボードで即プレビュー
-          if (typeof printRaw === 'function') printRaw(`魔法「${nm}」を登録して実行 — ⌘Kから使えます`, 't-ok');
+          if (typeof printRaw === 'function') printRaw(_en ? `spell "${nm}" registered & run — use it from ⌘K` : `魔法「${nm}」を登録して実行 — ⌘Kから使えます`, 't-ok');
       });
     }
     { const ib = overlay.querySelector('#spellImportBtn'), eb = overlay.querySelector('#spellExportAllBtn');
@@ -11038,6 +11053,8 @@ const I18N = {
         'submit.title': '📤 STOREに提出する',
         'submit.steps': '① 下のJSON（アイコン/説明/コード全部入り）をコピー　② 管理者にGitHub PR か メールで送る　③ 承認されるとSTOREに並びます（author を自分の名前に）',
         'submit.copy': 'JSONをコピー', 'submit.download': 'JSONを保存', 'submit.github': '🐙 GitHubで公開申請',
+        'ctx.here': 'ここに', 'ctx.text': 'テキストを置く', 'ctx.sticky': '付箋を置く', 'ctx.selectAll': '全選択', 'ctx.sweep': '消しカスを払う', 'ctx.store': 'STORE を開く',
+        'ctx.dup': '複製', 'ctx.saveSpell': '選択を魔法に保存', 'ctx.front': '前面へ', 'ctx.back': '背面へ', 'ctx.delete': '削除',
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
         'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
         'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
@@ -11081,6 +11098,8 @@ const I18N = {
         'submit.title': '📤 Submit to STORE',
         'submit.steps': '① Copy the JSON below (icon/desc/code all included)　② Send it to a maintainer via GitHub PR or email　③ Once approved it appears in the STORE (set author to your name)',
         'submit.copy': 'Copy JSON', 'submit.download': 'Save JSON', 'submit.github': '🐙 Submit via GitHub',
+        'ctx.here': 'Here', 'ctx.text': 'Add text', 'ctx.sticky': 'Add sticky', 'ctx.selectAll': 'Select all', 'ctx.sweep': 'Sweep crumbs', 'ctx.store': 'Open STORE',
+        'ctx.dup': 'Duplicate', 'ctx.saveSpell': 'Save as spell', 'ctx.front': 'Bring to front', 'ctx.back': 'Send to back', 'ctx.delete': 'Delete',
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
         'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
         'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
@@ -15498,24 +15517,25 @@ document.addEventListener('contextmenu', e => {
 
     window._showBoardCtx = (cx, cy, hit, worldPos) => {
         menu.innerHTML = ''; _pos = worldPos;
+        const T = k => (window.t ? window.t(k) : k);
         if (hit) {
             selectOnly(hit); redrawAll();
             menu.appendChild(head(hit.type));
-            menu.appendChild(row('⧉', '複製', () => { if (typeof duplicateSelection === 'function') duplicateSelection(); }, { k: '⌘D' }));
-            menu.appendChild(row('🪄', '選択を魔法に保存', () => { const r = window._addSpellFromSelection && window._addSpellFromSelection(''); if (r && r.ok && typeof printRaw === 'function') printRaw(`魔法「${r.name}」を保存（${r.count}個）`, 't-dim'); }));
+            menu.appendChild(row('⧉', T('ctx.dup'), () => { if (typeof duplicateSelection === 'function') duplicateSelection(); }, { k: '⌘D' }));
+            menu.appendChild(row('🪄', T('ctx.saveSpell'), () => { const r = window._addSpellFromSelection && window._addSpellFromSelection(''); if (r && r.ok && typeof printRaw === 'function') printRaw((window.getLang && window.getLang() === 'en') ? `spell "${r.name}" saved (${r.count})` : `魔法「${r.name}」を保存（${r.count}個）`, 't-dim'); }));
             menu.appendChild(sep());
-            menu.appendChild(row('⬆', '前面へ', () => bringFront(hit)));
-            menu.appendChild(row('⬇', '背面へ', () => sendBack(hit)));
+            menu.appendChild(row('⬆', T('ctx.front'), () => bringFront(hit)));
+            menu.appendChild(row('⬇', T('ctx.back'), () => sendBack(hit)));
             menu.appendChild(sep());
-            menu.appendChild(row('🗑', '削除', () => delObj(hit), { danger: true, k: 'Del' }));
+            menu.appendChild(row('🗑', T('ctx.delete'), () => delObj(hit), { danger: true, k: 'Del' }));
         } else {
-            menu.appendChild(head('ここに'));
-            menu.appendChild(row('✎', 'テキストを置く', () => placeAt('text', _pos)));
-            menu.appendChild(row('🗒', '付箋を置く', () => placeAt('sticky', _pos)));
+            menu.appendChild(head(T('ctx.here')));
+            menu.appendChild(row('✎', T('ctx.text'), () => placeAt('text', _pos)));
+            menu.appendChild(row('🗒', T('ctx.sticky'), () => placeAt('sticky', _pos)));
             menu.appendChild(sep());
-            menu.appendChild(row('▦', '全選択', () => { if (typeof selectAllObjects === 'function') selectAllObjects(); }, { k: '⌘A' }));
-            menu.appendChild(row('🧹', '消しカスを払う', () => { if (typeof runCommand === 'function') runCommand('sweep'); }));
-            menu.appendChild(row('✦', 'STORE を開く', () => { if (window._openCmdK) { window._openCmdK(); setTimeout(() => window._openStoreView && window._openStoreView(), 0); } }));
+            menu.appendChild(row('▦', T('ctx.selectAll'), () => { if (typeof selectAllObjects === 'function') selectAllObjects(); }, { k: '⌘A' }));
+            menu.appendChild(row('🧹', T('ctx.sweep'), () => { if (typeof runCommand === 'function') runCommand('sweep'); }));
+            menu.appendChild(row('✦', T('ctx.store'), () => { if (window._openCmdK) { window._openCmdK(); setTimeout(() => window._openStoreView && window._openStoreView(), 0); } }));
         }
         // 表示＆画面内にクランプ
         menu.classList.add('open');
