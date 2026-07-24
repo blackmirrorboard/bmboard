@@ -9165,6 +9165,48 @@ function runCommand(val) {
         printRaw((typeof LANG!=='undefined'&&LANG==='en') ? `board size → ${key==='free'?'none (infinite)':lbl}` : `ボードサイズ → ${key==='free'?'なし（無限）':lbl}`, 't-dim');
         return;
     }
+    // ⭐connect：選択した2つ（以上）を矢印でつなぐ＝図が"描けない人"でも図解できる
+    if (head==='connect' || head==='link2' || low==='つなぐ') {
+        const ids = (S.multiSelected && S.multiSelected.length) ? S.multiSelected : (S.selectedId ? [S.selectedId] : []);
+        const objs = S.objects.filter(o => ids.includes(o.id));
+        if (objs.length < 2) { printRaw(_L('connect: 2つ以上を選択してください（Tabで選択・⇧クリックで追加）','connect: select 2 or more objects (Tab to select, ⇧click to add)'), 't-err'); return; }
+        const cen = o => { const b = getObjBounds(o); return b ? { x: b.x + b.w / 2, y: b.y + b.h / 2 } : { x: 0, y: 0 }; };
+        const sorted = objs.slice().sort((a, b) => cen(a).x - cen(b).x || cen(a).y - cen(b).y);
+        let n = 0;
+        for (let i = 0; i < sorted.length - 1; i++) {
+            const a = cen(sorted[i]), b = cen(sorted[i + 1]);
+            const o = BM.create('arrow', { x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+            if (o) { o.side = (typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED) ? 'back' : 'front'; n++; }
+        }
+        saveHistory(); redrawAll();
+        printRaw(_L(`→ ${n}本の矢印でつなぎました`, `→ connected with ${n} arrow(s)`), 't-dim');
+        return;
+    }
+    // ⭐align：選択したものを揃える（left/right/top/bottom/center/middle）
+    if (head==='align') {
+        const ids = (S.multiSelected && S.multiSelected.length) ? S.multiSelected : [];
+        const objs = S.objects.filter(o => ids.includes(o.id));
+        if (objs.length < 2) { printRaw(_L('align: 2つ以上を選択してください','align: select 2 or more objects'), 't-err'); return; }
+        const how = rest.trim().toLowerCase() || 'left';
+        const B = objs.map(o => ({ o, b: getObjBounds(o) })).filter(x => x.b);
+        if (!B.length) return;
+        const minX = Math.min(...B.map(x => x.b.x)), maxX = Math.max(...B.map(x => x.b.x + x.b.w));
+        const minY = Math.min(...B.map(x => x.b.y)), maxY = Math.max(...B.map(x => x.b.y + x.b.h));
+        for (const { o, b } of B) {
+            let dx = 0, dy = 0;
+            if (how === 'left') dx = minX - b.x;
+            else if (how === 'right') dx = maxX - (b.x + b.w);
+            else if (how === 'top') dy = minY - b.y;
+            else if (how === 'bottom') dy = maxY - (b.y + b.h);
+            else if (how === 'center') dx = (minX + maxX) / 2 - (b.x + b.w / 2);
+            else if (how === 'middle') dy = (minY + maxY) / 2 - (b.y + b.h / 2);
+            else { printRaw(_L('align: left / right / top / bottom / center / middle','align: left / right / top / bottom / center / middle'), 't-err'); return; }
+            if (dx || dy) moveObj(o, dx, dy);
+        }
+        saveHistory(); redrawAll();
+        printRaw(_L(`→ ${B.length}個を ${how} で揃えました`, `→ aligned ${B.length} objects (${how})`), 't-dim');
+        return;
+    }
     // ⭐左右入替（利き手対応）：ボードを右に / 左に
     if (head==='swap' || head==='layout' || low==='左右' || low==='入替') {
         const sub = rest.trim().toLowerCase();
@@ -11217,6 +11259,8 @@ const OMNI_CMDS = [
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙' },
     { cmd:'gif',     cat:'io',      hint:'ボードをGIFに録画（gif 4 で4秒）', hintEn:'Record the board as a GIF (gif 4 = 4s)', args:true, kw:'gif アニメ 録画 書き出し 動画 sakura 共有 export' },
     { cmd:'rec',     cat:'io',      hint:'ボードを動画(WebM)に録画（rec 6 で6秒）', hintEn:'Record the board as video/WebM (rec 6 = 6s)', args:true, kw:'rec 録画 動画 video webm 書き出し キャプチャ capture' },
+    { cmd:'connect', cat:'insert',  hint:'選択した2つ以上を矢印でつなぐ', hintEn:'Connect 2+ selected objects with arrows', kw:'つなぐ connect 矢印 図解 フロー 結ぶ' },
+    { cmd:'align',   cat:'edit',    hint:'選択を揃える（align left/right/top/bottom/center/middle）', hintEn:'Align selection (left/right/top/bottom/center/middle)', args:true, kw:'align 整列 揃える 配置 そろえる' },
     { cmd:'swap',    cat:'panel',   hint:'ボードを右/左に入替（利き手）', hintEn:'Swap board to the right/left (handedness)', args:true, kw:'左右 入替 利き手 swap layout 右利き 左利き right left' },
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
@@ -14017,11 +14061,14 @@ function setTermWidthPct(pct, persist) {
         setV('--term-fx', (ox + dx) + 'px');
         setV('--term-fy', (oy + dy) + 'px');
         clampFloat();
-        // ⭐マグネット：パネルの右端が main の右端に近づいたら吸着予告（白枠）。
-        //   ポインタ位置ではなくパネル右端で判定 → ヘッダーを左寄りで掴んでも効く。
+        // ⭐マグネット：パネルの端が main の端に近づいたら吸着予告（白枠）。
+        //   ポインタ位置ではなくパネル端で判定 → ヘッダーを左寄りで掴んでも効く。
+        //   ⭐左右入替(bm-swap)中はドック先が左なので、左端で判定する。
         const mr = mainEl.getBoundingClientRect();
-        const panelRight = num(getV('--term-fx'), 64) + num(getV('--term-fw'), 460);
-        showSnap((mr.width - panelRight) < SNAP_PX);
+        const fx = num(getV('--term-fx'), 64);
+        const swapped = document.body.classList.contains('bm-swap');
+        const dist = swapped ? fx : (mr.width - (fx + num(getV('--term-fw'), 460)));
+        showSnap(dist < SNAP_PX);
         e.preventDefault();
     });
     function endHd() {
