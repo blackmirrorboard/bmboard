@@ -227,6 +227,20 @@
             object-fit: contain;
             filter: invert(1);   /* ⭐白抜き：暗いロゴ→白（暗いガラス面で映える） */
         }
+        /* ⭐BGM再生インジケータ（動く波形＝再生中が一目で分かる。クリックで停止）
+           ※YouTube埋め込みはクロスオリジンで実振幅を取得できないため、再生状態を示すアニメーション */
+        .bgm-ind { cursor: pointer; }
+        .bgm-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+        .bgm-bars i { display: block; width: 2px; background: currentColor; border-radius: 1px; height: 30%;
+            animation: bgmBar 900ms ease-in-out infinite; }
+        .bgm-bars i:nth-child(1) { animation-delay: 0ms;   }
+        .bgm-bars i:nth-child(2) { animation-delay: 140ms; }
+        .bgm-bars i:nth-child(3) { animation-delay: 280ms; }
+        .bgm-bars i:nth-child(4) { animation-delay: 420ms; }
+        .bgm-bars i:nth-child(5) { animation-delay: 560ms; }
+        @keyframes bgmBar { 0%,100% { height: 25%; } 50% { height: 100%; } }
+        @media (prefers-reduced-motion: reduce) { .bgm-bars i { animation: none; height: 60%; } }
+
         /* ⭐サイトと同じ「BM BOARD」ワードマーク（スミレイ ＋ 太字ワイド字間） */
         .logo-word {
             margin-left: 12px;
@@ -2495,6 +2509,9 @@
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.6" y="2.6" width="4.6" height="4.6" rx="1"/><rect x="8.8" y="2.6" width="4.6" height="4.6" rx="1"/><rect x="2.6" y="8.8" width="4.6" height="4.6" rx="1"/><rect x="8.8" y="8.8" width="4.6" height="4.6" rx="1"/></svg>
         </a>
         <!-- ⭐設定（歯車）— 端3つの代わりにここに集約（⌘, でも開く） -->
+        <button class="hbtn bgm-ind" id="bgmIndicator" style="display:none" onclick="runCommand('bgm off'); this.blur();" title="BGM再生中 — クリックで停止" data-i18n-title="tt.bgmOn" aria-label="BGM playing">
+            <span class="bgm-bars"><i></i><i></i><i></i><i></i><i></i></span>
+        </button>
         <button class="hbtn" onclick="window._toggleSettings && window._toggleSettings(); this.blur();" title="設定 (⌘,)" data-i18n-title="tt.settings" aria-label="Settings">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
         </button>
@@ -3803,17 +3820,26 @@ function bgmStart(n) {
     const id = BGM_TRACKS[n];
     if (!id) return false;
     const f = document.createElement('iframe');
-    f.style.cssText = 'position:fixed;width:1px;height:1px;left:-200px;top:-200px;border:0;opacity:0;pointer-events:none;';
-    f.allow = 'autoplay';
+    // ⚠️opacity:0 / 1px の完全非表示はブラウザに「隠しメディア」と見なされ自動再生を弾かれやすい。
+    //   画面外に置きつつ実サイズを持たせる（見た目は同じく非表示）。
+    f.style.cssText = 'position:fixed;width:200px;height:120px;left:-9999px;top:0;border:0;pointer-events:none;';
+    f.allow = 'autoplay; encrypted-media';
     f.src = `https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&controls=0&modestbranding=1&playsinline=1`;
     document.body.appendChild(f);
     _bgmFrame = f;
     _bgmTrack = n;
+    _bgmIndicator(true);
     return true;
 }
 function bgmStop() {
     if (_bgmFrame) { try { _bgmFrame.remove(); } catch{} _bgmFrame = null; }
     _bgmTrack = null;
+    _bgmIndicator(false);
+}
+// ⭐上部バーの再生インジケータ（動く波形）の表示切替
+function _bgmIndicator(on) {
+    const el = document.getElementById('bgmIndicator');
+    if (el) el.style.display = on ? 'inline-flex' : 'none';
 }
 
 // ══════════════════════════════════════════════════
@@ -8896,6 +8922,17 @@ function runCommand(val) {
         printRaw((typeof LANG!=='undefined'&&LANG==='en') ? `board size → ${key==='free'?'none (infinite)':lbl}` : `ボードサイズ → ${key==='free'?'なし（無限）':lbl}`, 't-dim');
         return;
     }
+    // ⭐パレット専用だったものをターミナルからも使えるように（settings / store / english / 日本語）
+    if (head==='settings' || head==='setting' || low==='設定') {
+        if (window._openSettings) window._openSettings(); else if (window._toggleSettings) window._toggleSettings();
+        printRaw((typeof LANG!=='undefined'&&LANG==='en') ? 'settings opened (⌘,)' : '設定を開きました（⌘,）', 't-dim'); return;
+    }
+    if (head==='store') {
+        if (window._openCmdK) { window._openCmdK(); setTimeout(() => { if (window._openStoreView) window._openStoreView(); }, 0); }
+        printRaw((typeof LANG!=='undefined'&&LANG==='en') ? 'opening STORE…' : 'STORE を開きます…', 't-dim'); return;
+    }
+    if (head==='english' || head==='en') { if (window.setLang) window.setLang('en'); printRaw('UI language → English', 't-dim'); return; }
+    if (head==='japanese' || head==='ja' || low==='日本語') { if (window.setLang) window.setLang('ja'); printRaw('表示を日本語にしました', 't-dim'); return; }
     // ⭐連鎖：chain add 名前 cmd1 ; cmd2 / chain 名前（順に実行）/ chain list / chain forget 名前
     if (head==='chain') {
         const en = (typeof LANG!=='undefined'&&LANG==='en');
@@ -10713,7 +10750,7 @@ const I18N = {
         'fb.note': 'メーラーが起動します · no tracking · local only',
         'crop.hint': 'ドラッグで範囲 · ハンドルで調整 · Enter 適用 · Esc キャンセル', 'crop.reset': 'リセット', 'crop.cancel': 'キャンセル', 'crop.apply': '適用',
         'voice.hint': '↵ 実行　Esc キャンセル',
-        'tt.sweep': '消しカスを払う', 'tt.boardsize': 'ボードサイズ（A4等）', 'board.size': 'ボードサイズ', 'board.free': 'なし（無限）', 'board.square': '正方形',
+        'tt.sweep': '消しカスを払う', 'tt.bgmOn': 'BGM再生中 — クリックで停止', 'tt.boardsize': 'ボードサイズ（A4等）', 'board.size': 'ボードサイズ', 'board.free': 'なし（無限）', 'board.square': '正方形',
         'board.flip': '⟳ 裏返す', 'flip.back': '⟳ 裏面 · クリックで表に戻る',
         'store.badge': '魔法ストア', 'store.sect': 'STORE · 魔法',
         'store.desc': 'ボード上でできることを魔法として追加できます。選ぶとインストール（⌘Kからいつでも使えます）。',
@@ -10753,7 +10790,7 @@ const I18N = {
         'fb.note': 'Opens your mail app · no tracking · local only',
         'crop.hint': 'Drag to select · handles to adjust · Enter to apply · Esc to cancel', 'crop.reset': 'Reset', 'crop.cancel': 'Cancel', 'crop.apply': 'Apply',
         'voice.hint': '↵ run　Esc cancel',
-        'tt.sweep': 'Sweep eraser crumbs', 'tt.boardsize': 'Board size (A4, etc.)', 'board.size': 'Board size', 'board.free': 'None (infinite)', 'board.square': 'Square',
+        'tt.sweep': 'Sweep eraser crumbs', 'tt.bgmOn': 'BGM playing — click to stop', 'tt.boardsize': 'Board size (A4, etc.)', 'board.size': 'Board size', 'board.free': 'None (infinite)', 'board.square': 'Square',
         'board.flip': '⟳ Flip', 'flip.back': '⟳ Back side · click to flip to front',
         'store.badge': 'Spell store', 'store.sect': 'STORE · SPELLS',
         'store.desc': 'Add board abilities as spells. Pick one to install — then use it anytime from ⌘K.',
@@ -11262,6 +11299,11 @@ function centerTermPanel() {
     function close() { capSc = null; capMsg = ''; storeMode = false; storeMsg = ''; storeDetail = null; overlay.classList.remove('open'); showList(); }
     function toggle(){ isOpen() ? close() : open(); }
     window._openCmdK = open; window._toggleCmdK = toggle;
+    window._openStoreView = () => {   // ターミナルの `store` からも開けるように
+        storeMode = true; storeDetail = null; storeMsg = ''; input.value = ''; refresh();
+        if (window._fetchStoreCatalog) window._fetchStoreCatalog().then(a => { if (a && a.length && storeMode) refresh(); }).catch(() => {});
+        setTimeout(() => input.focus(), 0);
+    };
     window._cmdkRefreshIfOpen = () => { if (isOpen()) refresh(); };   // ⭐言語切替時に開いてれば再描画
     function runSel() { const r = rows[sel]; if (r && typeof r.run === 'function') r.run(); }
 
