@@ -5658,6 +5658,16 @@ function stickyAutoFit(c2, text, w, h, fontFamily, weight) {
     if (!text) return { fs: Math.floor(Math.min(w, h) * 0.25), lines: [] };
     const maxFs = Math.max(10, Math.floor(Math.min(w, h) * 0.45));
     const minFs = 8;
+    // ⭐まず「折り返さず各段落を1行のまま」で最大fsを試す＝短文が縦に積み上がる（縦書きに見える）のを防ぐ
+    const paras = String(text).split('\n');
+    c2.font = `${wt} 100px ${fontFamily}`;
+    let widestPer = 1;
+    for (const pp of paras) widestPer = Math.max(widestPer, c2.measureText(pp || ' ').width / 100);
+    const fsByW = Math.floor((w * 0.98) / widestPer);
+    const fsByH = Math.floor((h * 0.98) / (paras.length * 1.22));
+    const oneLineFs = Math.min(maxFs, fsByW, fsByH);
+    if (oneLineFs >= 13) return { fs: oneLineFs, lines: paras };   // 1行で十分読める大きさなら折り返さない
+    // 長文はこれまで通り 幅で折り返して詰める
     for (let fs = maxFs; fs >= minFs; fs -= 1) {
         c2.font = `${wt} ${fs}px ${fontFamily}`;
         const lines = stickyWrapText(c2, text, w);
