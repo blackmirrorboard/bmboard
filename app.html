@@ -10527,7 +10527,10 @@ const I18N = {
         'crop.hint': 'ドラッグで範囲 · ハンドルで調整 · Enter 適用 · Esc キャンセル', 'crop.reset': 'リセット', 'crop.cancel': 'キャンセル', 'crop.apply': '適用',
         'voice.hint': '↵ 実行　Esc キャンセル',
         'tt.sweep': '消しカスを払う', 'tt.boardsize': 'ボードサイズ（A4等）', 'board.size': 'ボードサイズ', 'board.free': 'なし（無限）', 'board.square': '正方形',
-        'board.flip': '⟳ 裏返す', 'flip.back': '⟳ 裏面 · クリックで表に戻る'
+        'board.flip': '⟳ 裏返す', 'flip.back': '⟳ 裏面 · クリックで表に戻る',
+        'store.badge': '魔法ストア', 'store.sect': 'STORE · 魔法',
+        'store.desc': 'ボード上でできることを魔法として追加できます。選ぶとインストール（⌘Kからいつでも使えます）。',
+        'store.foot': '↵ でインストール · Esc で戻る'
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
@@ -10555,7 +10558,10 @@ const I18N = {
         'crop.hint': 'Drag to select · handles to adjust · Enter to apply · Esc to cancel', 'crop.reset': 'Reset', 'crop.cancel': 'Cancel', 'crop.apply': 'Apply',
         'voice.hint': '↵ run　Esc cancel',
         'tt.sweep': 'Sweep eraser crumbs', 'tt.boardsize': 'Board size (A4, etc.)', 'board.size': 'Board size', 'board.free': 'None (infinite)', 'board.square': 'Square',
-        'board.flip': '⟳ Flip', 'flip.back': '⟳ Back side · click to flip to front'
+        'board.flip': '⟳ Flip', 'flip.back': '⟳ Back side · click to flip to front',
+        'store.badge': 'Spell store', 'store.sect': 'STORE · SPELLS',
+        'store.desc': 'Add board abilities as spells. Pick one to install — then use it anytime from ⌘K.',
+        'store.foot': '↵ to install · Esc to go back'
     }
 };
 function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
@@ -10598,7 +10604,8 @@ const OMNI_CMDS = [
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙' },
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
-    { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic' },
+    { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import' },
+    { cmd:'store',   cat:'spell',   hint:'STORE を開く（魔法をインストール）', hintEn:'Open the STORE (install spells)', _storeView:true, kw:'store ストア 魔法 install インストール ダウンロード 追加 マーケット' },
     { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す', hintEn:'Clear the terminal log' },
     { cmd:'export',  cat:'io',      hint:'書き出し（png / svg / pptx / data）', hintEn:'Export (png / svg / pptx / data)', args:true },
     { cmd:'share',   cat:'io',      hint:'URLで画面を共有', hintEn:'Share the canvas via URL' },
@@ -10707,6 +10714,7 @@ function centerTermPanel() {
     if (!overlay || !input || !listEl) return;
 
     let rows = [], sel = 0, awaitingArg = null, mode = 'list', _favCount = 0, _recentCount = 0;
+    let storeMode = false, storeMsg = '';   // ⭐STORE画面（⌘K内で魔法をインストール）
     const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?', link:'↗', spell:'✦' };
     // ⭐お気に入り（パレット上部に固定表示・★/右クリックでトグル）
     const FAVS_KEY = 'bm_favs';
@@ -10772,6 +10780,10 @@ function centerTermPanel() {
             return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: hint, sc: it.sc || '', favKey, fav,
                 run() { close(); if (window._toggleSettings) window._toggleSettings(); } };
         }
+        if (it._storeView) {   // ⭐STOREを開く（⌘K内の画面）
+            return { kind:'storeview', ico:'✦', name: it.cmd, type: cat, desc: hint, favKey, fav,
+                run() { storeMode = true; storeMsg = ''; input.value = ''; refresh(); setTimeout(() => input.focus(), 0); } };
+        }
         if (it._lang) {   // ⭐言語切替
             return { kind:'lang', ico:'🌐', name: it.cmd, type: cat, desc: hint, favKey, fav, noFav: true,
                 run() { close(); if (window.setLang) window.setLang(it._lang); } };
@@ -10824,11 +10836,17 @@ function centerTermPanel() {
         } else if (rows[0] && rows[0].kind === 'calc') {
             top = detailHtml(rows[0]);   // calc は結果ヒーローだけ上に（通常コマンドはクリーンなリスト＝Raycast）
         }
+        if (storeMode) {   // ⭐STOREの見出し＋インストール結果
+            top = `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">✦ STORE</span><span class="cmdk-badge">${esc(t('store.badge'))}</span></div>`
+                + `<div class="cmdk-detail-desc">${esc(t('store.desc'))}</div>`
+                + (storeMsg ? `<div class="cmdk-detail-foot" style="color:#9ad29a">${esc(storeMsg)}</div>` : `<div class="cmdk-detail-foot">${esc(t('store.foot'))}</div>`)
+                + `</div>`;
+        }
         let listHtml = '';
-        const restLabel = input.value.trim() ? t('pal.cmds') : t('pal.all');
+        const restLabel = storeMode ? t('store.sect') : (input.value.trim() ? t('pal.cmds') : t('pal.all'));
         const allStart = _favCount + _recentCount;
         rows.forEach((r, i) => {
-            if (top) { if (i === 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.actions')) + '</div>'; }
+            if (top) { if (i === 0) listHtml += '<div class="cmdk-sect">' + esc(storeMode ? restLabel : t('pal.actions')) + '</div>'; }
             else {
                 if (i === 0 && _favCount > 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.fav')) + '</div>';
                 if (i === _favCount && _recentCount > 0) listHtml += '<div class="cmdk-sect">' + esc(t('pal.recent')) + '</div>';
@@ -10877,6 +10895,27 @@ function centerTermPanel() {
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = []; _favCount = 0; _recentCount = 0;
+        // ⭐STORE画面：カタログを検索して1つずつインストール
+        if (storeMode) {
+            const cat0 = (window._getStoreCatalog && window._getStoreCatalog()) || [];
+            const installed = new Set(((window._getSpells && window._getSpells()) || []).map(s => s.name));
+            const ql = full.toLowerCase();
+            const list = !ql ? cat0 : cat0.filter(s => (s.name + ' ' + (s.desc || '') + ' ' + (s.author || '')).toLowerCase().indexOf(ql) >= 0);
+            rows = list.map(s => {
+                const have = installed.has(s.name);
+                const meta = `${s.author || ''} · ${(s.ops || s.objects || []).length}要素${s.tag ? ' · ' + s.tag : ''}`;
+                return {
+                    kind: 'store', ico: s.icon || '✦', name: s.name, type: have ? '導入済' : 'インストール',
+                    desc: (s.desc || '') + '　' + meta, noFav: true,
+                    run() {
+                        const nm = window._installSpell && window._installSpell(Object.assign({}, s, { from: 'store' }));
+                        storeMsg = nm ? `「${nm}」をインストールしました — ⌘Kから使えます` : 'インストールに失敗';
+                        refresh();
+                    }
+                };
+            });
+            sel = 0; render(); return;
+        }
         const cv = (typeof safeCalc === 'function') ? safeCalc(full) : null;
         if (cv !== null) {
             const enL = (LANG === 'en');
@@ -10923,8 +10962,8 @@ function centerTermPanel() {
         close();
         if (window._openLink) window._openLink(u, n);   // 登録したらそのまま開く
     }
-    function open()  { capSc = null; capMsg = ''; overlay.classList.add('open'); showList(); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
-    function close() { capSc = null; capMsg = ''; overlay.classList.remove('open'); showList(); }
+    function open()  { capSc = null; capMsg = ''; storeMode = false; storeMsg = ''; overlay.classList.add('open'); showList(); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
+    function close() { capSc = null; capMsg = ''; storeMode = false; storeMsg = ''; overlay.classList.remove('open'); showList(); }
     function toggle(){ isOpen() ? close() : open(); }
     window._openCmdK = open; window._toggleCmdK = toggle;
     window._cmdkRefreshIfOpen = () => { if (isOpen()) refresh(); };   // ⭐言語切替時に開いてれば再描画
@@ -10957,7 +10996,7 @@ function centerTermPanel() {
         if (e.key === 'ArrowDown')    { if (rows.length) { sel = (sel + 1) % rows.length; render(); } e.preventDefault(); }
         else if (e.key === 'ArrowUp') { if (rows.length) { sel = (sel - 1 + rows.length) % rows.length; render(); } e.preventDefault(); }
         else if (e.key === 'Enter')   { e.preventDefault(); runSel(); }
-        else if (e.key === 'Escape')  { e.preventDefault(); close(); }
+        else if (e.key === 'Escape')  { e.preventDefault(); if (storeMode) { storeMode = false; storeMsg = ''; input.value = ''; refresh(); } else close(); }
     });
     // ⭐リンク追加フォームのキー操作（名前→URL→保存 / Esc で一覧に戻る）
     if (lfName) lfName.addEventListener('keydown', e => {
@@ -11984,12 +12023,35 @@ function addSpellFromSelection(name) {
     return { ok: true, name: nm, count: objs.length };
 }
 function runSpell(spell) {
-    if (!spell || !Array.isArray(spell.objects) || !spell.objects.length) return;
-    const tpls = spell.objects.map(o => JSON.parse(JSON.stringify(o)));   // id は _cloneInto が付与
-    const b = _spellBounds(tpls);
-    const vc = (typeof BM !== 'undefined' && BM.viewCenter) ? BM.viewCenter() : { x: 0, y: 0 };
-    const dx = b ? (vc.x - b.cx) : 0, dy = b ? (vc.y - b.cy) : 0;
-    _cloneInto(tpls, dx, dy);   // ビュー中心にスタンプ（新ID・選択状態）
+    if (!spell) return;
+    // ① ユーザー魔法＝シリアライズ済みオブジェクトをビュー中心にスタンプ
+    if (Array.isArray(spell.objects) && spell.objects.length) {
+        const tpls = spell.objects.map(o => JSON.parse(JSON.stringify(o)));
+        const b = _spellBounds(tpls);
+        const vc = (typeof BM !== 'undefined' && BM.viewCenter) ? BM.viewCenter() : { x: 0, y: 0 };
+        const dx = b ? (vc.x - b.cx) : 0, dy = b ? (vc.y - b.cy) : 0;
+        _cloneInto(tpls, dx, dy);
+        return;
+    }
+    // ② STORE内蔵魔法＝宣言的ops（BM.create の白リストのみ・安全）
+    if (Array.isArray(spell.ops) && spell.ops.length) {
+        const vc = (typeof BM !== 'undefined' && BM.viewCenter) ? BM.viewCenter() : { x: 0, y: 0 };
+        S.objects.forEach(o => o.selected = false);
+        const created = [];
+        const side = (typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED) ? 'back' : 'front';
+        for (const op of spell.ops) {
+            try {
+                const props = Object.assign({}, op.props || {});
+                if (op.dx != null) props.x = vc.x + op.dx;
+                if (op.dy != null) props.y = vc.y + op.dy;
+                const o = BM.create(op.type, props);
+                if (o) { o.side = side; o.selected = true; created.push(o.id); }
+            } catch (_) {}
+        }
+        S.selectedId = created.length === 1 ? created[0] : null;
+        S.multiSelected = created.length > 1 ? created : [];
+        saveHistory(); redrawAll();
+    }
 }
 function forgetSpell(name) {
     const a = getSpells(); const i = a.findIndex(s => s.name === name);
@@ -11997,14 +12059,37 @@ function forgetSpell(name) {
 }
 // 魔法をローカルに取り込む（import / STOREインストール共通）。名前衝突は _2 で回避
 function installSpell(s) {
-    if (!s || typeof s.name !== 'string' || !Array.isArray(s.objects)) return null;
+    if (!s || typeof s.name !== 'string' || !(Array.isArray(s.objects) || Array.isArray(s.ops))) return null;
     const cur = getSpells();
     const names = new Set(cur.map(x => x.name));
     let nm = s.name; while (names.has(nm)) nm = nm + '_2';
-    cur.unshift({ v: 1, name: nm, objects: s.objects, count: (s.objects || []).length, created: Date.now(), from: s.from || 'import' });
+    const entry = { v: 1, name: nm, count: Array.isArray(s.objects) ? s.objects.length : (s.ops || []).length, created: Date.now(), from: s.from || 'import' };
+    if (Array.isArray(s.objects)) entry.objects = s.objects;
+    if (Array.isArray(s.ops)) entry.ops = s.ops;
+    if (s.icon) entry.icon = s.icon;
+    if (s.desc) entry.desc = s.desc;
+    cur.unshift(entry);
     saveSpells(cur);
     return nm;
 }
+// ⭐STORE カタログ（内蔵シード＝サーバー不要）。将来は同形式の静的JSONをGitHub Pagesからfetchに差替え可
+const STORE_CATALOG = [
+    { name: '3×3 グリッド', icon: '▦', desc: '3×3 の正方形グリッドを置く（レイアウトの下敷きに）', author: 'kinoshita studio', tag: 'featured',
+      ops: (function () { const o = [], size = 90, gap = 24, step = 114; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) o.push({ type: 'square', dx: (c - 1) * step - size / 2, dy: (r - 1) * step - size / 2, props: { w: size, h: size } }); return o; })() },
+    { name: '付箋 3色', icon: '▢', desc: '黄・桃・青の付箋を横に3枚（発散用）', author: 'kinoshita studio', tag: 'new',
+      ops: [ { type: 'sticky', dx: -330, dy: -100, props: { w: 200, h: 200, color: '#FFE873', text: '' } },
+             { type: 'sticky', dx: -100, dy: -100, props: { w: 200, h: 200, color: '#FFC1CC', text: '' } },
+             { type: 'sticky', dx:  130, dy: -100, props: { w: 200, h: 200, color: '#BEE3FF', text: '' } } ] },
+    { name: 'KV枠 + タイトル', icon: '▧', desc: 'OG(1200×630)の枠と大きなタイトル', author: 'kinoshita studio', tag: 'featured',
+      ops: [ { type: 'square', dx: -600, dy: -315, props: { w: 1200, h: 630, fill: '#FAFAF8' } },
+             { type: 'text',   dx: -540, dy:  -10, props: { text: 'TITLE', fontSize: 96 } } ] },
+    { name: 'チェックリスト', icon: '☑', desc: '☐ 3行の付箋（今日やること）', author: 'kinoshita studio', tag: 'new',
+      ops: [ { type: 'sticky', dx: -140, dy: -120, props: { w: 280, h: 240, color: '#FFE873', text: '☐ \n☐ \n☐ ' } } ] },
+    { name: '見出し + 罫線', icon: '≡', desc: '見出しテキストと下線（章の頭に）', author: 'kinoshita studio', tag: 'new',
+      ops: [ { type: 'text',   dx: -200, dy: -40, props: { text: '見出し', fontSize: 48 } },
+             { type: 'square', dx: -210, dy:  20, props: { w: 420, h: 3, fill: '#111111', strokeOff: true } } ] },
+];
+window._getStoreCatalog = () => STORE_CATALOG;
 window._getSpells = getSpells;
 window._runSpell = runSpell;
 window._addSpellFromSelection = addSpellFromSelection;
