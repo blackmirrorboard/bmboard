@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<title>BMBoard ハブ構想 — 楽器の家</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --void:#0b0b0e; --void2:#141419;
+  --glass:rgba(26,26,32,.62); --glass-line:rgba(255,255,255,.08);
+  --paper:#ece9e0; --paper2:#e2ded2; --paper-line:#c9c4b6;
+  --ink:#f3f2ee; --dim:#9d9da8; --faint:#6b6b76;
+  --pencil:#3a3a3e;
+  --wire:#3b6fe0;               /* 接続＝データの流れ。ここだけ色を使う */
+  --wire-soft:rgba(59,111,224,.16);
+  --warn:#e0a24a;
+  --mono:"SF Mono","JetBrains Mono",ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  --maxw:1080px;
+}
+@media (prefers-color-scheme:light){
+  :root{ --void:#e7e4db; --void2:#f0eee7; --glass:rgba(255,255,255,.66);
+    --glass-line:rgba(0,0,0,.09); --ink:#1b1b1e; --dim:#5c5c66; --faint:#87879a; }
+}
+:root[data-theme="dark"]{ --void:#0b0b0e; --void2:#141419; --glass:rgba(26,26,32,.62);
+  --glass-line:rgba(255,255,255,.08); --ink:#f3f2ee; --dim:#9d9da8; --faint:#6b6b76; }
+:root[data-theme="light"]{ --void:#e7e4db; --void2:#f0eee7; --glass:rgba(255,255,255,.66);
+  --glass-line:rgba(0,0,0,.09); --ink:#1b1b1e; --dim:#5c5c66; --faint:#87879a; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--void);color:var(--ink);font-family:var(--sans);line-height:1.8;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+.shell{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.mono{font-family:var(--mono)}
+
+/* ── eyebrow / headings ── */
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--faint)}
+h1{font-size:clamp(30px,5.4vw,58px);line-height:1.12;letter-spacing:-.02em;font-weight:700;
+  text-wrap:balance;margin:18px 0}
+h2{font-size:clamp(22px,3.2vw,34px);line-height:1.2;letter-spacing:-.015em;font-weight:700;text-wrap:balance}
+h3{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.lead{font-size:clamp(15px,1.8vw,18px);color:var(--dim);max-width:62ch;text-wrap:balance}
+b.hl{color:var(--ink);font-weight:600}
+em.wire{font-style:normal;color:var(--wire);font-weight:600}
+
+/* ── hero ── */
+header{padding:96px 0 30px;position:relative}
+.badge{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.1em;color:var(--dim);border:1px solid var(--glass-line);border-radius:100px;
+  padding:6px 14px;background:var(--glass);backdrop-filter:blur(10px)}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:var(--wire);box-shadow:0 0 10px var(--wire)}
+
+/* ── mockup ── */
+.stage{margin:44px 0 8px}
+.frame{border-radius:16px;overflow:hidden;border:1px solid var(--glass-line);
+  box-shadow:0 40px 100px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.03) inset;background:var(--void2)}
+.tbar{display:flex;align-items:center;gap:7px;padding:11px 15px;background:var(--void2);
+  border-bottom:1px solid var(--glass-line)}
+.tbar i{width:11px;height:11px;border-radius:50%;background:#3a3a42;display:block}
+.tbar b{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.14em;margin-left:8px;font-weight:400}
+.split{display:grid;grid-template-columns:1.35fr 1fr;height:min(52vh,440px);position:relative}
+/* left = paper board */
+.board{background:
+    linear-gradient(var(--paper-line) 1px,transparent 1px) 0 0/26px 26px,
+    linear-gradient(90deg,var(--paper-line) 1px,transparent 1px) 0 0/26px 26px,
+    var(--paper);
+  background-blend-mode:soft-light,soft-light,normal;position:relative;overflow:hidden}
+.board svg{position:absolute;inset:0;width:100%;height:100%}
+.board .note{position:absolute;font-family:var(--sans);color:var(--pencil);font-size:12.5px;font-weight:600}
+.tag{position:absolute;top:12px;left:14px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+  color:var(--faint)}
+/* the magnet seam */
+.seam{position:absolute;top:0;bottom:0;left:calc(57.4% - 1px);width:2px;
+  background:linear-gradient(var(--wire),transparent 60%);opacity:.0;
+  animation:seam 5s ease-in-out infinite}
+@keyframes seam{0%,42%{opacity:0}48%,60%{opacity:.9}100%{opacity:0}}
+.snaphint{position:absolute;top:14px;left:53%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--wire);
+  border:1px dashed var(--wire);border-radius:5px;padding:3px 8px;background:var(--wire-soft);
+  opacity:0;animation:hint 5s ease-in-out infinite}
+@keyframes hint{0%,40%{opacity:0;transform:translate(-50%,-6px)}50%,64%{opacity:1;transform:translate(-50%,0)}80%,100%{opacity:0}}
+/* right = docked tool (Onore) */
+.tool{background:var(--glass);backdrop-filter:blur(22px) saturate(1.4);
+  border-left:1px solid var(--glass-line);display:flex;flex-direction:column}
+.tool .th{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid var(--glass-line)}
+.tool .th .ic{font-size:15px}
+.tool .th .nm{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:var(--ink)}
+.tool .th .x{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.tool .body{flex:1;padding:16px 14px;display:flex;flex-direction:column;gap:12px;justify-content:center}
+/* onore keys */
+.keys{display:flex;gap:5px;align-items:flex-end;height:88px}
+.keys span{flex:1;border-radius:3px 3px 2px 2px;background:linear-gradient(var(--wire),rgba(59,111,224,.25));
+  opacity:.85;animation:puls 2.4s ease-in-out infinite}
+.keys span:nth-child(2){animation-delay:.2s}.keys span:nth-child(3){animation-delay:.4s}
+.keys span:nth-child(4){animation-delay:.6s}.keys span:nth-child(5){animation-delay:.8s}
+.keys span:nth-child(6){animation-delay:1s}.keys span:nth-child(7){animation-delay:1.2s}
+@keyframes puls{0%,100%{transform:scaleY(.55);opacity:.55}50%{transform:scaleY(1);opacity:.95}}
+.keys span{transform-origin:bottom}
+.wave{height:34px;border-radius:6px;background:var(--wire-soft);position:relative;overflow:hidden}
+.wave::after{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent 0 4px,rgba(59,111,224,.5) 4px 5px)}
+.toolnote{font-family:var(--mono);font-size:10.5px;color:var(--dim);line-height:1.7}
+.caption{margin-top:16px;font-family:var(--mono);font-size:11.5px;color:var(--faint);
+  letter-spacing:.04em;text-align:center}
+
+/* ── generic section ── */
+section{padding:66px 0;border-top:1px solid var(--glass-line)}
+.sec-h{display:flex;flex-direction:column;gap:12px;margin-bottom:38px}
+
+/* stages */
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:st}
+@media(max-width:760px){.stages{grid-template-columns:1fr}}
+.st{padding:22px;border-radius:13px;border:1px solid var(--glass-line);background:var(--glass);
+  backdrop-filter:blur(14px);position:relative}
+.st .n{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.14em}
+.st h3{margin:12px 0 8px}
+.st p{font-size:14px;color:var(--dim)}
+.st .when{margin-top:14px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  display:inline-block;padding:4px 10px;border-radius:6px}
+.st.now .when{color:var(--wire);background:var(--wire-soft)}
+.st.later .when{color:var(--warn);background:rgba(224,162,74,.13)}
+
+/* scenarios */
+.scn{display:flex;flex-direction:column;gap:14px}
+.card{display:grid;grid-template-columns:132px 1fr;gap:22px;padding:24px;border-radius:13px;
+  border:1px solid var(--glass-line);background:var(--glass);backdrop-filter:blur(14px);
+  align-items:center;transition:border-color .25s,transform .25s}
+.card:hover{border-color:color-mix(in srgb,var(--wire) 45%,transparent);transform:translateY(-2px)}
+@media(max-width:640px){.card{grid-template-columns:1fr;gap:14px}}
+.card .pair{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.chip{font-family:var(--mono);font-size:11px;letter-spacing:.05em;padding:5px 10px;border-radius:7px;
+  background:var(--void2);border:1px solid var(--glass-line);white-space:nowrap}
+.chip.tool-c{color:var(--wire)}
+.card .flow{font-family:var(--mono);font-size:12px;color:var(--faint);margin:2px 0}
+.card h3{margin-bottom:7px}
+.card p{font-size:14.5px;color:var(--dim)}
+.card p .k{font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--void2);
+  padding:1px 6px;border-radius:4px;border:1px solid var(--glass-line)}
+
+/* can / cannot */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.cols{grid-template-columns:1fr}}
+.col{padding:24px;border-radius:13px;border:1px solid var(--glass-line);background:var(--glass);backdrop-filter:blur(14px)}
+.col.can{box-shadow:inset 3px 0 0 var(--wire)}
+.col.cant{box-shadow:inset 3px 0 0 var(--warn)}
+.col h3{margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.col ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+.col li{font-size:14px;color:var(--dim);padding-left:22px;position:relative;line-height:1.65}
+.col li::before{position:absolute;left:0;top:0;font-family:var(--mono);font-size:12px}
+.col.can li::before{content:"＋";color:var(--wire)}
+.col.cant li::before{content:"−";color:var(--warn)}
+.col li b{color:var(--ink);font-weight:600}
+
+/* closing */
+.close{padding:70px 0 96px;text-align:center;border-top:1px solid var(--glass-line)}
+.close .big{font-size:clamp(20px,3vw,30px);font-weight:700;letter-spacing:-.01em;text-wrap:balance;max-width:22ch;margin:0 auto}
+.close p{margin-top:18px;color:var(--dim);max-width:52ch;margin-inline:auto;font-size:15px}
+.foot{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.1em;margin-top:40px}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(20px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  .rv{opacity:1;transform:none} .seam,.snaphint,.keys span{animation:none}
+  .keys span{transform:scaleY(.8)}
+}
+</style>
+
+<div class="shell">
+
+<header>
+  <div class="badge rv"><span class="dot"></span><span class="mono">構想メモ · 木下用 · 2026-07-25</span></div>
+  <h1 class="rv">板の横に、<br>自分の道具がカチッとハマる。</h1>
+  <p class="lead rv"><b class="hl">ターミナルパネルが吸着したのと同じ器</b>に、Onore や Hori を入れる。
+    出ていかずに、板で考えながら隣で鳴らす・作る・戻す。<b class="hl">Tauri を待たず、今日から動く。</b></p>
+
+  <div class="stage rv">
+    <div class="frame">
+      <div class="tbar"><i></i><i></i><i></i><b>BM BOARD</b></div>
+      <div class="split">
+        <!-- 左：紙のボード -->
+        <div class="board">
+          <div class="tag mono">BOARD — 紙</div>
+          <svg viewBox="0 0 460 440" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <g fill="none" stroke="#3a3a3e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".82">
+              <path d="M60 150 C60 96 120 74 190 78 C255 82 300 108 296 156 C292 204 250 222 188 220 C120 218 60 200 60 150 Z"/>
+              <path d="M120 270 q60 22 120 8 t100 -6"/>
+              <path d="M118 300 q70 26 150 6"/>
+              <polygon points="190,320 224,384 156,384"/>
+            </g>
+            <text x="70" y="360" font-family="var(--sans)" font-size="19" font-weight="700" fill="#2a2a2e">構成 A</text>
+          </svg>
+          <div class="note" style="right:26px;bottom:26px">鳴らして<br>確かめる →</div>
+          <div class="seam"></div>
+          <div class="snaphint mono">SNAP</div>
+        </div>
+        <!-- 右：ドックした道具（Onore） -->
+        <div class="tool">
+          <div class="th"><span class="ic">🎛</span><span class="nm">ONORE</span><span class="x mono">⌘⇧O · 閉じる</span></div>
+          <div class="body">
+            <div class="keys"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="wave"></div>
+            <div class="toolnote">板の「構成 A」から音が鳴っている。<br>形を変えると、音が変わる。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption mono">左＝いつもの板／右＝ドックした Onore。境界はターミナルと同じマグネットで吸着する。</div>
+  </div>
+</header>
+
+<!-- 使用想定 -->
+<section>
+  <div class="sec-h">
+    <span class="eyebrow rv">使用想定 — こういう時に開く</span>
+    <h2 class="rv">切り替えなしで、板と道具を往復する。</h2>
+  </div>
+
+  <div class="scn">
+    <div class="card rv">
+      <div class="pair">
+        <span class="chip">板</span><span class="mono" style="color:var(--faint)">→</span><span class="chip tool-c">🎛 Onore</span>
+      </div>
+      <div>
+        <h3>構成を描きながら、その場で鳴らす</h3>
+        <p>板にセットリストや曲の構造を鉛筆で描く。隣の Onore で<b class="k" style="color:var(--ink)">実際に音を出して</b>並びを確かめ、違えば板に描き直す。DAW と紙を行き来していたのが、一つの面で終わる。</p>
+      </div>
+    </div>
+
+    <div class="card rv">
+      <div class="pair">
+        <span class="chip tool-c">✍ SAKUJI</span><span class="mono" style="color:var(--faint)">→</span><span class="chip">板</span>
+      </div>
+      <div>
+        <h3>字を作って、そのまま板に置く</h3>
+        <p>隣の SAKUJI でロゴの一文字を作る。書き出さずに <span class="k">板に置く</span> で、板の上のラフに重ねて全体のバランスを見る。「作字 → 書き出し → 別アプリで確認」の三往復が消える。</p>
+      </div>
+    </div>
+
+    <div class="card rv">
+      <div class="pair">
+        <span class="chip">板の色</span><span class="mono" style="color:var(--faint)">→</span><span class="chip tool-c">🟦 Tsubu</span><span class="mono" style="color:var(--faint)">→</span><span class="chip">板</span>
+      </div>
+      <div>
+        <h3>板の色を渡して、変換して、戻す</h3>
+        <p>板で選んだ色や文字を Tsubu に渡すと、<b class="k" style="color:var(--ink)">8bitドットに変換</b>されて板に戻ってくる。道具が「別のサイト」ではなく「板の続き」になる。<em class="wire">これは木下の道具どうしだからできる。</em></p>
+      </div>
+    </div>
+
+    <div class="card rv">
+      <div class="pair">
+        <span class="chip tool-c">◳ Hori</span><span class="mono" style="color:var(--faint)">→</span><span class="chip">板</span>
+      </div>
+      <div>
+        <h3>立体を作って、画像として板に貼る</h3>
+        <p>Hori で線を引いて立体を起こし、その一枚絵を板にスタンプする。板がムードボードのまま、three.js の実物が横にある。<span class="k">gif</span> で動きごと記録することもできる。</p>
+      </div>
+    </div>
+
+    <div class="card rv">
+      <div class="pair">
+        <span class="chip tool-c">🏪 STORE</span><span class="mono" style="color:var(--faint)">＋</span><span class="chip tool-c">📥 申請</span>
+      </div>
+      <div>
+        <h3>作った楽器を、その場で棚に並べる</h3>
+        <p>Siren・Kaibou・組・膜…と増える道具が、⌘K から名前で呼べる棚に並ぶ。<b class="k" style="color:var(--ink)">「楽器をインストールして弾く考える面」</b>の、実際の家がここになる。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3段階 -->
+<section>
+  <div class="sec-h">
+    <span class="eyebrow rv">積み方 — 三段階</span>
+    <h2 class="rv">埋め込みから、会話へ。</h2>
+    <p class="lead rv">下の段ほど深い。<b class="hl">段階1と2は今日、Tauri 無しで作れる。</b>器を一度作れば、その先も器は作り直さない。</p>
+  </div>
+  <div class="stages">
+    <div class="st now rv">
+      <div class="n mono">STAGE 1</div>
+      <h3>リンクで開く</h3>
+      <p>名前を打つと新しいタブで開く。今できること。板からは出ていく。</p>
+      <span class="when mono">できている</span>
+    </div>
+    <div class="st now rv">
+      <div class="n mono">STAGE 2</div>
+      <h3>板に埋め込む</h3>
+      <p>ターミナルと同じ器に道具を挿す。隣に常駐し、同時に見える。マグネットで吸着。</p>
+      <span class="when mono">今日 · $0 · Tauri不要</span>
+    </div>
+    <div class="st later rv">
+      <div class="n mono">STAGE 3</div>
+      <h3>板と道具が会話する</h3>
+      <p>板の選択を道具へ渡し、結果を受け取る。postMessage だけ。木下の道具どうしだから鍵を渡せる。</p>
+      <span class="when mono">Web標準のみ · サーバー不要</span>
+    </div>
+  </div>
+</section>
+
+<!-- できる / できない -->
+<section>
+  <div class="sec-h">
+    <span class="eyebrow rv">正直な線引き</span>
+    <h2 class="rv">木下の道具なら全部。他社は壁の向こう。</h2>
+  </div>
+  <div class="cols">
+    <div class="col can rv">
+      <h3>できる<span class="mono" style="font-size:11px;color:var(--wire);letter-spacing:.1em">— 今日から</span></h3>
+      <ul>
+        <li><b>Onore / Hori / Kumi / Tsubu / SAKUJI / KODOCO</b> を板に埋め込む（実測で全部 ✅）</li>
+        <li>ターミナルの<b>マグネット・ドック・リサイズ</b>をそのまま流用</li>
+        <li>板の<b>選択やデータを道具に渡す</b>（postMessage・段階3）</li>
+        <li>⌘K から<b>名前で呼び出す</b>（既存の link 機能の延長）</li>
+      </ul>
+    </div>
+    <div class="col cant rv">
+      <h3>できない<span class="mono" style="font-size:11px;color:var(--warn);letter-spacing:.1em">— Tauri でも限界あり</span></h3>
+      <ul>
+        <li><b>Figma / ChatGPT / Notion の画面そのもの</b>は iframe 拒否。子webview（Tauri）が要る</li>
+        <li>他社の中身に<b>データを渡す</b>ことはできない（向こうに受け口が無い）</li>
+        <li>Tauri でも<b>板と一緒にズームする窓</b>は作れない（浮く窓が限界）</li>
+        <li>ただし外部AIは<b>APIで話せば</b>iframeの壁ごと消える（BYO-AI／申請ボックスが実例）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="close shell">
+  <div class="big rv">これは Tauri の前哨戦ではない。<br>それ自体が「楽器の家」だ。</div>
+  <p class="rv">段階2の器を作れば、将来 Tauri に進んでも<b class="hl">中身を差し替えるだけ</b>。今日の作業は無駄にならない。<br>ただし——今すぐ要るとは限らない。まずこの絵で、要るかどうかを決めていい。</p>
+  <div class="foot mono rv">BMBoard · 楽器の家 · 木下スタジオ</div>
+</div>
+
+</div>
+
+<script>
+(function(){
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+  },{threshold:.14,rootMargin:"0px 0px -6% 0px"});
+  document.querySelectorAll(".rv").forEach(function(el){ io.observe(el); });
+})();
+</script>
+
+</head>
