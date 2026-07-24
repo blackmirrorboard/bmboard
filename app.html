@@ -4733,11 +4733,22 @@ function redrawAll() {
     else
         ctx.setTransform(VIEW.scale*dpr, 0, 0, VIEW.scale*dpr, VIEW.tx*dpr, VIEW.ty*dpr);
     drawBoardFrame();   // ⭐紙の枠（ボードサイズ指定時のみ・オブジェクトの背後）
+    // ⭐表裏：見えない側の線だけ薄く。鉛筆は内部で自前αを使うので globalAlpha は効かない→
+    //   「他側を描く→紙色ウォッシュで覆う→今側を上に描く」の2パスで薄くする。
     const _viewSide = BOARD_FLIPPED ? 'back' : 'front';
-    for (const obj of S.objects) {
-        if (!obj.side) obj.side = _viewSide;   // ⭐初回描画時の側で確定（復元分は起動時=表で確定）
-        if (obj.side !== _viewSide) { ctx.save(); ctx.globalAlpha = FLIP_BLEED_ALPHA; renderObject(obj); ctx.restore(); }   // 見えない側＝薄く裏写り
-        else renderObject(obj);
+    for (const obj of S.objects) { if (!obj.side) obj.side = _viewSide; }   // 初回描画時の側で確定
+    const _others = S.objects.filter(o => o.side !== _viewSide);
+    if (_others.length) {
+        for (const obj of _others) renderObject(obj);                       // ① 他側（薄くしたい）
+        const washA = 1 - FLIP_BLEED_ALPHA;
+        const wash = (MODE === 'dark') ? `rgba(19,19,21,${washA})` : (MODE === 'gray') ? `rgba(220,219,213,${washA})` : `rgba(245,243,237,${washA})`;
+        ctx.save();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);                             // ② 画面全面を紙色で覆う
+        ctx.fillStyle = wash; ctx.fillRect(0, 0, CW, CH);
+        ctx.restore();
+        for (const obj of S.objects) { if (obj.side === _viewSide) renderObject(obj); }   // ③ 今側を上に
+    } else {
+        for (const obj of S.objects) renderObject(obj);
     }
     if (S.isDown && isShapeTool(S.tool) && S.startPt && S.curPt) renderPreview();
     // Pen stroke in-progress (snap state changes trigger full redraw)
@@ -4751,8 +4762,8 @@ function redrawAll() {
         if (!document.body.classList.contains('bm-paper')) document.body.classList.add('bm-paper');
         _applyPaperGrain();
     }
-    // ⭐消しカスを紙の上に（ワールド座標のまま）
-    if (_eraseDebris.length) _drawEraseDebris();
+    // ⭐消しカスを紙の上に（ワールド座標のまま）。裏面では表示しない＝裏に消しカスはありえない
+    if (_eraseDebris.length && !BOARD_FLIPPED) _drawEraseDebris();
 
     // Marquee selection rectangle
     if (S.marquee) {
