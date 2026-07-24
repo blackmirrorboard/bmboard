@@ -1715,20 +1715,86 @@
 
         #usageOverlay.open { display: flex; }
 
+        /* ⭐ usage = Raycast風ドキュメント（検索＋サイドバー＋行） */
         .usage-box {
-            background: #0c0c0c;
-            border: 1px solid var(--line);
-            padding: 28px 32px;
-            max-width: 500px;
-            width: 92%;
-            max-height: 82vh;
-            overflow-y: auto;
+            background: rgba(24,24,26,0.86);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            backdrop-filter: blur(24px) saturate(160%);
+            border-radius: 12px;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.09) inset, 0 24px 60px rgba(0,0,0,0.6);
+            background-clip: padding-box;
+            width: min(900px, 94vw);
+            height: min(620px, 86vh);
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
+        .u-head {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            flex: none;
+        }
+        .u-head .u-ico { font-size: 15px; opacity: .85; }
+        .u-search {
+            flex: 1; background: none; border: none; outline: none;
+            font-family: inherit; font-size: 14px; color: #f2f2f2;
+        }
+        .u-search::placeholder { color: rgba(255,255,255,0.32); }
+        .u-x {
+            background: none; border: none; cursor: pointer; padding: 4px 7px;
+            color: rgba(255,255,255,0.45); font-size: 13px; border-radius: 6px;
+            font-family: inherit;
+        }
+        .u-x:hover { background: rgba(255,255,255,0.08); color: #eee; }
 
-        .usage-box h2 { font-size: 9px; letter-spacing: 0.22em; color: var(--dim); margin-bottom: 20px; }
-        .usage-box h3 { font-size: 8px; letter-spacing: 0.18em; color: var(--dim); margin: 18px 0 8px; text-transform: uppercase; }
-        .usage-box pre { font-size: 11px; line-height: 1.75; color: var(--mid); white-space: pre-wrap; }
-        .usage-box pre b { color: var(--glow); }
+        .u-body { flex: 1; display: flex; min-height: 0; }
+        .u-nav {
+            width: 186px; flex: none; overflow-y: auto;
+            padding: 8px 8px 12px;
+            border-right: 1px solid rgba(255,255,255,0.07);
+        }
+        .u-nav button {
+            display: flex; align-items: center; gap: 8px; width: 100%;
+            background: none; border: none; cursor: pointer; text-align: left;
+            font-family: inherit; font-size: 12px; color: rgba(255,255,255,0.62);
+            padding: 7px 9px; border-radius: 7px; line-height: 1.3;
+        }
+        .u-nav button:hover { background: rgba(255,255,255,0.06); color: #eee; }
+        .u-nav button.on { background: rgba(255,255,255,0.11); color: #fff; }
+        .u-nav button em { font-style: normal; font-size: 13px; width: 16px; text-align: center; flex: none; }
+
+        .u-main { flex: 1; overflow-y: auto; padding: 14px 18px 26px; min-width: 0; }
+        .u-sec + .u-sec { margin-top: 22px; }
+        .u-sec h3 {
+            font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+            color: rgba(255,255,255,0.38); margin: 0 0 4px; padding: 0 6px;
+        }
+        .u-sec .u-note { font-size: 11.5px; color: rgba(255,255,255,0.42); padding: 2px 6px 6px; line-height: 1.6; }
+        .u-row {
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 7px 6px; border-radius: 7px;
+        }
+        .u-row:hover { background: rgba(255,255,255,0.05); }
+        .u-row .u-k { flex: none; width: 200px; display: flex; flex-wrap: wrap; gap: 4px; }
+        .u-row .u-d { flex: 1; font-size: 12.5px; line-height: 1.6; color: rgba(255,255,255,0.72); min-width: 0; }
+        .u-row .u-d small { display: block; color: rgba(255,255,255,0.38); font-size: 11px; margin-top: 2px; }
+        kbd.u-c {
+            font-family: inherit; font-size: 11.5px; line-height: 1.5;
+            padding: 2px 7px; border-radius: 5px;
+            background: rgba(255,255,255,0.10);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.09) inset;
+            color: #f0f0f0; white-space: nowrap;
+        }
+        .u-empty { padding: 40px 6px; text-align: center; color: rgba(255,255,255,0.35); font-size: 12.5px; }
+
+        @media (max-width: 720px) {
+            .usage-box { height: 88vh; }
+            .u-nav { display: none; }
+            .u-row { flex-direction: column; gap: 3px; }
+            .u-row .u-k { width: auto; }
+        }
 
         .usage-close {
             display: block; margin-top: 20px; background: none;
@@ -3258,171 +3324,15 @@
 <!-- Usage overlay -->
 <div id="usageOverlay">
     <div class="usage-box">
-        <h2>USAGE — BLACK MIRROR BOARD v1.3</h2>
-        <h3>v1.3 NEW</h3>
-        <pre><b>GIF on canvas</b>           drop a <code>.gif</code> file → animates in place
-                            (copy-paste from web converts to PNG; use file D&amp;D)
-<b>align &lt;direction&gt;</b>       align 2+ selected objects:
-                            <code>left</code> / <code>center</code> / <code>right</code> / <code>top</code> / <code>middle</code> / <code>bottom</code>
-<b>distribute h | v</b>      evenly space 3+ selected objects (by center)
-<b>tpl &lt;name&gt;</b>             instant scaffold at view center:
-                            <code>wireframe</code> · <code>kanban</code> · <code>mindmap</code> · <code>moodboard</code>
-                            <code>tpl</code> alone opens a picker modal
-
-<b>bg-pattern &lt;name&gt;</b>       <code>dots</code> / <code>grid</code> / <code>cross</code> / <code>dotted-grid</code> / <code>stripes</code>
-<b>bg-opacity 0-100</b>        adjust background pattern opacity
-<b>bg none</b>                  clear background pattern
-<b>drawmode &lt;name&gt;</b>          <code>classic</code> (BMBoard signature pencil) / <code>tldraw</code> (smooth vector style)
-<b>DUP button</b> (header)     1-tap duplicate of selected object — mobile-friendly,
-                            no long-press required</pre>
-        <h3>TOOLS</h3>
-        <pre><b>↑ Select</b>   tap/click · drag to move · Del to delete
-         ↳ drag ○ handle above box to rotate
-         ↳ drag blue □ anchors to deform (single select)
-         ↳ drag on empty canvas → marquee multi-select
-<b>✎ Pen</b>      draw freely — shape detected on lift
-<b>⌫ Eraser</b>   tap object to remove · with selection: 1-tap batch-delete
-<b>○ △ □ →</b>   drag to place shape → terminal fires
-<b>🪣 Fill</b>    tap bucket → pick none/black/grey/white
-<b>T  Text</b>    tap canvas, type, Enter to confirm</pre>
-        <h3>MARQUEE (v0.9)</h3>
-        <pre>Drag on empty canvas → blue dotted rect.
-Release → all fully-enclosed objects selected.
-  drag      move whole group
-  ○ handle  rotate whole group
-  Del       delete all selected (Eraser tap on mobile)
-  Esc       deselect all</pre>
-        <h3>PAN / ZOOM (v0.7+)</h3>
-        <pre><b>Space + drag</b>   pan canvas (desktop)
-<b>2-finger drag</b>  pan canvas (mobile / trackpad)
-<b>Pinch</b>          zoom in / out (touch)
-<b>Wheel</b>          zoom in / out (mouse)
-<b>Dbl-tap/click</b>  reset view to 100%</pre>
-        <h3>SAVE / LOAD (v0.7+)</h3>
-        <pre><b>SAVE</b>   download .json — all objects + terminal log
-<b>OPEN</b>   import .json — fully restore project
-Local only. No upload. No account required.
-
-<b>⚠ IMAGES &amp; AUTOSAVE</b>
-Autosave (localStorage) stores shapes, text, and
-positions — but <b>NOT image pixel data</b>.
-If your board contains images, always <b>SAVE to .json</b>
-before closing or reloading. Images are fully
-embedded in the .json and restore on OPEN.</pre>
-        <h3>TERMINAL FILE OPS (v1.2)</h3>
-        <pre><b>save &lt;name&gt;</b>   commit canvas → <code>blackmirror / projects</code>
-<b>ls</b>            list every snapshot
-<b>load &lt;name&gt;</b>   restore a snapshot to the canvas
-
-snapshots live in <b>IndexedDB</b> — survive reloads, no upload.</pre>
-        <h3>ANCHOR POINTS</h3>
-        <pre>Select → blue □ anchors appear. Drag to deform:
-  ○  4 edge points (radii)
-  △  3 vertices (free edit)
-  □  4 corners + 4 edge midpoints
-  →  start + end endpoints
-  ✎✐ every vertex editable (pen strokes auto-simplified)</pre>
-        <h3>FILL</h3>
-        <pre><b>○</b>  outline  <b>●</b>  black  <b>◑</b>  grey  <b>□</b>  white
-Set before drawing, or apply to selected object.</pre>
-        <h3>KEYBOARD</h3>
-        <pre><b>S P N E C G Q A T</b>  switch tool (N = path/anchor)
-<b>I</b>                  upload image from disk
-<b>X</b>                  export selection → transparent PNG
-<b>1 2 3</b>               line width
-<b>Space</b>              hold to pan
-<b>Shift</b> (resize)     lock aspect ratio
-<b>Alt / Option</b> (resize)  scale from center
-<b>Cmd+Z</b> / <b>Cmd+Shift+Z</b>   undo / redo
-<b>Del / Backspace</b>     delete selected
-<b>Esc</b>                cancel / deselect</pre>
-        <h3>SHAPES → COMMANDS</h3>
-        <pre><b>○</b>  git init / npm create
-<b>◎</b>  docker run / kubectl apply
-<b>△</b>  git branch / if-else build
-<b>□</b>  docker build / terraform
-<b>→</b>  curl | jq / grep | sort
-<b>T</b>  stdin echo → terminal</pre>
-        <h3>TERMINAL COMMANDS</h3>
-        <pre><b>dark</b> / <b>light</b> / <b>gray</b>     theme switch
-<b>Black Mirror</b>             live selfie wipe · top-right · <b>drag to reposition</b>
-<b>Black Mirror off</b>         dismiss the selfie wipe
-<b>youtube</b>                  a surprise awaits
-<b>help</b> / <b>?</b>                 quick in-terminal reference
-<b>usage</b> / <b>man</b> / <b>docs</b>       summon this manual overlay
-<b>clear</b> / <b>flush</b>             wipe terminal output
-<b>objects</b>                  dump every object (debug)</pre>
-        <h3>PRESET SPELLS (v1.2)</h3>
-        <pre><b>$scatter</b>                scatter selected objects
-<b>$grid-3x3</b>               place a 3×3 square grid
-<b>$sticky-3x3</b>             place a 3×3 yellow sticky-note grid
-<b>$sakura</b>                 桜の花びらをループで降らせる (toggle)
-<b>$rain</b>                   雨をループで降らせる (toggle)
-<b>$leaf</b>                   茶色の落ち葉をループで降らせる (toggle)
-<b>$snow</b>                   雪をループで降らせる (toggle)
-<b>$powerpoint</b>             16:9 slide frame + title/body プレースホルダ配置
-<b>$biwako-blue</b>            retint every stroke to <code>#0044CC</code>
-<b>$make-img &lt;kw&gt; &lt;n&gt;</b>      summon n images (Lorem Flickr, no key) · alias: $fetch-img
-<b>$monoclo</b>                grayscale the selected image(s)
-<b>$svg</b>                    export selection as editable vector SVG</pre>
-        <h3>IMAGES (v1.2)</h3>
-        <pre><b>I</b> key              upload an image from disk (dataURL)
-<b>make-img sea 6</b>     6 photos · auto 3×2 grid · color by default
-<b>monoclo</b>            select image(s) → grayscale · Cmd+Z reverts
-  · max 25 per fetch · grid cols = ceil(√n)
-  · CORS-safe images are dataURL-persisted into bundles
-
-<b>⚠ IMAGE PERSISTENCE</b>
-Images are <b>NOT saved by autosave</b> (localStorage limit).
-They exist in memory for the current session only.
-→ Use <b>SAVE</b> or <b>export data</b> to write a <b>.json</b> file.
-→ The .json contains full image data and restores on <b>OPEN</b>.
-→ Tip: save to iCloud Drive to share between Mac and iPhone.</pre>
-        <h3>SPELL MANAGEMENT</h3>
-        <pre><b>register &lt;name&gt; &lt;js&gt;</b>   save a JS action as <code>$name</code>
-<b>alias &lt;new&gt;=&lt;old&gt;</b>     duplicate under a new name
-<b>share &lt;name&gt;</b>          copy command JSON → clipboard
-<b>share</b> (no args)        generate a URL that re-opens your exact canvas
-<b>list</b>                   preset + user spells inventory
-<b>forget &lt;name&gt;</b>         remove a user spell (presets protected)
-
-<b>bgm 1 on</b>               start ambient bgm track 1 (lofi)
-<b>bgm 2 on</b> / <b>bgm 3 on</b>      switch to track 2 / 3
-<b>bgm off</b>                stop bgm
-<b>volume off</b> / <b>mute</b>       silence click + timer beep + chime
-
-paste <code>{"command":"...","action":"..."}</code>
-into the terminal → auto-register. Enter not required.
-
-drop a <code>.json</code> file anywhere on the board
-  · single / array / blackmirror.spells / blackmirror.bundle
-  · same name → renamed <code>&lt;name&gt;_2026-04-19</code>
-  · identical action → skipped · preset never overwritten
-
-spells live in <b>IndexedDB</b> (<code>blackmirror / commands</code>),
-mirrored to <code>localStorage</code> for portability.</pre>
-        <h3>EXPORT (v1.2)</h3>
-        <pre><b>export</b>                 selection → transparent PNG (or X key)
-<b>$svg</b>                   selection → editable SVG (Illustrator / Figma)
-<b>export pptx</b> / <b>pptx</b>      selection → editable .pptx (PowerPoint / Keynote)
-<b>export magic</b>           spell picker modal (checkbox-per-spell)
-<b>export data</b>            bundle dialog (canvas / user / preset)
-<b>export-all</b>             non-interactive · project + all spells
-<b>export-spells [names]</b>  non-interactive · spells package</pre>
-        <h3>AI SPELLS (v1.2)</h3>
-        <pre>Ask Claude / ChatGPT for a spell by pasting:
-
-  Make a Black Mirror Board spell as JSON:
-    {"command":"NAME","action":"JS"}
-  BM API: getSelected(), all(), create(type, props),
-    translate, setStroke, setFill, remove, viewCenter,
-    rand(min,max), log(msg,cls), redraw(), save().
-  types: circle | square | triangle | arrow | text
-  NO 'rect'. NO async/await. Always end with redraw().
-
-Paste the JSON back into the terminal — auto-registers.
-Full guide → <b>usage.html §5</b></pre>
-        <button class="usage-close" onclick="closeUsage()">CLOSE ✕</button>
+        <div class="u-head">
+            <span class="u-ico">📖</span>
+            <input class="u-search" id="uSearch" type="text" placeholder="検索（コマンド・キー・やりたいこと）" data-i18n-ph="usage.search" autocomplete="off" spellcheck="false">
+            <button class="u-x" onclick="closeUsage()">esc</button>
+        </div>
+        <div class="u-body">
+            <div class="u-nav" id="uNav"></div>
+            <div class="u-main" id="uMain"></div>
+        </div>
     </div>
 </div>
 
@@ -11120,6 +11030,7 @@ function catLabel(c) { const m = (typeof LANG !== 'undefined' && LANG === 'en') 
 var LANG = (function () { try { return localStorage.getItem('bm_lang') || 'ja'; } catch (_) { return 'ja'; } })();
 const I18N = {
     ja: {
+        'usage.search': '検索（コマンド・キー・やりたいこと）',
         'pal.ph': 'コマンドを検索…（calc / dark / t …）',
         'pal.fav': 'お気に入り · FAVORITES', 'pal.recent': '最近使った · RECENT', 'pal.all': 'すべて · ALL', 'pal.cmds': 'コマンド · COMMANDS', 'pal.actions': '候補 · ACTIONS',
         'pal.none': '該当なし', 'pal.wait': '入力待ち', 'pal.run': '実行', 'pal.close': '閉じる',
@@ -11165,6 +11076,7 @@ const I18N = {
         'store.fail': 'インストールに失敗', 'store.featured': 'おすすめ · FEATURED', 'store.new': '新着 · NEW', 'store.detailFoot': '↵ でインストール · ← / Esc で一覧に戻る', 'store.code': 'コード', 'store.codeWarn': '⚡ コードで動く魔法（実行時にコードが走ります）'
     },
     en: {
+        'usage.search': 'Search commands, keys, or what you want to do',
         'pal.ph': 'Search commands…（calc / dark / t …）',
         'pal.fav': 'FAVORITES', 'pal.recent': 'RECENT', 'pal.all': 'ALL', 'pal.cmds': 'COMMANDS', 'pal.actions': 'ACTIONS',
         'pal.none': 'No results', 'pal.wait': 'awaiting input', 'pal.run': 'run', 'pal.close': 'close',
@@ -11227,6 +11139,12 @@ function setLang(l) {
     if (window._settingsSyncLang) window._settingsSyncLang();
     if (window._settingsRenderCmds) window._settingsRenderCmds();
     if (window._settingsRenderSpells) window._settingsRenderSpells();
+    // ⭐usage も開いていれば言語を反映
+    const _uo = document.getElementById('usageOverlay');
+    if (_uo && _uo.classList.contains('open') && window.renderUsage) {
+        const si = document.getElementById('uSearch');
+        window.renderUsage(si ? si.value : '');
+    }
 }
 window.setLang = setLang; window.getLang = getLang; window.t = t; window.applyLang = applyLang;
 
@@ -14126,7 +14044,191 @@ function setTermWidthPct(pct, persist) {
 // USAGE OVERLAY
 // ══════════════════════════════════════════════════
 
-function openUsage()  { document.getElementById('usageOverlay').classList.add('open'); }
+/* ⭐ USAGE — Raycast風ドキュメント。データ駆動＋検索＋日英。
+   1項目 = [キー(ハイライトするchip), 日本語, 英語]。キーは "|" で複数chip。 */
+var USAGE_DOC = [
+{ id:'start', icon:'✨', ja:'はじめに', en:'Getting started',
+  noteJa:'覚えることはひとつ。<b>⌘K</b> を押して、やりたいことを打つ。',
+  noteEn:'Only one thing to remember: hit <b>⌘K</b> and type what you want.',
+  items:[
+    ['⌘K','コマンドパレット。全機能がここから出る<small>★お気に入り／最近使った／自分でショートカットを割り当てられる</small>','Command palette — everything lives here<small>Favorites ★ / Recently used / assign your own shortcuts</small>'],
+    ['⌘,','設定（一般 / コマンド / 魔法）','Settings (General / Commands / Spells)'],
+    ['⌘B','ターミナル窓を ドック ⇔ フロート','Dock / float the terminal window'],
+    ['右クリック|long-press','ボードのメニュー<small>付箋・テキストを置く／複製／魔法に保存／前面・背面／削除</small>','Board context menu<small>sticky · text · duplicate · save as spell · front/back · delete</small>'],
+    ['help|?','ターミナル内に短い早見表を出す','Quick reference inside the terminal'],
+    ['usage|man|docs','この画面','This screen'],
+]},
+{ id:'draw', icon:'✎', ja:'描く', en:'Draw',
+  items:[
+    ['↑ Select','選ぶ／ドラッグで移動／Del で削除<small>上の ○ で回転・青い □ で変形・空白をドラッグで範囲選択</small>','Select · drag to move · Del to delete<small>○ handle rotates · blue □ anchors deform · drag empty canvas to marquee</small>'],
+    ['✎ Pen','自由に描く。離した瞬間に図形として認識される','Draw freely — shape is detected on lift'],
+    ['⌫ Eraser','触れたものを消す（選択中なら一括削除）','Tap an object to remove (batch-deletes a selection)'],
+    ['○ △ □ →','ドラッグで図形を置く → ターミナルが反応する','Drag to place a shape → the terminal fires'],
+    ['T','テキスト。書いて Enter で確定','Text — type, Enter to confirm'],
+    ['🪣 Fill','塗り: ○ なし ／ ● 黒 ／ ◑ グレー ／ □ 白','Fill: ○ none · ● black · ◑ grey · □ white'],
+    ['1 2 3','線の太さ','Line width'],
+    ['I','画像を読み込む','Upload an image'],
+]},
+{ id:'paper', icon:'✏️', ja:'紙と鉛筆', en:'Paper & pencil',
+  noteJa:'既定は<b>鉛筆＋紙</b>。デジタルをアナログの手ざわりで使うためのモード。',
+  noteEn:'Default is <b>pencil on paper</b> — digital that feels analog.',
+  items:[
+    ['drawmode classic','ペン＋通常ボードに切り替える（紙をやめる）<small>ペンのアイコンからも切替。鉛筆に戻すと紙も戻る</small>','Switch to pen + plain board<small>Also via the pen icon. Back to pencil brings the paper back.</small>'],
+    ['flip','紙を裏返す。表がうっすら透ける<small>裏面では表の線は選べない（裏だから）</small>','Flip the sheet — the front bleeds through faintly<small>Front strokes cannot be selected from the back</small>'],
+    ['sweep','消しカスを払う','Sweep away the eraser crumbs'],
+    ['board a4','ボードサイズ<small>a4 / a3 / b5 / letter / square / free</small>','Board size<small>a4 / a3 / b5 / letter / square / free</small>'],
+    ['grade 2B','鉛筆の濃さ<small>H / HB / B / 2B / 4B</small>','Pencil grade<small>H / HB / B / 2B / 4B</small>'],
+]},
+{ id:'arrange', icon:'⌗', ja:'選ぶ・整える', en:'Select & arrange',
+  noteJa:'絵が苦手でも、<b>キーボードだけで図解が作れる</b>。',
+  noteEn:'Cannot draw? You can build a diagram <b>with the keyboard alone</b>.',
+  items:[
+    ['Tab|⇧Tab','次／前のオブジェクトを選ぶ（画面外なら中央へ寄せる）','Select next / previous object (scrolls it into view)'],
+    ['↑↓←→','1px 動かす','Nudge 1px'],
+    ['⇧ + ↑↓←→','10px 動かす','Nudge 10px'],
+    ['⌥ + ↑↓←→','サイズを変える','Resize'],
+    ['connect','選んだ2つ以上を矢印でつなぐ','Connect 2+ selected objects with arrows'],
+    ['align left','整列<small>left / center / right / top / middle / bottom</small>','Align<small>left / center / right / top / middle / bottom</small>'],
+    ['distribute h|distribute v','3つ以上を等間隔に並べる','Evenly space 3+ objects'],
+    ['範囲選択','空白をドラッグ → 完全に囲んだものが全部選ばれる<small>まとめて移動・○で回転・Del で全削除・Esc で解除</small>','Drag empty canvas → everything fully enclosed is selected<small>move together · ○ rotates · Del deletes all · Esc clears</small>'],
+    ['アンカー','選ぶと青い □ が出る。ドラッグで変形<small>○=半径4点 △=頂点3点 □=四隅+辺の中点 →=両端 ✎=全頂点</small>','Select → blue □ anchors. Drag to deform<small>○ 4 radii · △ 3 vertices · □ corners+midpoints · → endpoints · ✎ every vertex</small>'],
+    ['⇧ (変形中)|⌥ (変形中)','縦横比を固定／中心から拡大','Lock aspect ratio / scale from center'],
+]},
+{ id:'view', icon:'⊕', ja:'見る・動かす', en:'View',
+  items:[
+    ['Space + drag','ボードを掴んで動かす','Pan the canvas'],
+    ['2本指ドラッグ','ボードを動かす（トラックパッド／モバイル）','Pan (trackpad / mobile)'],
+    ['ピンチ|ホイール','拡大・縮小','Zoom'],
+    ['ダブルクリック','表示を100%に戻す','Reset view to 100%'],
+    ['swap right|swap left','ボードを右／左に置く（利き手に合わせる）','Put the board on the right / left (handedness)'],
+    ['dark|light|gray','テーマ<small>色が変わるのはボード自身。周りのUIは変えない</small>','Theme<small>the board changes color — the chrome stays put</small>'],
+    ['bg-pattern dots','背景の柄<small>dots / grid / cross / dotted-grid / stripes ・ bg-opacity 0-100 ・ bg none</small>','Background pattern<small>dots / grid / cross / dotted-grid / stripes · bg-opacity 0-100 · bg none</small>'],
+]},
+{ id:'spell', icon:'🪄', ja:'魔法', en:'Spells',
+  noteJa:'魔法＝ボードの上でできること。自分で作って、配れる。',
+  noteEn:'A spell is something that happens on the board. Make one, hand it out.',
+  items:[
+    ['spell &lt;名前&gt;','選んでいるものを魔法として保存 → ⌘K から何度でも置ける','Save the selection as a spell → place it again from ⌘K'],
+    ['spell export|spell import','魔法を書き出す／読み込む','Export / import spells'],
+    ['tpl &lt;名前&gt;','下書きを一発で置く<small>wireframe / kanban / mindmap / moodboard ・ tpl だけで選択画面</small>','Instant scaffold<small>wireframe / kanban / mindmap / moodboard · bare tpl opens a picker</small>'],
+    ['$sakura|$rain|$snow|$leaf','降らせる（もう一度打つと止まる）','Make it fall (run again to stop)'],
+    ['$scatter|$grid-3x3|$sticky-3x3','散らす／3×3に並べる／付箋を3×3','Scatter / 3×3 grid / 3×3 stickies'],
+    ['$powerpoint','16:9のスライド枠＋タイトル・本文の置き場所','16:9 slide frame with title/body placeholders'],
+    ['$biwako-blue|$monoclo','全部の線を #0044CC に／選んだ画像を白黒に','Retint every stroke to #0044CC / grayscale selected images'],
+    ['$make-img &lt;語&gt; &lt;数&gt;','画像を呼ぶ（キー不要・自動でグリッド・最大25枚）','Summon images (no API key · auto grid · max 25)'],
+    ['register &lt;名&gt; &lt;js&gt;','JSの魔法を登録<small>alias 新=旧 ／ list 一覧 ／ forget &lt;名&gt; 削除（内蔵は守られる）</small>','Register a JS spell<small>alias new=old · list · forget &lt;name&gt; (presets protected)</small>'],
+    ['AIに作らせる','ターミナルに JSON を貼るだけで登録される<small>{"command":"名前","action":"JS"} ／ BM API: create/translate/setFill/setStroke/viewCenter/rand/redraw</small>','Paste JSON into the terminal to auto-register<small>{"command":"name","action":"JS"} · BM API: create/translate/setFill/setStroke/viewCenter/rand/redraw</small>'],
+]},
+{ id:'store', icon:'🏪', ja:'STORE / 配る', en:'STORE / share',
+  noteJa:'作った魔法を出す → 審査 → 全員の STORE に並ぶ。サーバーは要らない。',
+  noteEn:'Submit a spell → review → it lands in the STORE for everyone. No server needed.',
+  items:[
+    ['store','STORE を開く → 詳細を見て ↵ でインストール','Open the STORE → view details → ↵ to install'],
+    ['⌘, → 魔法タブ','自分の魔法の管理<small>名前・アイコン・説明を編集／📤で提出用JSONを出す／⬇単体DL／✕削除</small>','Manage your spells<small>edit name·icon·description · 📤 export submission JSON · ⬇ download · ✕ delete</small>'],
+    ['提出','📤 → 🐙 GitHubで公開申請（Issue が中身入りで開く）','📤 → 🐙 submit on GitHub (the issue opens pre-filled)'],
+    ['share &lt;名&gt;|share','魔法のJSONをコピー／今のボードを再現するURLを作る','Copy a spell as JSON / make a URL that reopens this exact board'],
+]},
+{ id:'snip', icon:'⛓', ja:'スニペット・連鎖', en:'Snippets & chains',
+  items:[
+    ['snip add &lt;名&gt; &lt;本文&gt;','よく書く文を登録 → snip &lt;名&gt; で付箋になる','Register text → snip &lt;name&gt; drops it as a sticky'],
+    ['chain add &lt;名&gt; a ; b','コマンドを順に実行する自分用マクロ','A macro that runs commands in order'],
+    ['link|open','URLをボードの窓で開く／新しいタブで開く','Open a URL in a board window / new tab'],
+]},
+{ id:'export', icon:'⬇️', ja:'書き出す', en:'Export',
+  items:[
+    ['export|X','選択 → 透過PNG','Selection → transparent PNG'],
+    ['$svg','選択 → 編集できるSVG（Illustrator / Figma）','Selection → editable SVG (Illustrator / Figma)'],
+    ['export pptx','選択 → 編集できる .pptx（PowerPoint / Keynote）','Selection → editable .pptx (PowerPoint / Keynote)'],
+    ['gif [秒]','ボードを GIF にする','Record the board as a GIF'],
+    ['rec [秒]','ボードを 動画(WebM) にする','Record the board as video (WebM)'],
+    ['export data|export-all','丸ごと束ねて書き出す（ボード＋魔法）','Bundle everything (board + spells)'],
+]},
+{ id:'save', icon:'💾', ja:'保存する', en:'Save & load',
+  noteJa:'⚠ 自動保存は<b>画像だけ保存しません</b>。画像があるボードは閉じる前に必ず SAVE を。',
+  noteEn:'⚠ Autosave does <b>not</b> keep image pixels. If your board has images, SAVE before closing.',
+  items:[
+    ['SAVE|OPEN','.json に書き出す／読み込む<small>ローカルだけ。アップロードもアカウントも要らない。画像も .json には入る</small>','Download / import .json<small>Local only. No upload, no account. Images do live inside the .json</small>'],
+    ['save &lt;名&gt;|ls|load &lt;名&gt;','ブラウザの中に置いておく（IndexedDB・再読込しても残る）','Snapshots inside the browser (IndexedDB · survive reloads)'],
+]},
+{ id:'keys', icon:'⌨️', ja:'キーボード', en:'Keyboard',
+  items:[
+    ['S P N E C G Q A T','道具を切り替える（N = パス／アンカー）','Switch tool (N = path/anchor)'],
+    ['⌘Z|⌘⇧Z','取り消す／やり直す','Undo / redo'],
+    ['Del|Backspace','選んでいるものを削除','Delete selected'],
+    ['Esc','やめる／選択を解除','Cancel / deselect'],
+    ['⌘K|⌘,|⌘B','パレット／設定／ターミナル','Palette / settings / terminal'],
+]},
+{ id:'misc', icon:'⚙️', ja:'その他', en:'Misc',
+  items:[
+    ['bgm on|bgm off','BGM（この場で作っている音・上に波形が出る）','Ambient BGM (synthesized live · waveform up top)'],
+    ['volume off|mute','クリック音・チャイムを黙らせる','Silence clicks and chimes'],
+    ['english|日本語','表示言語を変える','Switch language'],
+    ['Black Mirror','自撮りが画面を拭く（ドラッグで移動・off で消える）','A live selfie wipes the screen (drag to move · off to dismiss)'],
+    ['clear|flush','ターミナルの表示を消す','Wipe terminal output'],
+    ['objects','中身を全部吐き出す（デバッグ用）','Dump every object (debug)'],
+    ['youtube','おたのしみ','A surprise awaits'],
+]},
+];
+
+var _usageBuilt = false, _usageSec = 'start';
+
+function _usageRows(sec) {
+    const en = (typeof LANG !== 'undefined' && LANG === 'en');
+    let h = `<div class="u-sec"><h3>${en ? sec.en : sec.ja}</h3>`;
+    const note = en ? sec.noteEn : sec.noteJa;
+    if (note) h += `<div class="u-note">${note}</div>`;
+    for (const [k, ja, enTxt] of sec.items) {
+        const chips = k.split('|').map(x => `<kbd class="u-c">${x}</kbd>`).join('');
+        h += `<div class="u-row"><div class="u-k">${chips}</div><div class="u-d">${en ? enTxt : ja}</div></div>`;
+    }
+    return h + '</div>';
+}
+
+function renderUsage(query) {
+    const nav = document.getElementById('uNav'), main = document.getElementById('uMain');
+    if (!nav || !main) return;
+    const en = (typeof LANG !== 'undefined' && LANG === 'en');
+    const q = (query || '').trim().toLowerCase();
+
+    nav.innerHTML = USAGE_DOC.map(s =>
+        `<button data-sec="${s.id}" class="${!q && s.id === _usageSec ? 'on' : ''}"><em>${s.icon}</em>${en ? s.en : s.ja}</button>`
+    ).join('');
+    nav.querySelectorAll('button').forEach(b => b.onclick = () => {
+        _usageSec = b.dataset.sec;
+        const si = document.getElementById('uSearch'); if (si) si.value = '';
+        renderUsage('');
+        main.scrollTop = 0;
+    });
+
+    if (q) {
+        // 検索：全セクション横断。キー・日本語・英語のどれに当たってもよい
+        let h = '', hits = 0;
+        for (const s of USAGE_DOC) {
+            const items = s.items.filter(([k, ja, e]) =>
+                (k + ' ' + ja + ' ' + e + ' ' + s.ja + ' ' + s.en).toLowerCase().includes(q));
+            if (!items.length) continue;
+            hits += items.length;
+            h += _usageRows({ ...s, items, noteJa: '', noteEn: '' });
+        }
+        main.innerHTML = hits ? h
+            : `<div class="u-empty">${en ? 'No match' : '見つかりませんでした'}</div>`;
+        return;
+    }
+    const sec = USAGE_DOC.find(s => s.id === _usageSec) || USAGE_DOC[0];
+    main.innerHTML = _usageRows(sec);
+}
+
+function openUsage() {
+    document.getElementById('usageOverlay').classList.add('open');
+    if (!_usageBuilt) {
+        _usageBuilt = true;
+        const si = document.getElementById('uSearch');
+        if (si) si.addEventListener('input', () => renderUsage(si.value));
+    }
+    renderUsage(document.getElementById('uSearch') ? document.getElementById('uSearch').value : '');
+    setTimeout(() => { const si = document.getElementById('uSearch'); if (si) si.focus(); }, 40);
+}
+window.renderUsage = renderUsage;
 function closeUsage() { document.getElementById('usageOverlay').classList.remove('open'); }
 
 // v1.3 Phase 2: Restore bg layer settings on load
