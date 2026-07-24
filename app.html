@@ -62,6 +62,7 @@
         }
 
         :root {
+            --term-wall: url('assets/term-bg.webp');   /* ⭐ターミナルの壁紙。red 切替時に JS が差し替える */
             /* ⭐UI一新：Apple 純正モノスペース（Raycast/SwiftUI 方向・Courier New を置換）。
                キャンバス描画文字/SVG書き出し/フォントピッカーには適用しない。 */
             --ui-mono: ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, Monaco, 'Courier New', monospace;
@@ -969,7 +970,7 @@
             pointer-events: none;
             overflow: hidden;
             background-color: #050506;
-            background-image: url('assets/term-bg.webp');   /* ⭐木下作の赤リング */
+            background-image: var(--term-wall);   /* ⭐木下作の赤リング。切替は --term-wall を書き換える */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -2294,15 +2295,32 @@
                 min-height: 60px;
                 display: flex;
                 flex-direction: column;
-                background: rgba(14,13,16,0.96);
+                /* ⭐モバイルはパネルの「背後」に壁紙が無い（列フローで、後ろは素の背景）。
+                   backdrop-filter は背後をぼかす仕組みなので、背後が無地だと何も起きない＝ただの黒い板になる。
+                   そこで パネル自身が壁紙の光を持つ（::before）。デスクトップと同じ見え方を作り直している。 */
+                background: rgba(14,13,16,0.58);
                 border-left: none;
                 box-shadow: none;
+                overflow: hidden;
                 /* Kill the transform-based glitch animation on mobile —
                    a transformed ancestor becomes the containing block for
                    position:fixed descendants, which breaks the pinned input. */
                 animation: none !important;
             }
-            /* ⭐モバイルは背後の壁紙オーバーレイを出さない（絶対配置で全面を覆うため） */
+            .terminal-panel::before {
+                content: '';
+                position: absolute; inset: -60px;   /* ぼかしの縁が内側に出ないよう外へ広げる */
+                z-index: 0; pointer-events: none;
+                background-color: #050506;
+                background-image: var(--term-wall);
+                background-size: cover;
+                background-position: center;
+                filter: blur(38px) saturate(1.25);
+                opacity: .72;   /* ⭐PC実測の平均輝度に合わせた値（PC 140 / これで同等） */
+            }
+            /* 中身は壁紙より前面に（::before が z-index:0 なので上げておく） */
+            .terminal-panel > * { position: relative; z-index: 1; }
+            /* ⭐モバイルは背後の壁紙オーバーレイを出さない（絶対配置で全面を覆うため）＝上の ::before が代わり */
             #termWall { display: none !important; }
             /* ⭐モバイルはフロート無効＝常に列ドック（デスクトップのfloat状態が残っても崩れない） */
             body.bm-term-float .terminal-panel,
@@ -6362,7 +6380,11 @@ function _eraseSoft(p, extraPad = 0) {
             const wEff = Math.max(1.2, (o.data.lw || 2.5) * (0.5 + Ge.w * 0.75));
             const tightE = 1.25 + (0.62 - Ge.thr) * 1.6;
             const halfExtent = wEff * tightE * 0.5;          // 中心線から黒鉛が乗る半幅
-            const R = ERASE_RADIUS + extraPad + halfExtent;  // その分 届く範囲を広げる
+            // ⚠️extraPad(タッチ時+14px)は「小さい対象を拾いやすくする」ための当たり判定の拡張であって、
+            //   消す強さではない。ここに足すとモバイルだけ消しゴムが実寸の倍以上になり、
+            //   一撫でで全部 eFloor まで落ちて「すぐ消える・薄い跡も残らない」状態になっていた。
+            //   消える範囲は画面に出ている消しゴムの円（ERASE_RADIUS）と一致させる。
+            const R = ERASE_RADIUS + halfExtent;
             _erasedWidthMax = Math.max(_erasedWidthMax || 0, wEff);   // 消しカスの大きさに使う
             _erasedCScale = Ge.cScale != null ? Ge.cScale : 1.0;      // ⭐芯ごとの消しカス大きさ
             _erasedCFreq  = Ge.cFreq  != null ? Ge.cFreq  : 0.8;      // ⭐芯ごとの消しカス出やすさ
@@ -6398,11 +6420,20 @@ function _eraseSoft(p, extraPad = 0) {
     // ⭐ある程度こすって黒鉛が溜まってから、ちょこっと出す（いきなり出さない）。
     _eraseAccum += removedTotal;
     // ⭐芯ごとに出やすさが変わる（柔らかい6Bはカスが出やすい／硬い2Hは出にくい）
-    const crumbTh = ERASE_CRUMB_THRESHOLD / Math.max(0.3, _erasedCFreq);
-    while (_eraseAccum >= crumbTh) {
+    // ⭐消しゴムを大きくすると1回で剥がす黒鉛量が増えるので、閾値を半径に比例させる。
+    //   これをしないと「大きい消しゴム＝カスが何倍も出る」になる（実際そうなっていた）。
+    //   実際の消しゴムも大きいほど1個のカスが大きくなるだけで、数が何倍にもなるわけではない。
+    const crumbTh = ERASE_CRUMB_THRESHOLD
+                  * Math.max(1, ERASE_RADIUS / ERASE_R_BASE)
+                  / Math.max(0.3, _erasedCFreq);
+    // ⭐1イベントで出すのは最大2本。速く動かした時にドバっと出るのを防ぐ
+    let _spawned = 0;
+    while (_eraseAccum >= crumbTh && _spawned < 2) {
         _eraseAccum -= crumbTh;
         _spawnEraseCrumbs(p.x, p.y, edx, edy, 0.3);
+        _spawned++;
     }
+    if (_eraseAccum > crumbTh * 2) _eraseAccum = crumbTh * 2;   // 溜め込み過ぎを捨てる
     S.objects = survivors;
     saveHistory(); redrawAll();
 }
@@ -10689,7 +10720,9 @@ tiEl.addEventListener('paste', e => {
             else if (group === 'term')  { if (v === 'float') { window._termFloat && window._termFloat(); } else { window._termDock && window._termDock(); } }
             else if (group === 'wall')  {
                 const wall = document.getElementById('termWall');
-                if (wall) wall.style.backgroundImage = "url('assets/term-bg" + (v === 'red' ? '-red' : '') + ".webp')";
+                const _wallUrl = "url('assets/term-bg" + (v === 'red' ? '-red' : '') + ".webp')";
+                document.documentElement.style.setProperty('--term-wall', _wallUrl);   // ⭐モバイルのパネル内壁紙もこれで追従
+                if (wall) wall.style.backgroundImage = _wallUrl;
                 try { localStorage.setItem('bm_wall', v); } catch (_) {}
             }
         } catch (_) {}
@@ -11046,7 +11079,10 @@ tiEl.addEventListener('paste', e => {
     }, true);
 
     // 起動時：保存済み壁紙を復元
-    try { if (localStorage.getItem('bm_wall') === 'red') { const wall = document.getElementById('termWall'); if (wall) wall.style.backgroundImage = "url('assets/term-bg-red.webp')"; } } catch (_) {}
+    try { if (localStorage.getItem('bm_wall') === 'red') {
+        document.documentElement.style.setProperty('--term-wall', "url('assets/term-bg-red.webp')");
+        const wall = document.getElementById('termWall'); if (wall) wall.style.backgroundImage = "url('assets/term-bg-red.webp')";
+    } } catch (_) {}
 })();
 
 // ══════════════════════════════════════════════════
@@ -12365,7 +12401,8 @@ let _eraseAccum = 0;
 let _erasedWidthMax = 0;             // 直近で消した線の最大幅（消しカスの大きさに反映）
 let _erasedCScale = 1.0;             // 直近で消した芯の 消しカス大きさ係数（芯ごと）
 let _erasedCFreq = 0.8;              // 直近で消した芯の 消しカス出やすさ（芯ごと）
-const ERASE_CRUMB_THRESHOLD = 5.0;   // これだけ黒鉛を剥がすと1本カスが出る（大きいほど少ない）
+const ERASE_CRUMB_THRESHOLD = 6.5;   // これだけ黒鉛を剥がすと1本カスが出る（大きいほど少ない）
+const ERASE_R_BASE = 12;             // ⭐消しカス量の基準になる消しゴム半径（既定値）。これより大きい消しゴムは閾値も比例して上げる
 // 消しカスを弾き出す（進行方向の直交＝左右へ・消しゴム半径の外へ）
 function _spawnEraseCrumbs(px, py, dirx, diry, amount) {
     if (!(dirx || diry)) return;
