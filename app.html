@@ -8354,7 +8354,9 @@ function saveCmds() {
         try { printRaw('[save] localStorage quota — clear old data (' + (err?.message || 'quota') + ')', 't-dim'); } catch (_) {}
     }
 }
-function registerCmd(name, action, opts = {}) { const clean=(name||'').trim().toLowerCase().replace(/^\$/,''); if(!/^[a-z0-9][a-z0-9_-]{0,30}$/.test(clean)){printRaw(`[register] invalid command name: "${name}"`,'t-err');return false;} BM_CMDS[clean]={action:String(action),source:opts.source||'user',createdAt:new Date().toISOString()}; saveCmds(); return clean; }
+// ⭐名前は日本語も通す（`spell 紙吹雪` は通るのに JSON 登録だけ弾かれて非対称だった）。
+//   空白・引用符・記号は不可＝ターミナルで1語として打てるものだけ。
+function registerCmd(name, action, opts = {}) { const clean=(name||'').trim().toLowerCase().replace(/^\$/,''); if(!/^[\p{L}\p{N}][\p{L}\p{N}_-]{0,30}$/u.test(clean)){printRaw(`[register] invalid command name: "${name}"`,'t-err');return false;} BM_CMDS[clean]={action:String(action),source:opts.source||'user',createdAt:new Date().toISOString()}; saveCmds(); return clean; }
 
 // Import a spell JSON ({command, action}) with collision-safe naming:
 //   - no existing entry → register as-is
@@ -8362,7 +8364,8 @@ function registerCmd(name, action, opts = {}) { const clean=(name||'').trim().to
 //   - collides with preset, or different user action → append _YYYY-MM-DD (and _2, _3 ...)
 function importSpellJson(parsed) {
     const rawName = String(parsed && parsed.command || '').trim().toLowerCase().replace(/^\$/,'');
-    if (!/^[a-z0-9][a-z0-9_-]{0,30}$/.test(rawName)) { printRaw(`[import] invalid command name: "${parsed && parsed.command}"`,'t-err'); return null; }
+    // ⭐日本語名も通す（registerCmd と同じ規則に揃える）
+    if (!/^[\p{L}\p{N}][\p{L}\p{N}_-]{0,30}$/u.test(rawName)) { printRaw(`[import] invalid command name: "${parsed && parsed.command}"`,'t-err'); return null; }
     const incoming = String(parsed.action || '');
     const existing = BM_CMDS[rawName];
     if (!existing) {
@@ -10354,6 +10357,18 @@ function runCommand(val) {
     // ── Custom command dispatch ───────────────────────────────────────────
     if (BM_CMDS[head]) { enqueue(`$ ${head}${rest ? ' ' + rest : ''}`,['→ executing action...']); runCustomCmd(head, rest); return; }
 
+    // ⭐ユーザー魔法（spell 名前 / STOREでインストールしたもの）を名前で実行できるようにする。
+    //   これまで ⌘K からしか実行できず、ターミナルでは "command not found" になっていた。
+    if (typeof getSpells === 'function') {
+        const _q = val.trim().toLowerCase();
+        const _sp = getSpells().find(s => (s.name || '').trim().toLowerCase() === _q);
+        if (_sp) {
+            enqueue(`$ ${val.trim()}`, [_L('→ 魔法を唱えた', '→ casting the spell')]);
+            runSpell(_sp);
+            return;
+        }
+    }
+
     enqueue(val, [`${head}: command not found`]);
 }
 
@@ -10897,14 +10912,29 @@ tiEl.addEventListener('paste', e => {
               '', '下の JSON を `store/catalog.json` の `spells` に追記してください（author はご自身の名前に）。', '',
               '```json', ta.value, '```',
           ]).filter(x => x !== null).join('\n');
-          const url = 'https://github.com/' + REPO + '/issues/new?title=' + encodeURIComponent('[spell] ' + name) + '&labels=' + encodeURIComponent('spell-submission') + '&body=' + encodeURIComponent(body);
-          if (url.length > 7500) {   // URL長すぎ＝GitHubが弾く可能性→コピーに誘導
-              try { navigator.clipboard && navigator.clipboard.writeText(ta.value); } catch (_) {}
-              window.open('https://github.com/' + REPO + '/issues/new?title=' + encodeURIComponent('[spell] ' + name) + '&labels=spell-submission&body=' + encodeURIComponent('JSON をコピー済みです。ここに貼り付けてください。\n\n```json\n（ここに貼る）\n```'), '_blank', 'noopener');
-              if (typeof printRaw === 'function') printRaw('JSONが長いのでクリップボードにコピーしました。開いたIssueに貼ってください', 't-dim');
+          // ⭐用意した Issue フォーム（.github/ISSUE_TEMPLATE/spell-submission.yml）を実際に使う。
+          //   フォームの各欄(name / type / json)を URL で直接埋める＝提出者は貼り直さなくていい。
+          //   labels はテンプレ側の指定が使われるので URL には付けない（存在しないラベルを渡すと無視されるため）。
+          const TYPE_CODE = 'コード (action / JS) — 実行時にコードが走ります / code spell, runs JS';
+          const TYPE_DECL = '宣言的 (ops / objects) — コードは動きません / declarative, no code';
+          const formUrl = 'https://github.com/' + REPO + '/issues/new?template=spell-submission.yml'
+              + '&title=' + encodeURIComponent('[spell] ' + name)
+              + '&name=' + encodeURIComponent(name)
+              + '&type=' + encodeURIComponent(isCode ? TYPE_CODE : TYPE_DECL)
+              + '&json=' + encodeURIComponent(ta.value);
+          // 常にクリップボードにも入れておく＝URLが長くて切られても提出者が困らない
+          try { navigator.clipboard && navigator.clipboard.writeText(ta.value); } catch (_) {}
+          if (formUrl.length > 7500) {   // URL長すぎ＝GitHubが弾く可能性→フォームは空で開き、貼り付けてもらう
+              window.open('https://github.com/' + REPO + '/issues/new?template=spell-submission.yml'
+                  + '&title=' + encodeURIComponent('[spell] ' + name)
+                  + '&name=' + encodeURIComponent(name)
+                  + '&type=' + encodeURIComponent(isCode ? TYPE_CODE : TYPE_DECL), '_blank', 'noopener');
+              if (typeof printRaw === 'function') printRaw(_L('JSONが長いのでクリップボードにコピーしました。開いたフォームの「魔法の JSON」に貼ってください', 'The JSON was long — it is on your clipboard. Paste it into the "Spell JSON" field.'), 't-dim');
           } else {
-              window.open(url, '_blank', 'noopener');
+              window.open(formUrl, '_blank', 'noopener');
+              if (typeof printRaw === 'function') printRaw(_L('GitHubの提出フォームを開きました（内容は入力済み・JSONもコピー済み）', 'Opened the GitHub submission form (pre-filled; the JSON is also on your clipboard)'), 't-dim');
           }
+          void body;   // 旧形式の本文（フォーム化により未使用・残置）
       }); }
     // ⭐コードから魔法を作る（AI→貼付→登録して試す）。プロンプトは表示言語に合わせる
     function aiPrompt() {
