@@ -9423,7 +9423,7 @@ function runCommand(val) {
         S.drawMode='fude'; try{localStorage.setItem('bm_drawMode','fude');}catch{}
         document.body.classList.remove('bm-paper');    // ⭐板を元に戻す
         redrawAll();
-        enqueue(`$ ${head}`,['→ stroke render: 筆 (fude)','→ next strokes use smooth tapered fill','→ classic で master に戻る']);
+        enqueue(`$ ${head}`,[_L('→ 描き味: 筆 (fude)','→ stroke: brush (fude)'), _L('→ 次の線はなめらかにテーパー','→ next strokes use smooth tapered fill'), _L('→ classic で通常ペンに戻る','→ classic to go back to the pen')]);
         return;
     }
     // ── enpitsu ─ 紙の目に引っかかる鉛筆（追加モード。classic/fude はそのまま） ──
@@ -9437,12 +9437,8 @@ function runCommand(val) {
         redrawAll(); updateUndoRedoBtns();
         const _m = (SETTLE_MS >= 60000) ? (Math.round(SETTLE_MS/60000)+' min') : (Math.round(SETTLE_MS/1000)+' sec');
         enqueue(`$ ${head}`, wasOn
-            ? ['→ paper board on（すでに鉛筆モードでした）', '  ink fixes after ' + _m]
-            : ['→ 紙のノートに切り替えました',
-               '  ・鉛筆（紙の目に乗るざらつき）',
-               '  ・書いたものは ' + _m + ' で定着して消せなくなる',
-               '  ・消しゴムはこすった所だけ薄くなり、跡が残る',
-               '→ board / classic で黒板に戻る']);
+            ? [_L('→ 紙モードは既にオン（鉛筆）','→ paper mode already on (pencil)'), _L('  ink fixes after ','  ink fixes after ') + _m]
+            : [_L('→ 紙のノートに切り替えました','→ switched to paper'), _L('  ・鉛筆（紙の目に乗るざらつき）','  · pencil (grain that catches the paper)'), _L('  ・書いたものは ','  · strokes settle after ') + _m + _L(' で定着して消せなくなる',' and can no longer be erased'), _L('  ・消しゴムはこすった所だけ薄くなり、跡が残る','  · the eraser only lightens where you rub, leaving a mark'), _L('→ board / classic で黒板に戻る','→ classic to go back to the board')]);
         return;
     }
     // ⭐鉛筆の芯グレード（2H〜6B）。紙モードで打つと硬さ＝濃さ/太さ/紙目の拾い方が変わる
@@ -9499,7 +9495,7 @@ function runCommand(val) {
         document.body.classList.remove('bm-paper');
         _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}
         redrawAll(); updateUndoRedoBtns();
-        enqueue(`$ ${head}`,['→ 元の板に戻しました（classic / undo も通常どおり）']);
+        enqueue(`$ ${head}`,[_L('→ 元の板に戻しました（classic / undo も通常どおり）','→ back to the normal board (classic / undo works as usual)')]);
         return;
     }
     if (head==='classic'||head==='pencil'||head==='master') {
@@ -9508,7 +9504,7 @@ function runCommand(val) {
         document.body.classList.remove('bm-paper');    // ⭐板を元に戻す
         _settleMode = false; try{localStorage.removeItem('bm_settle');}catch{}   // 定着も解除
         redrawAll(); updateUndoRedoBtns();
-        enqueue(`$ ${head}`,['→ stroke render: classic (master)','→ next strokes use the original pencil renderer','→ undo も通常どおりに戻りました']);
+        enqueue(`$ ${head}`,['→ stroke render: classic (master)','→ next strokes use the original pencil renderer', _L('→ undo も通常どおりに戻りました','→ undo works normally again')]);
         return;
     }
 
