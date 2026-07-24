@@ -11086,7 +11086,7 @@ const I18N = {
         'set.title': 'Settings', 'set.board': 'BOARD', 'set.draw': 'DRAW', 'set.grade': 'GRADE', 'set.term': 'TERMINAL', 'set.wall': 'WALLPAPER', 'set.lang': 'LANGUAGE',
         'set.pencil': 'Pencil', 'set.brush': 'Brush', 'set.classic': 'Classic', 'set.white': 'White ring', 'set.red': 'Red ring',
         'set.foot': '⌘,  toggle · Esc to close',
-        'lang.name': '言語 / LANGUAGE',
+        'lang.name': 'Language',
         'tt.zoom100': 'Double-click for 100%', 'tt.settings': 'Settings (⌘,)', 'tt.confirm': 'Confirm', 'tt.resize': 'Drag to resize',
         'tt.newtab': 'Open in a new tab (for non-embeddable sites)', 'tt.close': 'Close',
         'tt.fontStd': 'Default (monospace)', 'tt.mincho': 'Mincho (serif)', 'tt.bold': 'Bold ON / OFF', 'tt.horiz': 'Horizontal', 'tt.vert': 'Vertical',
@@ -11533,7 +11533,7 @@ function centerTermPanel() {
         // ⭐お気に入りリンクを候補プールに合流（⌘Kから直接開ける）
         const linksObj = (window._getLinks && window._getLinks()) || {};
         const linkPool = Object.keys(linksObj).map(n => ({ cmd: n, cat: 'link', hint: linksObj[n], _url: linksObj[n], kw: 'link リンク url お気に入り' }));
-        const formCmd = { cmd:'リンク追加', cat:'link', hint:'お気に入りURLをフォームで登録（⌘Kだけで完結）', _form:true, kw:'link add リンク 追加 お気に入り url favorite ブックマーク' };
+        const formCmd = { cmd: LANG === 'en' ? 'Add link' : 'リンク追加', cat:'link', hint: LANG === 'en' ? 'Register a favorite URL via a form' : 'お気に入りURLをフォームで登録（⌘Kだけで完結）', _form:true, kw:'link add リンク 追加 お気に入り url favorite ブックマーク' };
         // ⭐魔法(spell)を候補プールに合流（保存した選択を⌘Kから再配置）
         const spellArr = (window._getSpells && window._getSpells()) || [];
         const spellPool = spellArr.map(s => ({ cmd: s.name, cat: 'spell', hint: (LANG === 'en' ? `spell · ${s.count} objects` : `魔法 · ${s.count}個を配置`), hintEn: `spell · ${s.count} objects`, _spell: s, kw: '魔法 spell スタンプ 配置 ' + s.name }));
@@ -14294,7 +14294,7 @@ function clearCanvas() {
 function boot() {
     // ⭐bashの偽ログ(起動シーケンス/manifest)は撤去。静かな挨拶だけ（printRaw=ハイライト無し＝</span>も出ない）。
     printRaw('BLACK MIRROR BOARD — kinoshita studio', 't-out');
-    printRaw('⌘K でコマンド（calc / dark / t …）  ·  🎤 で声  ·  paper に書きなぐる', 't-dim');
+    printRaw((typeof _L === 'function') ? _L('⌘K でコマンド（calc / dark / t …）  ·  🎤 で声  ·  paper に書きなぐる', '⌘K for commands (calc / dark / t …)  ·  🎤 for voice  ·  scribble on paper') : '⌘K for commands', 't-dim');
 }
 
 // ── Feedback Modal ─────────────────────────────────────────────────────────
