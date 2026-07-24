@@ -15565,6 +15565,71 @@ document.addEventListener('contextmenu', e => {
     }
 });
 
+// ⭐キーボードだけで図が描ける（描くのが苦手な人・開発者向け）
+//   Tab / ⇧Tab = 次/前のオブジェクトを選択 ／ 矢印 = 1px移動 ／ ⇧矢印 = 10px ／ ⌥矢印 = サイズ変更
+(function initKeyboardBoard() {
+    const isTyping = () => {
+        const a = document.activeElement;
+        if (!a) return false;
+        if (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable) return true;
+        return false;
+    };
+    const overlayOpen = () => {
+        const ids = ['cmdkOverlay', 'settingsOverlay', 'usageOverlay', 'voiceOverlay'];
+        return ids.some(id => { const el = document.getElementById(id); return el && (el.classList.contains('open') || el.style.display === 'flex' || el.style.display === 'block'); });
+    };
+    function selectedObjs() {
+        const ids = (S.multiSelected && S.multiSelected.length) ? S.multiSelected : (S.selectedId ? [S.selectedId] : []);
+        return S.objects.filter(o => ids.includes(o.id));
+    }
+    function focusIndex(dir) {
+        if (!S.objects.length) return;
+        const cur = S.selectedId ? S.objects.findIndex(o => o.id === S.selectedId) : -1;
+        const next = ((cur + dir) % S.objects.length + S.objects.length) % S.objects.length;
+        const o = S.objects[next];
+        S.objects.forEach(x => x.selected = false);
+        S.multiSelected = []; o.selected = true; S.selectedId = o.id;
+        if (typeof setTool === 'function' && S.tool !== 'select') setTool('select');
+        // 画面外なら中央に寄せる
+        try {
+            const b = getObjBounds(o);
+            if (b) {
+                const sx = b.x * VIEW.scale + VIEW.tx, sy = b.y * VIEW.scale + VIEW.ty;
+                if (sx < 0 || sy < 0 || sx > CW || sy > CH) {
+                    VIEW.tx = CW / 2 - (b.x + b.w / 2) * VIEW.scale;
+                    VIEW.ty = CH / 2 - (b.y + b.h / 2) * VIEW.scale;
+                }
+            }
+        } catch (_) {}
+        redrawAll();
+    }
+    function nudge(dx, dy) {
+        const objs = selectedObjs(); if (!objs.length) return false;
+        for (const o of objs) moveObj(o, dx, dy);
+        saveHistory(); redrawAll(); return true;
+    }
+    function resizeSel(dw, dh) {
+        const objs = selectedObjs(); if (!objs.length) return false;
+        for (const o of objs) {
+            const d = o.data;
+            if (d.w != null && d.h != null) { d.w = Math.max(4, d.w + dw); d.h = Math.max(4, d.h + dh); }
+            else if (d.rx != null) { d.rx = Math.max(2, d.rx + dw / 2); d.ry = Math.max(2, d.ry + dh / 2); }
+            else if (d.fontSize != null) { d.fontSize = Math.max(6, d.fontSize + (dw || dh) / 2); }
+        }
+        saveHistory(); redrawAll(); return true;
+    }
+    window.addEventListener('keydown', e => {
+        if (isTyping() || overlayOpen()) return;
+        if (e.metaKey || e.ctrlKey) return;                       // ⌘系は既存ショートカットに任せる
+        if (e.key === 'Tab') { e.preventDefault(); focusIndex(e.shiftKey ? -1 : 1); return; }
+        const map = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+        const v = map[e.key]; if (!v) return;
+        const step = (e.shiftKey ? 10 : 1) / (VIEW.scale || 1);    // 画面上の見た目で1px/10px
+        const ok = e.altKey ? resizeSel(v[0] * step * 2, v[1] * step * 2) : nudge(v[0] * step, v[1] * step);
+        if (ok) e.preventDefault();
+    });
+})();
+
 // ⭐ボード汎用コンテキストメニュー（右クリック）— BMBrowserの右クリック機能に相当する第一歩
 (function initBoardCtx() {
     const menu = document.getElementById('boardCtxMenu');
