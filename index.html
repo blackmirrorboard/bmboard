@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BM BOARD — A whiteboard that feels like paper and pencil ／ 紙と鉛筆の手ざわりで考えるホワイトボード</title>
-<meta name="description" content="BM BOARD は、紙と鉛筆の手ざわりでデジタルを使うためのホワイトボード（無限キャンバス）です。鉛筆で書きなぐり、紙を裏返し、消しカスを払う。覚えるのは ⌘K ひとつだけ。ブラウザだけで動き、アカウント登録もサーバーも不要、オフラインでも使えて無料。よく使う操作は「魔法」として保存し、他の人に配れます。— A whiteboard that feels like paper and pencil. Scribble, flip the sheet over, sweep away the crumbs. One shortcut to remember: ⌘K. No account, no server, works offline, free.">
+<meta name="description" content="BM BOARD は、紙と鉛筆の手ざわりでデジタルを使うためのホワイトボード（無限キャンバス）です。鉛筆で書きなぐり、紙を裏返し、消しカスを払う。覚えるのは ⌘K ひとつだけ。ブラウザだけで動き、アカウント登録もサーバーも不要、オフラインでも使えて無料。">
 <meta name="keywords" content="ホワイトボード,無限キャンバス,手書き,鉛筆,ペン,アイデア出し,図解,ブレスト,無料,オフライン,whiteboard,infinite canvas,drawing,sketching">
 <meta property="og:title" content="BM BOARD — 紙と鉛筆の手ざわりで考える、ブラウザのホワイトボード">
 <meta property="og:description" content="鉛筆で書きなぐり、紙を裏返し、消しカスを払う。覚えるのは ⌘K ひとつ。アカウント不要・オフラインで動くホワイトボード。">
@@ -131,2302 +131,494 @@
   ]
 }
 </script>
-<!-- Favicons (logo-based: black smiley on white) -->
 <link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0c0c0c">
-<!-- Apply stored theme before paint to avoid a flash-of-wrong-theme. -->
-<script>
-(function () {
-    try {
-        var t = localStorage.getItem('bmboard.theme');
-        if (t !== 'light' && t !== 'dark') {
-            t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches)
-                ? 'light' : 'dark';
-        }
-        document.documentElement.setAttribute('data-theme', t);
-    } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    }
-})();
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* ─────────────────────────────────────────────────────────────────────
-   BMBOARD · product page · "The Black Mirror Interface"
-   pure 1-bit · kinoshita studio · 2026
-   ───────────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   BM BOARD — preview build
+   Raycast的：暗いガラス・光のグラデーション・実機画面・スクロール演出
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#08080a;
+  --ink:#f4f4f6;
+  --dim:#a2a2ad;
+  --faint:#6e6e7a;
+  --line:rgba(255,255,255,.09);
+  --glass:rgba(22,22,26,.62);
+  --accent:#4d7cff;
+  --accent2:#8b5cf6;
+  --warm:#e8c07a;
+  --r:16px;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans','Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--sans);
+  line-height:1.7; overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+html[lang="ja"] .en{display:none!important}
+html[lang="en"] .ja{display:none!important}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── 背景の光。ゆっくり漂う ───────────────────────────── */
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.aurora i{
+  position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;
+  animation:drift 26s ease-in-out infinite alternate;
+}
+.aurora i:nth-child(1){width:52vw;height:52vw;left:-12vw;top:-14vw;
+  background:radial-gradient(circle,rgba(77,124,255,.42),transparent 66%)}
+.aurora i:nth-child(2){width:44vw;height:44vw;right:-10vw;top:6vh;
+  background:radial-gradient(circle,rgba(139,92,246,.32),transparent 66%);animation-delay:-9s}
+.aurora i:nth-child(3){width:40vw;height:40vw;left:24vw;top:52vh;
+  background:radial-gradient(circle,rgba(232,192,122,.16),transparent 66%);animation-delay:-16s}
+@keyframes drift{
+  from{transform:translate3d(0,0,0) scale(1)}
+  to{transform:translate3d(4vw,-5vh,0) scale(1.18)}
+}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.045;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
 
-:root {
-    /* DARK MODE (default) */
-    --ink:       #FFFFFF;
-    --void:      #000000;
-    --dim:       rgba(255,255,255,0.58);
-    --faint:     rgba(255,255,255,0.28);
-    --ghost:     rgba(255,255,255,0.10);
-    --rule:      rgba(255,255,255,0.18);
-    --glass:     rgba(255,255,255,0.04);
-    --accent:    #FFFFFF;
-    --warn:      #FF3B30;
-    --ease:      cubic-bezier(0.2, 0.7, 0.2, 1);
-    --mono:      'Space Mono', 'Courier New', Courier, monospace;
-    /* Thematic tokens that swap between modes */
-    --scan-color:   rgba(255,255,255,0.022);
-    --noise-color:  rgba(255,255,255,0.015);
-    --glow-halo:    rgba(255,255,255,0.6);
-    --bevel-top:    rgba(255,255,255,0.08);
-    --bevel-btm:    rgba(255,255,255,0.08);
-    --checker-fill: rgba(255,255,255,0.05);
-    --header-bg:    rgba(0,0,0,0.6);
-    --scan-blend:   screen;
-}
+.wrap{position:relative;z-index:2}
+.shell{max-width:1180px;margin:0 auto;padding:0 24px}
 
-/* LIGHT MODE — inverted 1-bit palette. Activated by a `html[data-theme="light"]`. */
-html[data-theme="light"] {
-    --ink:       #000000;
-    --void:      #FFFFFF;
-    --dim:       rgba(0,0,0,0.64);
-    --faint:     rgba(0,0,0,0.34);
-    --ghost:     rgba(0,0,0,0.08);
-    --rule:      rgba(0,0,0,0.18);
-    --glass:     rgba(0,0,0,0.04);
-    --accent:    #000000;
-    --scan-color:   rgba(0,0,0,0.028);
-    --noise-color:  rgba(0,0,0,0.015);
-    --glow-halo:    rgba(0,0,0,0.35);
-    --bevel-top:    rgba(0,0,0,0.06);
-    --bevel-btm:    rgba(0,0,0,0.06);
-    --checker-fill: rgba(0,0,0,0.05);
-    --header-bg:    rgba(255,255,255,0.72);
-    --scan-blend:   multiply;
+/* ── ナビ ──────────────────────────────────────────── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:60;
+  backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
+  background:rgba(8,8,10,.6);border-bottom:1px solid transparent;
+  transition:border-color .3s,background .3s;
 }
+nav.stuck{border-bottom-color:var(--line);background:rgba(8,8,10,.82)}
+.navin{max-width:1180px;margin:0 auto;padding:13px 24px;display:flex;align-items:center;gap:26px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:600;letter-spacing:.16em;font-size:13px}
+.brand img{width:26px;height:26px;border-radius:7px}
+.navlinks{display:flex;gap:24px;margin-left:auto;font-size:13px;color:var(--dim)}
+.navlinks a{transition:color .2s}
+.navlinks a:hover{color:var(--ink)}
+.langsw{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:11px;font-family:var(--mono)}
+.langsw button{background:none;border:none;color:var(--faint);padding:5px 10px;cursor:pointer;font:inherit;transition:.2s}
+.langsw button.on{background:rgba(255,255,255,.11);color:var(--ink)}
+.cta{
+  padding:8px 17px;border-radius:9px;font-size:12.5px;font-weight:600;letter-spacing:.04em;
+  background:linear-gradient(135deg,#fff,#d9d9e2);color:#0a0a0c;
+  transition:transform .2s,box-shadow .2s;white-space:nowrap;
+}
+.cta:hover{transform:translateY(-1px);box-shadow:0 8px 26px rgba(255,255,255,.22)}
 
-html, body {
-    background: var(--void);
-    color: var(--ink);
-    font-family: var(--mono);
-    font-size: 13.5px;
-    line-height: 1.7;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+/* ── HERO ─────────────────────────────────────────── */
+.hero{padding:186px 24px 0;text-align:center}   /* ⚠️左右は .shell と同じ余白を保つ（0にすると端に接する） */
+.pill{
+  display:inline-flex;align-items:center;gap:9px;font-size:12px;color:var(--dim);
+  padding:6px 15px;border-radius:100px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);backdrop-filter:blur(10px);margin-bottom:30px;
 }
+.pill b{color:var(--warm);font-weight:500}
+h1{
+  font-size:clamp(29px,6.6vw,80px);line-height:1.12;letter-spacing:-.03em;font-weight:700;
+  background:linear-gradient(180deg,#fff 22%,#9a9aa8 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-wrap:balance;
+}
+h1 .grad{background:linear-gradient(120deg,var(--accent),var(--accent2) 52%,var(--warm));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin:26px auto 0;max-width:60ch;font-size:clamp(15px,1.7vw,18px);color:var(--dim);text-wrap:balance;word-break:keep-all}
+.herobtns{display:flex;gap:13px;justify-content:center;margin-top:38px;flex-wrap:wrap}
+.btn2{
+  padding:12px 24px;border-radius:11px;font-size:14px;font-weight:600;
+  border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);
+  backdrop-filter:blur(12px);transition:.22s;
+}
+.btn2:hover{background:rgba(255,255,255,.11);transform:translateY(-1px)}
+.btn1{
+  padding:12px 26px;border-radius:11px;font-size:14px;font-weight:600;
+  background:linear-gradient(135deg,#fff,#dcdce4);color:#0a0a0c;transition:.22s;
+}
+.btn1:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(255,255,255,.2)}
+.meta{margin-top:24px;font-size:12px;color:var(--faint);font-family:var(--mono);letter-spacing:.06em}
 
-body { min-height: 100vh; position: relative; }
+/* 打鍵デモ */
+.typer{
+  margin:52px auto 0;max-width:560px;border-radius:13px;overflow:hidden;
+  border:1px solid var(--line);background:var(--glass);
+  backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);
+  box-shadow:0 24px 70px rgba(0,0,0,.6);text-align:left;
+}
+.typer .bar{display:flex;align-items:center;gap:11px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.typer .bar svg{opacity:.4;flex:none}
+.typed{font-size:14.5px;color:var(--ink);min-height:22px}
+.cursor{display:inline-block;width:1.5px;height:16px;background:var(--ink);vertical-align:-3px;margin-left:1px;animation:blink 1.05s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.typer .rows{padding:6px}
+.trow{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;font-size:13.5px;opacity:0;transform:translateY(5px);transition:.34s}
+.trow.show{opacity:1;transform:none}
+.trow.sel{background:rgba(255,255,255,.09)}
+.trow em{font-style:normal;font-size:15px;width:20px;text-align:center}
+.trow span{color:var(--faint);margin-left:auto;font-size:11.5px;font-family:var(--mono)}
 
-/* ── Scanline overlay — a thin veil of CRT ────────────────────────── */
-body::before {
-    content: "";
-    position: fixed; inset: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-        to bottom,
-        transparent        0px,
-        transparent        2px,
-        var(--scan-color)  2px,
-        var(--scan-color)  3px
-    );
-    z-index: 1000;
-    mix-blend-mode: var(--scan-blend);
+/* ── 実機画面 ─────────────────────────────────────── */
+.stage{margin-top:76px;perspective:1600px}
+.win{
+  position:relative;border-radius:14px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 50px 130px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.05) inset;
+  transform:rotateX(9deg) scale(.97);transform-origin:50% 0;
+  transition:transform 1.1s cubic-bezier(.16,1,.3,1);
+  background:#111;
 }
+.win.up{transform:rotateX(0deg) scale(1)}
+.win::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,transparent 55%,rgba(8,8,10,.5))}
+.wbar{display:flex;align-items:center;gap:7px;padding:11px 14px;background:rgba(18,18,22,.9);border-bottom:1px solid var(--line)}
+.wbar i{width:11px;height:11px;border-radius:50%;background:#3a3a42;display:block}
+.wbar b{margin-left:9px;font:400 11px/1 var(--mono);color:var(--faint);letter-spacing:.1em}
+.glow{position:absolute;left:50%;top:64%;width:74%;height:220px;transform:translateX(-50%);
+  background:radial-gradient(ellipse,rgba(77,124,255,.3),transparent 68%);filter:blur(58px);z-index:-1}
 
-/* ── Ambient noise grain ──────────────────────────────────────────── */
-body::after {
-    content: "";
-    position: fixed; inset: 0;
-    pointer-events: none;
-    background-image:
-        radial-gradient(circle at 20% 30%, var(--noise-color) 0, transparent 40%),
-        radial-gradient(circle at 80% 70%, var(--noise-color) 0, transparent 40%);
-    z-index: 999;
-}
+/* ── セクション ────────────────────────────────────── */
+section{padding:120px 0;position:relative}
+.eyebrow{font:500 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+h2{font-size:clamp(28px,4vw,46px);line-height:1.18;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+h2 .grad{background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{margin-top:18px;font-size:16px;color:var(--dim);max-width:62ch;text-wrap:balance}
 
-::selection { background: var(--ink); color: var(--void); }
+.duo{display:grid;grid-template-columns:1fr 1.15fr;gap:60px;align-items:center;margin-top:56px}
+.duo.rev{grid-template-columns:1.15fr 1fr}
+.duo.rev .txt{order:2}
+.shot{border-radius:13px;overflow:hidden;border:1px solid var(--line);
+  box-shadow:0 34px 90px rgba(0,0,0,.7);background:#0e0e12;transition:transform .5s cubic-bezier(.16,1,.3,1)}
+.shot:hover{transform:translateY(-6px) scale(1.012)}
 
-a { color: inherit; text-decoration: none; }
-
-/* ── LANGUAGE TOGGLE VISIBILITY ────────────────────────────────── */
-html[lang="en"] .lang-ja { display: none !important; }
-html[lang="ja"] .lang-en { display: none !important; }
-
-.lang-toggle {
-    gap: 4px;
-    background: transparent;
-    border: 1px solid var(--rule);
-    color: var(--dim);
-    cursor: pointer;
-    transition: border-color 0.2s;
-    padding: 0 10px !important;  /* override the 12px from .site-nav block */
-}
-.lang-toggle:hover { border-color: var(--ink); }
-.lang-toggle .lang-tok {
-    color: var(--faint);
-    padding: 0 3px;
-    transition: color 0.2s;
-    cursor: pointer;
-}
-.lang-toggle .lang-tok:hover { color: var(--dim); }
-html[lang="en"] .lang-toggle .lang-tok[data-set-lang="en"],
-html[lang="ja"] .lang-toggle .lang-tok[data-set-lang="ja"] {
-    color: var(--ink);
-}
-.lang-toggle .lang-sep { color: var(--faint); }
-
-/* ── Theme toggle — mirrors the lang-toggle aesthetic ─────────────── */
-.theme-toggle {
-    gap: 4px;
-    background: transparent;
-    border: 1px solid var(--rule);
-    color: var(--dim);
-    cursor: pointer;
-    transition: border-color 0.2s;
-    padding: 0 10px !important;
-    display: inline-flex;
-    align-items: center;
-}
-.theme-toggle:hover { border-color: var(--ink); }
-.theme-toggle .theme-tok {
-    color: var(--faint);
-    padding: 0 3px;
-    transition: color 0.2s;
-    cursor: pointer;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-}
-.theme-toggle .theme-tok:hover { color: var(--dim); }
-html[data-theme="dark"]  .theme-toggle .theme-tok[data-set-theme="dark"],
-html:not([data-theme="light"]) .theme-toggle .theme-tok[data-set-theme="dark"],
-html[data-theme="light"] .theme-toggle .theme-tok[data-set-theme="light"] {
-    color: var(--ink);
-}
-.theme-toggle .theme-sep { color: var(--faint); }
-
-/* ── BRAND LOGO IMAGE ─────────────────────────────────────────── */
-.brand-logo {
-    width: 30px; height: 30px;
-    object-fit: contain;
-    display: block;
-    /* logo.png ships as dark ink on transparent.
-       Dark mode needs it inverted to white; light mode keeps the original black. */
-    filter: invert(1);
-}
-html[data-theme="light"] .brand-logo { filter: none; }
-.hero-brand {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 22px;
-}
-.hero-title {
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    line-height: 0.92;
-    text-align: center;
-    margin: 0;
-    max-width: 100%;
-    text-transform: uppercase;
-}
-.hero-title.lang-en { font-size: clamp(34px, 9vw, 88px); letter-spacing: 0.04em; }
-.hero-title.lang-ja { font-size: clamp(28px, 7.4vw, 72px); letter-spacing: 0.08em; }
-
-.hero-logo {
-    width: clamp(140px, 22vw, 220px);
-    height: auto;
-    object-fit: contain;
-    display: block;
-    margin: 0 auto;
-    filter: invert(1);
-    opacity: 0.94;
-}
-html[data-theme="light"] .hero-logo { filter: none; }
-
-.eyebrow {
-    font-size: 10px; letter-spacing: 0.32em;
-    color: var(--dim); text-transform: uppercase;
-}
-.rule { height: 1px; background: var(--rule); border: none; width: 100%; margin: 0; }
-
-/* ── HEADER ────────────────────────────────────────────────────── */
-.site-header {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    padding: 18px 28px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 500;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    background: var(--header-bg);
-    border-bottom: 1px solid var(--rule);
-}
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-}
-.brand-text {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--ink);
-    line-height: 1;
-    white-space: nowrap;
-}
-.site-nav {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-/* Unified sizing for every nav item (links, toggle, launch) */
-.site-nav a,
-.site-nav .lang-toggle,
-.site-nav .theme-toggle {
-    display: inline-flex;
-    align-items: center;
-    height: 30px;
-    padding: 0 12px;
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    box-sizing: border-box;
-    line-height: 1;
-    white-space: nowrap;
-}
-.site-nav a {
-    color: var(--dim);
-    border: 1px solid transparent;
-    transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
-}
-.site-nav a:hover { color: var(--ink); border-color: var(--rule); }
-.site-nav .launch {
-    color: var(--ink);
-    border-color: var(--ink);
-    transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-.site-nav .launch:hover { background: var(--ink); color: var(--void); }
-
-/* ── HERO ──────────────────────────────────────────────────────── */
-.hero {
-    min-height: 100vh;
-    padding: 120px 28px 80px;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    text-align: center;
-    gap: 48px;
-    position: relative;
-}
-.hero-mirror {
-    width: min(780px, 92vw);
-    aspect-ratio: 16 / 9;
-    border: 1px solid var(--rule);
-    background:
-        linear-gradient(180deg, var(--glass), transparent),
-        linear-gradient(90deg, var(--noise-color) 1px, transparent 1px) 0 0 / 40px 40px,
-        linear-gradient(0deg,  var(--noise-color) 1px, transparent 1px) 0 0 / 40px 40px,
-        var(--void);
-    position: relative;
-    overflow: hidden;
-    box-shadow:
-        inset 0 0 80px var(--glass),
-        0 30px 60px -30px var(--ghost);
-}
-.hero-mirror::before {
-    content: "";
-    position: absolute; inset: 0;
-    background: linear-gradient(180deg, var(--bevel-top) 0%, transparent 30%, transparent 70%, var(--bevel-btm) 100%);
-    pointer-events: none;
-}
-.mirror-frame {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-}
-.mirror-pane { position: relative; padding: 24px; overflow: hidden; }
-.mirror-pane--left  { border-right: 1px solid var(--rule); }
-.mirror-pane-label {
-    position: absolute;
-    top: 14px; left: 14px;
-    font-size: 9px; letter-spacing: 0.24em;
-    color: var(--faint); text-transform: uppercase;
-}
-.mirror-pane-label--right { left: auto; right: 14px; }
-
-.mirror-sketch { width: 100%; height: 100%; }
-.mirror-sketch path,
-.mirror-sketch ellipse,
-.mirror-sketch polygon {
-    fill: none;
-    stroke: var(--ink);
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-.mirror-sketch .s1 {
-    stroke-dasharray: 520; stroke-dashoffset: 520;
-    animation: draw 2.4s var(--ease) 0.3s forwards, tint 6s 3.8s infinite;
-}
-.mirror-sketch .s2 {
-    stroke-dasharray: 360; stroke-dashoffset: 360;
-    animation: draw 2.2s var(--ease) 1.6s forwards, tint 6s 3.8s infinite;
-}
-.mirror-sketch .s3 {
-    stroke-dasharray: 240; stroke-dashoffset: 240;
-    animation: draw 1.8s var(--ease) 2.8s forwards, tint 6s 3.8s infinite;
-}
-@keyframes draw { to { stroke-dashoffset: 0; } }
-@keyframes tint {
-    0%, 35%, 100% { stroke: var(--ink); }
-    50%, 85%      { stroke: var(--ink); filter: drop-shadow(0 0 4px var(--glow-halo)); }
+.klist{margin-top:26px;display:flex;flex-direction:column;gap:13px}
+.kitem{display:flex;gap:13px;align-items:flex-start;font-size:14.5px;color:var(--dim)}
+.kitem b{color:var(--ink);font-weight:600}
+kbd{
+  font:500 12px/1.5 var(--mono);padding:3px 8px;border-radius:6px;white-space:nowrap;
+  background:rgba(255,255,255,.1);box-shadow:0 0 0 1px rgba(255,255,255,.1) inset;color:#eee;
 }
 
-.mirror-term {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--ink);
-    padding-top: 24px;
+/* カード */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:18px;margin-top:52px}
+.card{
+  padding:26px;border-radius:var(--r);border:1px solid var(--line);
+  background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  transition:.34s;position:relative;overflow:hidden;
 }
-.mirror-term .line { opacity: 0; animation: appear 0.4s var(--ease) forwards; }
-.mirror-term .line:nth-child(1) { animation-delay: 0.8s; }
-.mirror-term .line:nth-child(2) { animation-delay: 1.9s; }
-.mirror-term .line:nth-child(3) { animation-delay: 3.0s; color: var(--dim); }
-.mirror-term .line:nth-child(4) { animation-delay: 3.8s; }
-.mirror-term .line:nth-child(5) { animation-delay: 4.6s; color: var(--dim); }
-.mirror-term .caret {
-    display: inline-block;
-    width: 8px; height: 1em;
-    background: var(--ink);
-    vertical-align: -3px;
-    animation: blink 1s steps(2) infinite;
-}
-@keyframes appear { to { opacity: 1; } }
-@keyframes blink  { 50% { opacity: 0; } }
+.card::before{content:'';position:absolute;inset:0;opacity:0;transition:.34s;
+  background:radial-gradient(400px circle at var(--mx,50%) var(--my,0%),rgba(77,124,255,.16),transparent 62%)}
+.card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.2)}
+.card:hover::before{opacity:1}
+.card em{font-style:normal;font-size:24px;display:block;margin-bottom:13px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:8px;position:relative}
+.card p{font-size:13.5px;color:var(--dim);position:relative}
 
-.hero-tagline {
-    font-size: clamp(18px, 3vw, 30px);
-    font-weight: 400;
-    line-height: 1.3;
-    letter-spacing: -0.005em;
-    color: var(--dim);
-    max-width: 22ch;
-    margin: 0 auto;
-    text-align: center;
-}
-.hero-tagline em { font-style: normal; color: var(--ink); font-weight: 700; }
-/* ⭐正体を言い切る一行。詩的なタグラインの下に置く＝人にもAIにも「何であるか」が最初に伝わる */
-.hero-define {
-    font-size: clamp(13px, 1.5vw, 15.5px);
-    line-height: 2;
-    letter-spacing: 0.02em;
-    color: var(--dim);
-    opacity: 0.72;
-    max-width: 56ch;
-    margin: 22px auto 0;
-    text-align: center;
-    text-wrap: balance;          /* 行末で語が割れないように */
-    word-break: keep-all;        /* 日本語で「ホワイトボー／ド」を防ぐ */
-    overflow-wrap: anywhere;     /* 狭い画面では最終手段として折る */
-}
-.hero-define b { font-weight: 400; color: var(--ink); opacity: 0.92; }
-.hero-cta {
-    display: inline-flex; align-items: center; gap: 14px;
-    font-size: 12px; letter-spacing: 0.26em;
-    color: var(--ink); text-transform: uppercase;
-    border: 1px solid var(--ink);
-    padding: 16px 32px;
-    transition: background 0.2s, color 0.2s, letter-spacing 0.2s;
-}
-.hero-cta::before { content: "$"; color: var(--dim); }
-.hero-cta:hover {
-    background: var(--ink); color: var(--void);
-    letter-spacing: 0.3em;
-}
-.hero-cta:hover::before { color: var(--void); }
-.hero-meta {
-    font-size: 10px; letter-spacing: 0.24em;
-    color: var(--faint); text-transform: uppercase;
-    display: flex; gap: 24px; flex-wrap: wrap;
-    justify-content: center;
-}
+/* 流れるコマンド */
+.marquee{margin-top:60px;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.mrow{display:flex;gap:11px;width:max-content;animation:slide 42s linear infinite}
+.mrow:hover{animation-play-state:paused}
+@keyframes slide{to{transform:translateX(-50%)}}
+.chip{padding:8px 15px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.04);
+  font:500 12.5px/1 var(--mono);color:var(--dim);white-space:nowrap}
 
-/* ── SECTIONS ──────────────────────────────────────────────────── */
-.section {
-    padding: 120px 28px;
-    max-width: 1120px;
-    margin: 0 auto;
-    position: relative;
+/* CTA */
+.final{text-align:center;padding:130px 0}
+.final .box{
+  padding:66px 34px;border-radius:26px;border:1px solid var(--line);position:relative;overflow:hidden;
+  background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
 }
-.section + .section { border-top: 1px solid var(--rule); }
-.section-number {
-    font-size: 10px; letter-spacing: 0.36em;
-    color: var(--dim); text-transform: uppercase;
-    margin-bottom: 18px;
-}
-.section-number::before { content: "// "; color: var(--faint); }
-.section h2 {
-    font-size: clamp(24px, 3.6vw, 40px);
-    font-weight: 700; line-height: 1.15;
-    letter-spacing: -0.01em;
-    margin-bottom: 14px;
-    max-width: 22ch;
-}
-.section h2 em { font-style: normal; color: var(--dim); font-weight: 400; }
-.section-jp {
-    font-size: 13px; letter-spacing: 0.12em;
-    color: var(--dim);
-    margin-bottom: 40px;
-    max-width: 42ch;
-    line-height: 2;
-}
-.split {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 48px;
-    align-items: start;
-}
-.split p.en { color: var(--ink); margin-bottom: 14px; }
-.split p.jp { color: var(--dim); font-size: 12.5px; letter-spacing: 0.08em; line-height: 2; }
+.final .box::before{content:'';position:absolute;left:50%;top:-40%;width:130%;height:160%;transform:translateX(-50%);
+  background:radial-gradient(ellipse,rgba(77,124,255,.2),transparent 62%);pointer-events:none}
+footer{border-top:1px solid var(--line);padding:44px 0;font-size:12.5px;color:var(--faint)}
+.fnav{display:flex;flex-wrap:wrap;gap:10px 26px;margin-bottom:26px}
+.fnav a{color:var(--dim);transition:color .2s}
+.fnav a:hover{color:var(--ink)}
+.fin{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center;
+  padding-top:22px;border-top:1px solid var(--line)}
 
-.demo-frame {
-    border: 1px solid var(--rule);
-    background: var(--noise-color);
-    aspect-ratio: 16 / 10;
-    position: relative; overflow: hidden;
-}
-.demo-frame-label {
-    position: absolute; top: 12px; left: 12px;
-    font-size: 9px; letter-spacing: 0.22em;
-    color: var(--faint); text-transform: uppercase;
-}
+/* スクロール演出 */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.rv.in{opacity:1;transform:none}
+.rv[data-d="1"]{transition-delay:.08s}.rv[data-d="2"]{transition-delay:.16s}
+.rv[data-d="3"]{transition-delay:.24s}.rv[data-d="4"]{transition-delay:.32s}
 
-/* Section 01 — board demo */
-.board-demo svg { width: 100%; height: 100%; }
-.board-demo path,
-.board-demo ellipse {
-    fill: none; stroke: var(--ink);
-    stroke-width: 2.2;
-    stroke-linecap: round; stroke-linejoin: round;
+@media(max-width:880px){
+  .navlinks{display:none}
+  .hero{padding-top:132px}
+  .duo,.duo.rev{grid-template-columns:1fr;gap:34px}
+  .duo.rev .txt{order:0}
+  section{padding:82px 0}
+  .win{transform:none}
 }
-.board-demo .snap-ring {
-    fill: none; stroke: var(--ink);
-    stroke-width: 1.2;
-    opacity: 0;
-    animation: snapPulse 5s 3s infinite;
-}
-@keyframes snapPulse {
-    0%, 90%, 100% { opacity: 0; transform: scale(0.8); transform-origin: center; }
-    50% { opacity: 0.9; transform: scale(1.4); transform-origin: center; }
-}
-.board-demo .drawn {
-    stroke-dasharray: 640; stroke-dashoffset: 640;
-    animation: draw 3s var(--ease) 0.5s infinite alternate;
-}
-
-/* Section 02 — terminal demo */
-.term-demo {
-    padding: 28px;
-    font-size: 12px;
-    line-height: 1.9;
-    display: flex; flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-}
-.term-demo .pasted {
-    color: var(--ink);
-    background: var(--glass);
-    border: 1px dashed var(--rule);
-    padding: 8px 12px; margin: 6px 0;
-    animation: appearSlide 0.8s var(--ease) 1s backwards;
-}
-.term-demo .dim { color: var(--dim); }
-.term-demo .ok  { color: var(--ink); }
-.term-demo .ok::before { content: "[OK] "; color: var(--faint); }
-@keyframes appearSlide {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Section 04 — CAPABILITIES grid ──────────────────────────────── */
-.cap-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 22px;
-    margin-top: 28px;
-}
-@media (max-width: 760px) {
-    .cap-grid { grid-template-columns: 1fr; gap: 18px; }
-}
-.cap-card {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 20px;
-    background: var(--glass);
-    border: 1px solid var(--rule);
-    transition: border-color 0.2s var(--ease), transform 0.25s var(--ease);
-}
-.cap-card:hover { border-color: var(--ink); transform: translateY(-2px); }
-.cap-card .demo-frame { aspect-ratio: 16 / 9; margin: 0; }
-.cap-card h3 {
-    font-size: 13px;
-    letter-spacing: 0.22em;
-    color: var(--ink);
-    margin: 2px 0 2px;
-}
-.cap-card h3 small { display: block; font-size: 11px; letter-spacing: 0.15em; color: var(--dim); margin-top: 3px; }
-.cap-card p { color: var(--dim); font-size: 12.5px; line-height: 1.65; }
-.cap-card .spell-tag {
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    color: var(--ink);
-    padding: 3px 8px;
-    border: 1px solid var(--rule);
-    display: inline-block;
-    margin-top: 4px;
-    align-self: flex-start;
-    background: var(--glass);
-}
-/* Badge for features that require BMBrowser (Chrome extension). */
-.cap-card .ext-badge {
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    color: var(--dim);
-    padding: 3px 8px;
-    border: 1px dashed var(--rule);
-    display: inline-block;
-    margin-top: 4px;
-    align-self: flex-start;
-    background: transparent;
-    text-transform: uppercase;
-    font-style: italic;
-}
-.cap-card .ext-badge::before { content: '⌛ '; opacity: 0.7; font-style: normal; }
-
-/* demo illustration helpers (all monochrome, SVG-only) */
-.cap-svg path,
-.cap-svg line,
-.cap-svg rect,
-.cap-svg circle,
-.cap-svg polyline,
-.cap-svg polygon {
-    fill: none;
-    stroke: var(--ink);
-    stroke-width: 1.4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-.cap-svg .fill     { fill: var(--ink); stroke: none; }
-.cap-svg .dim      { stroke: var(--dim); }
-.cap-svg .faint    { stroke: var(--faint); }
-.cap-svg .rec      { fill: #FF3B30; stroke: none; animation: blinkRec 1.2s infinite; }
-@keyframes blinkRec { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
-.cap-svg .shimmer  { animation: capShimmer 4.6s infinite var(--ease); transform-origin: center; }
-@keyframes capShimmer { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-.cap-svg text {
-    fill: var(--dim);
-    font-family: var(--mono);
-    font-size: 8px;
-    letter-spacing: 0.08em;
-}
-.cap-svg text.hi { fill: var(--ink); }
-
-/* Checkerboard for transparency preview */
-.cap-svg .checker { fill: var(--checker-fill); stroke: none; }
-
-/* Section 03 — dual perspective */
-.dual {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border: 1px solid var(--rule);
-}
-.dual .persp { padding: 40px 32px; min-height: 340px; }
-.dual .persp + .persp { border-left: 1px solid var(--rule); }
-.dual .persp h3 {
-    font-size: 10px; letter-spacing: 0.32em;
-    color: var(--dim); text-transform: uppercase;
-    margin-bottom: 20px;
-}
-.dual .persp h3::before { content: "◼ "; color: var(--ink); }
-.dual .persp ul { list-style: none; padding: 0; margin: 0; }
-.dual .persp li {
-    font-size: 12.5px;
-    color: var(--ink);
-    padding: 10px 0;
-    border-bottom: 1px dashed var(--rule);
-}
-.dual .persp li:last-child { border-bottom: none; }
-.dual .persp li .jp {
-    display: block;
-    color: var(--dim);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    margin-top: 3px;
-}
-
-/* ── EMBEDDED TERMINAL ────────────────────────────────────────── */
-.terminal-section {
-    padding: 100px 28px;
-    max-width: 920px;
-    margin: 0 auto;
-    border-top: 1px solid var(--rule);
-}
-.terminal-section h2 {
-    font-size: clamp(22px, 3vw, 32px);
-    margin-bottom: 14px;
-    font-weight: 700;
-}
-.term-embed {
-    border: 1px solid var(--rule);
-    background: var(--noise-color);
-    padding: 22px;
-    font-size: 12.5px;
-    line-height: 1.75;
-    min-height: 280px;
-    margin-top: 30px;
-}
-.term-embed .out {
-    margin-bottom: 12px;
-    min-height: 160px;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-.term-embed .out .entry { margin-bottom: 2px; }
-.term-embed .out .cmd   { color: var(--ink); }
-.term-embed .out .cmd::before { content: "❯ "; color: var(--dim); }
-.term-embed .out .dim   { color: var(--dim); }
-.term-embed .out .err   { color: var(--warn); }
-.term-embed .out .ok    { color: var(--ink); }
-.term-embed .out .ascii {
-    font-size: 10px;
-    line-height: 1.2;
-    white-space: pre;
-    color: var(--ink);
-    overflow-x: auto;
-}
-.term-line {
-    display: flex; align-items: center; gap: 10px;
-    border-top: 1px solid var(--rule);
-    padding-top: 14px;
-}
-.term-line .prompt { color: var(--dim); font-weight: 700; }
-.term-line input {
-    flex: 1;
-    background: transparent;
-    border: none; outline: none;
-    color: var(--ink);
-    font-family: var(--mono);
-    font-size: 13px;
-    caret-color: var(--ink);
-}
-.term-line input::placeholder { color: var(--faint); }
-.term-hint {
-    margin-top: 14px;
-    font-size: 10px; letter-spacing: 0.22em;
-    color: var(--faint); text-transform: uppercase;
-}
-.term-hint code {
-    color: var(--dim);
-    padding: 2px 6px;
-    border: 1px solid var(--rule);
-    margin-right: 4px;
-    letter-spacing: 0.18em;
-}
-
-/* ── LAUNCH TRANSITION ────────────────────────────────────────── */
-.launch-overlay {
-    position: fixed; inset: 0;
-    background: var(--void);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.8s var(--ease);
-    z-index: 2000;
-    display: flex;
-    align-items: center; justify-content: center;
-    color: var(--ink);
-    font-size: 11px; letter-spacing: 0.32em;
-    text-transform: uppercase;
-}
-.launch-overlay.on { opacity: 1; pointer-events: auto; }
-.launch-overlay .dots::after {
-    content: "...";
-    animation: dots 1s steps(4) infinite;
-}
-@keyframes dots {
-    0%   { content: "";    }
-    25%  { content: ".";   }
-    50%  { content: "..";  }
-    75%  { content: "..."; }
-}
-
-/* ── FOOTER ───────────────────────────────────────────────────── */
-footer {
-    border-top: 1px solid var(--rule);
-    padding: 40px 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-    font-size: 10px; letter-spacing: 0.22em;
-    color: var(--faint); text-transform: uppercase;
-}
-.foot-primary {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-.foot-primary a {
-    color: var(--dim);
-    border-bottom: 1px solid var(--faint);
-    padding-bottom: 2px;
-    transition: color 0.2s, border-color 0.2s;
-}
-.foot-primary a:hover { color: var(--ink); border-color: var(--ink); }
-
-.foot-deep-manual {
-    width: 100%;
-    margin-top: 4px;
-    color: var(--faint);
-}
-.foot-deep-manual a {
-    color: var(--dim);
-    border-bottom: 1px solid var(--faint);
-    padding-bottom: 2px;
-    transition: color 0.2s, border-color 0.2s;
-}
-.foot-deep-manual a:hover { color: var(--ink); border-color: var(--ink); }
-
-.foot-social {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 14px;
-    padding-top: 22px;
-    border-top: 1px solid var(--rule);
-}
-.foot-social a {
-    display: inline-flex;
-    width: 38px;
-    height: 38px;
-    align-items: center;
-    justify-content: center;
-    color: var(--dim);
-    border: 1px solid var(--rule);
-    transition: color 0.2s, border-color 0.2s, transform 0.2s;
-}
-.foot-social a:hover {
-    color: var(--ink);
-    border-color: var(--ink);
-    transform: translateY(-1px);
-}
-.foot-social a svg { width: 16px; height: 16px; display: block; }
-
-/* ── RESPONSIVE ────────────────────────────────────────────────── */
-@media (max-width: 720px) {
-    .site-header { padding: 12px 16px; }
-    .site-nav { gap: 6px; }
-    .site-nav a,
-    .site-nav .lang-toggle,
-    .site-nav .theme-toggle {
-        font-size: 9px;
-        letter-spacing: 0.16em;
-        padding: 0 9px;
-        height: 28px;
-    }
-    .lang-toggle, .theme-toggle { padding: 0 8px !important; }
-    .brand { gap: 8px; }
-    .brand-logo { width: 28px; height: 28px; }
-    .brand-text { font-size: 11px; letter-spacing: 0.18em; }
-    /* Mobile: hide nav text links — keep only brand + toggles + $ launch */
-    .site-nav > a { display: none; }
-    .site-nav > a.launch { display: inline-flex; }
-
-    /* HERO — large, vertical mirror with maximum impact */
-    .hero { padding: 88px 12px 60px; gap: 32px; }
-    .hero-mirror {
-        width: min(780px, 96vw);
-        aspect-ratio: 2 / 3;         /* taller portrait — more vertical drama */
-    }
-    .mirror-frame {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr 1fr;
-    }
-    .mirror-pane { padding: 28px 22px; }
-    .mirror-pane--left {
-        border-right: none;
-        border-bottom: 1px solid var(--rule);
-    }
-    .mirror-pane-label {
-        font-size: 10px;
-        letter-spacing: 0.3em;
-        top: 16px; left: 16px;
-    }
-    .mirror-pane-label--right { left: auto; right: 16px; }
-    .mirror-sketch path,
-    .mirror-sketch ellipse,
-    .mirror-sketch polygon { stroke-width: 3; }
-    .mirror-term {
-        font-size: 14px;
-        line-height: 1.85;
-        padding-top: 32px;
-    }
-    .mirror-term .caret { width: 9px; }
-
-    .section { padding: 80px 18px; }
-    .split { grid-template-columns: 1fr; gap: 32px; }
-    .dual { grid-template-columns: 1fr; }
-    .dual .persp + .persp { border-left: none; border-top: 1px solid var(--rule); }
-}
-@media (max-width: 380px) {
-    /* very narrow phones — hide brand text to preserve nav */
-    .brand-text { display: none; }
-}
-
-/* ── MOTION SAFETY ────────────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-    .mirror-sketch .s1,
-    .mirror-sketch .s2,
-    .mirror-sketch .s3 { stroke-dashoffset: 0; }
-    .mirror-term .line { opacity: 1; }
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .rv{opacity:1;transform:none}
+  .win{transform:none}
 }
 </style>
 </head>
 <body>
 
-<!-- ═════════════════════════════════════════════════════════════════
-     HEADER
-     ═════════════════════════════════════════════════════════════════ -->
-<header class="site-header">
-    <a href="#top" class="brand" aria-label="Black Mirror Board — back to top">
-        <img src="./logo.png" alt="" class="brand-logo">
-        <span class="brand-text">BM Board</span>
-    </a>
-    <nav class="site-nav">
-        <a href="#the-board">
-            <span class="lang-en">Board</span>
-            <span class="lang-ja">ボード</span>
-        </a>
-        <a href="#the-terminal">
-            <span class="lang-en">Terminal</span>
-            <span class="lang-ja">ターミナル</span>
-        </a>
-        <a href="#capabilities">
-            <span class="lang-en">Capabilities</span>
-            <span class="lang-ja">できること</span>
-        </a>
-        <a href="./usage.html">
-            <span class="lang-en">Manual</span>
-            <span class="lang-ja">マニュアル</span>
-        </a>
-        <a href="./commands.html">
-            <span class="lang-en">Commands</span>
-            <span class="lang-ja">コマンド</span>
-        </a>
-        <div class="lang-toggle" id="langToggle" role="group" aria-label="switch language">
-            <span class="lang-tok" data-set-lang="en">EN</span>
-            <span class="lang-sep">·</span>
-            <span class="lang-tok" data-set-lang="ja">JP</span>
-        </div>
-        <div class="theme-toggle" id="themeToggle" role="group" aria-label="switch theme" title="dark / light">
-            <span class="theme-tok" data-set-theme="dark">●</span>
-            <span class="theme-sep">·</span>
-            <span class="theme-tok" data-set-theme="light">○</span>
-        </div>
-        <a href="./app" class="launch">$ launch</a>
-    </nav>
+<div class="aurora"><i></i><i></i><i></i></div>
+<div class="grain"></div>
+
+<div class="wrap">
+
+<nav id="nav"><div class="navin">
+  <a class="brand" href="#top"><img src="./logo.png" alt="">BM BOARD</a>
+  <div class="navlinks">
+    <a href="#paper"><span class="ja">紙と鉛筆</span><span class="en">Paper</span></a>
+    <a href="#palette"><span class="ja">⌘K</span><span class="en">⌘K</span></a>
+    <a href="#spells"><span class="ja">魔法</span><span class="en">Spells</span></a>
+    <a href="#keyboard"><span class="ja">キーボード</span><span class="en">Keyboard</span></a>
+  </div>
+  <div class="langsw"><button data-l="ja" class="on">JP</button><button data-l="en">EN</button></div>
+  <a class="cta" href="./app.html"><span class="ja">はじめる</span><span class="en">Launch</span></a>
+</div></nav>
+
+<!-- ═══ HERO ═══ -->
+<header class="hero shell" id="top">
+  <div class="pill rv"><b>●</b><span class="ja">v1.4 — 鉛筆と紙が既定になりました</span><span class="en">v1.4 — pencil on paper is now the default</span></div>
+  <h1 class="rv" data-d="1">
+    <span class="ja">紙と鉛筆の手ざわりで<br><span class="grad">考える</span>ための面。</span>
+    <span class="en">A surface for thinking,<br>that <span class="grad">feels like</span> paper.</span>
+  </h1>
+  <p class="sub rv" data-d="2">
+    <span class="ja">鉛筆で書きなぐり、紙を裏返し、消しカスを払う。<br>覚えるのは <kbd>⌘K</kbd> ひとつだけ。アカウント登録なし・オフラインでも動く・無料。</span>
+    <span class="en">Scribble in pencil, flip the sheet over, sweep away the crumbs.<br>One shortcut to remember: <kbd>⌘K</kbd>. No account, works offline, free.</span>
+  </p>
+  <div class="herobtns rv" data-d="3">
+    <a class="btn1" href="./app.html"><span class="ja">ブラウザで開く →</span><span class="en">Open in browser →</span></a>
+    <a class="btn2" href="#paper"><span class="ja">何ができるか見る</span><span class="en">See what it does</span></a>
+  </div>
+  <div class="meta rv" data-d="4">one file · zero deps · local-first · 日本語 / English</div>
+
+  <!-- 打鍵デモ -->
+  <div class="typer rv" data-d="4">
+    <div class="bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+      <div class="typed"><span id="tt"></span><span class="cursor"></span></div>
+    </div>
+    <div class="rows" id="trows">
+      <div class="trow sel"><em>✏️</em><div><span class="ja">紙に切り替える</span><span class="en">switch to paper</span></div><span>enpitsu</span></div>
+      <div class="trow"><em>🔄</em><div><span class="ja">紙を裏返す</span><span class="en">flip the sheet</span></div><span>flip</span></div>
+      <div class="trow"><em>🧹</em><div><span class="ja">消しカスを払う</span><span class="en">sweep the crumbs</span></div><span>sweep</span></div>
+      <div class="trow"><em>🪄</em><div><span class="ja">選んだものを魔法にする</span><span class="en">save selection as a spell</span></div><span>spell</span></div>
+    </div>
+  </div>
+
+  <div class="stage rv">
+    <div class="win" id="win">
+      <div class="glow"></div>
+      <div class="wbar"><i></i><i></i><i></i><b>BM BOARD</b></div>
+      <img src="shots/app_full.webp" alt="BM BOARD の画面。紙のボードに ⌘K のコマンドパレットが開いている" width="2000" loading="eager">
+    </div>
+  </div>
 </header>
 
-<!-- ═════════════════════════════════════════════════════════════════
-     HERO — the mirror
-     ═════════════════════════════════════════════════════════════════ -->
-<section class="hero">
-    <div class="hero-mirror" aria-label="a mirror where sketch meets command">
-        <div class="mirror-frame">
-            <!-- Left: designer's sketch drawing live -->
-            <div class="mirror-pane mirror-pane--left">
-                <div class="mirror-pane-label">DESIGNER</div>
-                <svg class="mirror-sketch" viewBox="0 0 300 220" preserveAspectRatio="xMidYMid meet">
-                    <ellipse class="s1" cx="150" cy="100" rx="70" ry="58"/>
-                    <path class="s2" d="M80 170 Q150 180 220 165 T 250 180"/>
-                    <polygon class="s3" points="150,48 190,130 110,130"/>
-                </svg>
-            </div>
-            <!-- Right: hacker's terminal commanding -->
-            <div class="mirror-pane mirror-pane--right">
-                <div class="mirror-pane-label mirror-pane-label--right">HACKER</div>
-                <div class="mirror-term">
-                    <div class="line">❯ draw circle</div>
-                    <div class="line">❯ draw arc</div>
-                    <div class="line">  → 2 strokes captured</div>
-                    <div class="line">❯ biwako-blue</div>
-                    <div class="line">  → retinted to #0044CC<span class="caret"></span></div>
-                </div>
-            </div>
-        </div>
+<!-- ═══ 紙 ═══ -->
+<section id="paper" class="shell">
+  <div class="txt rv">
+    <div class="eyebrow">01 — paper &amp; pencil</div>
+    <h2><span class="ja">開くと、<span class="grad">鉛筆と紙</span>です。</span><span class="en">It opens as <span class="grad">pencil on paper</span>.</span></h2>
+    <p class="lead">
+      <span class="ja">芯が紙の目に引っかかり、筆圧が重さになり、消した所には消しカスが残る。払ってもいいし、紙を裏返して裏に書き続けてもいい。表がうっすら透けるところまで、本物の紙と同じように。</span>
+      <span class="en">The lead catches the grain, pressure reads as weight, and the crumbs stay where you rubbed. Sweep them away — or flip the sheet and keep writing on the back, with the front bleeding through, faintly.</span>
+    </p>
+  </div>
+  <div class="duo">
+    <div class="txt">
+      <div class="klist">
+        <div class="kitem rv"><kbd>flip</kbd><div><b><span class="ja">紙を裏返す</span><span class="en">Flip the sheet</span></b><br><span class="ja">表がうっすら透ける。裏面では表の線は選べない — 裏だから。</span><span class="en">The front bleeds through. You can't select front strokes from the back — because it's the back.</span></div></div>
+        <div class="kitem rv" data-d="1"><kbd>sweep</kbd><div><b><span class="ja">消しカスを払う</span><span class="en">Sweep the crumbs</span></b><br><span class="ja">消しゴムはこすった所だけ薄くなり、跡が残る。</span><span class="en">The eraser only lightens where you rub, and leaves a mark.</span></div></div>
+        <div class="kitem rv" data-d="2"><kbd>grade 2B</kbd><div><b><span class="ja">芯の濃さ</span><span class="en">Pencil grade</span></b><br><span class="ja">H / HB / B / 2B / 4B。硬さで紙目の拾い方まで変わる。</span><span class="en">H / HB / B / 2B / 4B — hardness changes how the grain is picked up.</span></div></div>
+        <div class="kitem rv" data-d="3"><kbd>classic</kbd><div><b><span class="ja">ペンに戻す</span><span class="en">Back to the pen</span></b><br><span class="ja">一語でペン＋通常ボードへ。かっちり描きたい時はこちら。</span><span class="en">One word and the pencil becomes a pen, the paper becomes a board.</span></div></div>
+      </div>
     </div>
-
-    <div class="hero-brand">
-        <h1 class="hero-title lang-en">Black Mirror Board</h1>
-        <h1 class="hero-title lang-ja">ブラックミラーボード</h1>
-        <img src="./logo.png" alt="Black Mirror Board" class="hero-logo">
-    </div>
-
-    <p class="hero-tagline lang-en">Where Designer's Intuition<br><em>meets</em> Hacker's Command.</p>
-    <p class="hero-tagline lang-ja">デザイナーの直感と、<em>ハッカーの</em>コマンドが<br>交差する場所。</p>
-
-    <p class="hero-define lang-en"><b>A whiteboard that feels like paper and pencil.</b><br>Scribble in pencil, flip the sheet over, sweep away the crumbs.<br>No account. No server. Works offline. Free.</p>
-    <p class="hero-define lang-ja"><b>紙と鉛筆の手ざわりで考える、ブラウザのホワイトボード。</b><br>鉛筆で書きなぐり、紙を裏返し、消しカスを払う。<br>アカウント登録なし・オフラインでも動く・無料。</p>
-
-    <a class="hero-cta" href="./app" data-launch>launch</a>
-
-    <div class="hero-meta">
-        <span class="lang-en">one file</span>
-        <span class="lang-ja">一枚の HTML</span>
-        <span class="lang-en">zero deps</span>
-        <span class="lang-ja">依存ゼロ</span>
-        <span class="lang-en">zero build</span>
-        <span class="lang-ja">ビルド不要</span>
-        <span class="lang-en">local-first</span>
-        <span class="lang-ja">ローカル完結</span>
-    </div>
+    <div class="shot rv" data-d="1"><img src="shots/flip.webp" alt="紙を裏返した状態。表の線がうっすら透けている" loading="lazy"></div>
+  </div>
 </section>
 
-<!-- ═════════════════════════════════════════════════════════════════
-     SECTION 01 — THE BOARD
-     ═════════════════════════════════════════════════════════════════ -->
-<section class="section" id="the-board">
-    <div class="section-number">
-        <span class="lang-en">Section 01 — THE BOARD</span>
-        <span class="lang-ja">セクション 01 — ボード</span>
+<!-- ═══ ⌘K ═══ -->
+<section id="palette" class="shell">
+  <div class="txt rv">
+    <div class="eyebrow">02 — command palette</div>
+    <h2><span class="ja">これを、<span class="grad">覚える必要はありません</span>。</span><span class="en">You never have to <span class="grad">memorise</span> any of this.</span></h2>
+    <p class="lead">
+      <span class="ja"><kbd>⌘K</kbd> を押して、やりたいことを打つ。候補が出て、最近使ったものが上に並び、自分でショートカットも割り当てられます。メニューを探す時間がなくなります。</span>
+      <span class="en">Press <kbd>⌘K</kbd> and type what you want. The palette suggests the rest, keeps what you used last on top, and lets you bind your own shortcuts.</span>
+    </p>
+  </div>
+  <div class="duo rev">
+    <div class="shot rv"><img src="shots/cmdk.webp" alt="⌘K コマンドパレット" loading="lazy"></div>
+    <div class="txt">
+      <div class="klist">
+        <div class="kitem rv" data-d="1"><kbd>⌘K</kbd><div><b><span class="ja">すべての入口</span><span class="en">One way in</span></b><br><span class="ja">お気に入り★・最近使ったもの・ユーザー割当ショートカット。</span><span class="en">Favorites, recents, and your own key bindings.</span></div></div>
+        <div class="kitem rv" data-d="2"><kbd>⌘,</kbd><div><b><span class="ja">設定</span><span class="en">Settings</span></b><br><span class="ja">一般 / コマンド / 魔法。衝突するキーは赤で警告。</span><span class="en">General / Commands / Spells. Conflicting keys are flagged in red.</span></div></div>
+        <div class="kitem rv" data-d="3"><kbd>⌘B</kbd><div><b><span class="ja">ターミナル</span><span class="en">Terminal</span></b><br><span class="ja">打つのが好きな人のために。同じことは全部、手でも届きます。</span><span class="en">For people who like typing. Everything it does is reachable by hand, too.</span></div></div>
+      </div>
     </div>
-    <h2 class="lang-en">Experience <em>begins</em> at the fingertip.</h2>
-    <h2 class="lang-ja">体験は、指先から<em>始まる</em>。</h2>
-
-    <div class="split">
-        <div>
-            <p class="en lang-en">It opens as pencil on paper. The lead catches the grain, the pressure reads as weight, and the crumbs stay where you rubbed. Sweep them away, or <em>flip the sheet over</em> and keep writing on the back — the front bleeds through, faintly, the way it does on real paper.</p>
-            <p class="jp lang-ja">開くと、鉛筆と紙です。芯が紙の目に引っかかり、筆圧が重さになり、消した所には消しカスが残る。払ってもいいし、<em>紙を裏返して</em>裏に書き続けてもいい。表がうっすら透けるところまで、本物の紙と同じように。</p>
-            <p class="en lang-en">Prefer a clean line? One word — <code>classic</code> — and the pencil becomes a pen, the paper becomes a board. Strokes snap closed, anchors bend every shape, rotation feels like Illustrator. 60fps, no stutter.</p>
-            <p class="jp lang-ja">かっちり描きたい時は一語、<code>classic</code>。鉛筆がペンになり、紙が板に戻ります。始点近くで止めれば線は閉じ、アンカーが形を曲げ、回転は Illustrator のそれに近い。60fps で止まりません。</p>
-            <p class="en lang-en">Themes are a single word: <code>dark</code>, <code>light</code>, <code>gray</code> — the board changes color, not the room around it. Your file is yours: no account, no server, no upload.</p>
-            <p class="jp lang-ja">テーマも一語。<code>dark</code>, <code>light</code>, <code>gray</code>。色が変わるのはボード自身で、まわりの道具は動きません。アカウントは無い。サーバーも無い。描いたものは、あなたの端末の中に。</p>
-        </div>
-
-        <div class="demo-frame board-demo" aria-hidden="true">
-            <div class="demo-frame-label">BOARD ▸ LIVE DEMO</div>
-            <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
-                <!-- animated pen stroke: a freehand circle that snaps closed -->
-                <path class="drawn" d="M 100 130 C 100 80, 140 60, 200 60 C 260 60, 300 80, 300 130 C 300 180, 260 200, 200 200 C 140 200, 100 180, 100 130 Z"/>
-                <circle class="snap-ring" cx="100" cy="130" r="6"/>
-            </svg>
-        </div>
-    </div>
+  </div>
+  <div class="marquee rv">
+    <div class="mrow" id="mrow"></div>
+  </div>
 </section>
 
-<!-- ═════════════════════════════════════════════════════════════════
-     SECTION 02 — THE TERMINAL
-     ═════════════════════════════════════════════════════════════════ -->
-<section class="section" id="the-terminal">
-    <div class="section-number">
-        <span class="lang-en">Section 02 — THE TERMINAL</span>
-        <span class="lang-ja">セクション 02 — ターミナル</span>
+<!-- ═══ 魔法 ═══ -->
+<section id="spells" class="shell">
+  <div class="txt rv">
+    <div class="eyebrow">03 — spells &amp; store</div>
+    <h2><span class="ja">機能は買うものではない。<br><span class="grad">魔法として共有する</span>ものだ。</span><span class="en">Features are not bought.<br>They are <span class="grad">shared as spells</span>.</span></h2>
+    <p class="lead">
+      <span class="ja">魔法＝ボードの上でできることに、名前を付けたもの。並べたものを保存して何度でも置き直したり、桜を降らせるような動くものを作ったり。JSON で書き出せるので、そのまま人に配れます。</span>
+      <span class="en">A spell is a name for something the board can do. Save an arrangement and place it again, or write something that makes cherry blossoms fall. Export it as JSON and hand it out.</span>
+    </p>
+  </div>
+  <div class="cards">
+    <div class="card rv"><em>🪄</em><h3><span class="ja">作る</span><span class="en">Make</span></h3><p><span class="ja">選んで <kbd>spell 名前</kbd>。または AI に JSON を書かせて貼るだけ。</span><span class="en">Select, then <kbd>spell name</kbd>. Or let an AI write the JSON and paste it in.</span></p></div>
+    <div class="card rv" data-d="1"><em>🎉</em><h3><span class="ja">試す</span><span class="en">Try</span></h3><p><span class="ja">その場でボードに走らせて確かめる。動く魔法もそのまま。</span><span class="en">Run it on the board right away — animated ones included.</span></p></div>
+    <div class="card rv" data-d="2"><em>🏪</em><h3><span class="ja">配る</span><span class="en">Share</span></h3><p><span class="ja">📤 で提出 → 審査 → STORE に並び、全員が使えるようになる。</span><span class="en">Submit with 📤 → review → it lands in the STORE for everyone.</span></p></div>
+    <div class="card rv" data-d="3"><em>🔌</em><h3><span class="ja">サーバー不要</span><span class="en">No backend</span></h3><p><span class="ja">静的な JSON を読むだけ。維持費ゼロで回り続けます。</span><span class="en">Just a static JSON file. Zero running cost.</span></p></div>
+  </div>
+  <div class="duo" style="margin-top:64px">
+    <div class="txt rv">
+      <h2 style="font-size:clamp(22px,2.6vw,30px)"><span class="ja">自分のものだから、<br>名前もアイコンも変えられる。</span><span class="en">It's yours — so rename it,<br>and pick its icon.</span></h2>
+      <p class="lead"><span class="ja">設定の「魔法」タブで、自作もインストールしたものも一覧に。✎ で名前・アイコン・説明をその場で編集し、📤 で提出用の JSON を全部込みで書き出せます。</span><span class="en">The Spells tab lists everything you made or installed. Edit the name, icon and description inline with ✎, then 📤 exports a submission-ready JSON.</span></p>
     </div>
-    <h2 class="lang-en">Magic <em>travels</em> as JSON.</h2>
-    <h2 class="lang-ja">魔法は JSON で<em>流通する</em>。</h2>
-
-    <div class="split">
-        <div class="demo-frame term-demo" aria-hidden="true">
-            <div class="demo-frame-label">TERMINAL ▸ PASTE INTERCEPTED</div>
-            <div><span class="dim">paste</span> &gt; <span class="dim">[JSON payload]</span></div>
-            <div class="pasted">{"command":"grain","action":"for(let i=0;i&lt;120;i++){...}"}</div>
-            <div class="dim">→ schema check... ✓</div>
-            <div class="dim">→ binding $grain...</div>
-            <div class="dim">→ persisting to local storage...</div>
-            <div class="ok">spell acquired — run: $grain</div>
-        </div>
-
-        <div>
-            <p class="en lang-en"><b>You never have to memorise any of this.</b> Press <code>⌘K</code> and type what you want — the palette suggests the rest, remembers what you used last, and lets you bind your own shortcuts. The terminal is for people who like typing; everything it does is reachable by hand, too.</p>
-            <p class="jp lang-ja"><b>これを覚える必要は、ありません。</b><code>⌘K</code> を押して、やりたいことを打つ。候補が出て、最近使ったものが上に並び、自分でショートカットも割り当てられます。ターミナルは打つのが好きな人のためのもので、同じことは全部、手でも届きます。</p>
-            <p class="en lang-en">Save what you just arranged as a <b>spell</b> — a name for something the board can do. Paste a JSON payload and a new one installs. Spells are portable, remixable, and yours to hand out.</p>
-            <p class="jp lang-ja">いま並べたものは <b>魔法</b> として保存できます。ボードの上でできることに、名前を付けたもの。JSON を貼れば新しい魔法が入り、書き出して人に配ることもできます。</p>
-            <p class="en lang-en"><b>Features are not bought. They are shared as spells.</b></p>
-            <p class="jp lang-ja"><b>機能は買うものではない。魔法として共有するものだ。</b></p>
-            <p class="en lang-en">An AI can write your next spell. Paste the BM API into Claude or ChatGPT, describe what you want, get back a JSON. The ecosystem grows one sentence at a time.</p>
-            <p class="jp lang-ja">次の呪文は AI に書かせられる。BM API を Claude や ChatGPT に貼り、自然言語で依頼すれば、動く JSON が返ってくる。エコシステムは、一文ずつ育つ。</p>
-        </div>
-    </div>
+    <div class="shot rv" data-d="1"><img src="shots/settings.webp" alt="設定パネルのコマンド・ショートカット管理" loading="lazy"></div>
+  </div>
 </section>
 
-<!-- ═════════════════════════════════════════════════════════════════
-     SECTION 03 — DUAL PERSPECTIVE
-     ═════════════════════════════════════════════════════════════════ -->
-<section class="section" id="dual">
-    <div class="section-number">
-        <span class="lang-en">Section 03 — DUAL PERSPECTIVE</span>
-        <span class="lang-ja">セクション 03 — 二律背反</span>
+<!-- ═══ キーボード ═══ -->
+<section id="keyboard" class="shell">
+  <div class="duo rev">
+    <div class="shot rv"><img src="shots/usage.webp" alt="使い方画面。検索とカテゴリ" loading="lazy"></div>
+    <div class="txt rv" data-d="1">
+      <div class="eyebrow">04 — keyboard only</div>
+      <h2><span class="ja">絵が描けなくても、<br><span class="grad">図解はつくれる</span>。</span><span class="en">Can't draw?<br>You can still <span class="grad">build the diagram</span>.</span></h2>
+      <p class="lead"><span class="ja">開発者や、描くのが苦手な人のために。マウスを使わずに、選んで、動かして、つないで、揃える。</span><span class="en">For developers and anyone who finds drawing hard. Select, nudge, connect and align — without touching the mouse.</span></p>
+      <div class="klist">
+        <div class="kitem rv" data-d="2"><kbd>Tab</kbd><div><span class="ja">次のオブジェクトを選ぶ（画面外なら中央へ寄せる）</span><span class="en">Select the next object (scrolls it into view)</span></div></div>
+        <div class="kitem rv" data-d="2"><kbd>↑↓←→</kbd><div><span class="ja">1px 動かす／<kbd>⇧</kbd> で 10px ／<kbd>⌥</kbd> でサイズ変更</span><span class="en">Nudge 1px / <kbd>⇧</kbd> 10px / <kbd>⌥</kbd> resize</span></div></div>
+        <div class="kitem rv" data-d="3"><kbd>connect</kbd><div><span class="ja">選んだ2つ以上を矢印でつなぐ</span><span class="en">Link 2+ selected objects with arrows</span></div></div>
+        <div class="kitem rv" data-d="3"><kbd>align</kbd><div><span class="ja">left / center / right / top / middle / bottom で整列</span><span class="en">left / center / right / top / middle / bottom</span></div></div>
+      </div>
     </div>
-    <h2 class="lang-en">Two minds. <em>One</em> board.</h2>
-    <h2 class="lang-ja">二つの知性、<em>一枚の</em>板。</h2>
-
-    <div class="dual">
-        <div class="persp">
-            <h3><span class="lang-en">Designer</span><span class="lang-ja">デザイナー</span></h3>
-            <ul>
-                <li class="lang-en">Pen, ink, pressure — the hand leads</li>
-                <li class="lang-ja">鉛筆、インク、筆圧 — 手が導く</li>
-                <li class="lang-en">Biwako silence as the default palette</li>
-                <li class="lang-ja">琵琶湖の静寂が、既定のパレット</li>
-                <li class="lang-en">Every shape edits like a native vector</li>
-                <li class="lang-ja">すべての図形が、ベクター然として編まれる</li>
-                <li class="lang-en">Export PNG in one keystroke · SVG in one word</li>
-                <li class="lang-ja">PNG は 1 キーで、SVG は 1 語で書き出せる</li>
-            </ul>
-        </div>
-        <div class="persp">
-            <h3><span class="lang-en">Hacker</span><span class="lang-ja">ハッカー</span></h3>
-            <ul>
-                <li class="lang-en">⌘K, JSON, spells — the mind commands</li>
-                <li class="lang-ja">⌘K、JSON、魔法 — 知性が命じる</li>
-                <li class="lang-en"><b>Can't draw? Build the diagram with the keyboard alone</b> — Tab to select, arrows to nudge, <code>connect</code> to link, <code>align</code> to tidy</li>
-                <li class="lang-ja"><b>絵が描けなくても、キーボードだけで図解できる</b> — Tab で選び、矢印で動かし、<code>connect</code> でつなぎ、<code>align</code> で揃える</li>
-                <li class="lang-en">Register a spell in one line of JS</li>
-                <li class="lang-ja">1 行の JS で、新しい魔法を登録できる</li>
-                <li class="lang-en">Paste from SNS, drop a .json, bundle everything</li>
-                <li class="lang-ja">SNS から拾い、ファイルで配り、まとめて運ぶ</li>
-                <li class="lang-en">IndexedDB persistence · offline · forever yours</li>
-                <li class="lang-ja">IndexedDB に刻まれ、オフラインで生き続ける</li>
-            </ul>
-        </div>
-    </div>
+  </div>
 </section>
 
-<!-- ═════════════════════════════════════════════════════════════════
-     SECTION 04 — CAPABILITIES (six doors into the mirror)
-     ═════════════════════════════════════════════════════════════════ -->
-<section class="section" id="capabilities">
-    <div class="section-number">
-        <span class="lang-en">Section 04 — CAPABILITIES</span>
-        <span class="lang-ja">セクション 04 — できること</span>
-    </div>
-    <h2 class="lang-en">Six <em>doors</em> into the mirror.</h2>
-    <h2 class="lang-ja">鏡に開かれた、<em>6つの扉</em>。</h2>
-
-    <div class="cap-grid">
-
-        <!-- ── 1. SVG EXPORT — for designers who work in Figma / Illustrator ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ SVG EXPORT</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <!-- left: a pencil stroke -->
-                    <path d="M 40 150 C 60 100, 90 80, 120 100 S 150 160, 170 130" stroke-width="2"/>
-                    <!-- pencil nib -->
-                    <polygon points="170,128 180,122 182,128 172,134" class="fill"/>
-                    <!-- arrow -->
-                    <line x1="200" y1="112" x2="230" y2="112"/>
-                    <polyline points="224,106 232,112 224,118"/>
-                    <!-- svg tag -->
-                    <rect x="246" y="86" width="64" height="52"/>
-                    <text x="278" y="118" text-anchor="middle" class="hi">&lt;svg/&gt;</text>
-                    <!-- destination apps -->
-                    <rect x="330" y="70" width="42" height="42"/>
-                    <text x="351" y="97" text-anchor="middle" class="hi">F</text>
-                    <text x="351" y="108" text-anchor="middle">figma</text>
-                    <rect x="330" y="118" width="42" height="42"/>
-                    <text x="351" y="145" text-anchor="middle" class="hi">Ai</text>
-                    <text x="351" y="156" text-anchor="middle">illust</text>
-                    <!-- whispers of precision -->
-                    <text x="40" y="190">pen · pressure · bezier</text>
-                    <text x="40" y="204" class="faint" style="stroke:none; fill:var(--faint);">native vectors — no raster bake</text>
-                </svg>
-            </div>
-            <h3>
-                SVG EXPORT
-                <small class="lang-en">Pencil strokes become editable vectors</small>
-                <small class="lang-ja">鉛筆の線が、そのまま編集可能なベクターに</small>
-            </h3>
-            <p class="lang-en">Draw with the pen. Type <code>svg</code>. Drop the file into Figma or Illustrator and keep editing — beziers, anchors, strokes all intact.</p>
-            <p class="lang-ja">鉛筆で描いて、<code>svg</code> と唱える。書き出した SVG を Figma / Illustrator に放り込めば、曲線・アンカー・線幅すべてそのまま編集できる。</p>
-            <span class="spell-tag">$ svg</span>
-        </article>
-
-        <!-- ── 2. TRANSPARENT PNG — objects on alpha ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ TRANSPARENT PNG</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <!-- checkerboard background for transparency -->
-                    <g>
-                        <!-- 20×12 cells of 16px -->
-                        <rect class="checker" x="16"  y="22"  width="16" height="16"/>
-                        <rect class="checker" x="48"  y="22"  width="16" height="16"/>
-                        <rect class="checker" x="80"  y="22"  width="16" height="16"/>
-                        <rect class="checker" x="112" y="22"  width="16" height="16"/>
-                        <rect class="checker" x="144" y="22"  width="16" height="16"/>
-                        <rect class="checker" x="176" y="22"  width="16" height="16"/>
-                        <rect class="checker" x="208" y="22"  width="16" height="16"/>
-                        <rect class="checker" x="240" y="22"  width="16" height="16"/>
-                        <rect class="checker" x="272" y="22"  width="16" height="16"/>
-                        <rect class="checker" x="304" y="22"  width="16" height="16"/>
-                        <rect class="checker" x="336" y="22"  width="16" height="16"/>
-                        <rect class="checker" x="32"  y="38"  width="16" height="16"/>
-                        <rect class="checker" x="64"  y="38"  width="16" height="16"/>
-                        <rect class="checker" x="96"  y="38"  width="16" height="16"/>
-                        <rect class="checker" x="128" y="38"  width="16" height="16"/>
-                        <rect class="checker" x="160" y="38"  width="16" height="16"/>
-                        <rect class="checker" x="192" y="38"  width="16" height="16"/>
-                        <rect class="checker" x="224" y="38"  width="16" height="16"/>
-                        <rect class="checker" x="256" y="38"  width="16" height="16"/>
-                        <rect class="checker" x="288" y="38"  width="16" height="16"/>
-                        <rect class="checker" x="320" y="38"  width="16" height="16"/>
-                        <rect class="checker" x="16"  y="54"  width="16" height="16"/>
-                        <rect class="checker" x="48"  y="54"  width="16" height="16"/>
-                        <rect class="checker" x="80"  y="54"  width="16" height="16"/>
-                        <rect class="checker" x="112" y="54"  width="16" height="16"/>
-                        <rect class="checker" x="144" y="54"  width="16" height="16"/>
-                        <rect class="checker" x="176" y="54"  width="16" height="16"/>
-                        <rect class="checker" x="208" y="54"  width="16" height="16"/>
-                        <rect class="checker" x="240" y="54"  width="16" height="16"/>
-                        <rect class="checker" x="272" y="54"  width="16" height="16"/>
-                        <rect class="checker" x="304" y="54"  width="16" height="16"/>
-                        <rect class="checker" x="336" y="54"  width="16" height="16"/>
-                        <rect class="checker" x="32"  y="70"  width="16" height="16"/>
-                        <rect class="checker" x="64"  y="70"  width="16" height="16"/>
-                        <rect class="checker" x="96"  y="70"  width="16" height="16"/>
-                        <rect class="checker" x="128" y="70"  width="16" height="16"/>
-                        <rect class="checker" x="160" y="70"  width="16" height="16"/>
-                        <rect class="checker" x="192" y="70"  width="16" height="16"/>
-                        <rect class="checker" x="224" y="70"  width="16" height="16"/>
-                        <rect class="checker" x="256" y="70"  width="16" height="16"/>
-                        <rect class="checker" x="288" y="70"  width="16" height="16"/>
-                        <rect class="checker" x="320" y="70"  width="16" height="16"/>
-                        <rect class="checker" x="16"  y="86"  width="16" height="16"/>
-                        <rect class="checker" x="48"  y="86"  width="16" height="16"/>
-                        <rect class="checker" x="80"  y="86"  width="16" height="16"/>
-                        <rect class="checker" x="112" y="86"  width="16" height="16"/>
-                        <rect class="checker" x="144" y="86"  width="16" height="16"/>
-                        <rect class="checker" x="176" y="86"  width="16" height="16"/>
-                        <rect class="checker" x="208" y="86"  width="16" height="16"/>
-                        <rect class="checker" x="240" y="86"  width="16" height="16"/>
-                        <rect class="checker" x="272" y="86"  width="16" height="16"/>
-                        <rect class="checker" x="304" y="86"  width="16" height="16"/>
-                        <rect class="checker" x="336" y="86"  width="16" height="16"/>
-                        <rect class="checker" x="32"  y="102" width="16" height="16"/>
-                        <rect class="checker" x="64"  y="102" width="16" height="16"/>
-                        <rect class="checker" x="96"  y="102" width="16" height="16"/>
-                        <rect class="checker" x="128" y="102" width="16" height="16"/>
-                        <rect class="checker" x="160" y="102" width="16" height="16"/>
-                        <rect class="checker" x="192" y="102" width="16" height="16"/>
-                        <rect class="checker" x="224" y="102" width="16" height="16"/>
-                        <rect class="checker" x="256" y="102" width="16" height="16"/>
-                        <rect class="checker" x="288" y="102" width="16" height="16"/>
-                        <rect class="checker" x="320" y="102" width="16" height="16"/>
-                    </g>
-                    <!-- floating object — an asymmetric blob -->
-                    <path d="M 140 70 C 120 55, 120 95, 140 105 C 165 120, 210 130, 240 115 C 275 97, 275 60, 240 52 C 215 46, 170 50, 140 70 Z"
-                          class="fill" style="opacity:0.9"/>
-                    <!-- .png badge -->
-                    <rect x="272" y="140" width="88" height="28"/>
-                    <text x="316" y="158" text-anchor="middle" class="hi">.png  ·  α</text>
-                    <!-- copy hints -->
-                    <text x="20" y="180" class="hi">OBJECT → PNG</text>
-                    <text x="20" y="196" class="faint" style="stroke:none; fill:var(--faint);">alpha channel preserved · 2× pixel-ratio</text>
-                </svg>
-            </div>
-            <h3>
-                TRANSPARENT PNG
-                <small class="lang-en">Ship objects with a clean alpha channel</small>
-                <small class="lang-ja">背景透過のままオブジェクトを書き出し</small>
-            </h3>
-            <p class="lang-en">Select one or many shapes, hit <code>png</code>, get a pixel-crisp raster with full transparency — drop it into Keynote, Notion, a deck, a Discord post.</p>
-            <p class="lang-ja">形を選んで <code>png</code> と唱えれば、アルファチャンネル付きの高精細 PNG に。Keynote でも Notion でもスライドでも、そのまま置ける。</p>
-            <span class="spell-tag">$ png</span>
-        </article>
-
-        <!-- ── 3. IMAGE BRAINSTORM — keywords fetch images non-stop ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ IMAGE BRAINSTORM</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <!-- terminal line at top -->
-                    <text x="20" y="32" class="hi" style="font-size:10px;">&gt; fetch-img  biwako  mist  dawn</text>
-                    <line x1="20" y1="42" x2="380" y2="42" class="faint"/>
-                    <!-- 3×3 image placeholders with X inside -->
-                    <g transform="translate(28 54)">
-                        <g><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
-                        <g transform="translate(118 0)"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
-                        <g transform="translate(236 0)"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
-                        <g transform="translate(0 60)"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
-                        <g transform="translate(118 60)" class="shimmer"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
-                        <g transform="translate(236 60)"><rect width="104" height="50"/><line x1="0" y1="0" x2="104" y2="50" class="dim"/><line x1="104" y1="0" x2="0" y2="50" class="dim"/></g>
-                    </g>
-                    <text x="20" y="212" class="faint" style="stroke:none; fill:var(--faint);">scatter on canvas · drop any keyword · never stops</text>
-                </svg>
-            </div>
-            <h3>
-                IMAGE BRAINSTORM
-                <small class="lang-en">Keywords → scatter of images. Thoughts, non-stop.</small>
-                <small class="lang-ja">キーワードでイメージが散る。思考、ノンストップ。</small>
-            </h3>
-            <p class="lang-en">Type a word. Images of it appear on the board — spread, rotated, ready to annotate. The canvas becomes a mood-board that writes itself.</p>
-            <p class="lang-ja">一語を投げれば、イメージがボード上に散らばる。回転、余白、注釈。キャンバスが、勝手にムードボードになる。</p>
-            <span class="spell-tag">$ fetch-img &lt;keyword&gt;</span>
-        </article>
-
-        <!-- ── 4. CUSTOM SPELLS — write your own magic ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ CUSTOM SPELLS</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <!-- sparkles -->
-                    <path d="M 30 40 L 34 44 M 34 40 L 30 44" class="faint"/>
-                    <path d="M 360 58 L 366 64 M 366 58 L 360 64" class="faint"/>
-                    <path d="M 50 180 L 56 186 M 56 180 L 50 186" class="faint"/>
-                    <path d="M 370 180 L 378 188 M 378 180 L 370 188" class="faint"/>
-                    <!-- JSON card -->
-                    <rect x="70" y="36" width="260" height="150"/>
-                    <line x1="90" y1="58" x2="310" y2="58" class="faint"/>
-                    <text x="86" y="54" class="hi">{  custom spell  }</text>
-                    <text x="86" y="80"  class="hi">  "$":   "moonpaint",</text>
-                    <text x="86" y="100" class="hi">  "on":  "click",</text>
-                    <text x="86" y="120" class="hi">  "do":  "ink.blur(3)  →</text>
-                    <text x="86" y="138" class="hi">          bloom(✶✶✶)"</text>
-                    <text x="86" y="166">}  —  saved as $moonpaint</text>
-                    <!-- arrow to canvas -->
-                    <line x1="340" y1="110" x2="380" y2="110"/>
-                    <polyline points="374,104 380,110 374,116"/>
-                </svg>
-            </div>
-            <h3>
-                CUSTOM SPELLS
-                <small class="lang-en">Author your own magic. Yours forever.</small>
-                <small class="lang-ja">自分だけの魔法を、自分だけに</small>
-            </h3>
-            <p class="lang-en">Write one line of JS or paste JSON — your command is registered, auto-completed, persisted. Describe what you want to Claude or ChatGPT and get a spell back instantly.</p>
-            <p class="lang-ja">1 行の JS を書く。あるいは JSON を貼るだけ。呪文は登録され、補完され、IndexedDB に残る。Claude や ChatGPT に自然言語で依頼すれば、動く JSON が返ってくる。</p>
-            <span class="spell-tag">$ register  ·  paste JSON</span>
-        </article>
-
-        <!-- ── 5. SHARE / SNS — spells travel as JSON ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ SHARE · SNS</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <!-- center spell card -->
-                    <rect x="160" y="88" width="80" height="50"/>
-                    <text x="200" y="110" text-anchor="middle" class="hi">$ spell</text>
-                    <text x="200" y="124" text-anchor="middle" class="faint" style="stroke:none; fill:var(--faint);">.json</text>
-                    <!-- arrows radiating -->
-                    <line x1="160" y1="92"  x2="92"  y2="62"/>
-                    <polyline points="98,56 90,62 96,68"/>
-                    <line x1="240" y1="92"  x2="308" y2="62"/>
-                    <polyline points="302,56 310,62 304,68"/>
-                    <line x1="160" y1="136" x2="92"  y2="168"/>
-                    <polyline points="98,162 90,168 96,174"/>
-                    <line x1="240" y1="136" x2="308" y2="168"/>
-                    <polyline points="302,162 310,168 304,174"/>
-                    <!-- destinations -->
-                    <rect x="52"  y="40"  width="40" height="40"/><text x="72" y="65" text-anchor="middle" class="hi">X</text>
-                    <rect x="308" y="40"  width="40" height="40"/><text x="328" y="65" text-anchor="middle" class="hi">◇</text>
-                    <rect x="52"  y="154" width="40" height="40"/><text x="72" y="179" text-anchor="middle" class="hi">DM</text>
-                    <rect x="308" y="154" width="40" height="40"/><text x="328" y="179" text-anchor="middle" class="hi">☁</text>
-                </svg>
-            </div>
-            <h3>
-                SHARE / SNS
-                <small class="lang-en">A spell is a text string. Text travels.</small>
-                <small class="lang-ja">魔法は一片のテキスト。いくらでも、どこにでも</small>
-            </h3>
-            <p class="lang-en">Export any spell as JSON — drop it into X, Slack, a gist, or your friend's DM. They paste, it installs. Features spread like memes.</p>
-            <p class="lang-ja">呪文は JSON 1枚。X に貼る、Slack に貼る、gist にしてもいい。受け取った人は貼るだけで自分のボードに魔法が住み着く。機能はミームのように広がる。</p>
-            <span class="spell-tag">$ export  ·  $ paste</span>
-        </article>
-
-        <!-- ── 6. CAMERA / YouTube LIVE ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ CAMERA / LIVE</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <!-- viewport frame -->
-                    <rect x="28" y="26" width="344" height="152"/>
-                    <!-- silhouette -->
-                    <circle cx="200" cy="95" r="22" class="faint"/>
-                    <path d="M 160 160 C 170 125, 230 125, 240 160 Z" class="faint"/>
-                    <!-- PIP (the wipe) -->
-                    <rect x="288" y="34" width="72" height="54"/>
-                    <circle cx="304" cy="48" r="4" class="rec"/>
-                    <text x="312" y="52" class="hi">REC</text>
-                    <circle cx="324" cy="60" r="10" class="faint"/>
-                    <path d="M 314 76 C 320 68, 328 68, 334 76 Z" class="faint"/>
-                    <!-- live label + waveform -->
-                    <text x="40" y="50" class="hi">● LIVE  ·  YouTube</text>
-                    <polyline class="dim"
-                        points="40,168 60,160 70,172 90,150 100,170 120,156 140,170 160,160 180,172 200,152 220,170 240,160 260,170 280,156 300,170 320,158 340,170 360,162"/>
-                    <!-- spell call-out -->
-                    <text x="212" y="210" text-anchor="middle" class="faint" style="stroke:none; fill:var(--faint);">type: Black Mirror → camera · draggable PIP · one-click stream</text>
-                </svg>
-            </div>
-            <h3>
-                CAMERA / YouTube LIVE
-                <small class="lang-en">The mirror can look back.</small>
-                <small class="lang-ja">鏡は、こちらも覗き返す</small>
-            </h3>
-            <p class="lang-en">Type <code>Black Mirror</code>. A draggable webcam wipe appears — selfie-mirrored, CRT-tinted. Flip a switch and the canvas streams straight to YouTube. Casual, personal, live.</p>
-            <p class="lang-ja"><code>Black Mirror</code> と唱えれば、カメラのワイプがふわっと現れる。ドラッグで自由に置ける。スイッチ一つで、キャンバスはそのまま YouTube ライブへ。気楽で、個人的で、生。</p>
-            <span class="spell-tag">$ Black Mirror  ·  $ live</span>
-        </article>
-
-    </div>
+<!-- ═══ 数字 ═══ -->
+<section class="shell">
+  <div class="cards">
+    <div class="card rv"><em>📄</em><h3><span class="ja">HTML 1枚</span><span class="en">One HTML file</span></h3><p><span class="ja">依存ライブラリなし・ビルド不要。オフラインでも動きます。</span><span class="en">No dependencies, no build step, works offline.</span></p></div>
+    <div class="card rv" data-d="1"><em>🔒</em><h3><span class="ja">端末の中だけ</span><span class="en">Stays on your device</span></h3><p><span class="ja">アップロードなし・アカウントなし。描いたものはあなたの手元に。</span><span class="en">No upload, no account. What you draw stays with you.</span></p></div>
+    <div class="card rv" data-d="2"><em>⬇️</em><h3><span class="ja">そのまま持ち出せる</span><span class="en">Take it anywhere</span></h3><p><span class="ja">PNG / SVG / PowerPoint / GIF / 動画 で書き出し。</span><span class="en">Export as PNG, SVG, PowerPoint, GIF or video.</span></p></div>
+    <div class="card rv" data-d="3"><em>🌏</em><h3><span class="ja">日本語 / English</span><span class="en">日本語 / English</span></h3><p><span class="ja">画面もコマンドの説明も、まるごと切り替わります。</span><span class="en">The whole interface switches, command hints included.</span></p></div>
+  </div>
 </section>
 
-<!-- ═════════════════════════════════════════════════════════════════
-     SECTION 05 — FOR DESIGNERS / CREATORS (six more tools)
-     既存 Section 04 の "六つの扉" と対になる、デザイナー実務向け 6 機能。
-     ═════════════════════════════════════════════════════════════════ -->
-<section class="section" id="for-designers">
-    <div class="section-number">
-        <span class="lang-en">Section 05 — FOR DESIGNERS</span>
-        <span class="lang-ja">セクション 05 — つくる手のために</span>
-    </div>
-    <h2 class="lang-en">Six <em>more</em> tools, for hands that ship.</h2>
-    <h2 class="lang-ja">作って届ける手のための、<em>もう6つ</em>の道具。</h2>
-
-    <div class="cap-grid">
-
-        <!-- ── 1. FRAME TEMPLATES ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ FRAME TEMPLATES</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <rect x="40" y="40" width="74" height="104"/>
-                    <text x="77" y="158" text-anchor="middle" class="hi">A4</text>
-                    <line x1="48" y1="52" x2="106" y2="52" class="dim"/>
-                    <line x1="48" y1="62" x2="100" y2="62" class="dim"/>
-                    <circle cx="77" cy="100" r="22" class="faint"/>
-                    <rect x="130" y="56" width="60" height="84"/>
-                    <text x="160" y="158" text-anchor="middle" class="hi">B5</text>
-                    <rect x="138" y="68" width="44" height="20"/>
-                    <line x1="138" y1="98" x2="182" y2="98" class="dim"/>
-                    <line x1="138" y1="108" x2="172" y2="108" class="dim"/>
-                    <rect x="206" y="74" width="68" height="46"/>
-                    <text x="240" y="158" text-anchor="middle" class="hi">postcard</text>
-                    <line x1="214" y1="86" x2="266" y2="86" class="dim"/>
-                    <text x="240" y="106" text-anchor="middle" class="hi" style="font-size:10px;">— 拝啓 —</text>
-                    <rect x="290" y="78" width="80" height="46"/>
-                    <text x="330" y="158" text-anchor="middle" class="hi">16:9</text>
-                    <text x="330" y="98" text-anchor="middle" class="hi" style="font-size:9px;">slide</text>
-                    <line x1="296" y1="108" x2="364" y2="108" class="dim"/>
-                    <text x="200" y="190" text-anchor="middle" class="faint">pick a paper · draw inside · X = clip-export</text>
-                    <text x="200" y="206" text-anchor="middle" class="hi" style="font-size:9px;">入稿サイズで作って書き出し</text>
-                </svg>
-            </div>
-            <h3>
-                FRAME TEMPLATES
-                <small class="lang-en">Pick a paper. Draw inside. Export the clip.</small>
-                <small class="lang-ja">入稿サイズで作って、フレームの中だけ書き出し</small>
-            </h3>
-            <p class="lang-en">A4 / B5 / postcard / square / 16:9 — call <code>frame</code>, pick a size, draw inside the placed frame, then <code>X</code> to clip-export. Print-ready PNG without leaving the canvas.</p>
-            <p class="lang-ja">A4 / B5 / ハガキ / 正方形 / 16:9 — <code>frame</code> でサイズピッカー、フレーム内だけ描いて <code>X</code> でクリップ書き出し。入稿サイズの PNG が、キャンバス内で完結する。</p>
-            <span class="spell-tag">$ frame</span>
-        </article>
-
-        <!-- ── 2. PPTX EXPORT ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ PPTX EXPORT</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <rect x="20" y="36" width="140" height="80"/>
-                    <text x="20" y="30" class="faint">BMBoard · 16:9</text>
-                    <text x="28" y="58" class="hi" style="font-size:10px;">— TITLE</text>
-                    <line x1="28" y1="66" x2="80" y2="66"/>
-                    <text x="28" y="86" class="dim" style="font-size:7px;">body line one</text>
-                    <text x="28" y="98" class="dim" style="font-size:7px;">body line two</text>
-                    <circle cx="130" cy="86" r="14"/>
-                    <text x="20" y="138" class="hi" style="font-size:10px;">$ export pptx</text>
-                    <line x1="20" y1="146" x2="140" y2="146" class="faint"/>
-                    <line x1="172" y1="80" x2="216" y2="80"/>
-                    <polyline points="210,74 218,80 210,86"/>
-                    <rect x="232" y="36" width="64" height="80"/>
-                    <text x="264" y="58" text-anchor="middle" class="hi">.pptx</text>
-                    <text x="264" y="74" text-anchor="middle" class="dim" style="font-size:7px;">slide 01 / 02 / 03</text>
-                    <line x1="240" y1="84" x2="288" y2="84" class="faint"/>
-                    <line x1="240" y1="92" x2="280" y2="92" class="faint"/>
-                    <line x1="240" y1="100" x2="284" y2="100" class="faint"/>
-                    <rect x="312" y="36" width="40" height="36"/>
-                    <text x="332" y="58" text-anchor="middle" class="hi">K</text>
-                    <text x="332" y="68" text-anchor="middle" class="faint">Keynote</text>
-                    <rect x="312" y="80" width="40" height="36"/>
-                    <text x="332" y="102" text-anchor="middle" class="hi">P</text>
-                    <text x="332" y="112" text-anchor="middle" class="faint">PPT</text>
-                    <text x="200" y="190" text-anchor="middle" class="faint">編集可能のまま、別ツールで続行</text>
-                    <text x="200" y="206" text-anchor="middle" class="hi" style="font-size:9px;">editable on the other side</text>
-                </svg>
-            </div>
-            <h3>
-                PPTX EXPORT
-                <small class="lang-en">Open it in Keynote. Keep editing.</small>
-                <small class="lang-ja">Keynote / PowerPoint で開いて編集続行可</small>
-            </h3>
-            <p class="lang-en">Compose a deck on the canvas. Type <code>export pptx</code>. Open in Keynote or PowerPoint — text, shapes, layout all editable. No raster bake, no rebuilding from screenshot.</p>
-            <p class="lang-ja">キャンバスでスライドを組んで <code>export pptx</code>。Keynote / PowerPoint で開けば、テキストも図形もレイアウトもすべて編集可能。スクショから組み直す摩擦がゼロ。</p>
-            <span class="spell-tag">$ export pptx</span>
-        </article>
-
-        <!-- ── 3. JAPANESE TYPE ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ JAPANESE TYPE</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <rect x="28" y="32" width="46" height="160"/>
-                    <text x="51" y="48" text-anchor="middle" class="hi" style="font-size:14px;">縦</text>
-                    <text x="51" y="68" text-anchor="middle" class="hi" style="font-size:14px;">書</text>
-                    <text x="51" y="88" text-anchor="middle" class="hi" style="font-size:14px;">き</text>
-                    <text x="51" y="108" text-anchor="middle" class="hi" style="font-size:14px;">対</text>
-                    <text x="51" y="128" text-anchor="middle" class="hi" style="font-size:14px;">応</text>
-                    <text x="51" y="180" text-anchor="middle" class="faint" style="font-size:7px;">$ vertical</text>
-                    <text x="92" y="48" class="hi" style="font-family:'Noto Serif JP', serif; font-size:18px;">明朝</text>
-                    <text x="92" y="60" class="faint">$ font mincho</text>
-                    <text x="92" y="84" class="hi" style="font-family:'Hiragino Kaku Gothic ProN', sans-serif; font-size:18px;">游ゴシック</text>
-                    <text x="92" y="96" class="faint">$ font yugo</text>
-                    <text x="92" y="120" class="hi" style="font-style:italic; font-size:18px;">手書き</text>
-                    <text x="92" y="132" class="faint">$ font hand</text>
-                    <text x="92" y="156" class="hi" style="font-family:monospace; font-size:18px;">monospace</text>
-                    <text x="92" y="168" class="faint">$ font mono · 10種から</text>
-                    <rect x="240" y="36" width="138" height="84"/>
-                    <text x="248" y="56" class="hi" style="font-weight:700;">bold + bullet</text>
-                    <text x="248" y="74" class="hi" style="font-size:9px;">- アイデア</text>
-                    <text x="248" y="86" class="hi" style="font-size:9px;">- 試作</text>
-                    <text x="248" y="98" class="hi" style="font-size:9px;">- 検証</text>
-                    <text x="248" y="110" class="faint" style="font-size:7px;">$ bold · $ bullet -</text>
-                    <rect x="240" y="128" width="138" height="60"/>
-                    <text x="248" y="148" class="hi" style="font-size:9px;">1. プロトタイプ</text>
-                    <text x="248" y="160" class="hi" style="font-size:9px;">2. 撮影</text>
-                    <text x="248" y="172" class="hi" style="font-size:9px;">3. 投稿</text>
-                    <text x="248" y="184" class="faint" style="font-size:7px;">$ bullet 1 · 番号付き</text>
-                </svg>
-            </div>
-            <h3>
-                JAPANESE TYPE
-                <small class="lang-en">Vertical writing. Ten fonts. Bold + bullets. One word each.</small>
-                <small class="lang-ja">縦書き、10種フォント、太字、箇条書き — すべて一語</small>
-            </h3>
-            <p class="lang-en">Vertical text via <code>vertical</code>. Switch typeface in one word: <code>font mincho · gothic · yugo · hand · mono</code> — ten Japanese-aware fonts. Bold and bullets (<code>- · *  · 1.</code>) work on any sticky.</p>
-            <p class="lang-ja">縦書きは <code>vertical</code> 一語。フォント切替も一語: <code>font mincho · gothic · yugo · hand · mono</code> — 日本語対応 10種。<code>bold</code> と <code>bullet -/*/1</code> はどの付箋にも効く。</p>
-            <span class="spell-tag">$ vertical · $ font · $ bold · $ bullet</span>
-        </article>
-
-        <!-- ── 4. 8-ANCHOR EDITING ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ 8-ANCHOR EDITING</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <ellipse cx="200" cy="115" rx="84" ry="56"/>
-                    <rect x="116" y="59" width="168" height="112" class="dim"/>
-                    <rect x="112" y="55" width="8" height="8" class="fill"/>
-                    <rect x="280" y="55" width="8" height="8" class="fill"/>
-                    <rect x="112" y="167" width="8" height="8" class="fill"/>
-                    <rect x="280" y="167" width="8" height="8" class="fill"/>
-                    <rect x="196" y="55" width="8" height="8" class="fill"/>
-                    <rect x="196" y="167" width="8" height="8" class="fill"/>
-                    <rect x="112" y="111" width="8" height="8" class="fill"/>
-                    <rect x="280" y="111" width="8" height="8" class="fill"/>
-                    <line x1="200" y1="55" x2="200" y2="36"/>
-                    <circle cx="200" cy="32" r="6"/>
-                    <text x="220" y="32" class="faint">↻ rotate</text>
-                    <text x="20" y="32" class="hi">8 ANCHORS</text>
-                    <text x="20" y="44" class="faint">■ 4 corners · ■ 4 mid-edges</text>
-                    <text x="20" y="200" class="hi">drag to deform</text>
-                    <text x="20" y="212" class="faint">scale · skew · rotate · in-place</text>
-                    <text x="296" y="200" text-anchor="end" class="faint">like Illustrator</text>
-                </svg>
-            </div>
-            <h3>
-                8-ANCHOR EDITING
-                <small class="lang-en">Drag any of 8 handles. Rotate from the top.</small>
-                <small class="lang-ja">8つの取っ手で変形、上から回転</small>
-            </h3>
-            <p class="lang-en">Select any shape — 8 anchors appear (4 corners + 4 mid-edges) plus a rotation handle. Scale, skew, deform, rotate — like Illustrator's transform, in-place on the canvas.</p>
-            <p class="lang-ja">図形を選ぶと 8 つのアンカー（4 隅 + 4 辺中央）と回転ハンドルが現れる。拡大、シア、変形、回転 — Illustrator の transform をその場で。</p>
-            <span class="spell-tag">select · drag · rotate</span>
-        </article>
-
-        <!-- ── 5. GIF / MOTION EXPORT ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ GIF / MOTION EXPORT</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <g transform="translate(20 50)">
-                        <rect width="68" height="50"/>
-                        <circle cx="34" cy="25" r="6" class="fill"/>
-                        <text x="34" y="64" text-anchor="middle" class="faint">01</text>
-                        <g transform="translate(78 0)">
-                            <rect width="68" height="50"/>
-                            <circle cx="40" cy="22" r="6" class="fill"/>
-                            <text x="34" y="64" text-anchor="middle" class="faint">02</text>
-                        </g>
-                        <g transform="translate(156 0)">
-                            <rect width="68" height="50"/>
-                            <circle cx="46" cy="20" r="6" class="fill"/>
-                            <text x="34" y="64" text-anchor="middle" class="faint">03</text>
-                        </g>
-                        <g transform="translate(234 0)">
-                            <rect width="68" height="50"/>
-                            <circle cx="52" cy="18" r="6" class="fill"/>
-                            <text x="34" y="64" text-anchor="middle" class="faint">04</text>
-                        </g>
-                    </g>
-                    <g class="faint">
-                        <rect x="26" y="40" width="4" height="6"/>
-                        <rect x="80" y="40" width="4" height="6"/>
-                        <rect x="134" y="40" width="4" height="6"/>
-                        <rect x="188" y="40" width="4" height="6"/>
-                        <rect x="242" y="40" width="4" height="6"/>
-                        <rect x="296" y="40" width="4" height="6"/>
-                        <rect x="26" y="105" width="4" height="6"/>
-                        <rect x="80" y="105" width="4" height="6"/>
-                        <rect x="134" y="105" width="4" height="6"/>
-                        <rect x="188" y="105" width="4" height="6"/>
-                        <rect x="242" y="105" width="4" height="6"/>
-                        <rect x="296" y="105" width="4" height="6"/>
-                    </g>
-                    <line x1="312" y1="75" x2="346" y2="75"/>
-                    <polyline points="340,69 348,75 340,81"/>
-                    <rect x="354" y="58" width="36" height="34"/>
-                    <text x="372" y="80" text-anchor="middle" class="hi">.gif</text>
-                    <text x="200" y="160" text-anchor="middle" class="hi">N images → looped GIF</text>
-                    <text x="200" y="174" text-anchor="middle" class="faint">built-in encoder · no upload</text>
-                    <text x="200" y="200" text-anchor="middle" class="faint">$ make-img cat 4 → select all → $ gif</text>
-                </svg>
-            </div>
-            <h3>
-                GIF / MOTION EXPORT
-                <small class="lang-en">N images become one looped GIF.</small>
-                <small class="lang-ja">複数枚の画像から、1つのループ GIF</small>
-            </h3>
-            <p class="lang-en">Built-in GIF encoder (gifenc). Select multiple images — frames, sketches, fetched stills — and pack them into a looped animation. Local-only, no upload, no service.</p>
-            <p class="lang-ja">GIF エンコーダ（gifenc）を内蔵。複数の画像を選んで一発でループ GIF に。フレーム、スケッチ、fetch した素材も同列に扱える。サーバ不要、外部サービス不要。</p>
-            <span class="ext-badge">via BMBrowser · <a href="https://chromewebstore.google.com/detail/black-mirror-browser/ndnjojkcfekgcnfiieecehclidhkibjm" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Available</a></span>
-        </article>
-
-        <!-- ── 6. NO LAYERS · BY DESIGN ── -->
-        <article class="cap-card">
-            <div class="demo-frame">
-                <div class="demo-frame-label">▸ NO LAYERS · BY DESIGN</div>
-                <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <g transform="translate(20 32)">
-                        <text class="faint" y="0">other tools</text>
-                        <rect y="8"  width="120" height="22"/>
-                        <text x="8" y="22" class="hi">layer 4</text>
-                        <rect y="34" width="120" height="22"/>
-                        <text x="8" y="48" class="hi">layer 3</text>
-                        <rect y="60" width="120" height="22"/>
-                        <text x="8" y="74" class="hi">layer 2</text>
-                        <rect y="86" width="120" height="22"/>
-                        <text x="8" y="100" class="hi">layer 1</text>
-                        <line x1="-4" y1="4" x2="124" y2="112" stroke-width="2.4"/>
-                        <line x1="124" y1="4" x2="-4" y2="112" stroke-width="2.4"/>
-                        <text class="faint" y="130">cognitive overhead</text>
-                    </g>
-                    <g transform="translate(180 32)">
-                        <text class="faint" y="0">BMBoard</text>
-                        <rect y="8" width="200" height="120"/>
-                        <text x="100" y="40" text-anchor="middle" class="hi" style="font-size:13px;">ONE SURFACE</text>
-                        <text x="100" y="58" text-anchor="middle" class="faint">all objects · here</text>
-                        <circle cx="48" cy="92" r="14" class="fill"/>
-                        <rect x="80" y="78" width="32" height="24"/>
-                        <path d="M 130 102 L 150 78 L 170 102 Z" class="fill"/>
-                        <text class="faint" y="148">no layer panel · no z-index drama</text>
-                    </g>
-                    <text x="200" y="208" text-anchor="middle" class="hi" style="font-size:9px;">レイヤー無し — 一面で考える</text>
-                </svg>
-            </div>
-            <h3>
-                NO LAYERS · BY DESIGN
-                <small class="lang-en">One surface. No layer panel.</small>
-                <small class="lang-ja">レイヤー無しの潔さ — 一面で考える</small>
-            </h3>
-            <p class="lang-en">Other tools give you layers. We took them out. Z-order without panels, selection without filters — every object lives on the same surface, where ideas live too. The cognitive overhead is the feature we removed.</p>
-            <p class="lang-ja">レイヤー機能はあえて入れていない。z 順は触れる、選択はそのまま、すべてのオブジェクトが同じ一面に住む。アイディアと道具のあいだに「レイヤーパネル」を挟まない。引いたものが、機能。</p>
-            <span class="spell-tag">— intentional simplicity</span>
-        </article>
-
-    </div>
+<!-- ═══ CTA ═══ -->
+<section class="final shell">
+  <div class="box rv">
+    <h2><span class="ja">開いて、書きなぐる。<br>それだけです。</span><span class="en">Open it and scribble.<br>That's the whole thing.</span></h2>
+    <p class="lead" style="margin:20px auto 0"><span class="ja">インストールもログインも要りません。</span><span class="en">Nothing to install. Nothing to sign up for.</span></p>
+    <div class="herobtns"><a class="btn1" href="./app.html"><span class="ja">ブラウザで開く →</span><span class="en">Open in browser →</span></a></div>
+  </div>
 </section>
 
-<!-- ═════════════════════════════════════════════════════════════════
-     EMBEDDED TERMINAL — splash-page spellbook
-     ═════════════════════════════════════════════════════════════════ -->
-<section class="terminal-section" id="try">
-    <div class="section-number">
-        <span class="lang-en">Section 06 — TRY A COMMAND</span>
-        <span class="lang-ja">セクション 06 — コマンドを試す</span>
-    </div>
-    <h2 class="lang-en">The mirror <em>is</em> already listening.</h2>
-    <h2 class="lang-ja">鏡は、すでに<em>聞いている</em>。</h2>
+<footer><div class="shell">
+  <div class="fnav">
+    <a href="./usage.html"><span class="ja">使い方</span><span class="en">Manual</span></a>
+    <a href="./commands.html"><span class="ja">コマンド一覧</span><span class="en">Commands</span></a>
+    <a href="./story.html"><span class="ja">つくった理由</span><span class="en">Story</span></a>
+    <a href="./dev-log.html"><span class="ja">開発ログ</span><span class="en">Dev log</span></a>
+    <a href="./browser/"><span class="ja">BMBrowser（Chrome拡張）</span><span class="en">BMBrowser (Chrome extension)</span></a>
+    <a href="./store/README.md"><span class="ja">STORE に魔法を出す</span><span class="en">Submit a spell</span></a>
+  </div>
+  <div class="fin">
+    <div>© kinoshita studio — <span class="ja">滋賀</span><span class="en">Shiga, Japan</span></div>
+    <div><a href="https://kinoshita.studio/">kinoshita.studio</a> · <a href="https://github.com/blackmirrorboard/bmboard">GitHub</a></div>
+  </div>
+</div></footer>
 
-    <div class="term-embed">
-        <div class="out" id="termOut" aria-live="polite" role="log">
-            <div class="entry dim">
-                <span class="lang-en">// BM splash shell · type a command, press Enter.</span>
-                <span class="lang-ja">// BM スプラッシュシェル · コマンドを打って Enter。</span>
-            </div>
-            <div class="entry dim">
-                <span class="lang-en">// try: <span style="color:var(--ink)">launch</span> · <span style="color:var(--ink)">about</span> · <span style="color:var(--ink)">help</span> · <span style="color:var(--ink)">clear</span></span>
-                <span class="lang-ja">// 試す: <span style="color:var(--ink)">launch</span> · <span style="color:var(--ink)">about</span> · <span style="color:var(--ink)">help</span> · <span style="color:var(--ink)">clear</span></span>
-            </div>
-        </div>
-        <form class="term-line" onsubmit="bmRun(event)">
-            <span class="prompt">❯</span>
-            <input id="termIn" type="text" autocomplete="off" spellcheck="false"
-                   placeholder="type: launch · about · help · clear"
-                   aria-label="terminal input">
-        </form>
-        <div class="term-hint lang-en">
-            <code>launch</code> → enter the board &nbsp;·&nbsp;
-            <code>about</code> → philosophy &nbsp;·&nbsp;
-            <code>help</code> → all commands
-        </div>
-        <div class="term-hint lang-ja">
-            <code>launch</code> → ボードへ遷移 &nbsp;·&nbsp;
-            <code>about</code> → 哲学 &nbsp;·&nbsp;
-            <code>help</code> → 全コマンド
-        </div>
-    </div>
-</section>
-
-<!-- ═════════════════════════════════════════════════════════════════
-     SECTION 07 — ALSO ON THE DESK (BMBrowser, the Chrome extension)
-     ═════════════════════════════════════════════════════════════════ -->
-<section class="section" id="also">
-    <div class="section-number">
-        <span class="lang-en">Section 07 — ALSO ON THE DESK</span>
-        <span class="lang-ja">セクション 07 — もうひとつの道具</span>
-    </div>
-    <h2 class="lang-en">The board, <em>beside</em> any page.</h2>
-    <h2 class="lang-ja">どのページの<em>横にも</em>、黒板を。</h2>
-
-    <!-- ── browser + side-panel mock — CWS live ── -->
-    <a href="https://chromewebstore.google.com/detail/black-mirror-browser/ndnjojkcfekgcnfiieecehclidhkibjm" target="_blank" rel="noopener noreferrer" style="display:block;text-decoration:none;cursor:pointer;" title="Chrome Web Store でインストール">
-    <div class="demo-frame coming-soon-frame" aria-hidden="true" style="margin: 24px 0 8px; max-width: 720px; transition:opacity .15s;" onmouseover="this.style.opacity='.82'" onmouseout="this.style.opacity='1'">
-        <div class="demo-frame-label">▸ NOW LIVE · CHROME WEB STORE</div>
-        <svg class="cap-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet">
-            <!-- browser frame -->
-            <rect x="14" y="22" width="372" height="180"/>
-            <line x1="14" y1="40" x2="386" y2="40"/>
-            <circle cx="24" cy="31" r="3" class="faint"/>
-            <circle cx="34" cy="31" r="3" class="faint"/>
-            <circle cx="44" cy="31" r="3" class="faint"/>
-            <text x="60" y="34" class="faint">https://any-page</text>
-            <!-- left: page content (lines + image placeholder) -->
-            <line x1="28" y1="58" x2="240" y2="58" class="dim"/>
-            <line x1="28" y1="68" x2="220" y2="68" class="dim"/>
-            <line x1="28" y1="78" x2="232" y2="78" class="dim"/>
-            <rect x="28" y="92" width="100" height="60" class="faint"/>
-            <line x1="138" y1="98" x2="240" y2="98" class="dim"/>
-            <line x1="138" y1="108" x2="232" y2="108" class="dim"/>
-            <line x1="138" y1="118" x2="240" y2="118" class="dim"/>
-            <line x1="28" y1="166" x2="240" y2="166" class="dim"/>
-            <line x1="28" y1="176" x2="220" y2="176" class="dim"/>
-            <!-- vertical divider -->
-            <line x1="252" y1="42" x2="252" y2="200"/>
-            <!-- right: BMBoard side panel mock -->
-            <text x="260" y="56" class="hi">▮ BMBOARD</text>
-            <path d="M 264 78 C 280 72, 300 76, 320 88 S 360 100, 374 88"/>
-            <line x1="268" y1="104" x2="374" y2="104" class="faint"/>
-            <circle cx="288" cy="130" r="14"/>
-            <rect x="312" y="118" width="32" height="28"/>
-            <text x="260" y="186" class="faint">side panel · ⌘⇧Y</text>
-            <!-- COMING SOON banner across center (filled, contrast) -->
-            <g transform="translate(200, 112)">
-                <rect x="-138" y="-19" width="276" height="38" class="fill" style="opacity:0.94"/>
-                <circle cx="-118" cy="0" r="5" class="cs-pulse"/>
-                <text x="-100" y="4" class="hi" style="fill:var(--void); font-size:12px; letter-spacing:0.18em;">NOW LIVE · CWS v1.1.3</text>
-            </g>
-            <!-- bottom note -->
-            <text x="200" y="216" text-anchor="middle" class="faint">v1.1.3 · live on Chrome Web Store · 2026-06-03</text>
-        </svg>
-    </div>
-    </a>
-    <style>
-        /* BMBrowser section — green SVG override */
-        #also .cap-svg path,
-        #also .cap-svg line,
-        #also .cap-svg rect,
-        #also .cap-svg circle,
-        #also .cap-svg polyline,
-        #also .cap-svg polygon {
-            stroke: #58dc44;
-        }
-        #also .cap-svg text { fill: #3da028; }
-        #also .cap-svg text.hi { fill: #58dc44; }
-        #also .cap-svg .fill { fill: #58dc44; stroke: none; }
-        #also .cap-svg .dim  { stroke: #2e7a1e; }
-        #also .cap-svg .faint { stroke: #1f5215; }
-        /* pulsing green dot inside the CWS REVIEW badge */
-        .cs-pulse {
-            fill: #58dc44;
-            stroke: none;
-            animation: csPulseFade 1.6s infinite var(--ease);
-        }
-        @keyframes csPulseFade { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
-    </style>
-
-    <p class="en lang-en"><strong>Black Mirror Browser</strong> is a Chrome extension. It brings BMBoard into the browser as a side panel — opened with the toolbar icon or <code>⌘⇧Y</code>. Right-click an image or selected text on any page — "Send to BMBoard" drops it directly onto the side panel.</p>
-    <p class="jp lang-ja"><strong>Black Mirror Browser</strong> は Chrome 拡張機能。BMBoard をサイドパネルとして持ち込み、ツールバーのアイコン（または <code>⌘⇧Y</code>）でいつでも黒板を開ける。画像やテキストの右クリックメニューから「Send to BMBoard」でサイドパネルに送る。</p>
-
-    <style>
-        #also .bmbr-list {
-            margin: 22px 0 28px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0;
-            border: 1px solid #58dc44;
-            max-width: 640px;
-        }
-        #also .bmbr-list dt {
-            grid-column: 1;
-            padding: 8px 14px;
-            font-family: var(--mono);
-            font-size: 11px;
-            letter-spacing: 0.12em;
-            color: #58dc44;
-            border-bottom: 1px solid #1f5215;
-        }
-        #also .bmbr-list dd {
-            grid-column: 2;
-            padding: 8px 14px;
-            font-size: 12px;
-            color: #3da028;
-            border-bottom: 1px solid #1f5215;
-            margin: 0;
-        }
-        #also .bmbr-list dt:last-of-type,
-        #also .bmbr-list dd:last-of-type { border-bottom: 0; }
-        @media (max-width: 600px) {
-            #also .bmbr-list { grid-template-columns: 1fr; }
-            #also .bmbr-list dt { border-bottom: 0; padding-bottom: 2px; }
-            #also .bmbr-list dd { border-bottom: 1px solid #1f5215; padding-top: 2px; }
-        }
-    </style>
-
-    <dl class="bmbr-list lang-en">
-        <dt>⌘⇧Y</dt><dd>open BMBoard side panel from any page</dd>
-        <dt>right-click image</dt><dd>send to BMBoard canvas</dd>
-        <dt>right-click text</dt><dd>send as sticky note</dd>
-        <dt>drag image → panel</dt><dd>drop any web image onto the board</dd>
-        <dt>paste text on canvas</dt><dd>lands as a sticky note</dd>
-        <dt>right-click sticky</dt><dd>colour palette · font · bold</dd>
-        <dt>right-click 1 image</dt><dd>crop / trim (non-destructive)</dd>
-        <dt>right-click 2+ images</dt><dd>make animated GIF</dd>
-        <dt>selection size</dt><dd>W × H px shown in panel bar</dd>
-    </dl>
-    <dl class="bmbr-list lang-ja">
-        <dt>⌘⇧Y</dt><dd>どのページからでもサイドパネルを開く</dd>
-        <dt>画像を右クリック</dt><dd>キャンバスに送る</dd>
-        <dt>テキストを右クリック</dt><dd>付箋として送る</dd>
-        <dt>画像を D&D → パネル</dt><dd>ウェブ画像をそのままキャンバスへ</dd>
-        <dt>キャンバスにペースト</dt><dd>テキストが付箋になる</dd>
-        <dt>付箋を右クリック</dt><dd>カラー変更・フォント・Bold</dd>
-        <dt>画像1枚を右クリック</dt><dd>クロップ / トリム（非破壊）</dd>
-        <dt>画像2枚以上を右クリック</dt><dd>GIF アニメを作成</dd>
-        <dt>選択サイズ表示</dt><dd>W × H px をパネルバーに表示</dd>
-    </dl>
-
-    <p class="en lang-en">No account. No analytics. No tracking. Same hands, same desk — one more surface.</p>
-    <p class="jp lang-ja">アカウントなし。アナリティクスなし。トラッキングなし。同じ手、同じ机 — もう一面だけ広く。</p>
-
-    <style>
-        #also .cws-btn {
-            display: inline-flex; align-items: center; gap: 12px;
-            margin: 32px 0 8px;
-            padding: 16px 32px;
-            background: #58dc44; color: #000;
-            font-family: var(--mono); font-size: 14px; letter-spacing: 0.12em;
-            text-decoration: none; border-radius: 3px;
-            transition: background .15s, box-shadow .15s;
-            box-shadow: 0 0 24px rgba(88,220,68,0.35);
-        }
-        #also .cws-btn:hover { background: #6fff55; box-shadow: 0 0 36px rgba(88,220,68,0.55); }
-        #also .cws-btn .cws-sub { font-size: 11px; opacity: 0.65; margin-left: 4px; }
-        #also .cws-note { font-size: 11px; color: var(--faint); letter-spacing: 0.08em; margin-top: 8px; }
-        #also .cws-note a { color: var(--faint); text-decoration: underline; }
-    </style>
-    <div style="text-align:center; margin-top:16px;">
-        <a class="cws-btn" href="https://chromewebstore.google.com/detail/black-mirror-browser/ndnjojkcfekgcnfiieecehclidhkibjm" target="_blank" rel="noopener noreferrer">
-            <span class="lang-en">+ Add to Chrome — Free</span>
-            <span class="lang-ja">+ Chrome に追加 — 無料</span>
-            <span class="cws-sub">Chrome Web Store</span>
-        </a>
-        <div class="cws-note">
-            <span class="lang-en">v1.1.3 · Chrome, Brave, Edge · <a href="https://bmboard.studio/browser/privacy.html" target="_blank">Privacy</a></span>
-            <span class="lang-ja">v1.1.3 · Chrome / Brave / Edge 対応 · <a href="https://bmboard.studio/browser/privacy.html" target="_blank">プライバシー</a></span>
-        </div>
-    </div>
-</section>
-
-<!-- ═════════════════════════════════════════════════════════════════
-     MAKER
-     ═════════════════════════════════════════════════════════════════ -->
-<section class="section" id="maker">
-    <div class="section-number">
-        <span class="lang-en">Section 08 — THE MAKER</span>
-        <span class="lang-ja">セクション 08 — 作った人</span>
-    </div>
-
-    <style>
-        .maker-grid {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 60px;
-            align-items: center;
-            margin-top: 40px;
-        }
-        .maker-photo {
-            width: 100%;
-            aspect-ratio: 1/1;
-            object-fit: cover;
-            object-position: right top;
-            display: block;
-            filter: grayscale(30%) contrast(1.05);
-        }
-        .maker-text h3 {
-            font-size: clamp(20px, 2.8vw, 32px);
-            font-weight: 700;
-            line-height: 1.25;
-            letter-spacing: -0.01em;
-            margin-bottom: 20px;
-        }
-        .maker-text h3 em { font-style: normal; color: var(--dim); font-weight: 400; }
-        .maker-story {
-            font-size: 13px;
-            line-height: 2;
-            color: var(--dim);
-            margin-bottom: 28px;
-            max-width: 52ch;
-        }
-        .maker-story strong { color: var(--ink); }
-        .maker-name {
-            font-size: 11px;
-            letter-spacing: 0.2em;
-            color: var(--ink);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-        .maker-role {
-            font-size: 11px;
-            letter-spacing: 0.12em;
-            color: var(--faint);
-            margin-bottom: 20px;
-        }
-        .maker-link {
-            font-size: 11px;
-            letter-spacing: 0.16em;
-            color: var(--ink);
-            text-decoration: none;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--rule);
-            padding-bottom: 2px;
-        }
-        .maker-link:hover { border-color: var(--ink); }
-        @media (max-width: 660px) {
-            .maker-grid {
-                grid-template-columns: 1fr;
-                gap: 32px;
-            }
-            .maker-photo {
-                aspect-ratio: 4/3;
-                max-width: 320px;
-            }
-        }
-    </style>
-
-    <div class="maker-grid">
-        <img
-            src="assets/founder.jpg"
-            alt="木下 貴博 — kinoshita studio / 琵琶湖のほとりで"
-            class="maker-photo"
-            loading="lazy"
-        >
-        <div class="maker-text">
-            <h3 class="lang-en">Built by one person,<br><em>beside Lake Biwa.</em></h3>
-            <h3 class="lang-ja">琵琶湖のほとりで、<br><em>ひとりで作った。</em></h3>
-            <p class="maker-story lang-en">
-                Netflix was on. I was watching Black Mirror.<br>
-                Then it hit me — <strong>why don't designers and engineers ever share the same canvas?</strong><br><br>
-                One has intuition. The other has commands.<br>
-                Both are trying to build something.<br>
-                Black Mirror Board is the place where they finally meet.
-            </p>
-            <p class="maker-story lang-ja">
-                ある夜、Netflixで「ブラックミラー」を見ていた。<br>
-                そのとき気づいた —— <strong>デザイナーとエンジニアが同じキャンバスを見る場所が、この世にない。</strong><br><br>
-                一方には直感がある。もう一方にはコマンドがある。<br>
-                ふたりは同じものを作ろうとしている。<br>
-                Black Mirror Board は、その交差点だ。
-            </p>
-            <p class="maker-name">Takahiro Kinoshita / 木下 貴博</p>
-            <p class="maker-role">Designer &amp; Developer — 木下スタジオ / kinoshita studio · Shiga, Japan</p>
-            <a href="story.html" class="maker-link"><span class="lang-en">Read the full story →</span><span class="lang-ja">開発ストーリーを読む →</span></a>
-            <a href="https://kinoshita.studio/about.html" target="_blank" rel="noopener" class="maker-link" style="display:block; margin-top:0.8rem; opacity:0.6;">kinoshita.studio / 木下 貴博 →</a>
-        </div>
-    </div>
-</section>
-
-<!-- ═════════════════════════════════════════════════════════════════
-     FOOTER
-     ═════════════════════════════════════════════════════════════════ -->
-<footer>
-    <div class="foot-primary">
-        <div>
-            <span class="lang-en">◼ BM BOARD · 木下スタジオ / kinoshita studio · born by Lake Biwa · 2026</span>
-            <span class="lang-ja">◼ BM BOARD · 木下スタジオ / kinoshita studio · 琵琶湖のほとりで · 2026</span>
-        </div>
-        <div>
-            <a href="./app"><span class="lang-en">app</span><span class="lang-ja">アプリ</span></a> &nbsp;·&nbsp;
-            <a href="./commands.html#quickstart"><span class="lang-en">commands</span><span class="lang-ja">コマンド</span></a> &nbsp;·&nbsp;
-            <a href="./commands.html#first-spell"><span class="lang-en">spell guide</span><span class="lang-ja">魔法の作り方</span></a> &nbsp;·&nbsp;
-            <a href="./usage.html"><span class="lang-en">manual</span><span class="lang-ja">マニュアル</span></a> &nbsp;·&nbsp;
-            <a href="./dev-log.html"><span class="lang-en">dev log</span><span class="lang-ja">開発ログ</span></a>
-        </div>
-        <div class="foot-deep-manual">
-            <span class="lang-en">v1.2 deep-dive manual on GitHub —&nbsp;</span>
-            <span class="lang-ja">v1.2 詳細マニュアル（GitHub）—&nbsp;</span>
-            <a href="https://github.com/blackmirrorboard/bmboard/blob/main/v1.2_manual_ja/INDEX.md" target="_blank" rel="noopener noreferrer">日本語</a>
-            &nbsp;·&nbsp;
-            <a href="https://github.com/blackmirrorboard/bmboard/blob/main/v1.2_manual_en/INDEX.md" target="_blank" rel="noopener noreferrer">English</a>
-        </div>
-    </div>
-    <div class="foot-social">
-        <a href="https://x.com/bmboards" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter) — @bmboards">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-        </a>
-        <a href="https://www.instagram.com/bmboard.official" target="_blank" rel="noopener noreferrer" aria-label="Instagram — @bmboard.official">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18" rx="5"/>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-            </svg>
-        </a>
-        <a href="https://www.youtube.com/@BlackMirrorBoard" target="_blank" rel="noopener noreferrer" aria-label="YouTube — @BlackMirrorBoard">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-            </svg>
-        </a>
-    </div>
-</footer>
-
-<!-- launch transition overlay -->
-<div class="launch-overlay" id="launchOverlay" aria-hidden="true">
-    <span class="lang-en">entering the board<span class="dots"></span></span>
-    <span class="lang-ja">ボードへ入る<span class="dots"></span></span>
 </div>
 
 <script>
-'use strict';
+(function(){
+  var RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// ══════════════════════════════════════════════════════════════════
-// LANGUAGE TOGGLE — EN (default) / JP · persists in localStorage
-// ══════════════════════════════════════════════════════════════════
+  /* 言語 */
+  var saved = null; try{ saved = localStorage.getItem('bm_site_lang'); }catch(e){}
+  setLang(saved || (navigator.language||'').toLowerCase().indexOf('ja')===0 ? (saved||'ja') : 'en');
+  function setLang(l){
+    document.documentElement.lang = l;
+    document.querySelectorAll('.langsw button').forEach(function(b){ b.classList.toggle('on', b.dataset.l===l); });
+    try{ localStorage.setItem('bm_site_lang', l); }catch(e){}
+  }
+  document.querySelectorAll('.langsw button').forEach(function(b){
+    b.addEventListener('click', function(){ setLang(b.dataset.l); });
+  });
 
-const LANG_KEY = 'bmboard.lang';
-function currentLang() { return document.documentElement.lang === 'ja' ? 'ja' : 'en'; }
-function setLang(lang) {
-    const next = (lang === 'ja') ? 'ja' : 'en';
-    document.documentElement.lang = next;
-    try { localStorage.setItem(LANG_KEY, next); } catch {}
-}
-// Restore preference on load
-try {
-    const saved = localStorage.getItem(LANG_KEY);
-    if (saved === 'ja' || saved === 'en') document.documentElement.lang = saved;
-} catch {}
+  /* ナビの境界線 */
+  var nav = document.getElementById('nav');
+  addEventListener('scroll', function(){ nav.classList.toggle('stuck', scrollY > 12); }, {passive:true});
 
-// Wire toggle clicks — the whole box swaps, or click a token directly
-document.querySelectorAll('.lang-toggle .lang-tok').forEach(tok => {
-    tok.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setLang(tok.dataset.setLang);
+  /* スクロールで出す */
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.12, rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+
+  /* 実機画面が起き上がる */
+  var win = document.getElementById('win');
+  if(win){
+    var io2 = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ win.classList.add('up'); io2.unobserve(win); } });
+    }, {threshold:.2});
+    io2.observe(win);
+  }
+
+  /* カードの光をポインタに追わせる */
+  if(!RM) document.querySelectorAll('.card').forEach(function(c){
+    c.addEventListener('pointermove', function(ev){
+      var r = c.getBoundingClientRect();
+      c.style.setProperty('--mx', (ev.clientX-r.left)+'px');
+      c.style.setProperty('--my', (ev.clientY-r.top)+'px');
     });
-});
-document.getElementById('langToggle')?.addEventListener('click', (e) => {
-    // fallback: clicking outside a token → flip
-    if (e.target.matches('.lang-tok')) return;
-    setLang(currentLang() === 'en' ? 'ja' : 'en');
-});
+  });
 
-// ══════════════════════════════════════════════════════════════════
-// THEME TOGGLE — dark (default) / light, persisted to localStorage.
-// First-time visitors inherit the OS `prefers-color-scheme`.
-// ══════════════════════════════════════════════════════════════════
-const THEME_KEY = 'bmboard.theme';
-function currentTheme() {
-    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-}
-function setTheme(theme) {
-    const next = (theme === 'light') ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem(THEME_KEY, next); } catch {}
-}
-// Restore preference on load — saved value wins, else OS setting, else dark.
-try {
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved === 'light' || saved === 'dark') {
-        document.documentElement.setAttribute('data-theme', saved);
-    } else if (window.matchMedia?.('(prefers-color-scheme: light)').matches) {
-        document.documentElement.setAttribute('data-theme', 'light');
-    } else {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    }
-} catch {
-    document.documentElement.setAttribute('data-theme', 'dark');
-}
+  /* 流れるコマンド */
+  var CMDS = ['enpitsu','flip','sweep','board a4','grade 2B','classic','⌘K','connect','align top','distribute h',
+              'spell 紙吹雪','store','snip add','chain add','gif 5','rec 10','bgm on','swap right','tpl kanban',
+              '$sakura','$rain','$snow','export pptx','$svg','english'];
+  var mrow = document.getElementById('mrow');
+  if(mrow){
+    var html = CMDS.map(function(c){ return '<span class="chip">'+c+'</span>'; }).join('');
+    mrow.innerHTML = html + html;   /* 2周ぶんで途切れないループ */
+  }
 
-document.querySelectorAll('.theme-toggle .theme-tok').forEach(tok => {
-    tok.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setTheme(tok.dataset.setTheme);
-    });
-});
-document.getElementById('themeToggle')?.addEventListener('click', (e) => {
-    if (e.target.matches('.theme-tok')) return;
-    setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
-});
-
-// ══════════════════════════════════════════════════════════════════
-// SPLASH SHELL — a tiny in-page terminal for the product page
-// ══════════════════════════════════════════════════════════════════
-
-const termOut = document.getElementById('termOut');
-const termIn  = document.getElementById('termIn');
-const overlay = document.getElementById('launchOverlay');
-
-const ABOUT_ASCII = `
- ██████╗ ███╗   ███╗
- ██╔══██╗████╗ ████║   BLACK MIRROR BOARD
- ██████╔╝██╔████╔██║   ─────────────────────
- ██╔══██╗██║╚██╔╝██║   draw · speak · cast
- ██████╔╝██║ ╚═╝ ██║   kinoshita studio
- ╚═════╝ ╚═╝     ╚═╝   2026 · shiga · japan
-`.trim();
-
-function printEntry(text, cls) {
-    const d = document.createElement('div');
-    d.className = 'entry' + (cls ? ' ' + cls : '');
-    d.textContent = text;
-    termOut.appendChild(d);
-    termOut.parentElement.scrollTop = termOut.parentElement.scrollHeight;
-    return d;
-}
-function printCmd(v)  { printEntry(v, 'cmd'); }
-function printDim(v)  { printEntry(v, 'dim'); }
-function printOk(v)   { printEntry(v, 'ok'); }
-function printErr(v)  { printEntry(v, 'err'); }
-function printAscii(text) {
-    const pre = document.createElement('pre');
-    pre.className = 'entry ascii';
-    pre.textContent = text;
-    termOut.appendChild(pre);
-    termOut.parentElement.scrollTop = termOut.parentElement.scrollHeight;
-}
-function printBlank() { printEntry('\u00a0', 'dim'); }
-
-function launchToApp() {
-    const ja = currentLang() === 'ja';
-    printOk(ja ? '起動シーケンス開始...' : 'initiating launch sequence...');
-    printDim(ja ? '→ スプラッシュからフェード...' : '→ fading from splash...');
-    printDim(ja ? '→ app.html を読み込み中...' : '→ loading app.html...');
-    overlay.classList.add('on');
-    setTimeout(() => { window.location.href = './app'; }, 820);
-}
-
-function bmAbout() {
-    const ja = currentLang() === 'ja';
-    printAscii(ABOUT_ASCII);
-    printBlank();
-    if (ja) {
-        printEntry("琵琶湖のほとりで生まれた黒い板 —", 'dim');
-        printEntry("静寂を既定のパレットに、描いた線は", 'dim');
-        printEntry("JSON で流通する呪文として返ってくる。", 'dim');
-        printBlank();
-        printEntry("描くことでコードが走り、コードを書くことでデザインが生まれる。", 'ok');
-        printEntry("Drawing feeds code. Code feeds design.", 'dim');
-        printBlank();
-        printEntry("— kinoshita studio / 2026", 'dim');
-    } else {
-        printEntry("A blackboard born by Lake Biwa — where silence", 'dim');
-        printEntry("is the default palette and every drawn line", 'dim');
-        printEntry("can echo back as a JSON-portable spell.", 'dim');
-        printBlank();
-        printEntry("Drawing feeds code. Code feeds design.", 'ok');
-        printEntry("描くことでコードが走り、コードを書くことでデザインが生まれる。", 'dim');
-        printBlank();
-        printEntry("— kinoshita studio / 2026", 'dim');
-    }
-}
-
-function bmHelp() {
-    const ja = currentLang() === 'ja';
-    if (ja) {
-        printEntry("利用可能なコマンド:", 'dim');
-        printEntry("  launch            ボード（app.html）へ遷移", 'dim');
-        printEntry("  about             哲学と ASCII アート", 'dim');
-        printEntry("  help              このリファレンス", 'dim');
-        printEntry("  clear             シェル出力クリア", 'dim');
-        printEntry("  version           ビルド情報", 'dim');
-        printEntry("  contact           作者情報", 'dim');
-        printBlank();
-        printEntry("ヒント: ↑ で直前のコマンドを呼び出せる。", 'dim');
-    } else {
-        printEntry("available commands:", 'dim');
-        printEntry("  launch            enter the board (app.html)", 'dim');
-        printEntry("  about             philosophy & ascii art", 'dim');
-        printEntry("  help              this reference", 'dim');
-        printEntry("  clear             wipe the shell", 'dim');
-        printEntry("  version           build info", 'dim');
-        printEntry("  contact           who built it", 'dim');
-        printBlank();
-        printEntry("tip: hit ↑ to recall the last command.", 'dim');
-    }
-}
-
-function bmClear() {
-    termOut.innerHTML = '';
-    printDim(currentLang() === 'ja' ? '// シェルをクリア。' : '// splash shell cleared.');
-}
-
-function bmVersion() {
-    const ja = currentLang() === 'ja';
-    printEntry(ja
-        ? 'BM BOARD スプラッシュ v1.4 · エンジン本体は app.html に同梱'
-        : 'BM BOARD splash v1.4 · engine bundled as app.html', 'ok');
-    printEntry(ja
-        ? '— プリセット: scatter · grid-3x3 · sticky-3x3 · sakura · rain · leaf · snow · powerpoint · biwako-blue · make-img · monoclo · svg'
-        : '— presets: scatter · grid-3x3 · sticky-3x3 · sakura · rain · leaf · snow · powerpoint · biwako-blue · make-img · monoclo · svg', 'dim');
-}
-
-function bmContact() {
-    const ja = currentLang() === 'ja';
-    printEntry(ja ? '作者: kinoshita studio · 滋賀 · 日本' : 'built by kinoshita studio · shiga · japan', 'ok');
-    printEntry(ja ? '  フィードバック → tkinoshita.studio@gmail.com' : '  feedback → tkinoshita.studio@gmail.com', 'dim');
-    printEntry('  instagram → @tkinoshita99', 'dim');
-    printEntry(ja ? '  開発ログ   → bmboard.studio/dev-log.html' : '  dev log   → bmboard.studio/dev-log.html', 'dim');
-}
-
-// ── history (↑ ↓) ────────────────────────────────────────────────
-let termHist = [], termIx = -1, termDraft = '';
-function pushHist(v) {
-    if (!v) return;
-    if (termHist[termHist.length-1] === v) return;
-    termHist.push(v);
-    if (termHist.length > 40) termHist.shift();
-    termIx = -1;
-}
-
-function bmRun(e) {
-    if (e) e.preventDefault();
-    const raw = (termIn.value || '').trim();
-    if (!raw) return;
-    termIn.value = '';
-    termIx = -1; termDraft = '';
-    pushHist(raw);
-
-    const head = raw.toLowerCase().replace(/^\$\s*/, '');
-    printCmd(raw);
-
-    switch (head) {
-        case 'launch': case 'start': case 'go':
-            launchToApp(); break;
-        case 'about': case 'philosophy': case 'who':
-            bmAbout(); break;
-        case 'help': case '?':
-            bmHelp(); break;
-        case 'clear': case 'flush':
-            bmClear(); break;
-        case 'version': case 'ver':
-            bmVersion(); break;
-        case 'contact': case 'feedback':
-            bmContact(); break;
-        case 'ls': case 'list':
-            printDim(currentLang() === 'ja'
-                ? "呪文は app 内に眠る — launch で入ってから list を打つと見える。"
-                : "spells live inside the app — type launch to enter."); break;
-        default:
-            printErr(head + (currentLang() === 'ja'
-                ? ": コマンドが見つかりません — 'help' と打ってください。"
-                : ": command not found — type 'help'."));
-    }
-}
-
-termIn.addEventListener('keydown', e => {
-    if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (!termHist.length) return;
-        if (termIx === -1) { termDraft = termIn.value; termIx = termHist.length; }
-        termIx = Math.max(0, termIx - 1);
-        termIn.value = termHist[termIx] || '';
-        requestAnimationFrame(() => termIn.setSelectionRange(termIn.value.length, termIn.value.length));
-    } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (termIx === -1) return;
-        termIx++;
-        if (termIx >= termHist.length) { termIx = -1; termIn.value = termDraft; }
-        else { termIn.value = termHist[termIx]; }
-        requestAnimationFrame(() => termIn.setSelectionRange(termIn.value.length, termIn.value.length));
-    }
-});
-
-// ── brand (logo) click → smooth scroll to top ────────────────────
-document.querySelector('.brand')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-// ── intercept hero-cta + nav launch for fade transition ──────────
-document.querySelectorAll('[data-launch], .site-nav .launch, .hero-cta').forEach(el => {
-    el.addEventListener('click', (e) => {
-        // Only intercept same-origin links to the app (either /app or /app.html).
-        // The check is exact-suffix on '/app' so a hypothetical link like
-        // 'something-app' wouldn't accidentally match.
-        const href = el.getAttribute('href') || '';
-        if (!href.endsWith('app.html') && !href.endsWith('/app')) return;
-        e.preventDefault();
-        overlay.classList.add('on');
-        setTimeout(() => { window.location.href = href; }, 820);
-    });
-});
-
-// ── focus the input when the terminal scrolls into view ──────────
-const termSection = document.getElementById('try');
-if ('IntersectionObserver' in window && termSection) {
-    const io = new IntersectionObserver((entries) => {
-        for (const ent of entries) {
-            if (ent.isIntersecting && ent.intersectionRatio > 0.5) {
-                // subtle — don't steal focus on mobile
-                if (window.matchMedia('(hover: hover)').matches) termIn.focus({ preventScroll: true });
-            }
-        }
-    }, { threshold: [0.5] });
-    io.observe(termSection);
-}
+  /* 打鍵デモ */
+  var tt = document.getElementById('tt'), rows = [].slice.call(document.querySelectorAll('#trows .trow'));
+  if(tt && !RM){
+    var WORDS = ['かみ','flip','まほう','sweep'];
+    var wi=0, ci=0, del=false;
+    (function tick(){
+      var w = WORDS[wi];
+      tt.textContent = w.slice(0, ci);
+      rows.forEach(function(r,i){ r.classList.toggle('show', ci>0 && i<=Math.min(3, ci)); r.classList.toggle('sel', i===0 && ci>0); });
+      if(!del && ci < w.length){ ci++; setTimeout(tick, 130); }
+      else if(!del){ del=true; setTimeout(tick, 1500); }
+      else if(ci > 0){ ci--; setTimeout(tick, 55); }
+      else { del=false; wi=(wi+1)%WORDS.length; setTimeout(tick, 350); }
+    })();
+  } else if(tt){
+    tt.textContent = 'flip';
+    rows.forEach(function(r){ r.classList.add('show'); });
+  }
+})();
 </script>
 </body>
 </html>
