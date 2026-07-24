@@ -2912,7 +2912,18 @@
         <div class="set-cmds" data-pane="spells" hidden>
             <div class="set-spell-head">
                 <span data-i18n="spells.head">保存した魔法（⌘Kから使えます）</span>
-                <span class="set-spell-actions"><span class="set-cmdbtn" id="spellImportBtn" data-i18n="spells.import">読み込む</span><span class="set-cmdbtn" id="spellExportAllBtn" data-i18n="spells.exportAll">全部書き出す</span></span>
+                <span class="set-spell-actions"><span class="set-cmdbtn" id="spellCreateBtn" data-i18n="spells.create">✨ コードから作る</span><span class="set-cmdbtn" id="spellImportBtn" data-i18n="spells.import">読み込む</span><span class="set-cmdbtn" id="spellExportAllBtn" data-i18n="spells.exportAll">全部書き出す</span></span>
+            </div>
+            <div id="spellCreate" class="set-submit" hidden>
+                <div class="set-submit-hd"><span data-i18n="create.title">✨ コードから魔法を作る</span><span class="set-cmdbtn" id="spellCreateClose">✕</span></div>
+                <div class="set-submit-steps" data-i18n="create.steps">① 「AI用プロンプトをコピー」→ ChatGPT等に貼って作ってもらう ② 返ってきた JSON を下に貼る ③「登録して試す」でボードで動作確認（⌘Kにも出ます）</div>
+                <div class="set-submit-actions" style="justify-content:flex-start">
+                    <span class="set-cmdbtn" id="spellAiPrompt" data-i18n="create.aiCopy">🤖 AI用プロンプトをコピー</span>
+                </div>
+                <textarea id="spellCreateJson" spellcheck="false" placeholder='{ "name":"confetti", "icon":"🎉", "desc":"紙吹雪", "action":"const vc=BM.viewCenter(); ..." }'></textarea>
+                <div class="set-submit-actions">
+                    <span class="set-cmdbtn" id="spellCreateRun" data-i18n="create.run">登録して試す</span>
+                </div>
             </div>
             <div id="setSpellList" class="set-cmds-list"></div>
             <div id="spellSubmit" class="set-submit" hidden>
@@ -8413,15 +8424,20 @@ function _importLog(result, sourceLabel) {
         enqueue(head, ['→ schema check... ✓', `→ preset protected: $${result.originalName}`, `→ renamed to $${result.name}`, `[OK] spell acquired — run: $${result.name}`]);
     }
 }
+// JS魔法の見た目メタ（アイコン/説明）＝BM_CMDSに無いので別保存
+function getJsMeta() { try { return JSON.parse(localStorage.getItem('bm_js_meta') || '{}'); } catch (_) { return {}; } }
+function setJsMeta(name, icon, desc) { const m = getJsMeta(); m[name] = { icon: icon || '⚡', desc: desc || '' }; try { localStorage.setItem('bm_js_meta', JSON.stringify(m)); } catch (_) {} }
 // ⭐⌘K/魔法タブ用：ユーザー/STORE登録のJS魔法（preset以外＝自作 or STORE由来）を列挙
 function getUserJsSpells() {
     const built = new Set(['fetch-img']);   // 別名などは除外
     const presetNames = new Set(Object.keys(typeof BM_PRESETS !== 'undefined' ? BM_PRESETS : {}));
+    const meta = getJsMeta();
     return Object.keys(BM_CMDS || {}).filter(n => {
         const v = BM_CMDS[n];
         return v && v.source !== 'preset' && !presetNames.has(n) && !built.has(n);
-    }).map(n => ({ name: n, source: BM_CMDS[n].source || 'user', action: BM_CMDS[n].action }));
+    }).map(n => ({ name: n, source: BM_CMDS[n].source || 'user', action: BM_CMDS[n].action, icon: (meta[n] && meta[n].icon) || '⚡', desc: (meta[n] && meta[n].desc) || '' }));
 }
+window._setJsMeta = setJsMeta;
 window._getUserJsSpells = getUserJsSpells;
 window._runJsSpell = (name, args) => { if (typeof runCustomCmd === 'function') runCustomCmd(name, args || ''); };
 window._registerJsSpell = (name, action, source) => (typeof registerCmd === 'function') ? registerCmd(name, action, { source: source || 'user' }) : null;
@@ -10788,6 +10804,38 @@ tiEl.addEventListener('paste', e => {
           if (!ta || !box) return;
           if (typeof bmDeliverJson === 'function') bmDeliverJson(ta.value, `bmstore-entry-${box.dataset.name || 'spell'}.json`);
       }); }
+    // ⭐コードから魔法を作る（AI→貼付→登録して試す）
+    const _AI_PROMPT = [
+        'あなたはお絵かきボード「BMBoard」の魔法(spell)を作ります。',
+        '出力は JSON 1つだけ：{ "name":"英数字の短い名前", "icon":"絵文字1つ", "desc":"日本語の短い説明", "action":"JavaScript本文" }',
+        'action の中では以下の BM API だけ使えます（それ以外のグローバル/fetch/DOM操作は禁止）：',
+        "・BM.create(type, props) type= 'circle'|'square'|'triangle'|'arrow'|'text'|'sticky'。props例 square/sticky/text:{x,y,w,h,text,fill,color,fontSize} circle:{cx,cy,rx,ry,fill} arrow:{x1,y1,x2,y2}",
+        '・BM.viewCenter() → {x,y}（今の画面中心のワールド座標）／BM.rand(min,max)／BM.all()／BM.getSelected()／BM.translate(obj,dx,dy)／BM.setFill(obj,color)／BM.setStroke(obj,color)／BM.redraw()／BM.log(msg)',
+        'アニメにする場合は requestAnimationFrame を使い、window._<name>Id に id を保持して2回目の実行で停止できるトグルにする（sakura/rain と同様）。',
+        '作ってほしい魔法：「__ここに作りたい内容__」。JSONだけを返してください。'
+    ].join('\n');
+    { const cb = overlay.querySelector('#spellCreateBtn'), box = overlay.querySelector('#spellCreate');
+      const cl = overlay.querySelector('#spellCreateClose'), ai = overlay.querySelector('#spellAiPrompt'), run = overlay.querySelector('#spellCreateRun'), ta = overlay.querySelector('#spellCreateJson');
+      if (cb) cb.addEventListener('click', () => { if (box) { box.hidden = !box.hidden; if (!box.hidden && ta) setTimeout(() => ta.focus(), 0); } });
+      if (cl) cl.addEventListener('click', () => { if (box) box.hidden = true; });
+      if (ai) ai.addEventListener('click', () => { try { navigator.clipboard && navigator.clipboard.writeText(_AI_PROMPT); ai.textContent = '✓ コピーしました'; setTimeout(() => { ai.textContent = (window.t ? window.t('create.aiCopy') : '🤖 AI用プロンプトをコピー'); }, 1500); } catch (_) {} });
+      if (run) run.addEventListener('click', () => {
+          if (!ta) return;
+          let obj; try { obj = JSON.parse(ta.value); } catch (e) { if (typeof printRaw === 'function') printRaw('魔法JSON: 構文エラー — ' + e.message, 't-err'); return; }
+          const name = (obj.name || obj.command || '').trim();
+          const action = String(obj.action || '');
+          if (!name || !action) { if (typeof printRaw === 'function') printRaw('魔法JSON: name と action が必要', 't-err'); return; }
+          const nm = window._registerJsSpell && window._registerJsSpell(name, action, 'user');
+          if (!nm) { if (typeof printRaw === 'function') printRaw('魔法の登録に失敗（名前は英数字）', 't-err'); return; }
+          if (window._setJsMeta) window._setJsMeta(nm, obj.icon, obj.desc);
+          renderSpells();
+          if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen();
+          if (box) box.hidden = true;
+          if (window._toggleSettings) window._toggleSettings();          // 設定を閉じて…
+          setTimeout(() => { if (window._runJsSpell) window._runJsSpell(nm, ''); }, 60);   // ボードで即プレビュー
+          if (typeof printRaw === 'function') printRaw(`魔法「${nm}」を登録して実行 — ⌘Kから使えます`, 't-ok');
+      });
+    }
     { const ib = overlay.querySelector('#spellImportBtn'), eb = overlay.querySelector('#spellExportAllBtn');
       if (ib) ib.addEventListener('click', () => { const i = document.getElementById('spellFileInput'); if (i) i.click(); });
       if (eb) eb.addEventListener('click', () => {
@@ -10892,6 +10940,9 @@ const I18N = {
         'tab.general': '一般', 'tab.commands': 'コマンド', 'tab.spells': '魔法',
         'spells.head': '保存した魔法（⌘Kから使えます）', 'spells.empty': 'まだ魔法がありません — 選択して「spell 名前」、または store から入れる',
         'spells.import': '読み込む', 'spells.exportAll': '全部書き出す',
+        'spells.create': '✨ コードから作る', 'create.title': '✨ コードから魔法を作る',
+        'create.steps': '① 「AI用プロンプトをコピー」→ ChatGPT等に貼って作ってもらう　② 返ってきた JSON を下に貼る　③「登録して試す」でボードで動作確認（⌘Kにも出ます）',
+        'create.aiCopy': '🤖 AI用プロンプトをコピー', 'create.run': '登録して試す',
         'spells.fromSelf': '自作', 'spells.fromStore': 'STORE', 'spells.fromImport': '読込',
         'submit.title': '📤 STOREに提出する',
         'submit.steps': '① 下のJSONをコピー　② store/catalog.json の spells に貼って追記（PR）または作者に送る　③ 公開されるとSTOREに並びます（author を自分の名前に変えてください）',
@@ -10932,6 +10983,9 @@ const I18N = {
         'tab.general': 'General', 'tab.commands': 'Commands', 'tab.spells': 'Spells',
         'spells.head': 'Saved spells (use them from ⌘K)', 'spells.empty': 'No spells yet — select objects then "spell <name>", or install from the store',
         'spells.import': 'Import', 'spells.exportAll': 'Export all',
+        'spells.create': '✨ Create from code', 'create.title': '✨ Create a spell from code',
+        'create.steps': '① Copy the AI prompt → paste into ChatGPT etc.　② Paste the returned JSON below　③ Register & test on the board (also shows in ⌘K)',
+        'create.aiCopy': '🤖 Copy AI prompt', 'create.run': 'Register & test',
         'spells.fromSelf': 'mine', 'spells.fromStore': 'STORE', 'spells.fromImport': 'imported',
         'submit.title': '📤 Submit to STORE',
         'submit.steps': '① Copy the JSON below　② Append it to spells in store/catalog.json (PR) or send it to the author　③ Once published it appears in the STORE (set author to your name)',
@@ -11194,7 +11248,7 @@ function centerTermPanel() {
                 run() { recordRecent('link:' + it.cmd); close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
         }
         if (it._js) {   // ⭐JS魔法（sakura型・コードで動く）→ runCustomCmd
-            return { kind:'js', ico:'⚡', name: it.cmd, type: cat, desc: hint, favKey, fav,
+            return { kind:'js', ico: it._jsicon || '⚡', name: it.cmd, type: cat, desc: hint, favKey, fav,
                 run() { recordRecent(it.cmd); close(); try { pushHistory(it.cmd); } catch (_) {} if (window._runJsSpell) window._runJsSpell(it.cmd, ''); } };
         }
         if (it._preset) {   // ⭐内蔵プリセット魔法 → runCustomCmd で実行
@@ -11379,8 +11433,8 @@ function centerTermPanel() {
             kw: '魔法 spell 内蔵 preset プリセット ' + p.name }));
         // ⭐ユーザー/STORE登録のJS魔法（sakura型・コードで動く）
         const jsPool = ((window._getUserJsSpells && window._getUserJsSpells()) || []).map(j => ({
-            cmd: j.name, cat: 'spell', hint: (j.source === 'store' ? 'STORE' : '自作') + 'のコード魔法', hintEn: 'code spell (' + j.source + ')',
-            _js: j.name, kw: '魔法 spell コード js ' + j.source + ' ' + j.name }));
+            cmd: j.name, cat: 'spell', hint: j.desc || ((j.source === 'store' ? 'STORE' : '自作') + 'のコード魔法'), hintEn: j.desc || ('code spell (' + j.source + ')'),
+            _js: j.name, _jsicon: j.icon || '⚡', kw: '魔法 spell コード js ' + j.source + ' ' + j.name }));
         const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, snipPool, chainPool, presetPool, jsPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
