@@ -244,6 +244,10 @@
                `flush` / `clear` terminal command and the in-terminal flush. */
             .hbtn-flush     { display: none !important; }
             .hbtn-usage     { display: none !important; }
+            /* ⭐モバイルは上部を最小限に：編集系(undo/redo/複製/保存/開く/消す/overview)を隠し
+               ズーム＋設定(歯車)だけ残す。機能は ⌘K / ツールバー / ジェスチャから使える。 */
+            .hbtn-save, .hbtn-open, #undoBtn, #redoBtn, #dupBtn,
+            .hbtn-clear, .hlink-overview { display: none !important; }
             /* OVERVIEW stays visible on mobile but stacks as "OVER / VIEW"
                so it fits next to the other vertical hbtn icons. */
             .hlink-overview {
@@ -2439,10 +2443,10 @@
     </button>
     <div class="header-right">
         <span class="zoom-label" id="zoomLabel" ondblclick="zoomReset()" title="ダブルクリックで100%" data-i18n-title="tt.zoom100" style="cursor:pointer">100%</span>
-        <button class="hbtn" onclick="exportProject()" title="Save project (JSON)" aria-label="Save">
+        <button class="hbtn hbtn-save" onclick="exportProject()" title="Save project (JSON)" aria-label="Save">
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5 V9"/><path d="M5 6 L8 9 L11 6"/><path d="M3 12.5 h10"/></svg>
         </button>
-        <label class="hbtn" style="cursor:pointer" title="Open project" aria-label="Open">
+        <label class="hbtn hbtn-open" style="cursor:pointer" title="Open project" aria-label="Open">
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9 V2.5"/><path d="M5 5.5 L8 2.5 L11 5.5"/><path d="M3 12.5 h10"/></svg>
             <input type="file" id="importFile" accept=".json" style="display:none">
         </label>
