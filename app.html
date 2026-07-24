@@ -1607,6 +1607,23 @@
         }
         .icm-item:hover { background: rgba(255,255,255,0.07); }
         .icm-sep { height: 1px; background: var(--line, #2a2a2a); margin: 4px 0; }
+        /* ⭐ボード汎用の右クリックメニュー（透過フロスト・パレットと同系） */
+        #boardCtxMenu {
+            position: fixed; z-index: 495; display: none; min-width: 172px; padding: 5px;
+            background: rgba(22,21,25,0.82);
+            -webkit-backdrop-filter: blur(22px) saturate(1.3); backdrop-filter: blur(22px) saturate(1.3);
+            border-radius: 11px; box-shadow: 0 18px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.12);
+            font-family: var(--ui-sans);
+        }
+        #boardCtxMenu.open { display: block; }
+        .bcm-item { display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: 7px; cursor: pointer;
+            font-size: 12.5px; color: #ebe9e3; white-space: nowrap; }
+        .bcm-item:hover { background: rgba(255,255,255,0.09); }
+        .bcm-item .k { margin-left: auto; font-size: 10px; color: rgba(255,255,255,0.4); }
+        .bcm-ico { width: 18px; text-align: center; font-size: 13px; }
+        .bcm-item.danger:hover { background: rgba(255,80,80,0.16); }
+        .bcm-sep { height: 1px; background: rgba(255,255,255,0.09); margin: 4px 6px; }
+        .bcm-head { padding: 6px 11px 4px; font-size: 9.5px; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.34); }
 
         /* ══════════════════════════════════
            CROP OVERLAY
@@ -2674,6 +2691,8 @@
         <div id="imgCtxMenu" style="display:none">
             <div class="icm-item" id="icmCrop">✂ クロップ</div>
         </div>
+        <!-- ⭐BOARD CONTEXT MENU（汎用の右クリック） -->
+        <div id="boardCtxMenu"></div>
 
         <!-- CROP OVERLAY -->
         <div id="cropOverlay" style="display:none" role="dialog" aria-modal="true" aria-label="Crop image">
@@ -15130,14 +15149,82 @@ document.addEventListener('contextmenu', e => {
     // Allow right-click only inside text inputs; block everywhere else (buttons, toolbar, canvas)
     if (!e.target.closest('#ti') && !e.target.closest('#ti2') && !e.target.closest('#stickyEditor')) {
         e.preventDefault();
-        // Right-click on canvas over an image → show context menu
-        if (e.target === canvas && typeof window._showImgCtxMenu === 'function') {
+        // Right-click on canvas: image → クロップメニュー、それ以外 → ⭐ボード汎用メニュー
+        if (e.target === canvas) {
             const p = getPos(e.clientX, e.clientY);
-            const hit = [...S.objects].reverse().find(o => o.type === 'image' && hitTest(o, p.x, p.y, 0));
-            if (hit) window._showImgCtxMenu(e.clientX, e.clientY, hit);
+            const img = [...S.objects].reverse().find(o => o.type === 'image' && hitTest(o, p.x, p.y, 0));
+            if (img && typeof window._showImgCtxMenu === 'function') { window._showImgCtxMenu(e.clientX, e.clientY, img); return; }
+            const hit = [...S.objects].reverse().find(o => hitTest(o, p.x, p.y, 6));
+            if (window._showBoardCtx) window._showBoardCtx(e.clientX, e.clientY, hit || null, p);
         }
     }
 });
+
+// ⭐ボード汎用コンテキストメニュー（右クリック）— BMBrowserの右クリック機能に相当する第一歩
+(function initBoardCtx() {
+    const menu = document.getElementById('boardCtxMenu');
+    if (!menu) return;
+    let _pos = { x: 0, y: 0 };
+    const hide = () => { menu.classList.remove('open'); menu.innerHTML = ''; };
+    window._closeBoardCtx = hide;
+
+    function selectOnly(obj) { S.objects.forEach(o => o.selected = false); S.multiSelected = []; obj.selected = true; S.selectedId = obj.id; }
+    function bringFront(obj) { const i = S.objects.indexOf(obj); if (i >= 0) { S.objects.splice(i, 1); S.objects.push(obj); saveHistory(); redrawAll(); } }
+    function sendBack(obj)   { const i = S.objects.indexOf(obj); if (i >= 0) { S.objects.splice(i, 1); S.objects.unshift(obj); saveHistory(); redrawAll(); } }
+    function delObj(obj)     { S.objects = S.objects.filter(o => o !== obj); S.selectedId = null; S.multiSelected = []; saveHistory(); redrawAll(); }
+    function placeAt(type, pos) {
+        const o = BM.create(type, type === 'text' ? { text: 'テキスト' } : { text: '' });
+        if (o) {
+            if (type === 'text') { o.data.x = pos.x; o.data.y = pos.y; }
+            else { o.data.x = pos.x - (o.data.w || 100) / 2; o.data.y = pos.y - (o.data.h || 100) / 2; }
+            o.side = (typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED) ? 'back' : 'front';
+            selectOnly(o);
+        }
+        saveHistory(); redrawAll();
+    }
+    function row(ico, label, fn, opt) {
+        const d = document.createElement('div');
+        d.className = 'bcm-item' + (opt && opt.danger ? ' danger' : '');
+        d.innerHTML = `<span class="bcm-ico">${ico}</span><span>${label}</span>` + (opt && opt.k ? `<span class="k">${opt.k}</span>` : '');
+        d.addEventListener('click', () => { hide(); try { fn(); } catch (_) {} });
+        return d;
+    }
+    function head(t) { const d = document.createElement('div'); d.className = 'bcm-head'; d.textContent = t; return d; }
+    function sep() { const d = document.createElement('div'); d.className = 'bcm-sep'; return d; }
+
+    window._showBoardCtx = (cx, cy, hit, worldPos) => {
+        menu.innerHTML = ''; _pos = worldPos;
+        if (hit) {
+            selectOnly(hit); redrawAll();
+            menu.appendChild(head(hit.type));
+            menu.appendChild(row('⧉', '複製', () => { if (typeof duplicateSelection === 'function') duplicateSelection(); }, { k: '⌘D' }));
+            menu.appendChild(row('🪄', '選択を魔法に保存', () => { const r = window._addSpellFromSelection && window._addSpellFromSelection(''); if (r && r.ok && typeof printRaw === 'function') printRaw(`魔法「${r.name}」を保存（${r.count}個）`, 't-dim'); }));
+            menu.appendChild(sep());
+            menu.appendChild(row('⬆', '前面へ', () => bringFront(hit)));
+            menu.appendChild(row('⬇', '背面へ', () => sendBack(hit)));
+            menu.appendChild(sep());
+            menu.appendChild(row('🗑', '削除', () => delObj(hit), { danger: true, k: 'Del' }));
+        } else {
+            menu.appendChild(head('ここに'));
+            menu.appendChild(row('✎', 'テキストを置く', () => placeAt('text', _pos)));
+            menu.appendChild(row('🗒', '付箋を置く', () => placeAt('sticky', _pos)));
+            menu.appendChild(sep());
+            menu.appendChild(row('▦', '全選択', () => { if (typeof selectAllObjects === 'function') selectAllObjects(); }, { k: '⌘A' }));
+            menu.appendChild(row('🧹', '消しカスを払う', () => { if (typeof runCommand === 'function') runCommand('sweep'); }));
+            menu.appendChild(row('✦', 'STORE を開く', () => { if (window._openCmdK) { window._openCmdK(); setTimeout(() => window._openStoreView && window._openStoreView(), 0); } }));
+        }
+        // 表示＆画面内にクランプ
+        menu.classList.add('open');
+        const mw = menu.offsetWidth || 180, mh = menu.offsetHeight || 200;
+        let x = cx, y = cy;
+        if (x + mw > window.innerWidth - 8) x = window.innerWidth - mw - 8;
+        if (y + mh > window.innerHeight - 8) y = window.innerHeight - mh - 8;
+        menu.style.left = Math.max(8, x) + 'px'; menu.style.top = Math.max(8, y) + 'px';
+    };
+    document.addEventListener('mousedown', e => { if (menu.classList.contains('open') && !e.target.closest('#boardCtxMenu')) hide(); }, true);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && menu.classList.contains('open')) hide(); });
+    window.addEventListener('blur', hide);
+})();
 
 // iOS: kill native selection / loupe / drag preview document-wide (tldraw pattern)
 // selectstart fires before any selection range opens — preventing it kills
