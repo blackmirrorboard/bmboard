@@ -1400,6 +1400,10 @@
         /* ⭐検索行：先頭に虫眼鏡（Raycast） */
         .cmdk-search { display: flex; align-items: center; gap: 12px; padding: 0 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
         .cmdk-search-ico { color: rgba(255,255,255,0.34); flex-shrink: 0; }
+        /* ⭐戻る（STORE 詳細→一覧→コマンド） */
+        .cmdk-back { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; flex-shrink: 0;
+            border-radius: 7px; cursor: pointer; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.11); color: rgba(255,255,255,0.75); }
+        .cmdk-back:hover { background: rgba(255,255,255,0.17); color: #fff; }
         #cmdkInput {
             flex: 1; background: none; border: none; outline: none;
             color: #f4f2ec; caret-color: #9aa0ff;
@@ -1450,7 +1454,7 @@
         .cmdk-foot-warn { color: #f0c674; }
         /* Raycast風：アイコン＋名前＋サブ＋右タイプ */
         /* ⭐アイコンをタイル化（Raycastの"アプリアイコン"感） */
-        .cmdk-ico  { width: 25px; height: 25px; border-radius: 6.5px; background: linear-gradient(180deg, rgba(255,255,255,0.085), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.07); display: inline-flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.74); font-size: 12.5px; flex-shrink: 0; }
+        .cmdk-ico  { width: 25px; height: 25px; border-radius: 6.5px; background: linear-gradient(180deg, rgba(255,255,255,0.085), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.07); display: inline-flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.74); font-size: 14px; line-height: 1; flex-shrink: 0; }
         .cmdk-item.sel .cmdk-ico { background: linear-gradient(180deg, rgba(255,255,255,0.17), rgba(255,255,255,0.11)); border-color: rgba(255,255,255,0.12); color: #fff; }
         .cmdk-sub  { color: rgba(255,255,255,0.42); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
         .cmdk-type { color: rgba(255,255,255,0.30); font-size: 10px; letter-spacing: 0.02em; white-space: nowrap; flex-shrink: 0; }
@@ -1472,6 +1476,18 @@
         .cmdk-detail-name { color: #f2efe8; font-size: 16px; font-weight: 700; white-space: nowrap; }
         .cmdk-detail-desc { color: rgba(255,255,255,0.60); font-size: 12px; line-height: 1.55; }
         .cmdk-detail-foot { margin-top: 10px; font-size: 10px; color: rgba(255,255,255,0.32); letter-spacing: 0.04em; }
+        /* ⭐STORE 詳細画面（もう一段深い・Raycast型） */
+        .st-detail { margin: 5px 7px 7px; padding: 16px 17px 14px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+        .st-hero { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+        .st-ico-lg { width: 52px; height: 52px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 26px; color: #f2efe8; background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07)); border: 1px solid rgba(255,255,255,0.12); flex-shrink: 0; }
+        .st-hero-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .st-name { font-size: 19px; font-weight: 700; color: #f4f2ec; letter-spacing: -0.01em; }
+        .st-meta { font-size: 11px; color: rgba(255,255,255,0.45); }
+        .st-desc { font-size: 12.5px; color: rgba(255,255,255,0.68); line-height: 1.6; }
+        .st-sect { margin-top: 13px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.32); }
+        .st-contents { margin-top: 5px; font-size: 12px; color: rgba(255,255,255,0.6); }
+        .st-foot { margin-top: 13px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.07); font-size: 10.5px; color: rgba(255,255,255,0.38); }
         .cmdk-sect { padding: 12px 11px 5px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: rgba(255,255,255,0.34); }
         #cmdkList > .cmdk-sect:first-child { padding-top: 4px; }
 
@@ -2837,6 +2853,9 @@
 <div id="cmdkOverlay" aria-hidden="true">
     <div class="cmdk-card" role="dialog" aria-label="Command palette">
         <div class="cmdk-search">
+            <button class="cmdk-back" id="cmdkBack" type="button" aria-label="back" style="display:none">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><polyline points="11,18 5,12 11,6"></polyline></svg>
+            </button>
             <svg class="cmdk-search-ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg>
             <input id="cmdkInput" type="text" placeholder="コマンドを検索…（calc / dark / t …）" data-i18n-ph="pal.ph" autocomplete="off" spellcheck="false" autocapitalize="off">
         </div>
@@ -10530,7 +10549,10 @@ const I18N = {
         'board.flip': '⟳ 裏返す', 'flip.back': '⟳ 裏面 · クリックで表に戻る',
         'store.badge': '魔法ストア', 'store.sect': 'STORE · 魔法',
         'store.desc': 'ボード上でできることを魔法として追加できます。選ぶとインストール（⌘Kからいつでも使えます）。',
-        'store.foot': '↵ でインストール · Esc で戻る'
+        'store.foot': '↵ で詳細を見る · Esc で戻る',
+        'store.install': '⬇ インストール', 'store.reinstall': '⬇ 再インストール', 'store.installed': '導入済',
+        'store.units': '要素', 'store.contains': '含まれるもの', 'store.done': 'をインストールしました — ⌘Kから使えます',
+        'store.fail': 'インストールに失敗', 'store.detailFoot': '↵ でインストール · ← / Esc で一覧に戻る'
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
@@ -10561,7 +10583,10 @@ const I18N = {
         'board.flip': '⟳ Flip', 'flip.back': '⟳ Back side · click to flip to front',
         'store.badge': 'Spell store', 'store.sect': 'STORE · SPELLS',
         'store.desc': 'Add board abilities as spells. Pick one to install — then use it anytime from ⌘K.',
-        'store.foot': '↵ to install · Esc to go back'
+        'store.foot': '↵ to show details · Esc to go back',
+        'store.install': '⬇ Install', 'store.reinstall': '⬇ Reinstall', 'store.installed': 'Installed',
+        'store.units': ' items', 'store.contains': 'What it adds', 'store.done': ' installed — use it from ⌘K',
+        'store.fail': 'Install failed', 'store.detailFoot': '↵ to install · ← / Esc back to list'
     }
 };
 function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
@@ -10714,8 +10739,9 @@ function centerTermPanel() {
     if (!overlay || !input || !listEl) return;
 
     let rows = [], sel = 0, awaitingArg = null, mode = 'list', _favCount = 0, _recentCount = 0;
-    let storeMode = false, storeMsg = '';   // ⭐STORE画面（⌘K内で魔法をインストール）
-    const CAT_ICON = { calc:'∑', capture:'✎', board:'◑', draw:'✐', grade:'✏', panel:'▤', edit:'⌫', io:'⇅', insert:'＋', media:'♪', help:'?', link:'↗', spell:'✦' };
+    let storeMode = false, storeMsg = '', storeDetail = null;   // ⭐STORE（一覧→詳細→インストール）
+    // ⭐絵文字アイコン（細いグリフは見分けがつかないため）
+    const CAT_ICON = { calc:'🔢', capture:'📝', board:'🌓', draw:'✏️', grade:'🖍', panel:'🪟', edit:'🧹', io:'💾', insert:'➕', media:'🎵', help:'❓', link:'🔗', spell:'🪄' };
     // ⭐お気に入り（パレット上部に固定表示・★/右クリックでトグル）
     const FAVS_KEY = 'bm_favs';
     function getFavs() { try { return JSON.parse(localStorage.getItem(FAVS_KEY) || '[]'); } catch (_) { return []; } }
@@ -10781,7 +10807,7 @@ function centerTermPanel() {
                 run() { close(); if (window._toggleSettings) window._toggleSettings(); } };
         }
         if (it._storeView) {   // ⭐STOREを開く（⌘K内の画面）
-            return { kind:'storeview', ico:'✦', name: it.cmd, type: cat, desc: hint, favKey, fav,
+            return { kind:'storeview', ico:'🛍', name: it.cmd, type: cat, desc: hint, favKey, fav,
                 run() { storeMode = true; storeMsg = ''; input.value = ''; refresh(); setTimeout(() => input.focus(), 0); } };
         }
         if (it._lang) {   // ⭐言語切替
@@ -10836,7 +10862,21 @@ function centerTermPanel() {
         } else if (rows[0] && rows[0].kind === 'calc') {
             top = detailHtml(rows[0]);   // calc は結果ヒーローだけ上に（通常コマンドはクリーンなリスト＝Raycast）
         }
-        if (storeMode) {   // ⭐STOREの見出し＋インストール結果
+        if (storeMode && storeDetail) {          // ⭐STORE 詳細画面（もう一段深い）
+            const s = storeDetail;
+            const ops = s.ops || s.objects || [];
+            const LBL = { square:'四角', sticky:'付箋', text:'テキスト', circle:'円', triangle:'三角', arrow:'矢印' };
+            const cnt = {}; ops.forEach(o => { const k = o.type || 'obj'; cnt[k] = (cnt[k] || 0) + 1; });
+            const contains = Object.keys(cnt).map(k => `${LBL[k] || k} ×${cnt[k]}`).join(' · ') || '—';
+            const have = ((window._getSpells && window._getSpells()) || []).some(x => x.name === s.name);
+            top = `<div class="st-detail">`
+                + `<div class="st-hero"><span class="st-ico-lg">${esc(s.icon || '🪄')}</span>`
+                + `<span class="st-hero-t"><span class="st-name">${esc(s.name)}</span>`
+                + `<span class="st-meta">${esc(s.author || '')}${s.tag ? ' · ' + esc(s.tag) : ''} · ${ops.length}${esc(t('store.units'))}${have ? ' · ' + esc(t('store.installed')) : ''}</span></span></div>`
+                + `<div class="st-desc">${esc(s.desc || '')}</div>`
+                + `<div class="st-sect">${esc(t('store.contains'))}</div><div class="st-contents">${esc(contains)}</div>`
+                + `<div class="st-foot">${esc(t('store.detailFoot'))}</div></div>`;
+        } else if (storeMode) {   // ⭐STORE 一覧の見出し＋インストール結果
             top = `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">✦ STORE</span><span class="cmdk-badge">${esc(t('store.badge'))}</span></div>`
                 + `<div class="cmdk-detail-desc">${esc(t('store.desc'))}</div>`
                 + (storeMsg ? `<div class="cmdk-detail-foot" style="color:#9ad29a">${esc(storeMsg)}</div>` : `<div class="cmdk-detail-foot">${esc(t('store.foot'))}</div>`)
@@ -10857,7 +10897,18 @@ function centerTermPanel() {
         });
         listEl.innerHTML = top + listHtml;
         const s = listEl.querySelector('.cmdk-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
+        // ⭐戻るボタンは STORE の階層にいる時だけ出す（虫眼鏡と入替）
+        const bk = document.getElementById('cmdkBack');
+        const mg = overlay.querySelector('.cmdk-search-ico');
+        const inStore = !!(storeMode || storeDetail);
+        if (bk) bk.style.display = inStore ? 'inline-flex' : 'none';
+        if (mg) mg.style.display = inStore ? 'none' : '';
         updateFoot();
+    }
+    function storeBack() {   // 詳細→一覧→コマンド
+        if (storeDetail) { storeDetail = null; refresh(); }
+        else if (storeMode) { storeMode = false; storeMsg = ''; input.value = ''; refresh(); }
+        setTimeout(() => input.focus(), 0);
     }
     // ⭐フッターをコンテキスト化：選択コマンドのショートカット割当（Raycast流アクション）
     function updateFoot() {
@@ -10895,25 +10946,31 @@ function centerTermPanel() {
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = []; _favCount = 0; _recentCount = 0;
-        // ⭐STORE画面：カタログを検索して1つずつインストール
+        // ⭐STORE：一覧 → 詳細 → インストール の2階層
         if (storeMode) {
+            const installedSet = new Set(((window._getSpells && window._getSpells()) || []).map(s => s.name));
+            if (storeDetail) {   // 詳細画面：Enter でインストール
+                const have = installedSet.has(storeDetail.name);
+                rows = [{ kind: 'storeAction', ico: storeDetail.icon || '🪄',
+                    name: have ? t('store.reinstall') : t('store.install'), type: 'STORE',
+                    desc: storeDetail.name, noFav: true,
+                    run() {
+                        const nm = window._installSpell && window._installSpell(Object.assign({}, storeDetail, { from: 'store' }));
+                        storeMsg = nm ? `「${nm}」${t('store.done')}` : t('store.fail');
+                        storeDetail = null; refresh();
+                    } }];
+                sel = 0; render(); return;
+            }
             const cat0 = (window._getStoreCatalog && window._getStoreCatalog()) || [];
-            const installed = new Set(((window._getSpells && window._getSpells()) || []).map(s => s.name));
             const ql = full.toLowerCase();
             const list = !ql ? cat0 : cat0.filter(s => (s.name + ' ' + (s.desc || '') + ' ' + (s.author || '')).toLowerCase().indexOf(ql) >= 0);
-            rows = list.map(s => {
-                const have = installed.has(s.name);
-                const meta = `${s.author || ''} · ${(s.ops || s.objects || []).length}要素${s.tag ? ' · ' + s.tag : ''}`;
-                return {
-                    kind: 'store', ico: s.icon || '✦', name: s.name, type: have ? '導入済' : 'インストール',
-                    desc: (s.desc || '') + '　' + meta, noFav: true,
-                    run() {
-                        const nm = window._installSpell && window._installSpell(Object.assign({}, s, { from: 'store' }));
-                        storeMsg = nm ? `「${nm}」をインストールしました — ⌘Kから使えます` : 'インストールに失敗';
-                        refresh();
-                    }
-                };
-            });
+            const order = list.slice().sort((a, b) => (a.tag === 'featured' ? 0 : 1) - (b.tag === 'featured' ? 0 : 1));
+            rows = order.map(s => ({
+                kind: 'store', ico: s.icon || '🪄', name: s.name, type: installedSet.has(s.name) ? t('store.installed') : (s.tag || ''),
+                sc: (s.ops || s.objects || []).length + t('store.units'),
+                desc: s.desc || '', noFav: true, _s: s,
+                run() { storeDetail = s; refresh(); }   // ↵＝詳細を見る
+            }));
             sel = 0; render(); return;
         }
         const cv = (typeof safeCalc === 'function') ? safeCalc(full) : null;
@@ -10962,8 +11019,8 @@ function centerTermPanel() {
         close();
         if (window._openLink) window._openLink(u, n);   // 登録したらそのまま開く
     }
-    function open()  { capSc = null; capMsg = ''; storeMode = false; storeMsg = ''; overlay.classList.add('open'); showList(); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
-    function close() { capSc = null; capMsg = ''; storeMode = false; storeMsg = ''; overlay.classList.remove('open'); showList(); }
+    function open()  { capSc = null; capMsg = ''; storeMode = false; storeMsg = ''; storeDetail = null; overlay.classList.add('open'); showList(); input.value = ''; refresh(); setTimeout(() => input.focus(), 0); }
+    function close() { capSc = null; capMsg = ''; storeMode = false; storeMsg = ''; storeDetail = null; overlay.classList.remove('open'); showList(); }
     function toggle(){ isOpen() ? close() : open(); }
     window._openCmdK = open; window._toggleCmdK = toggle;
     window._cmdkRefreshIfOpen = () => { if (isOpen()) refresh(); };   // ⭐言語切替時に開いてれば再描画
@@ -10979,6 +11036,8 @@ function centerTermPanel() {
         input.focus();
     });
 
+    { const _bk = document.getElementById('cmdkBack');
+      if (_bk) _bk.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); storeBack(); }); }
     input.addEventListener('input', refresh);
     input.addEventListener('keydown', e => {
         if (e.isComposing || e.keyCode === 229) return;   // ⭐IME変換中のEnterでは実行しない（漢字変換確定で誤発火を防ぐ）
@@ -10996,7 +11055,12 @@ function centerTermPanel() {
         if (e.key === 'ArrowDown')    { if (rows.length) { sel = (sel + 1) % rows.length; render(); } e.preventDefault(); }
         else if (e.key === 'ArrowUp') { if (rows.length) { sel = (sel - 1 + rows.length) % rows.length; render(); } e.preventDefault(); }
         else if (e.key === 'Enter')   { e.preventDefault(); runSel(); }
-        else if (e.key === 'Escape')  { e.preventDefault(); if (storeMode) { storeMode = false; storeMsg = ''; input.value = ''; refresh(); } else close(); }
+        else if (e.key === 'Escape')  {
+            e.preventDefault();
+            if (storeDetail) { storeDetail = null; refresh(); }                                   // 詳細→一覧
+            else if (storeMode) { storeMode = false; storeMsg = ''; input.value = ''; refresh(); } // 一覧→コマンド
+            else close();
+        }
     });
     // ⭐リンク追加フォームのキー操作（名前→URL→保存 / Esc で一覧に戻る）
     if (lfName) lfName.addEventListener('keydown', e => {
@@ -11027,7 +11091,7 @@ function centerTermPanel() {
     function applyCardPos() { if (card) card.style.transform = `translate3d(${Math.round(_cx)}px, ${Math.round(_cy)}px, 0)`; }
     if (card) {
         card.addEventListener('pointerdown', e => {
-            const onSearch = e.target.closest('.cmdk-search') && e.target.tagName !== 'INPUT';
+            const onSearch = e.target.closest('.cmdk-search') && e.target.tagName !== 'INPUT' && !e.target.closest('.cmdk-back');
             const onFoot   = e.target.closest('.cmdk-foot') && !e.target.closest('.cmdk-foot-btn');
             if (!onSearch && !onFoot) return;
             _drag = { x: e.clientX, y: e.clientY, cx: _cx, cy: _cy };
@@ -12074,18 +12138,18 @@ function installSpell(s) {
 }
 // ⭐STORE カタログ（内蔵シード＝サーバー不要）。将来は同形式の静的JSONをGitHub Pagesからfetchに差替え可
 const STORE_CATALOG = [
-    { name: '3×3 グリッド', icon: '▦', desc: '3×3 の正方形グリッドを置く（レイアウトの下敷きに）', author: 'kinoshita studio', tag: 'featured',
+    { name: '3×3 グリッド', icon: '🔳', desc: '3×3 の正方形グリッドを置く（レイアウトの下敷きに）', author: 'kinoshita studio', tag: 'featured',
       ops: (function () { const o = [], size = 90, gap = 24, step = 114; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) o.push({ type: 'square', dx: (c - 1) * step - size / 2, dy: (r - 1) * step - size / 2, props: { w: size, h: size } }); return o; })() },
-    { name: '付箋 3色', icon: '▢', desc: '黄・桃・青の付箋を横に3枚（発散用）', author: 'kinoshita studio', tag: 'new',
+    { name: '付箋 3色', icon: '🗒', desc: '黄・桃・青の付箋を横に3枚（発散用）', author: 'kinoshita studio', tag: 'new',
       ops: [ { type: 'sticky', dx: -330, dy: -100, props: { w: 200, h: 200, color: '#FFE873', text: '' } },
              { type: 'sticky', dx: -100, dy: -100, props: { w: 200, h: 200, color: '#FFC1CC', text: '' } },
              { type: 'sticky', dx:  130, dy: -100, props: { w: 200, h: 200, color: '#BEE3FF', text: '' } } ] },
-    { name: 'KV枠 + タイトル', icon: '▧', desc: 'OG(1200×630)の枠と大きなタイトル', author: 'kinoshita studio', tag: 'featured',
+    { name: 'KV枠 + タイトル', icon: '🖼', desc: 'OG(1200×630)の枠と大きなタイトル', author: 'kinoshita studio', tag: 'featured',
       ops: [ { type: 'square', dx: -600, dy: -315, props: { w: 1200, h: 630, fill: '#FAFAF8' } },
              { type: 'text',   dx: -540, dy:  -10, props: { text: 'TITLE', fontSize: 96 } } ] },
-    { name: 'チェックリスト', icon: '☑', desc: '☐ 3行の付箋（今日やること）', author: 'kinoshita studio', tag: 'new',
+    { name: 'チェックリスト', icon: '✅', desc: '☐ 3行の付箋（今日やること）', author: 'kinoshita studio', tag: 'new',
       ops: [ { type: 'sticky', dx: -140, dy: -120, props: { w: 280, h: 240, color: '#FFE873', text: '☐ \n☐ \n☐ ' } } ] },
-    { name: '見出し + 罫線', icon: '≡', desc: '見出しテキストと下線（章の頭に）', author: 'kinoshita studio', tag: 'new',
+    { name: '見出し + 罫線', icon: '📏', desc: '見出しテキストと下線（章の頭に）', author: 'kinoshita studio', tag: 'new',
       ops: [ { type: 'text',   dx: -200, dy: -40, props: { text: '見出し', fontSize: 48 } },
              { type: 'square', dx: -210, dy:  20, props: { w: 420, h: 3, fill: '#111111', strokeOff: true } } ] },
 ];
