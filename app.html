@@ -11000,6 +11000,10 @@ function centerTermPanel() {
             return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: hint || it._url, favKey, fav,
                 run() { recordRecent('link:' + it.cmd); close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
         }
+        if (it._preset) {   // ⭐内蔵プリセット魔法 → runCustomCmd で実行
+            return { kind:'preset', ico: it._picon || '🪄', name: it.cmd, type: cat, desc: hint, favKey, fav,
+                run() { recordRecent(it.cmd); close(); try { pushHistory(it.cmd); } catch (_) {} if (typeof runCustomCmd === 'function') runCustomCmd(it.cmd, ''); } };
+        }
         if (it._chain) {   // ⭐連鎖 → 選ぶとコマンドを順に実行
             return { kind:'chain', ico: CAT_ICON.chain || '⛓', name: it.cmd, type: cat, desc: hint, favKey, fav,
                 run() { recordRecent('chain:' + it.cmd); close(); if (window._runChain) window._runChain(it._chain); } };
@@ -11173,7 +11177,10 @@ function centerTermPanel() {
         const snipPool = Object.keys(snipObj).map(n => ({ cmd: n, cat: 'snippet', hint: String(snipObj[n]).slice(0, 40), _snip: snipObj[n], kw: 'スニペット snippet 定型 付箋 ' + n }));
         const chainObj = (window._getChains && window._getChains()) || {};
         const chainPool = Object.keys(chainObj).map(n => ({ cmd: n, cat: 'chain', hint: (chainObj[n]||[]).join(' → ').slice(0, 46), _chain: chainObj[n], kw: '連鎖 chain マクロ 一括 ' + n }));
-        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, snipPool, chainPool);
+        const presetPool = ((window._getPresetSpells && window._getPresetSpells()) || []).map(p => ({
+            cmd: p.name, cat: 'spell', hint: p.desc, hintEn: p.descEn, _preset: p.name, _picon: p.icon,
+            kw: '魔法 spell 内蔵 preset プリセット ' + p.name }));
+        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, snipPool, chainPool, presetPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = []; _favCount = 0; _recentCount = 0;
@@ -12338,8 +12345,16 @@ function runSpell(spell) {
         for (const op of spell.ops) {
             try {
                 const props = Object.assign({}, op.props || {});
-                if (op.dx != null) props.x = vc.x + op.dx;
-                if (op.dy != null) props.y = vc.y + op.dy;
+                if (op.type === 'circle') {          // 円は cx,cy（dx,dy＝中心）
+                    if (op.dx != null) props.cx = vc.x + op.dx;
+                    if (op.dy != null) props.cy = vc.y + op.dy;
+                } else if (op.type === 'arrow') {    // 矢印は x1,y1,x2,y2（props は相対値）
+                    ['x1', 'x2'].forEach(k => { if (props[k] != null) props[k] = vc.x + props[k]; });
+                    ['y1', 'y2'].forEach(k => { if (props[k] != null) props[k] = vc.y + props[k]; });
+                } else {                              // 四角/付箋/テキストは x,y（左上）
+                    if (op.dx != null) props.x = vc.x + op.dx;
+                    if (op.dy != null) props.y = vc.y + op.dy;
+                }
                 const o = BM.create(op.type, props);
                 if (o) { o.side = side; o.selected = true; created.push(o.id); }
             } catch (_) {}
@@ -12401,6 +12416,22 @@ function runChain(list) {
     })();
 }
 window._getChains = getChains; window._saveChain = saveChain; window._rmChain = rmChain; window._runChain = runChain;
+
+// ⭐内蔵プリセット魔法（既存の BM_PRESETS を⌘Kから使えるように。実行は runCustomCmd）
+const PRESET_SPELLS = [
+    { name:'sakura',      icon:'🌸', desc:'桜を舞わせる（もう一度で止める）',      descEn:'Falling sakura petals (run again to stop)' },
+    { name:'rain',        icon:'🌧',  desc:'雨を降らせる（もう一度で止める）',      descEn:'Rain (run again to stop)' },
+    { name:'snow',        icon:'❄️', desc:'雪を降らせる（もう一度で止める）',      descEn:'Snow (run again to stop)' },
+    { name:'leaf',        icon:'🍃', desc:'葉を舞わせる（もう一度で止める）',      descEn:'Falling leaves (run again to stop)' },
+    { name:'scatter',     icon:'💨', desc:'選択したものをランダムに散らす',        descEn:'Scatter the selected objects' },
+    { name:'monoclo',     icon:'⚫️', desc:'選択した画像をモノクロにする',          descEn:'Make selected images monochrome' },
+    { name:'biwako-blue', icon:'🔵', desc:'全部を BIWAKO BLUE に染める',           descEn:'Retint everything to BIWAKO BLUE' },
+    { name:'grid-3x3',    icon:'🔳', desc:'3×3 の正方形グリッドを置く',            descEn:'Place a 3×3 square grid' },
+    { name:'sticky-3x3',  icon:'🗂',  desc:'3×3 の付箋グリッドを置く',              descEn:'Place a 3×3 sticky grid' },
+    { name:'powerpoint',  icon:'📽',  desc:'16:9 スライド枠＋見出し/本文を置く',    descEn:'Place a 16:9 slide frame with title/body' },
+    { name:'svg',         icon:'🧬', desc:'選択（無ければ全部）をSVGで書き出す',   descEn:'Export selection (or all) as SVG' },
+];
+window._getPresetSpells = () => PRESET_SPELLS;
 
 // ⭐STORE カタログ（内蔵シード＝サーバー不要）。将来は同形式の静的JSONをGitHub Pagesからfetchに差替え可
 const STORE_CATALOG = [
