@@ -8990,6 +8990,46 @@ function runCommand(val) {
         const _cv = safeCalc(clean);
         if (_cv !== null) { printRaw(clean, 't-cmd'); printResult(_cv); return; }
     }
+    // ⭐GIF録画：gif [秒] → ボードをアニメGIFに書き出し
+    if (head==='gif') {
+        const sec = Math.max(1, Math.min(8, parseFloat(rest) || 4));
+        const en = (typeof LANG!=='undefined'&&LANG==='en');
+        printRaw(en?`[gif] recording ${sec}s… draw or run an animation (e.g. sakura) now`:`[gif] ${sec}秒 録画中… 今 描く/アニメ(例 sakura)を動かして`, 't-dim');
+        if (window._recordGif) window._recordGif(sec, { fps: 10, maxW: 480 }).then(r => {
+            if (!r) { printRaw('gif: 録画失敗', 't-err'); return; }
+            const blob = new Blob([r.bytes], { type: 'image/gif' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = `bmboard-${Date.now()}.gif`; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+            printRaw(en?`[gif] saved (${r.w}×${r.h}, ${r.frames}f, ${(r.bytes.length/1024|0)}KB)`:`[gif] 書き出し完了（${r.w}×${r.h}・${r.frames}コマ・${(r.bytes.length/1024|0)}KB）`, 't-ok');
+        }).catch(err => printRaw('gif: ' + err.message, 't-err'));
+        return;
+    }
+    // ⭐動画録画：rec [秒] → ボードを WebM に（MediaRecorder・音は入らない）
+    if (head==='rec' || head==='record') {
+        const sec = Math.max(1, Math.min(30, parseFloat(rest) || 6));
+        const en = (typeof LANG!=='undefined'&&LANG==='en');
+        const src = document.getElementById('c');
+        if (!src || !src.captureStream || typeof MediaRecorder === 'undefined') { printRaw(en?'rec: not supported in this browser':'rec: このブラウザは非対応', 't-err'); return; }
+        try {
+            const stream = src.captureStream(30);
+            const mime = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+            const mr = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+            const chunks = [];
+            mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+            mr.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                a.download = `bmboard-${Date.now()}.webm`; document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+                printRaw(en?`[rec] saved WebM (${(blob.size/1024|0)}KB)`:`[rec] WebM 書き出し完了（${(blob.size/1024|0)}KB）`, 't-ok');
+            };
+            mr.start();
+            printRaw(en?`[rec] recording ${sec}s of WebM…`:`[rec] ${sec}秒 動画録画中…`, 't-dim');
+            setTimeout(() => { try { mr.stop(); } catch(_){} }, sec * 1000);
+        } catch (err) { printRaw('rec: ' + err.message, 't-err'); }
+        return;
+    }
     // ⭐消しカスを払う（紙の上の消しカスだけ一掃・描画/保存コアは不変）
     if (head==='sweep' || head==='dust' || head==='crumbs' || low==='払う' || low==='消しカスを払う') {
         const n = (typeof _eraseDebris !== 'undefined') ? _eraseDebris.length : 0;
@@ -10929,6 +10969,8 @@ const OMNI_CMDS = [
     { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', hintEn:'Split width (panel 30 / float / dock / center)', args:true },
     { cmd:'clear',   cat:'edit',    hint:'ボードを消す', hintEn:'Clear the board' },
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙' },
+    { cmd:'gif',     cat:'io',      hint:'ボードをGIFに録画（gif 4 で4秒）', hintEn:'Record the board as a GIF (gif 4 = 4s)', args:true, kw:'gif アニメ 録画 書き出し 動画 sakura 共有 export' },
+    { cmd:'rec',     cat:'io',      hint:'ボードを動画(WebM)に録画（rec 6 で6秒）', hintEn:'Record the board as video/WebM (rec 6 = 6s)', args:true, kw:'rec 録画 動画 video webm 書き出し キャプチャ capture' },
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
     { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import' },
@@ -12548,6 +12590,80 @@ function runChain(list) {
     })();
 }
 window._getChains = getChains; window._saveChain = saveChain; window._rmChain = rmChain; window._runChain = runChain;
+
+// ⭐GIF書き出し＝ボードを数秒録画してアニメGIFに（外部ライブラリ無し・完全自前・オフライン可）
+//   3-3-2 の256色固定パレット＋標準GIF-LZW。sakura等のアニメや描画過程をそのままGIFに。
+function _lzwGIF(minCode, indices) {
+    const clearCode = 1 << minCode, eoiCode = clearCode + 1;
+    let codeSize = minCode + 1, dictSize = eoiCode + 1, dict = new Map();
+    const initDict = () => { dict = new Map(); for (let i = 0; i < clearCode; i++) dict.set('' + i, i); dictSize = eoiCode + 1; codeSize = minCode + 1; };
+    const bytes = []; let acc = 0, accBits = 0;
+    const put = code => { acc |= code << accBits; accBits += codeSize; while (accBits >= 8) { bytes.push(acc & 255); acc = acc >>> 8; accBits -= 8; } };
+    initDict(); put(clearCode);
+    let w = '' + indices[0];
+    for (let i = 1; i < indices.length; i++) {
+        const k = '' + indices[i], wk = w + ',' + k;
+        if (dict.has(wk)) { w = wk; }
+        else {
+            put(dict.get(w));
+            dict.set(wk, dictSize++);
+            if (dictSize > (1 << codeSize) && codeSize < 12) codeSize++;
+            if (dictSize >= 4096) { put(clearCode); initDict(); }
+            w = k;
+        }
+    }
+    put(dict.get(w)); put(eoiCode);
+    if (accBits > 0) bytes.push(acc & 255);
+    return bytes;
+}
+function encodeGIF(frames, w, h, delayCs) {
+    const out = [];
+    const b = (...a) => { for (const x of a) out.push(x & 255); };
+    const short = n => out.push(n & 255, (n >> 8) & 255);
+    const str = s => { for (let i = 0; i < s.length; i++) out.push(s.charCodeAt(i)); };
+    // 3-3-2 固定パレット
+    const pal = [];
+    for (let i = 0; i < 256; i++) pal.push(Math.round(((i >> 5) & 7) * 255 / 7), Math.round(((i >> 2) & 7) * 255 / 7), Math.round((i & 3) * 255 / 3));
+    str('GIF89a'); short(w); short(h); b(0xF7, 0, 0); for (const c of pal) out.push(c);
+    b(0x21, 0xFF, 0x0B); str('NETSCAPE2.0'); b(0x03, 0x01, 0, 0, 0);   // 無限ループ
+    for (const rgba of frames) {
+        const n = w * h, idx = new Uint8Array(n);
+        for (let i = 0; i < n; i++) idx[i] = ((rgba[i * 4] >> 5) << 5) | ((rgba[i * 4 + 1] >> 5) << 2) | (rgba[i * 4 + 2] >> 6);
+        b(0x21, 0xF9, 0x04, 0x00); short(delayCs); b(0, 0);
+        b(0x2C); short(0); short(0); short(w); short(h); b(0);
+        b(8);
+        const data = _lzwGIF(8, idx);
+        let p = 0; while (p < data.length) { const len = Math.min(255, data.length - p); b(len); for (let k = 0; k < len; k++) b(data[p + k]); p += len; }
+        b(0);
+    }
+    b(0x3B);
+    return new Uint8Array(out);
+}
+async function recordGif(seconds, opts) {
+    opts = opts || {};
+    const fps = opts.fps || 10;
+    const maxW = opts.maxW || 480;
+    const src = document.getElementById('c'); if (!src) return null;
+    const sw = src.width, sh = src.height;
+    const scale = Math.min(1, maxW / sw);
+    const ow = Math.max(2, Math.round(sw * scale)) & ~1, oh = Math.max(2, Math.round(sh * scale)) & ~1;
+    const off = document.createElement('canvas'); off.width = ow; off.height = oh;
+    const octx = off.getContext('2d', { willReadFrequently: true });
+    const totalFrames = Math.max(2, Math.min(80, Math.round(seconds * fps)));
+    const frames = [];
+    for (let i = 0; i < totalFrames; i++) {
+        octx.clearRect(0, 0, ow, oh);
+        octx.fillStyle = getComputedStyle(src).backgroundColor || '#fff';
+        octx.fillRect(0, 0, ow, oh);
+        octx.drawImage(src, 0, 0, ow, oh);
+        frames.push(octx.getImageData(0, 0, ow, oh).data);
+        if (typeof printRaw === 'function' && i % fps === 0) printRaw(`[gif] recording… ${i}/${totalFrames}`, 't-dim');
+        await new Promise(r => setTimeout(r, Math.round(1000 / fps)));
+    }
+    const bytes = encodeGIF(frames, ow, oh, Math.round(100 / fps));
+    return { bytes, w: ow, h: oh, frames: totalFrames };
+}
+window._recordGif = recordGif; window._encodeGIF = encodeGIF;
 
 // ⭐内蔵プリセット魔法（既存の BM_PRESETS を⌘Kから使えるように。実行は runCustomCmd）
 const PRESET_SPELLS = [
