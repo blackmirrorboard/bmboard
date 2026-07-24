@@ -2597,6 +2597,8 @@
              Sits under the canvas-panel grid pseudo + canvas — additive only. -->
         <div id="bgLayer" aria-hidden="true"></div>
         <canvas id="c" draggable="false"></canvas>
+        <!-- ⭐紙の裏（フリップ時のみ表示・表がうっすら透ける／ヒントで表に戻る） -->
+        <div id="flipOverlay"><div class="flip-hint" id="flipHint" data-i18n="flip.back">⟳ 裏面 · クリックで表に戻る</div></div>
         <!-- v1.3 Phase 2: Palette modal (opens on `palette load <name>`).
              Shows swatch grid, click to copy hex to clipboard, X / Esc to close. -->
         <div id="paletteOverlay" onclick="if(event.target===event.currentTarget)closePaletteModal()" aria-hidden="true">
@@ -2984,6 +2986,8 @@
         <button class="board-size-opt" data-size="letter">Letter</button>
         <button class="board-size-opt" data-size="square" data-i18n="board.square">正方形</button>
     </div>
+    <div class="pop-sep-line"></div>
+    <button class="board-size-opt" id="boardFlipOpt" data-i18n="board.flip">⟳ 裏返す</button>
 </div>
 
 <!-- Shape Popover — ○ △ □ → + Fill (position:fixed, never clipped) -->
@@ -8771,6 +8775,14 @@ function runCommand(val) {
         printRaw((typeof LANG!=='undefined'&&LANG==='en') ? `board size → ${key==='free'?'none (infinite)':lbl}` : `ボードサイズ → ${key==='free'?'なし（無限）':lbl}`, 't-dim');
         return;
     }
+    // ⭐紙を裏返す（表が薄く透ける・見るv1）
+    if (head==='flip' || low==='裏返す' || low==='ひっくり返す') {
+        if (typeof toggleBoardFlip === 'function') toggleBoardFlip();
+        const flipped = (typeof BOARD_FLIPPED !== 'undefined') && BOARD_FLIPPED;
+        const en = (typeof LANG!=='undefined'&&LANG==='en');
+        printRaw(en ? (flipped ? 'flipped to the back — front bleeds through' : 'flipped back to the front') : (flipped ? '裏返しました（表が薄く透けます）' : '表に戻しました'), 't-dim');
+        return;
+    }
     if (head==='t') {
         const txt = rest.trim();
         if (!txt) { printRaw('t: テキストを指定（例: t アイデア）', 't-err'); return; }
@@ -10420,7 +10432,8 @@ const I18N = {
         'fb.note': 'メーラーが起動します · no tracking · local only',
         'crop.hint': 'ドラッグで範囲 · ハンドルで調整 · Enter 適用 · Esc キャンセル', 'crop.reset': 'リセット', 'crop.cancel': 'キャンセル', 'crop.apply': '適用',
         'voice.hint': '↵ 実行　Esc キャンセル',
-        'tt.sweep': '消しカスを払う', 'tt.boardsize': 'ボードサイズ（A4等）', 'board.size': 'ボードサイズ', 'board.free': 'なし（無限）', 'board.square': '正方形'
+        'tt.sweep': '消しカスを払う', 'tt.boardsize': 'ボードサイズ（A4等）', 'board.size': 'ボードサイズ', 'board.free': 'なし（無限）', 'board.square': '正方形',
+        'board.flip': '⟳ 裏返す', 'flip.back': '⟳ 裏面 · クリックで表に戻る'
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
@@ -10447,7 +10460,8 @@ const I18N = {
         'fb.note': 'Opens your mail app · no tracking · local only',
         'crop.hint': 'Drag to select · handles to adjust · Enter to apply · Esc to cancel', 'crop.reset': 'Reset', 'crop.cancel': 'Cancel', 'crop.apply': 'Apply',
         'voice.hint': '↵ run　Esc cancel',
-        'tt.sweep': 'Sweep eraser crumbs', 'tt.boardsize': 'Board size (A4, etc.)', 'board.size': 'Board size', 'board.free': 'None (infinite)', 'board.square': 'Square'
+        'tt.sweep': 'Sweep eraser crumbs', 'tt.boardsize': 'Board size (A4, etc.)', 'board.size': 'Board size', 'board.free': 'None (infinite)', 'board.square': 'Square',
+        'board.flip': '⟳ Flip', 'flip.back': '⟳ Back side · click to flip to front'
     }
 };
 function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
@@ -10489,6 +10503,7 @@ const OMNI_CMDS = [
     { cmd:'clear',   cat:'edit',    hint:'ボードを消す', hintEn:'Clear the board' },
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙' },
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
+    { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
     { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す', hintEn:'Clear the terminal log' },
     { cmd:'export',  cat:'io',      hint:'書き出し（png / svg / pptx / data）', hintEn:'Export (png / svg / pptx / data)', args:true },
     { cmd:'share',   cat:'io',      hint:'URLで画面を共有', hintEn:'Share the canvas via URL' },
@@ -12193,6 +12208,17 @@ document.addEventListener('click', (e) => {
     if (swBtn) swBtn.addEventListener('click', e => {
         e.stopPropagation(); if (typeof playClick === 'function') playClick(false);
         if (typeof runCommand === 'function') runCommand('sweep');
+    });
+    // ⭐裏返す：popoverのトグル／裏面ヒントで表に戻る
+    const flipOpt = document.getElementById('boardFlipOpt');
+    const flipHint = document.getElementById('flipHint');
+    if (flipOpt) flipOpt.addEventListener('click', e => {
+        e.stopPropagation(); if (typeof playClick === 'function') playClick(false);
+        if (typeof toggleBoardFlip === 'function') toggleBoardFlip();
+        closeBoardPop();
+    });
+    if (flipHint) flipHint.addEventListener('click', e => {
+        e.stopPropagation(); if (typeof toggleBoardFlip === 'function') toggleBoardFlip(false);
     });
     if (typeof _syncBoardSizeUI === 'function') _syncBoardSizeUI();
 })();
