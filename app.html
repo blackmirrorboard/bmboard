@@ -4735,8 +4735,8 @@ function redrawAll() {
     drawBoardFrame();   // ⭐紙の枠（ボードサイズ指定時のみ・オブジェクトの背後）
     const _viewSide = BOARD_FLIPPED ? 'back' : 'front';
     for (const obj of S.objects) {
-        const _objSide = obj.side || _viewSide;   // 未タグ＝今いる側
-        if (_objSide !== _viewSide) { ctx.save(); ctx.globalAlpha = FLIP_BLEED_ALPHA; renderObject(obj); ctx.restore(); }   // 見えない側＝薄く裏写り
+        if (!obj.side) obj.side = _viewSide;   // ⭐初回描画時の側で確定（復元分は起動時=表で確定）
+        if (obj.side !== _viewSide) { ctx.save(); ctx.globalAlpha = FLIP_BLEED_ALPHA; renderObject(obj); ctx.restore(); }   // 見えない側＝薄く裏写り
         else renderObject(obj);
     }
     if (S.isDown && isShapeTool(S.tool) && S.startPt && S.curPt) renderPreview();
