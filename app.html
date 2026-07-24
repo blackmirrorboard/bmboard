@@ -686,8 +686,7 @@
             -webkit-user-select: none;
             -webkit-touch-callout: none;
         }
-        /* ⭐紙をひっくり返す：canvasを水平ミラー＋紙裏オーバーレイで"表が薄く透ける" */
-        #cp.bm-flipped #c { transform: scaleX(-1); transition: transform 0.35s cubic-bezier(.4,0,.2,1); }
+        /* ⭐紙をひっくり返す：ミラーは canvas 描画側で実施（入力/pan/zoom も一致）。ここは紙裏オーバーレイのみ */
         #flipOverlay {
             position: absolute; inset: 0; z-index: 11; display: none;
             background: rgba(250,248,242,0.6);
@@ -3361,9 +3360,10 @@ function fitContentView() {
 function toggleBoardFlip(force) {
     const cp = document.getElementById('cp'); if (!cp) return;
     const want = (typeof force === 'boolean') ? force : !cp.classList.contains('bm-flipped');
-    if (want) fitContentView();   // ⭐裏返す前に内容を画面中央にフィット（見失わない）
+    if (want && !BOARD_FLIPPED) fitContentView();   // ⭐裏返す時だけ内容を画面中央にフィット（見失わない）
     cp.classList.toggle('bm-flipped', want);
     BOARD_FLIPPED = want;
+    if (typeof redrawAll === 'function') redrawAll();   // ミラーの反映（表↔裏 両方向）
     if (typeof _syncBoardSizeUI === 'function') _syncBoardSizeUI();
 }
 window.toggleBoardFlip = toggleBoardFlip;
@@ -3878,16 +3878,18 @@ function initCanvas() {
             const r   = canvas.getBoundingClientRect();
             const sx  = cur.mid.x-r.left,  sy  = cur.mid.y-r.top;
             const psx = pinch.mid.x-r.left, psy = pinch.mid.y-r.top;
-            const wx  = (psx-VIEW.tx)/VIEW.scale, wy=(psy-VIEW.ty)/VIEW.scale;
+            const wx  = _wxFromSx(psx), wy=(psy-VIEW.ty)/VIEW.scale;
             VIEW.scale = Math.max(0.02, Math.min(40, VIEW.scale*(cur.dist/pinch.dist)));
-            VIEW.tx = sx-wx*VIEW.scale; VIEW.ty = sy-wy*VIEW.scale;
+            VIEW.tx = _txForAnchor(sx, wx); VIEW.ty = sy-wy*VIEW.scale;
             pinch = cur;
             updateZoomLabel(); redrawAll(); return;
         }
 
         // Pan drag
         if (S.panning) {
-            VIEW.tx += e.clientX-S.panStart.x; VIEW.ty += e.clientY-S.panStart.y;
+            const _dx = e.clientX-S.panStart.x;
+            VIEW.tx += (typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED) ? -_dx : _dx;
+            VIEW.ty += e.clientY-S.panStart.y;
             S.panStart = { x:e.clientX, y:e.clientY };
             updateZoomLabel(); redrawAll(); return;
         }
@@ -3963,10 +3965,10 @@ function initCanvas() {
         e.preventDefault();
         const r  = canvas.getBoundingClientRect();
         const sx = e.clientX-r.left, sy = e.clientY-r.top;
-        const cx = (sx-VIEW.tx)/VIEW.scale, cy = (sy-VIEW.ty)/VIEW.scale;
+        const cx = _wxFromSx(sx), cy = (sy-VIEW.ty)/VIEW.scale;
         const f  = e.deltaY < 0 ? 1.1 : 1/1.1;
         VIEW.scale = Math.max(0.02, Math.min(40, VIEW.scale*f));
-        VIEW.tx = sx-cx*VIEW.scale; VIEW.ty = sy-cy*VIEW.scale;
+        VIEW.tx = _txForAnchor(sx, cx); VIEW.ty = sy-cy*VIEW.scale;
         updateZoomLabel(); redrawAll();
     }, { passive: false });
 }
@@ -4018,9 +4020,12 @@ function resizeCanvas() {
     redrawAll();
 }
 
+// ⭐裏返し(render mirror)時は X を CW 中心で反転＝入力とビューを一致させる（描画/pan/zoom 全部）
+function _wxFromSx(sx) { return (typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED) ? (CW - VIEW.tx - sx) / VIEW.scale : (sx - VIEW.tx) / VIEW.scale; }
+function _txForAnchor(sx, wx) { return (typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED) ? (CW - sx - wx * VIEW.scale) : (sx - wx * VIEW.scale); }
 function getPos(cx, cy) {
     const r = canvas.getBoundingClientRect();
-    return { x: (cx - r.left - VIEW.tx) / VIEW.scale, y: (cy - r.top - VIEW.ty) / VIEW.scale };
+    return { x: _wxFromSx(cx - r.left), y: (cy - r.top - VIEW.ty) / VIEW.scale };
 }
 
 function updateZoomLabel() {
@@ -4714,7 +4719,10 @@ function redrawAll() {
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, CW, CH);
-    ctx.setTransform(VIEW.scale*dpr, 0, 0, VIEW.scale*dpr, VIEW.tx*dpr, VIEW.ty*dpr);
+    if (typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED)
+        ctx.setTransform(-VIEW.scale*dpr, 0, 0, VIEW.scale*dpr, (CW - VIEW.tx)*dpr, VIEW.ty*dpr);   // ⭐裏返し＝X反転（CW中心）
+    else
+        ctx.setTransform(VIEW.scale*dpr, 0, 0, VIEW.scale*dpr, VIEW.tx*dpr, VIEW.ty*dpr);
     drawBoardFrame();   // ⭐紙の枠（ボードサイズ指定時のみ・オブジェクトの背後）
     for (const obj of S.objects) renderObject(obj);
     if (S.isDown && isShapeTool(S.tool) && S.startPt && S.curPt) renderPreview();
