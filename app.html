@@ -227,6 +227,17 @@
             object-fit: contain;
             filter: invert(1);   /* ⭐白抜き：暗いロゴ→白（暗いガラス面で映える） */
         }
+        /* ⭐サイトと同じ「BM BOARD」ワードマーク（スミレイ ＋ 太字ワイド字間） */
+        .logo-word {
+            margin-left: 12px;
+            font-family: var(--ui-mono);
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.22em;
+            color: #f4f2ec;
+            white-space: nowrap;
+        }
+        @media (max-width: 700px) { .logo-word { font-size: 13px; margin-left: 9px; letter-spacing: 0.16em; } }
         @media (max-width: 700px) {
             .logo-img { height: 26px; }
             /* Hide the header FLUSH button on mobile — still reachable via the
@@ -1262,29 +1273,41 @@
         .set-cmds-conflict { margin: 0 16px 6px; padding: 7px 10px; border-radius: 8px; font-size: 11px;
             color: #ff8b8b; background: rgba(255,80,80,0.09); border: 1px solid rgba(255,80,80,0.28); }
         .set-cmds-conflict[hidden] { display: none; }
-        .set-cmds-list { overflow-y: auto; max-height: 46vh; padding: 0 8px 8px; }
+        .set-cmds-list { overflow-y: auto; max-height: 52vh; padding: 0 8px 8px; }
         .set-cmds-list::-webkit-scrollbar { width: 4px; }
         .set-cmds-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
-        .set-cmdfolder { padding: 12px 8px 5px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; color: rgba(255,255,255,0.32); text-transform: uppercase; }
-        .set-cmdrow { display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 8px; }
-        .set-cmdrow:hover { background: rgba(255,255,255,0.045); }
-        .set-cmdrow.conflict { background: rgba(255,80,80,0.09); box-shadow: inset 0 0 0 1px rgba(255,80,80,0.3); }
-        .set-cmdrow.conflict .set-cmdhot .k { color: #ff8b8b; border-color: rgba(255,80,80,0.45); background: rgba(255,80,80,0.12); }
-        .set-cmdstar { cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.28); flex-shrink: 0; width: 16px; text-align: center; }
-        .set-cmdstar.on { color: rgba(255,255,255,0.92); }
+        /* ⭐Raycast列グリッド：☆ | 名前 | 説明 | 種類 | ショートカット */
+        .set-cmdhdr, .set-cmdrow { display: grid; grid-template-columns: 18px minmax(74px, 132px) 1fr minmax(104px, auto); align-items: center; gap: 10px; padding: 7px 10px; }
+        .set-cmdhdr { position: sticky; top: 0; z-index: 2; padding-top: 10px; padding-bottom: 8px; font-size: 9px; letter-spacing: 0.09em; font-weight: 600; text-transform: uppercase; color: rgba(255,255,255,0.32); background: linear-gradient(180deg, rgba(20,18,23,0.96), rgba(20,18,23,0.82)); }
+        .set-cmdhdr .r { text-align: right; }
+        .set-cmdfolder { grid-column: 1 / -1; padding: 12px 2px 4px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; color: rgba(255,255,255,0.3); text-transform: uppercase; }
+        .set-cmdrow { border-radius: 8px; }
+        .set-cmdrow:hover { background: rgba(255,255,255,0.05); }
+        .set-cmdrow.conflict { background: rgba(255,80,80,0.09); box-shadow: inset 0 0 0 1px rgba(255,80,80,0.32); }
+        .set-cmdrow.conflict .k { color: #ff8b8b; border-color: rgba(255,80,80,0.45); background: rgba(255,80,80,0.12); }
+        .set-cmdstar { cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.24); text-align: center; }
+        .set-cmdrow:hover .set-cmdstar { color: rgba(255,255,255,0.5); }
+        .set-cmdstar.on, .set-cmdrow:hover .set-cmdstar.on { color: rgba(255,255,255,0.95); }
         .set-cmdstar:hover { color: #fff; }
-        .set-cmdname { font-size: 13px; color: #ebe9e3; white-space: nowrap; flex-shrink: 0; }
-        .set-cmdhint { font-size: 11px; color: rgba(255,255,255,0.4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-        .set-cmdhot { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .set-cmdname { font-size: 13px; color: #ebe9e3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .set-cmdhint { font-size: 11.5px; color: rgba(255,255,255,0.42); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .set-cmdtype { font-size: 10px; color: rgba(255,255,255,0.34); white-space: nowrap; }
+        .set-cmdhot { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
         .set-cmdhot .k { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px;
-            border-radius: 5px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.78); font-size: 10.5px; }
-        .set-cmdhot .k.def { opacity: 0.55; }
-        .set-cmdbtn { cursor: pointer; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
-            padding: 4px 8px; font-size: 10px; color: rgba(255,255,255,0.6); font-family: var(--ui-sans); white-space: nowrap; }
-        .set-cmdbtn:hover { color: #fff; background: rgba(255,255,255,0.12); }
-        .set-cmdrow.recording { background: rgba(240,198,116,0.09); box-shadow: inset 0 0 0 1px rgba(240,198,116,0.3); }
-        .set-cmdrec { color: #f0c674; font-size: 10.5px; white-space: nowrap; }
+            border-radius: 5px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.82); font-size: 10.5px; }
+        .set-cmdhot .k.def { opacity: 0.5; }
+        /* Record Hotkey ＝ 淡いプレースホルダ（ホバーで明るく＝Raycast） */
+        .set-cmdrec-ph { cursor: pointer; font-size: 10.5px; color: rgba(255,255,255,0.22); white-space: nowrap; }
+        .set-cmdrow:hover .set-cmdrec-ph { color: rgba(255,255,255,0.5); }
+        .set-cmdrec-ph:hover { color: #fff; }
+        .set-cmdclear { cursor: pointer; color: rgba(255,255,255,0.3); font-size: 12px; opacity: 0; line-height: 1; }
+        .set-cmdrow:hover .set-cmdclear { opacity: 1; }
+        .set-cmdclear:hover { color: #ff8b8b; }
+        .set-cmdrow.recording { background: rgba(240,198,116,0.1); box-shadow: inset 0 0 0 1px rgba(240,198,116,0.32); }
+        .set-cmdrec { grid-column: 4 / -1; text-align: right; color: #f0c674; font-size: 10.5px; white-space: nowrap; }
         .set-cmds-empty { padding: 24px; text-align: center; color: rgba(255,255,255,0.35); font-size: 12px; }
+        /* コマンドタブでカードを広げる（Raycastの横長テーブル感） */
+        .settings-card.cmds-wide { width: min(760px, 94vw); }
 
         /* ══════════════════════════════════
            OMNIBOX — ターミナル入力の候補ドロップダウン（打つと候補）
@@ -2362,6 +2385,7 @@
         <img class="logo-img" src="logo.png" alt="BLACK MIRROR BOARD"
              draggable="false"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <span class="logo-word">BM&nbsp;BOARD</span>
         <span class="logo-fallback" style="display:none">
             <span class="logo-mark">◼</span>BLACK MIRROR BOARD<span class="logo-ver">v1.3</span>
         </span>
@@ -10122,10 +10146,12 @@ tiEl.addEventListener('paste', e => {
         cmdConflict.textContent = (window.t ? window.t('setcmd.conflict') : '');
         if (!items.length) { cmdList.innerHTML = `<div class="set-cmds-empty">${window.t ? window.t('setcmd.none') : 'なし'}</div>`; return; }
         const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+        const T = k => (window.t ? window.t(k) : k);
         // カテゴリでフォルダ分け（登場順）
         const order = []; const groups = {};
         items.forEach(it => { if (!groups[it.cat]) { groups[it.cat] = []; order.push(it.cat); } groups[it.cat].push(it); });
-        let html = '';
+        // ⭐Raycast風の列ヘッダ（名前 / 説明 / ショートカット）
+        let html = `<div class="set-cmdhdr"><span></span><span>${esc(T('setcmd.cName'))}</span><span>${esc(T('setcmd.cDesc'))}</span><span class="r">${esc(T('setcmd.cHot'))}</span></div>`;
         order.forEach(cat => {
             const label = (typeof catLabel === 'function') ? catLabel(cat) : cat;
             html += `<div class="set-cmdfolder">${esc(label)}</div>`;
@@ -10137,12 +10163,13 @@ tiEl.addEventListener('paste', e => {
                 const star = `<span class="set-cmdstar${favOn(it.cmd) ? ' on' : ''}" data-fav="${esc(it.cmd)}">${favOn(it.cmd) ? '★' : '☆'}</span>`;
                 let hotHtml;
                 if (isRec) {
-                    hotHtml = `<span class="set-cmdrec">${esc(window.t ? window.t('setcmd.recording') : '')}${recMsg ? ' · ' + esc(recMsg) : ''}</span>`;
+                    hotHtml = `<span class="set-cmdrec">${esc(T('setcmd.recording'))}${recMsg ? ' · ' + esc(recMsg) : ''}</span>`;
                 } else if (hot) {
-                    const clr = hot.user ? `<span class="set-cmdbtn" data-clear="${esc(it.cmd)}">${esc(window.t ? window.t('setcmd.clear') : '解除')}</span>` : '';
-                    hotHtml = `<span class="k${hot.user ? '' : ' def'}">${esc(hot.disp)}</span>${clr}${(!hot.user && !it.args) ? `<span class="set-cmdbtn" data-rec="${esc(it.cmd)}">${esc(window.t ? window.t('setcmd.record') : '記録')}</span>` : ''}`;
+                    // 割当済み：kbdバッジ＋（ユーザー割当なら）クリア×／内蔵なら「既定」＋上書き記録
+                    const clr = hot.user ? `<span class="set-cmdclear" data-clear="${esc(it.cmd)}" title="${esc(T('setcmd.clear'))}">✕</span>` : '';
+                    hotHtml = `<span class="k${hot.user ? '' : ' def'}">${esc(hot.disp)}</span>${clr}${(!hot.user && !it.args) ? `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.record'))}</span>` : ''}`;
                 } else if (!it.args) {
-                    hotHtml = `<span class="set-cmdbtn" data-rec="${esc(it.cmd)}">${esc(window.t ? window.t('setcmd.record') : '記録')}</span>`;
+                    hotHtml = `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.recordHot'))}</span>`;
                 } else {
                     hotHtml = '';
                 }
@@ -10151,11 +10178,13 @@ tiEl.addEventListener('paste', e => {
         });
         cmdList.innerHTML = html;
     }
+    const setCard = overlay.querySelector('.settings-card');
     function switchTab(name) {
         curTab = name;
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
         if (panes.general)  panes.general.hidden  = (name !== 'general');
         if (panes.commands) panes.commands.hidden = (name !== 'commands');
+        if (setCard) setCard.classList.toggle('cmds-wide', name === 'commands');   // ⭐横長テーブル
         if (name === 'commands') { recCmd = null; recMsg = ''; renderCmds(); setTimeout(() => cmdSearch && cmdSearch.focus(), 0); }
     }
     tabs.forEach(tb => tb.addEventListener('click', () => switchTab(tb.dataset.tab)));
@@ -10242,8 +10271,9 @@ const I18N = {
         'tt.fontStd': '標準（等幅）', 'tt.mincho': '明朝', 'tt.bold': '太字 ON / OFF', 'tt.horiz': '横書き', 'tt.vert': '縦書き',
         'tab.general': '一般', 'tab.commands': 'コマンド',
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
-        'setcmd.record': '記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
-        'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）'
+        'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
+        'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
+        'setcmd.cName': '名前', 'setcmd.cDesc': '説明', 'setcmd.cHot': 'ショートカット'
     },
     en: {
         'pal.ph': 'Search commands…（calc / dark / t …）',
@@ -10263,8 +10293,9 @@ const I18N = {
         'tt.fontStd': 'Default (monospace)', 'tt.mincho': 'Mincho (serif)', 'tt.bold': 'Bold ON / OFF', 'tt.horiz': 'Horizontal', 'tt.vert': 'Vertical',
         'tab.general': 'General', 'tab.commands': 'Commands',
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
-        'setcmd.record': 'Record', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
-        'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)'
+        'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
+        'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
+        'setcmd.cName': 'Name', 'setcmd.cDesc': 'Description', 'setcmd.cHot': 'Hotkey'
     }
 };
 function t(key) { const L = I18N[LANG] || I18N.ja; return (key in L) ? L[key] : (I18N.ja[key] != null ? I18N.ja[key] : key); }
@@ -10681,7 +10712,7 @@ function centerTermPanel() {
 
     // ⭐パレットをドラッグで自由に移動（検索バー or フッターを掴む・入力/ボタンは除外）
     let _cx = 0, _cy = 0, _drag = null;
-    function applyCardPos() { if (card) card.style.transform = `translate(${_cx}px, ${_cy}px)`; }
+    function applyCardPos() { if (card) card.style.transform = `translate3d(${Math.round(_cx)}px, ${Math.round(_cy)}px, 0)`; }
     if (card) {
         card.addEventListener('pointerdown', e => {
             const onSearch = e.target.closest('.cmdk-search') && e.target.tagName !== 'INPUT';
