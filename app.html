@@ -8896,6 +8896,32 @@ function runCommand(val) {
         printRaw((typeof LANG!=='undefined'&&LANG==='en') ? `board size → ${key==='free'?'none (infinite)':lbl}` : `ボードサイズ → ${key==='free'?'なし（無限）':lbl}`, 't-dim');
         return;
     }
+    // ⭐スニペット：snip add 名前 本文 / snip 名前（付箋で配置）/ snip list / snip forget 名前
+    if (head==='snip' || head==='snippet') {
+        const en = (typeof LANG!=='undefined'&&LANG==='en');
+        const sub = rest.trim(); const w = sub.split(/\s+/); const verb = (w[0]||'').toLowerCase();
+        if (verb === 'add') {
+            const r2 = sub.slice(w[0].length).trim(); const sp = r2.indexOf(' ');
+            if (sp < 0) { printRaw(en?'snip: usage → snip add <name> <text>':'snip: 使い方 → snip add 名前 本文', 't-err'); return; }
+            const nm = r2.slice(0, sp).trim(), tx = r2.slice(sp + 1).trim();
+            if (!nm || !tx) { printRaw(en?'snip: usage → snip add <name> <text>':'snip: 使い方 → snip add 名前 本文', 't-err'); return; }
+            saveSnip(nm, tx);
+            printRaw(en?`saved snippet "${nm}" — call it from ⌘K`:`スニペット「${nm}」を保存 — ⌘Kから呼べます`, 't-dim'); return;
+        }
+        if (verb === 'forget' || verb === 'rm' || verb === 'delete') {
+            const nm = sub.slice(w[0].length).trim();
+            printRaw(rmSnip(nm) ? (en?`forgot "${nm}"`:`スニペット「${nm}」を削除`) : (en?`"${nm}" not found`:`「${nm}」が見つからない`), rmSnip ? 't-dim':'t-err'); return;
+        }
+        const map = getSnips();
+        if (verb === 'list' || !sub) {
+            const ks = Object.keys(map);
+            printRaw(!ks.length ? (en?'no snippets — try: snip add hello こんにちは':'スニペット無し — 例: snip add 挨拶 こんにちは')
+                                : (en?'snippets: ':'スニペット: ') + ks.join(' · '), 't-dim');
+            return;
+        }
+        if (map[sub] != null) { placeSnip(map[sub]); printRaw(en?`placed "${sub}"`:`「${sub}」を置きました`, 't-dim'); return; }
+        printRaw(en?`snip: "${sub}" not found`:`snip:「${sub}」が見つからない`, 't-err'); return;
+    }
     // ⭐選択を魔法(spell)に保存 → ⌘Kで再配置。forget spell <name> で削除、list spell で一覧
     if (head==='spell') {
         const en = (typeof LANG!=='undefined'&&LANG==='en');
@@ -10619,8 +10645,8 @@ tiEl.addEventListener('paste', e => {
 // ══════════════════════════════════════════════════
 // ⭐omnibox 共有カタログ：ターミナル補完 と ⌘Kパレット が同じ1ソースを使う。
 //   cat＝⌘Kパレットのバッジ（何の機能かひと目で分かる）。
-const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク', spell:'魔法' };
-const OMNI_CATS_EN = { calc:'Calc', capture:'Note', board:'Board', draw:'Draw', grade:'Grade', panel:'Panel', edit:'Edit', io:'I/O', insert:'Insert', media:'Sound', help:'Help', link:'Link', spell:'Spell' };
+const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク', spell:'魔法', snippet:'スニペット' };
+const OMNI_CATS_EN = { calc:'Calc', capture:'Note', board:'Board', draw:'Draw', grade:'Grade', panel:'Panel', edit:'Edit', io:'I/O', insert:'Insert', media:'Sound', help:'Help', link:'Link', spell:'Spell', snippet:'Snippet' };
 function catLabel(c) { const m = (typeof LANG !== 'undefined' && LANG === 'en') ? OMNI_CATS_EN : OMNI_CATS; return m[c] || c || ''; }
 // ══════════════════════════════════════════════════
 // i18n — EN/JP 切替（追加コードのみ・既存の描画/操作/保存には触れない）
@@ -10752,6 +10778,7 @@ const OMNI_CMDS = [
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
     { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import' },
+    { cmd:'snip',    cat:'snippet', hint:'スニペット（snip add 名前 本文 / snip 名前）', hintEn:'Snippets (snip add name text / snip name)', args:true, kw:'スニペット snippet 定型 テンプレ 付箋 add 登録' },
     { cmd:'store',   cat:'spell',   hint:'STORE を開く（魔法をインストール）', hintEn:'Open the STORE (install spells)', _storeView:true, kw:'store ストア 魔法 install インストール ダウンロード 追加 マーケット' },
     { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す', hintEn:'Clear the terminal log' },
     { cmd:'export',  cat:'io',      hint:'書き出し（png / svg / pptx / data）', hintEn:'Export (png / svg / pptx / data)', args:true },
@@ -10863,7 +10890,7 @@ function centerTermPanel() {
     let rows = [], sel = 0, awaitingArg = null, mode = 'list', _favCount = 0, _recentCount = 0;
     let storeMode = false, storeMsg = '', storeDetail = null;   // ⭐STORE（一覧→詳細→インストール）
     // ⭐絵文字アイコン（細いグリフは見分けがつかないため）
-    const CAT_ICON = { calc:'🔢', capture:'📝', board:'🌓', draw:'✏️', grade:'🖍', panel:'🪟', edit:'🧹', io:'💾', insert:'➕', media:'🎵', help:'❓', link:'🔗', spell:'🪄' };
+    const CAT_ICON = { calc:'🔢', capture:'📝', board:'🌓', draw:'✏️', grade:'🖍', panel:'🪟', edit:'🧹', io:'💾', insert:'➕', media:'🎵', help:'❓', link:'🔗', spell:'🪄', snippet:'📋' };
     // ⭐お気に入り（パレット上部に固定表示・★/右クリックでトグル）
     const FAVS_KEY = 'bm_favs';
     function getFavs() { try { return JSON.parse(localStorage.getItem(FAVS_KEY) || '[]'); } catch (_) { return []; } }
@@ -10917,7 +10944,7 @@ function centerTermPanel() {
 
     function cmdItem(it) {
         const cat = catLabel(it.cat);
-        const favKey = it._url ? ('link:' + it.cmd) : it._spell ? ('spell:' + it.cmd) : it.cmd;
+        const favKey = it._url ? ('link:' + it.cmd) : it._spell ? ('spell:' + it.cmd) : (it._snip != null) ? ('snip:' + it.cmd) : it.cmd;
         const fav = isFav(favKey);
         if (it._form) {   // ⭐パレット内フォームへ（リンク追加＝ターミナルに打たず⌘Kだけで完結）
             return { kind:'form', ico:'＋', name: it.cmd, type: cat, desc: it.hint || '', sc: it.sc || '', favKey, fav, noFav: true,
@@ -10944,6 +10971,10 @@ function centerTermPanel() {
         if (it._url) {   // ⭐お気に入りリンク → 選ぶとボード上のiframe窓で開く
             return { kind:'link', ico: CAT_ICON.link || '↗', name: it.cmd, type: cat, desc: hint || it._url, favKey, fav,
                 run() { recordRecent('link:' + it.cmd); close(); if (window._openLink) window._openLink(it._url, it.cmd); } };
+        }
+        if (it._snip != null) {   // ⭐スニペット → 選ぶと付箋で配置
+            return { kind:'snippet', ico: CAT_ICON.snippet || '📋', name: it.cmd, type: cat, desc: hint, favKey, fav,
+                run() { recordRecent('snip:' + it.cmd); close(); if (window._placeSnip) window._placeSnip(it._snip); } };
         }
         if (it._spell) {   // ⭐魔法 → 選ぶと保存した選択をビュー中心にスタンプ
             return { kind:'spell', ico: CAT_ICON.spell || '✦', name: it.cmd, type: cat, desc: hint, favKey, fav,
@@ -11106,7 +11137,9 @@ function centerTermPanel() {
         // ⭐魔法(spell)を候補プールに合流（保存した選択を⌘Kから再配置）
         const spellArr = (window._getSpells && window._getSpells()) || [];
         const spellPool = spellArr.map(s => ({ cmd: s.name, cat: 'spell', hint: (LANG === 'en' ? `spell · ${s.count} objects` : `魔法 · ${s.count}個を配置`), hintEn: `spell · ${s.count} objects`, _spell: s, kw: '魔法 spell スタンプ 配置 ' + s.name }));
-        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool);
+        const snipObj = (window._getSnips && window._getSnips()) || {};
+        const snipPool = Object.keys(snipObj).map(n => ({ cmd: n, cat: 'snippet', hint: String(snipObj[n]).slice(0, 40), _snip: snipObj[n], kw: 'スニペット snippet 定型 付箋 ' + n }));
+        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, snipPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = []; _favCount = 0; _recentCount = 0;
@@ -12301,6 +12334,23 @@ function installSpell(s) {
     saveSpells(cur);
     return nm;
 }
+// ⭐スニペット＝よく書く定型文を名前で呼び出して付箋で置く（ユーザーが作れるコマンドの第2種）
+const SNIPS_KEY = 'bm_snippets';
+function getSnips() { try { return JSON.parse(localStorage.getItem(SNIPS_KEY) || '{}'); } catch (_) { return {}; } }
+function saveSnip(n, t) { if (!n) return; const m = getSnips(); m[n] = String(t == null ? '' : t); try { localStorage.setItem(SNIPS_KEY, JSON.stringify(m)); } catch (_) {} }
+function rmSnip(n) { const m = getSnips(); if (!(n in m)) return false; delete m[n]; try { localStorage.setItem(SNIPS_KEY, JSON.stringify(m)); } catch (_) {} return true; }
+function placeSnip(text) {
+    const o = BM.create('sticky', { text: String(text == null ? '' : text) });
+    if (o) {
+        S.objects.forEach(x => x.selected = false);
+        o.selected = true; S.selectedId = o.id; S.multiSelected = [];
+        o.side = (typeof BOARD_FLIPPED !== 'undefined' && BOARD_FLIPPED) ? 'back' : 'front';
+    }
+    saveHistory(); redrawAll();
+    return o;
+}
+window._getSnips = getSnips; window._saveSnip = saveSnip; window._rmSnip = rmSnip; window._placeSnip = placeSnip;
+
 // ⭐STORE カタログ（内蔵シード＝サーバー不要）。将来は同形式の静的JSONをGitHub Pagesからfetchに差替え可
 const STORE_CATALOG = [
     { name: '3×3 グリッド', icon: '🔳', desc: '3×3 の正方形グリッドを置く（レイアウトの下敷きに）', author: 'kinoshita studio', tag: 'featured',
