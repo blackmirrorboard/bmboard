@@ -1153,6 +1153,10 @@
         .term-view .tv-zb:hover { opacity: 1; background: rgba(255,255,255,0.08); color: var(--ink); }
         .term-view .tv-zlvl { font-size: 9.5px; min-width: 34px; letter-spacing: 0.02em;
             font-variant-numeric: tabular-nums; }
+        /* ⭐ログインURLを貼る */
+        .term-view .tv-login { margin-left: 8px; font-size: 10px; color: var(--dim); white-space: nowrap;
+            border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; }
+        .term-view .tv-login:hover { color: var(--ink); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
         .term-view iframe { transform-origin: 0 0; }
 
         .term-body::-webkit-scrollbar { width: 2px; }
@@ -14409,6 +14413,7 @@ function setTermWidthPct(pct, persist) {
               +   `<button class="tv-zb tv-zlvl" data-z="reset" title="${en ? 'reset' : '100%に戻す'}">100%</button>`
               +   `<button class="tv-zb" data-z="in" title="${en ? 'zoom in' : '拡大'}">＋</button>`
               + `</span>`
+              + `<button class="tv-zb tv-login" title="${en ? 'Paste your login URL to sign in inside the panel' : 'ログインURLを貼ってパネル内でログイン'}">${en ? '🔑 log in' : '🔑 ログイン'}</button>`
               + `<a href="${conf.url}" target="_blank" rel="noopener">${en ? 'open ↗' : '新しいタブで開く ↗'}</a>`;
             const ifr = document.createElement('iframe');
             ifr.src = conf.url;
@@ -14441,6 +14446,33 @@ function setTermWidthPct(pct, persist) {
                 applyZoom();
             });
             applyZoom();
+
+            // ⭐ログインURLを貼る＝パネルの中でそのサイトにログインする。
+            //   認証を持つのはその埋め込み先(アトリエ等)＝BMBoardは認証を持たない。
+            //   ログイン後のトークン入りURL(#access_token=…)をiframeに直接読み込ませる＝
+            //   別タブと"共有"するのでなく iframe が自分の領域でログインする（ストレージ分離を回避）。
+            //   ⚠️Chromeは通りやすい／Safariはサードパーティストレージを塞ぐことがある。
+            const loginBtn = bar.querySelector('.tv-login');
+            if (loginBtn) loginBtn.addEventListener('click', () => {
+                const _en = (window.getLang && window.getLang() === 'en');
+                const origin = (() => { try { return new URL(conf.url).origin; } catch (_) { return conf.url; } })();
+                const url = window.prompt(_en
+                    ? `Paste your login URL for ${host}.\n(In a tab: sign in, then copy the address-bar URL that contains #access_token=… and paste it here.)`
+                    : `${host} のログインURLを貼ってください。\n（別タブでログイン → アドレスバーの #access_token=… が入ったURLをコピーして貼る）`, '');
+                if (!url) return;
+                let u;
+                try { u = new URL(url.trim()); } catch (_) {
+                    if (typeof printRaw === 'function') printRaw(_L('URLの形式が正しくありません', 'That is not a valid URL'), 't-err'); return;
+                }
+                // 安全：同じサイトのURLだけ受け付ける（他サイトを勝手に開かせない）
+                if (u.origin !== origin) {
+                    if (typeof printRaw === 'function') printRaw(_L(`このパネルは ${host} 専用です（貼れるのは同じサイトのURLだけ）`, `This panel is for ${host} only (same-site URLs).`), 't-err');
+                    return;
+                }
+                ifr.src = u.href;   // トークン入りURLをiframeに読ませる＝パネル内でログイン
+                showView(v);
+                if (typeof printRaw === 'function') printRaw(_L('ログインURLを読み込みました。パネル内でログイン状態になれば成功です', 'Loaded the login URL. If the panel shows you signed in, it worked.'), 't-dim');
+            });
         }
         // 選んだビューだけ表示
         view.querySelectorAll('.tv-pane').forEach(p =>
