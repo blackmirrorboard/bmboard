@@ -11520,6 +11520,7 @@ const I18N = {
         'pal.fav': 'お気に入り · FAVORITES', 'pal.recent': '最近使った · RECENT', 'pal.all': 'すべて · ALL', 'pal.cmds': 'コマンド · COMMANDS', 'pal.actions': '候補 · ACTIONS',
         'pal.none': '該当なし', 'pal.wait': '入力待ち', 'pal.run': '実行', 'pal.close': '閉じる',
         'pal.enterInput': '内容を入力して ↵ で実行。', 'pal.example': '例',
+        'pal.optArg': '↵で実行', 'pal.enterRunOrArg': '↵ でそのまま実行。引数を足してもOK。',
         'pal.assign': '⌨ ショートカット割当', 'pal.change': '⌨ ショートカット変更', 'pal.clearSc': '解除',
         'pal.capTo': 'に割り当てるキーを押す…', 'pal.capHint': '⌘/⌥/⌃＋キー · Esc取消',
         'pal.warnUsed': 'その組合せは使用中', 'pal.warnMod': '⌘/⌥/⌃ と組合せて',
@@ -11578,6 +11579,7 @@ const I18N = {
         'pal.fav': 'FAVORITES', 'pal.recent': 'RECENT', 'pal.all': 'ALL', 'pal.cmds': 'COMMANDS', 'pal.actions': 'ACTIONS',
         'pal.none': 'No results', 'pal.wait': 'awaiting input', 'pal.run': 'run', 'pal.close': 'close',
         'pal.enterInput': 'Type your input, then ↵ to run.', 'pal.example': 'e.g.',
+        'pal.optArg': '↵ to run', 'pal.enterRunOrArg': '↵ runs it as-is — or add an argument. ',
         'pal.assign': '⌨ Assign shortcut', 'pal.change': '⌨ Change shortcut', 'pal.clearSc': 'clear',
         'pal.capTo': '— press the keys to assign…', 'pal.capHint': '⌘/⌥/⌃＋key · Esc to cancel',
         'pal.warnUsed': 'That combo is in use', 'pal.warnMod': 'Combine with ⌘/⌥/⌃',
@@ -11665,35 +11667,66 @@ const OMNI_CMDS = [
     { cmd:'6b',      cat:'grade',   hint:'芯を 6B に', hintEn:'Set lead to 6B', kw:'鉛筆 pencil 芯 しん grade' },
     { cmd:'float',   cat:'panel',   hint:'ターミナルを浮かす', hintEn:'Float the terminal', sc:'⌘B' },
     { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す', hintEn:'Dock the terminal to the right', sc:'⌘B' },
-    { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', hintEn:'Split width (panel 30 / float / dock / center)', args:true },
+    { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', hintEn:'Split width (panel 30 / float / dock / center)', args:true,
+      subs:[['dock','パネルを右に戻す（マグネット）','Dock the panel back to the side'],
+            ['float','パネルを浮かせる（フロート）','Float the panel'],
+            ['center','パネルを画面の中央へ','Center the panel'],
+            ['reset','分割幅を既定に戻す','Reset the split width']] },
     { cmd:'clear',   cat:'edit',    hint:'ボードを消す', hintEn:'Clear the board' },
-    { cmd:'crumb',   cat:'draw',    hint:'消しカスの量（crumb 50）', hintEn:'Eraser crumb amount (crumb 50)', args:true, kw:'消しカス けしかす crumb debris eraser' },
+    { cmd:'crumb',   cat:'draw',    hint:'消しカスの量（crumb 50）', hintEn:'Eraser crumb amount (crumb 50)', args:true, argsOpt:true,
+      subs:[['0','消しカスを出さない','No eraser crumbs'],['50','消しカスを半分に','Half the crumbs'],['100','消しカスを標準に','Default amount'],['200','消しカスを多めに','Twice the crumbs']], kw:'消しカス けしかす crumb debris eraser' },
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙' },
-    { cmd:'gif',     cat:'io',      hint:'ボードをGIFに録画（gif 4 で4秒）', hintEn:'Record the board as a GIF (gif 4 = 4s)', args:true, kw:'gif アニメ 録画 書き出し 動画 sakura 共有 export' },
-    { cmd:'rec',     cat:'io',      hint:'ボードを動画(WebM)に録画（rec 6 で6秒）', hintEn:'Record the board as video/WebM (rec 6 = 6s)', args:true, kw:'rec 録画 動画 video webm 書き出し キャプチャ capture' },
+    { cmd:'gif',     cat:'io',      hint:'ボードをGIFに録画（gif 4 で4秒）', hintEn:'Record the board as a GIF (gif 4 = 4s)', args:true,
+      subs:[['4','GIFに4秒録画する','Record a 4s GIF'],['8','GIFに8秒録画する','Record an 8s GIF']], kw:'gif アニメ 録画 書き出し 動画 sakura 共有 export' },
+    { cmd:'rec',     cat:'io',      hint:'ボードを動画(WebM)に録画（rec 6 で6秒）', hintEn:'Record the board as video/WebM (rec 6 = 6s)', args:true,
+      subs:[['6','動画に6秒録画する','Record a 6s video'],['15','動画に15秒録画する','Record a 15s video'],['30','動画に30秒録画する','Record a 30s video']], kw:'rec 録画 動画 video webm 書き出し キャプチャ capture' },
     { cmd:'connect', cat:'insert',  hint:'選択した2つ以上を矢印でつなぐ', hintEn:'Connect 2+ selected objects with arrows', kw:'つなぐ connect 矢印 図解 フロー 結ぶ' },
-    { cmd:'align',   cat:'edit',    hint:'選択を揃える（align left/right/top/bottom/center/middle）', hintEn:'Align selection (left/right/top/bottom/center/middle)', args:true, kw:'align 整列 揃える 配置 そろえる' },
+    { cmd:'align',   cat:'edit',    hint:'選択を揃える（align left/right/top/bottom/center/middle）', hintEn:'Align selection (left/right/top/bottom/center/middle)', args:true, kw:'align 整列 揃える 配置 そろえる',
+      subs:[['left','選択を左に揃える','Align selection left'],
+            ['right','選択を右に揃える','Align selection right'],
+            ['top','選択を上に揃える','Align selection top'],
+            ['bottom','選択を下に揃える','Align selection bottom'],
+            ['center','選択を左右の中央に','Center selection horizontally'],
+            ['middle','選択を上下の中央に','Center selection vertically']] },
     { cmd:'swap',    cat:'panel',   hint:'ボードを右/左に入替（利き手）· ↵でそのまま入替', hintEn:'Swap board to the right/left (handedness) · ↵ to toggle', args:true, argsOpt:true, kw:'左右 入替 利き手 swap layout 右利き 左利き right left' },
-    { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
+    { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size',
+      subs:[['free','枠なし（無限に広い板）','No page frame (infinite board)'],
+            ['a4','A4（縦）','A4 portrait'],
+            ['a4l','A4（横）','A4 landscape'],
+            ['a3','A3','A3'],
+            ['b5','B5','B5'],
+            ['letter','レター','Letter'],
+            ['square','正方形','Square']] },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
-    { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import' },
-    { cmd:'chain',   cat:'chain',   hint:'連鎖（chain add 名前 cmd1 ; cmd2）', hintEn:'Chains (chain add name cmd1 ; cmd2)', args:true, kw:'連鎖 chain マクロ 一括 まとめて 自動 add' },
-    { cmd:'snip',    cat:'snippet', hint:'スニペット（snip add 名前 本文 / snip 名前）', hintEn:'Snippets (snip add name text / snip name)', args:true, kw:'スニペット snippet 定型 テンプレ 付箋 add 登録' },
+    { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, argsOpt:true,
+      subs:[['list','保存した魔法の一覧','List your saved spells']], kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import' },
+    { cmd:'chain',   cat:'chain',   hint:'連鎖（chain add 名前 cmd1 ; cmd2）', hintEn:'Chains (chain add name cmd1 ; cmd2)', args:true, argsOpt:true,
+      subs:[['list','作った連鎖の一覧','List your chains']], kw:'連鎖 chain マクロ 一括 まとめて 自動 add' },
+    { cmd:'snip',    cat:'snippet', hint:'スニペット（snip add 名前 本文 / snip 名前）', hintEn:'Snippets (snip add name text / snip name)', args:true, argsOpt:true,
+      subs:[['list','登録したスニペットの一覧','List your snippets']], kw:'スニペット snippet 定型 テンプレ 付箋 add 登録' },
     { cmd:'store',   cat:'spell',   hint:'STORE を開く（魔法をインストール）', hintEn:'Open the STORE (install spells)', _storeView:true, kw:'store ストア 魔法 install インストール ダウンロード 追加 マーケット' },
     { cmd:'flush',   cat:'edit',    hint:'ターミナルのログを消す', hintEn:'Clear the terminal log' },
-    { cmd:'export',  cat:'io',      hint:'書き出し（png / svg / pptx / data）', hintEn:'Export (png / svg / pptx / data)', args:true },
+    { cmd:'export',  cat:'io',      hint:'書き出し（png / pptx / data）', hintEn:'Export (png / pptx / data)', args:true, argsOpt:true,
+      subs:[['png','PNG画像で書き出す','Export as a PNG image'],
+            ['pptx','PowerPointで書き出す','Export as PowerPoint'],
+            ['data','プロジェクトを丸ごと書き出す','Export the whole project data'],
+            ['magic','魔法をまとめて書き出す','Export all your spells']] },
     { cmd:'share',   cat:'io',      hint:'URLで画面を共有', hintEn:'Share the canvas via URL' },
     { cmd:'save',    cat:'io',      hint:'プロジェクト保存', hintEn:'Save the project', args:true },
     { cmd:'load',    cat:'io',      hint:'プロジェクト読込', hintEn:'Load a project', args:true },
-    { cmd:'tpl',     cat:'insert',  hint:'テンプレを置く', hintEn:'Insert a template', args:true },
-    { cmd:'sticky',  cat:'insert',  hint:'付箋を置く', hintEn:'Place a sticky note', args:true },
-    { cmd:'bgm',     cat:'media',   hint:'BGM（bgm on / off）', hintEn:'Background music (bgm on / off)', args:true },
+    { cmd:'tpl',     cat:'insert',  hint:'テンプレを置く', hintEn:'Insert a template', args:true, kw:'テンプレ template 雛形 tpl',
+      subs:[['wireframe','ワイヤーフレームを置く','Insert a wireframe'],['kanban','カンバンを置く','Insert a kanban board'],['mindmap','マインドマップを置く','Insert a mind map'],['moodboard','ムードボードを置く','Insert a moodboard']], },
+    { cmd:'sticky',  cat:'insert',  hint:'付箋を置く（文字を入れてもOK）', hintEn:'Place a sticky note (text optional)', args:true, argsOpt:true, kw:'付箋 sticky ふせん メモ note', },
+    { cmd:'bgm',     cat:'media',   hint:'BGM（bgm on / off）', hintEn:'Background music (bgm on / off)', args:true, argsOpt:true,
+      subs:[['on','BGMを鳴らす','Start the music'],
+            ['off','BGMを止める','Stop the music']] },
     { cmd:'usage',   cat:'help',    hint:'使い方 / ヘルプ', hintEn:'How to use / help' },
     { cmd:'settings',cat:'help',    hint:'設定を開く（ボード/描き味/芯/壁紙）', hintEn:'Open settings (board / draw / grade / wallpaper)', sc:'⌘,', _settings:true, kw:'設定 setting 環境 preferences 歯車' },
     { cmd:'english', cat:'help',    hint:'表示を英語に切替', hintEn:'Switch UI to English', _lang:'en', kw:'en english 英語 language lang 言語 切替' },
     { cmd:'日本語',  cat:'help',    hint:'表示を日本語に切替', hintEn:'Switch UI to Japanese', _lang:'ja', kw:'ja jp japanese 日本語 language lang 言語 切替' },
     { cmd:'open',    cat:'link',    hint:'URLをボードに開く（open example.com）', hintEn:'Open a URL on the board (open example.com)', args:true, kw:'url web リンク 開く browser サイト' },
-    { cmd:'link',    cat:'link',    hint:'お気に入りURL（link add 名前 url / link 名前）', hintEn:'Favorite URLs (link add name url / link name)', args:true, kw:'url web お気に入り リンク favorite ブックマーク' },
+    { cmd:'link',    cat:'link',    hint:'お気に入りURL（link add 名前 url / link 名前）', hintEn:'Favorite URLs (link add name url / link name)', args:true, argsOpt:true,
+      subs:[['list','お気に入りURLの一覧','List your favorite URLs']], kw:'url web お気に入り リンク favorite ブックマーク' },
 ];
 // ⭐フローティング窓を画面中央へ（⌘⇧B / `panel center`）
 function centerTermPanel() {
@@ -11932,8 +11965,10 @@ function centerTermPanel() {
         let top = '';
         if (awaitingArg) {
             const argHint = (LANG === 'en' && awaitingArg.hintEn) ? awaitingArg.hintEn : (awaitingArg.hint || '');
-            top = `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">${esc(awaitingArg.cmd)}</span><span class="cmdk-badge">${esc(t('pal.wait'))}</span></div>`
-                + `<div class="cmdk-detail-desc">${esc(t('pal.enterInput'))}${esc(argHint)}</div>`
+            // ⭐引数が任意のコマンドは「入力待ち」でなく「↵ で実行できる」と伝える
+            const _opt = !!awaitingArg.argsOpt;
+            top = `<div class="cmdk-detail"><div class="cmdk-detail-top"><span class="cmdk-detail-name">${esc(awaitingArg.cmd)}</span><span class="cmdk-badge">${esc(t(_opt ? 'pal.optArg' : 'pal.wait'))}</span></div>`
+                + `<div class="cmdk-detail-desc">${esc(t(_opt ? 'pal.enterRunOrArg' : 'pal.enterInput'))}${esc(argHint)}</div>`
                 + `<div class="cmdk-detail-foot">${esc(t('pal.example'))}: ${esc(awaitingArg.cmd)} …</div></div>`;
         } else if (rows[0] && rows[0].kind === 'calc') {
             top = detailHtml(rows[0]);   // calc は結果ヒーローだけ上に（通常コマンドはクリーンなリスト＝Raycast）
@@ -12072,7 +12107,16 @@ function centerTermPanel() {
             cmd: d.name, cat: 'draft', hint: d.desc || (LANG === 'en' ? 'draft spell (in progress)' : '作りかけの魔法'),
             hintEn: d.desc || 'draft spell (in progress)', _draft: d.name, _dicon: d.icon || '📝',
             kw: 'ドラフト draft 作りかけ wip 魔法 ' + d.name }));
-        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, draftPool, snipPool, chainPool, presetPool, jsPool);
+        // ⭐サブコマンドは ⌘K に1行ずつ展開する（panel dock / board a4 / align left …）。
+        //   ⚠️これが無いと args:true のコマンドは ↵ で引数待ちに戻るだけで、
+        //     打ち方を知らない限り ⌘K から永久に実行できなかった（木下の指摘）。
+        const subPool = [];
+        OMNI_CMDS.forEach(c => (c.subs || []).forEach(([a, ja, en]) => subPool.push({
+            cmd: c.cmd + ' ' + a, cat: c.cat,
+            hint: ja, hintEn: en,
+            kw: (c.kw || '') + ' ' + c.cmd + ' ' + a + ' ' + ja,
+        })));
+        const POOL = OMNI_CMDS.concat([formCmd], subPool, linkPool, spellPool, draftPool, snipPool, chainPool, presetPool, jsPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = []; _favCount = 0; _recentCount = 0;
@@ -12262,7 +12306,10 @@ function centerTermPanel() {
         if (!hit) return;
         e.preventDefault(); e.stopPropagation();
         const def = (typeof OMNI_CMDS !== 'undefined') ? OMNI_CMDS.find(c => c.cmd === hit) : null;
-        if (def && def.args) {   // ⭐引数コマンドはパレットを開いて「cmd 」まで入れ引数待ちに
+        // ⭐引数が「必須」のものだけパレットを開いて「cmd 」まで入れ引数待ちにする。
+        //   argsOpt（引数は任意＝swap 等）は、割り当てたキーを押した瞬間に実行する
+        //   （⌘Sを押したのにパレットが開いて一手増える、を避ける）
+        if (def && def.args && !def.argsOpt) {
             open(); input.value = hit + ' '; refresh(); setTimeout(() => input.focus(), 0);
             return;
         }
