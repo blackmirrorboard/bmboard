@@ -5082,7 +5082,10 @@ function renderObject(obj) {
 }
 
 function baseStyle(obj) {
-    ctx.strokeStyle = (obj && obj.data && obj.data.stroke) || getStrokeColor();
+    // ⭐鉛筆モードは図形(○△□→)も黒鉛色＝紙/黒板に馴染む手書き。色付きstrokeは尊重する。
+    const _pencil = (typeof S !== 'undefined' && S.drawMode === 'pencil');
+    const _explicit = obj && obj.data && obj.data.stroke;
+    ctx.strokeStyle = _explicit || (_pencil ? _pencilInk() : getStrokeColor());
     ctx.lineWidth = 2.2;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 }
@@ -5162,8 +5165,10 @@ function renderArrow(obj) {
 
 function renderText(obj) {
     if (obj.id === S.editingTextId) return; // hidden while overlay is active
+    // ⭐鉛筆モードのテキストは黒鉛色（紙/黒板に馴染む）。色付きは尊重。getStrokeColorは他所で使うのでここだけ。
+    const _tink = (obj.data.stroke) || ((typeof S !== 'undefined' && S.drawMode === 'pencil') ? _pencilInk() : getStrokeColor());
     if (obj.data.vertical) {
-        drawVerticalGlyphs(ctx, obj.data, getStrokeColor());
+        drawVerticalGlyphs(ctx, obj.data, _tink);
         if (obj.selected) {
             const b = textVisualBounds(obj);
             selBox(b.x, b.y, b.w, b.h);
@@ -5177,8 +5182,8 @@ function renderText(obj) {
     const L  = hTextLayout(text, fs, fontFamily, bold);
     ctx.save();
     ctx.font = `${bold ? 'bold ' : ''}${fs}px ${ff}`;
-    ctx.fillStyle = getStrokeColor();
-    if (bold) { ctx.lineWidth = Math.max(0.5, fs * 0.055); ctx.lineJoin = 'round'; ctx.strokeStyle = getStrokeColor(); }
+    ctx.fillStyle = _tink;
+    if (bold) { ctx.lineWidth = Math.max(0.5, fs * 0.055); ctx.lineJoin = 'round'; ctx.strokeStyle = _tink; }
     for (let i = 0; i < L.lines.length; i++) {
         const yy = y + i * L.lineH;
         ctx.fillText(L.lines[i], x, yy);
