@@ -334,7 +334,7 @@
             background: linear-gradient(180deg, rgba(31,29,35,0.97) 0%, rgba(16,15,19,0.985) 100%);
             border: 1px solid rgba(255,255,255,0.11);
             border-radius: 16px;
-            box-shadow: 0 32px 100px rgba(0,0,0,0.66), inset 0 1px 0 rgba(255,255,255,0.06);
+            box-shadow: 0 14px 44px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06);
             padding: 26px 28px 22px;
             max-width: 420px;
             width: calc(100% - 48px);
@@ -1071,7 +1071,7 @@
         }
         body.bm-term-float .terminal-panel {
             border: 1px solid rgba(255,255,255,0.10);
-            box-shadow: 0 24px 80px rgba(0,0,0,0.55), 0 2px 10px rgba(0,0,0,0.35);
+            box-shadow: 0 14px 44px rgba(0,0,0,0.28), 0 2px 10px rgba(0,0,0,0.35);
         }
         /* float 中はドック用リサイズハンドルを隠す（意味が無いので） */
         body.bm-term-float .resize-handle { display: none !important; }
@@ -1321,7 +1321,7 @@
             background: rgba(18,16,18,0.92);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 16px;
-            box-shadow: 0 26px 80px rgba(0,0,0,0.6);
+            box-shadow: 0 14px 44px rgba(0,0,0,0.28);
             padding: 17px 18px 12px;
             display: flex; flex-direction: column; gap: 10px;
         }
@@ -1534,7 +1534,7 @@
             background: rgba(20,18,23,0.96);
             border: 1px solid rgba(255,255,255,0.10);
             border-radius: 12px;
-            box-shadow: 0 14px 44px rgba(0,0,0,0.55);
+            box-shadow: 0 14px 44px rgba(0,0,0,0.28);
             -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
         }
         #omniList.open { display: flex; }
@@ -1599,6 +1599,12 @@
         .cmdk-item { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 9px; cursor: pointer; transition: background .08s; }
         .cmdk-item:hover { background: rgba(255,255,255,0.045); }
         .cmdk-item.sel  { background: rgba(255,255,255,0.085); }
+        /* ⭐キーボードで選んでいる間は、カーソルが乗っている行の hover を消す。
+           ⚠️これが無いと「選択行」と「カーソルの下の行」が同時に光って2つ選ばれて見える（木下報告） */
+        .cmdk-card.kb-nav .cmdk-item:hover:not(.sel) { background: transparent; }
+        .cmdk-card.kb-nav .cmdk-item:hover:not(.sel) .cmdk-star { opacity: 0; }
+        .settings-card.kb-nav .set-cmdrow:hover:not(.kb-row),
+        .settings-card.kb-nav .set-spellrow:hover:not(.kb-row) { background: transparent; }
         .cmdk-name  { color: #f0eee8; font-size: 13.5px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; }
         .cmdk-badge {
             font-size: 9.5px; letter-spacing: 0.04em; color: rgba(255,255,255,0.62);
@@ -1705,7 +1711,7 @@
             background: rgba(18,16,20,0.98);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 12px; overflow: hidden;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
+            box-shadow: 0 14px 44px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05);
         }
         #linkPanel.open { display: flex; }
         .lp-hd {
@@ -1739,7 +1745,7 @@
             position: fixed; z-index: 490;
             background: var(--bm-bg, #0c0c0c);
             border: 1px solid var(--line, #2a2a2a);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.28);
             min-width: 140px;
             padding: 4px 0;
         }
@@ -1758,7 +1764,7 @@
             position: fixed; z-index: 495; display: none; min-width: 172px; padding: 5px;
             background: rgba(22,21,25,0.82);
             -webkit-backdrop-filter: blur(22px) saturate(1.3); backdrop-filter: blur(22px) saturate(1.3);
-            border-radius: 11px; box-shadow: 0 18px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.12);
+            border-radius: 11px; box-shadow: 0 14px 44px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.12);
             font-family: var(--ui-sans);
         }
         #boardCtxMenu.open { display: block; }
@@ -1941,7 +1947,7 @@
             padding: 28px 26px 24px;
             position: relative;
             border: 1px solid #0c0c0c;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            box-shadow: 0 14px 44px rgba(0,0,0,0.28);
             font-family: var(--ui-mono);
         }
         .share-close {
@@ -2053,7 +2059,7 @@
             z-index: 9000;
             border: 1px solid var(--glow, #F0EDE6);
             background: #000;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.55), 0 0 0 2px rgba(0,0,0,0.25);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.28), 0 0 0 2px rgba(0,0,0,0.25);
             overflow: hidden;
             display: none;
             pointer-events: auto;
@@ -2068,7 +2074,7 @@
         #bmBlackMirrorWipe.dragging {
             cursor: grabbing;
             transition: none;        /* no lag during drag */
-            box-shadow: 0 14px 48px rgba(0,0,0,0.7), 0 0 0 2px rgba(0,0,0,0.35);
+            box-shadow: 0 14px 44px rgba(0,0,0,0.28), 0 0 0 2px rgba(0,0,0,0.35);
         }
         #bmBlackMirrorWipe video { pointer-events: none; }   /* let pointer reach parent */
         #bmBlackMirrorWipe.on {
@@ -2493,7 +2499,7 @@
             color: #eee;
             font-family: var(--ui-mono);
             position: relative;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.28);
         }
         .palette-card .pal-h {
             font-size: 11px; letter-spacing: 0.18em;
@@ -2560,7 +2566,7 @@
             color: #eee;
             font-family: var(--ui-mono);
             position: relative;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.28);
         }
         .tpl-card .tpl-h {
             font-size: 11px; letter-spacing: 0.18em;
@@ -9396,6 +9402,19 @@ function runCommand(val) {
     //     親のショートカット（⌘S=swap など）も ⌘K も届かない。cross-origin なので親からは拾えない。
     //     ＝ボードを一度クリックして戻る導線が要る。⌘K から切り替えられれば手が止まらない。
     //   ⚠️printRaw は _panelShowLog でログに引き戻すので、必ず先に出してから切り替える。
+    // ⭐1つのキーで LOG ⇄ Ateli.er を行き来する（ショートカットを2つ使わなくていい）
+    //   今どちらを見ているかは .term-tab.active から読む＝表示の正が1箇所で済む
+    if (head==='view' || head==='toggle' || low==='切替' || low==='きりかえ' || low==='切り替え') {
+        const _at = document.querySelector('.term-tab.active');
+        const _cur = _at ? _at.dataset.view : 'log';
+        const _next = (_cur === 'atelier') ? 'log' : 'atelier';
+        // ⚠️printRaw は _panelShowLog でログに引き戻すので、必ず先に出してから切り替える
+        printRaw(_next === 'atelier'
+            ? _L('パネルを Ateli.er に切り替えました', 'Switched the panel to Ateli.er')
+            : _L('パネルを LOG に切り替えました', 'Switched the panel to LOG'), 't-dim');
+        if (window._panelSetView) window._panelSetView(_next);
+        return;
+    }
     if (head==='atelier' || low==='アトリエ' || head==='ateli.er') {
         printRaw(_L('パネルを Ateli.er に切り替えました', 'Switched the panel to Ateli.er'), 't-dim');
         if (window._panelSetView) window._panelSetView('atelier');
@@ -11016,6 +11035,7 @@ tiEl.addEventListener('paste', e => {
     let _kbRow = 0;
     const _kbSegs = () => Array.from(overlay.querySelectorAll('[data-pane="general"] .set-seg'));
     function _kbPaint() {
+        if (typeof _setKbNav === 'function') _setKbNav(true);
         const segs = _kbSegs();
         if (_kbRow >= segs.length) _kbRow = 0;
         segs.forEach((sg, i) => sg.classList.toggle('kb-focus', i === _kbRow));
@@ -11533,7 +11553,12 @@ tiEl.addEventListener('paste', e => {
         if (curTab === 'spells')   return Array.from(overlay.querySelectorAll('.set-spellrow'));
         return [];
     }
+    // ⭐設定側も、キーボードで選んでいる間はカーソル下の hover を消す
+    const _setCardEl = overlay.querySelector('.settings-card');
+    function _setKbNav(on) { if (_setCardEl) _setCardEl.classList.toggle('kb-nav', !!on); }
+    overlay.addEventListener('pointermove', () => _setKbNav(false));
     function _kbListPaint() {
+        _setKbNav(true);
         const rows = _kbListRows();
         if (_kbListIdx >= rows.length) _kbListIdx = rows.length - 1;
         rows.forEach((r, i) => r.classList.toggle('kb-row', i === _kbListIdx));
@@ -11643,7 +11668,7 @@ const I18N = {
         'pal.optArg': '↵で実行', 'pal.enterRunOrArg': '↵ でそのまま実行。引数を足してもOK。',
         'pal.warnBrowser': 'そのキーはブラウザが使うので効きません — 別のキーにしてください',
         'pal.assign': '⌨ ショートカット割当', 'pal.change': '⌨ ショートカット変更', 'pal.clearSc': '解除',
-        'pal.capTo': 'に割り当てるキーを押す…', 'pal.capHint': '⌘/⌥/⌃＋キー · Esc取消',
+        'pal.capTo': 'に割り当てるキーを押す…', 'pal.capHint': '好きなキー（⌘/⌥/⌃と組み合わせも可） · Esc取消',
         'pal.warnUsed': 'その組合せは使用中', 'pal.warnMod': '⌘/⌥/⌃ と組合せて',
         'pal.calcCap': '計算 · CALCULATOR', 'pal.expr': '式', 'pal.result': '結果', 'pal.copyAns': '↵ 答えをコピー', 'pal.doRun': '↵ で実行',
         'set.title': '設定', 'set.board': 'ボード', 'set.draw': '描き味', 'set.grade': '芯', 'set.term': 'ターミナル', 'set.wall': '壁紙', 'set.lang': '言語',
@@ -11703,7 +11728,7 @@ const I18N = {
         'pal.optArg': '↵ to run', 'pal.enterRunOrArg': '↵ runs it as-is — or add an argument. ',
         'pal.warnBrowser': 'The browser takes that key — please pick another one',
         'pal.assign': '⌨ Assign shortcut', 'pal.change': '⌨ Change shortcut', 'pal.clearSc': 'clear',
-        'pal.capTo': '— press the keys to assign…', 'pal.capHint': '⌘/⌥/⌃＋key · Esc to cancel',
+        'pal.capTo': '— press the keys to assign…', 'pal.capHint': 'any key (⌘/⌥/⌃ combos too) · Esc to cancel',
         'pal.warnUsed': 'That combo is in use', 'pal.warnMod': 'Combine with ⌘/⌥/⌃',
         'pal.calcCap': 'CALCULATOR', 'pal.expr': 'expr', 'pal.result': 'result', 'pal.copyAns': '↵ copy answer', 'pal.doRun': '↵ to run',
         'set.title': 'Settings', 'set.board': 'BOARD', 'set.draw': 'DRAW', 'set.grade': 'GRADE', 'set.term': 'TERMINAL', 'set.wall': 'WALLPAPER', 'set.lang': 'LANGUAGE',
@@ -11845,6 +11870,8 @@ const OMNI_CMDS = [
     { cmd:'usage',   cat:'help',    hint:'使い方 / ヘルプ', hintEn:'How to use / help' },
     { cmd:'settings',cat:'help',    hint:'設定を開く（ボード/描き味/芯/壁紙）', hintEn:'Open settings (board / draw / grade / wallpaper)', sc:'⌘,', _settings:true, kw:'設定 setting 環境 preferences 歯車' },
     // ⭐パネルの切替＝アトリエ(iframe)にフォーカスがあるとキーが親に届かないので、⌘Kからも戻れるように
+    // ⭐1キーで往復＝ショートカットを当てるならこれが本命（atelier/log は名指しで飛ぶ用）
+    { cmd:'view',    cat:'panel',   hint:'パネルを LOG ⇄ Ateli.er で切り替える（押すたび交互）', hintEn:'Toggle the panel between LOG and Ateli.er', kw:'切替 きりかえ 切り替え トグル 行き来 往復 パネル view toggle ログ アトリエ タブ' },
     { cmd:'atelier', cat:'panel',   hint:'パネルに Ateli.er を表示', hintEn:'Show Ateli.er in the panel', kw:'アトリエ atelier ateli.er パネル 切替 タブ メモ' },
     { cmd:'log',     cat:'panel',   hint:'パネルを LOG に戻す', hintEn:'Show LOG in the panel', kw:'ログ log パネル 切替 タブ ターミナル 戻る' },
     { cmd:'english', cat:'help',    hint:'表示を英語に切替', hintEn:'Switch UI to English', _lang:'en', kw:'en english 英語 language lang 言語 切替' },
@@ -11963,19 +11990,27 @@ function centerTermPanel() {
     function getUsc() { try { return JSON.parse(localStorage.getItem(USC_KEY) || '{}'); } catch (_) { return {}; } }
     function setUsc(cmd, combo) { const m = getUsc(); if (combo) { for (const k in m) { if (m[k] && m[k].match === combo.match) delete m[k]; } m[cmd] = combo; } else delete m[cmd]; try { localStorage.setItem(USC_KEY, JSON.stringify(m)); } catch (_) {} }
     // イベント→コンボ（修飾必須・修飾キー単体は無効）。表示用disp と 照合用match を返す
+    // ⭐盤面が単キーで使っている道具（割り当てると道具側が使えなくなるので知らせる）
+    const BOARD_ONEKEY = ['s','p','n','e','c','g','q','a','t','x','i','f','1','2','3'];
     function comboOf(e) {
         const k = e.key;
         if (!k || k === 'Meta' || k === 'Control' || k === 'Alt' || k === 'Shift') return null;
-        if (!(e.metaKey || e.ctrlKey || e.altKey)) return null;   // 修飾キー必須
-        const low = k.toLowerCase();
+        // ⚠️macOSは Option を押すと e.key が別の文字に化ける（⌥B → ∫ / ⌥A → å）。
+        //   e.key で判定すると表示が「⌥∫」になり、検索欄にもその文字が入ってしまう。
+        //   物理キー e.code を基準にすれば、配列や修飾に関係なく安定する。
+        const code = e.code || '';
+        let base;
+        if (/^Key[A-Z]$/.test(code))        base = code.slice(3).toLowerCase();
+        else if (/^Digit[0-9]$/.test(code)) base = code.slice(5);
+        else                                base = k.toLowerCase();
         let disp = '';
         if (e.metaKey) disp += '⌘';
         if (e.ctrlKey) disp += '⌃';
         if (e.altKey)  disp += '⌥';
         if (e.shiftKey) disp += '⇧';
-        disp += (k.length === 1 ? k.toUpperCase() : k);
+        disp += (base.length === 1 ? base.toUpperCase() : (k.length === 1 ? k.toUpperCase() : k));
         const mods = []; if (e.metaKey) mods.push('m'); if (e.ctrlKey) mods.push('c'); if (e.altKey) mods.push('a'); if (e.shiftKey) mods.push('s');
-        return { disp, match: mods.sort().join('') + ':' + low };
+        return { disp, match: mods.sort().join('') + ':' + base, bare: !(e.metaKey || e.ctrlKey || e.altKey), base };
     }
     // 既存の⌘系ショートカットは予約（Undo/コピー/⌘K 等）＝ユーザーは割り当て不可
     function reservedCombo(e) {
@@ -12337,6 +12372,10 @@ function centerTermPanel() {
         setTimeout(() => input.focus(), 0);
     };
     window._cmdkRefreshIfOpen = () => { if (isOpen()) refresh(); };   // ⭐言語切替時に開いてれば再描画
+    // ⭐キーボードで選び始めたら hover を止める／マウスを動かしたら戻す
+    const _cardEl = overlay.querySelector('.cmdk-card');
+    function _kbNav(on) { if (_cardEl) _cardEl.classList.toggle('kb-nav', !!on); }
+    if (listEl) listEl.addEventListener('pointermove', () => _kbNav(false));
     function runSel() { const r = rows[sel]; if (r && typeof r.run === 'function') r.run(); }
 
     // ⭐フッターの割当/解除ボタン（mousedownでフォーカスを保持）
@@ -12351,6 +12390,9 @@ function centerTermPanel() {
 
     { const _bk = document.getElementById('cmdkBack');
       if (_bk) _bk.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); storeBack(); }); }
+    // ⚠️録音中は文字を入れさせない。macOSの ⌥+文字 は keydown の preventDefault だけでは
+    //   止まらず、beforeinput まで来て検索欄に「∫」等が入ってしまう（木下報告）。
+    input.addEventListener('beforeinput', e => { if (capSc) { e.preventDefault(); e.stopPropagation(); } });
     input.addEventListener('input', refresh);
     input.addEventListener('keydown', e => {
         if (e.isComposing || e.keyCode === 229) return;   // ⭐IME変換中のEnterでは実行しない（漢字変換確定で誤発火を防ぐ）
@@ -12361,13 +12403,27 @@ function centerTermPanel() {
             if (e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift') return;
             if (osTakenCombo(e)) { capMsg = t('pal.warnBrowser'); updateFoot(); return; }   // ブラウザが奪うキー
             if (reservedCombo(e)) { capMsg = t('pal.warnUsed'); updateFoot(); return; }
+            // ⭐単キーも割り当てられる。ただし盤面の道具(P=鉛筆 等)と重なるものは、
+            //   割り当てると道具側が押せなくなるので、登録した上で理由を伝える。
+            {
+                const _c = comboOf(e);
+                if (_c && _c.bare && BOARD_ONEKEY.indexOf(_c.base) >= 0) {
+                    setUsc(capSc, _c); capSc = null; capMsg = ''; refresh();
+                    if (typeof printRaw === 'function') printRaw(
+                        (LANG === 'en')
+                            ? `Assigned ${_c.disp}. Note: the board also uses this key for a tool — the tool will no longer respond.`
+                            : `${_c.disp} を割り当てました。⚠️このキーは盤面の道具にも使われているので、道具側は反応しなくなります`,
+                        't-err');
+                    return;
+                }
+            }
             const c = comboOf(e);
             if (!c) { capMsg = t('pal.warnMod'); updateFoot(); return; }
             setUsc(capSc, c); capSc = null; capMsg = ''; refresh();
             return;
         }
-        if (e.key === 'ArrowDown')    { if (rows.length) { sel = (sel + 1) % rows.length; render(); } e.preventDefault(); }
-        else if (e.key === 'ArrowUp') { if (rows.length) { sel = (sel - 1 + rows.length) % rows.length; render(); } e.preventDefault(); }
+        if (e.key === 'ArrowDown')    { _kbNav(true); if (rows.length) { sel = (sel + 1) % rows.length; render(); } e.preventDefault(); }
+        else if (e.key === 'ArrowUp') { _kbNav(true); if (rows.length) { sel = (sel - 1 + rows.length) % rows.length; render(); } e.preventDefault(); }
         else if (e.key === 'Enter')   { e.preventDefault(); runSel(); }
         else if (e.key === 'Escape')  {
             e.preventDefault();
