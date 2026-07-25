@@ -1127,6 +1127,9 @@
             display: flex; flex-direction: column;
             background: rgba(10,10,12,0.35);
         }
+        /* ⚠️display:flex が hidden 属性を上書きしてしまう＝隠しても空の暗い箱が残り、
+           #tb との境目が横線になる。hidden の時は必ず display:none にする。 */
+        .term-view[hidden] { display: none !important; }
         .term-view iframe {
             flex: 1; width: 100%; border: 0; background: #fff;
         }
@@ -7557,6 +7560,17 @@ function showStickyEdit(stickyObj) {
     const sw = w * VIEW.scale;
     const sh = h * VIEW.scale;
     stickyEditor.style.display = 'block';
+    // ⭐編集オーバーレイの色を実際の付箋に合わせる。鉛筆モードは紙/黒板に馴染む（黄色固定をやめる）。
+    if (typeof S !== 'undefined' && S.drawMode === 'pencil') {
+        const dark = (typeof MODE !== 'undefined' && MODE === 'dark');
+        stickyEditor.style.background = dark ? 'rgba(30,30,32,0.9)' : 'rgba(255,255,255,0.55)';
+        stickyEditor.style.color = (typeof _pencilInk === 'function') ? _pencilInk() : '#3a3a38';
+        stickyEditor.style.borderColor = 'rgba(0,0,0,0.18)';
+    } else {
+        stickyEditor.style.background = stickyObj.data.color || '#FFE873';
+        stickyEditor.style.color = '#1a1a1a';
+        stickyEditor.style.borderColor = 'rgba(0,0,0,0.10)';
+    }
     stickyEditor.style.left   = sx + 'px';
     stickyEditor.style.top    = sy + 'px';
     stickyEditor.style.width  = sw + 'px';
