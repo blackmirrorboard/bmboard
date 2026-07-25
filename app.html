@@ -3126,6 +3126,7 @@
                 </div>
                 <textarea id="spellCreateJson" spellcheck="false" placeholder='{ "name":"confetti", "icon":"🎉", "desc":"紙吹雪", "action":"const vc=BM.viewCenter(); ..." }' data-i18n-ph="spell.jsonph"></textarea>
                 <div class="set-submit-actions">
+                    <span class="set-cmdbtn" id="spellCreateDraft" data-i18n="create.draft">📝 ドラフトに保存</span>
                     <span class="set-cmdbtn primary" id="spellCreateRun" data-i18n="create.run">登録して試す</span>
                 </div>
             </div>
@@ -8582,6 +8583,40 @@ function getUserJsSpells() {
 }
 window._setJsMeta = setJsMeta;
 window._getUserJsSpells = getUserJsSpells;
+
+// ⭐ドラフト魔法＝まだ登録しない「作りかけ」。BM_CMDS には入れず localStorage に別置き。
+//   ⌘K に 📝ドラフト カテゴリで出て、呼べば実行できる（育てながら試せる）。完成したら「正式にする」で昇格。
+const DRAFT_KEY = 'bm_drafts';
+function getDrafts() { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '[]'); } catch (_) { return []; } }
+function saveDrafts(a) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(a)); } catch (_) {} }
+function addDraft(name, action, icon, desc) {
+    const nm = (name || '').trim() || ('draft' + (getDrafts().length + 1));
+    const a = getDrafts().filter(d => d.name !== nm);   // 同名は上書き
+    a.unshift({ name: nm, action: String(action || ''), icon: icon || '📝', desc: desc || '', created: Date.now() });
+    saveDrafts(a);
+    return nm;
+}
+function removeDraft(name) { const a = getDrafts(); const n = a.length; saveDrafts(a.filter(d => d.name !== name)); return a.length !== n; }
+// ドラフトを1回だけ実行（登録せず走らせる＝申請ボックスの _runInlineJsSpell と同じ考え）
+function runDraft(name) {
+    const d = getDrafts().find(x => x.name === name); if (!d) return false;
+    try { new Function('BM', 'args', d.action)(window.BM, ''); redrawAll(); saveHistory(); return true; }
+    catch (err) { printRaw(`[${name}] runtime error: ${err.message}`, 't-err'); return false; }
+}
+// ドラフト → 正式な魔法に昇格（BM_CMDS に登録して ⌘K の通常魔法へ・ドラフトから外す）
+function promoteDraft(name) {
+    const d = getDrafts().find(x => x.name === name); if (!d) return false;
+    const nm = window._registerJsSpell && window._registerJsSpell(d.name, d.action, 'user');
+    if (!nm) { printRaw(_L('正式化に失敗（名前は英数字/日本語で・記号や空白は不可）', 'promote failed (name must be alphanumeric/JP, no spaces/symbols)'), 't-err'); return false; }
+    if (window._setJsMeta) window._setJsMeta(nm, d.icon, d.desc);
+    removeDraft(name);
+    return nm;
+}
+window._getDrafts = getDrafts;
+window._addDraft = addDraft;
+window._removeDraft = removeDraft;
+window._runDraft = runDraft;
+window._promoteDraft = promoteDraft;
 window._runJsSpell = (name, args) => { if (typeof runCustomCmd === 'function') runCustomCmd(name, args || ''); };
 window._registerJsSpell = (name, action, source) => (typeof registerCmd === 'function') ? registerCmd(name, action, { source: source || 'user' }) : null;
 window._forgetJsSpell = (name) => { if (typeof BM_CMDS !== 'undefined' && BM_CMDS[name] && BM_CMDS[name].source !== 'preset') { delete BM_CMDS[name]; if (typeof saveCmds === 'function') saveCmds(); return true; } return false; };
@@ -11329,6 +11364,20 @@ tiEl.addEventListener('paste', e => {
           setTimeout(() => { if (window._runJsSpell) window._runJsSpell(nm, ''); }, 60);   // ボードで即プレビュー
           if (typeof printRaw === 'function') printRaw(_en ? `spell "${nm}" registered & run — use it from ⌘K` : `魔法「${nm}」を登録して実行 — ⌘Kから使えます`, 't-ok');
       });
+      // ⭐ドラフトに保存＝登録せず作りかけとして置く。⌘Kの📝ドラフトカテゴリに出て、育てながら試せる。
+      const draftBtn = overlay.querySelector('#spellCreateDraft');
+      if (draftBtn) draftBtn.addEventListener('click', () => {
+          if (!ta) return;
+          const _en = (window.getLang && window.getLang() === 'en');
+          let obj; try { obj = JSON.parse(ta.value); } catch (e) { if (typeof printRaw === 'function') printRaw((_en ? 'draft JSON: syntax error — ' : 'ドラフトJSON: 構文エラー — ') + e.message, 't-err'); return; }
+          const name = (obj.name || obj.command || '').trim();
+          const action = String(obj.action || '');
+          if (!name || !action) { if (typeof printRaw === 'function') printRaw(_en ? 'draft JSON: needs name and action' : 'ドラフトJSON: name と action が必要', 't-err'); return; }
+          const nm = window._addDraft && window._addDraft(name, action, obj.icon || '📝', obj.desc);
+          renderSpells();
+          if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen();
+          if (typeof printRaw === 'function') printRaw(_en ? `draft "${nm}" saved — find it in ⌘K under 📝Draft` : `ドラフト「${nm}」を保存 — ⌘Kの📝ドラフトから呼べます`, 't-ok');
+      });
     }
     { const ib = overlay.querySelector('#spellImportBtn'), eb = overlay.querySelector('#spellExportAllBtn');
       if (ib) ib.addEventListener('click', () => { const i = document.getElementById('spellFileInput'); if (i) i.click(); });
@@ -11412,8 +11461,8 @@ tiEl.addEventListener('paste', e => {
 // ══════════════════════════════════════════════════
 // ⭐omnibox 共有カタログ：ターミナル補完 と ⌘Kパレット が同じ1ソースを使う。
 //   cat＝⌘Kパレットのバッジ（何の機能かひと目で分かる）。
-const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク', spell:'魔法', snippet:'スニペット', chain:'連鎖' };
-const OMNI_CATS_EN = { calc:'Calc', capture:'Note', board:'Board', draw:'Draw', grade:'Grade', panel:'Panel', edit:'Edit', io:'I/O', insert:'Insert', media:'Sound', help:'Help', link:'Link', spell:'Spell', snippet:'Snippet', chain:'Chain' };
+const OMNI_CATS = { calc:'計算', capture:'メモ', board:'ボード', draw:'描き味', grade:'芯', panel:'パネル', edit:'編集', io:'I/O', insert:'挿入', media:'音', help:'ヘルプ', link:'リンク', spell:'魔法', draft:'📝ドラフト', snippet:'スニペット', chain:'連鎖' };
+const OMNI_CATS_EN = { calc:'Calc', capture:'Note', board:'Board', draw:'Draw', grade:'Grade', panel:'Panel', edit:'Edit', io:'I/O', insert:'Insert', media:'Sound', help:'Help', link:'Link', spell:'Spell', draft:'📝Draft', snippet:'Snippet', chain:'Chain' };
 function catLabel(c) { const m = (typeof LANG !== 'undefined' && LANG === 'en') ? OMNI_CATS_EN : OMNI_CATS; return m[c] || c || ''; }
 // ══════════════════════════════════════════════════
 // i18n — EN/JP 切替（追加コードのみ・既存の描画/操作/保存には触れない）
@@ -11455,7 +11504,7 @@ const I18N = {
         'spells.import': '読み込む', 'spells.exportAll': '全部書き出す',
         'spells.create': '✨ コードから作る', 'create.title': '✨ コードから魔法を作る',
         'create.steps': '① 「AI用プロンプトをコピー」→ ChatGPT等に貼って作ってもらう　② 返ってきた JSON を下に貼る　③「登録して試す」でボードで動作確認（⌘Kにも出ます）',
-        'create.aiCopy': '🤖 AI用プロンプトをコピー', 'create.run': '登録して試す',
+        'create.aiCopy': '🤖 AI用プロンプトをコピー', 'create.run': '登録して試す', 'create.draft': '📝 ドラフトに保存',
         'spells.fromSelf': '自作', 'spells.fromStore': 'STORE', 'spells.fromImport': '読込', 'spells.fromCode': 'コード', 'spells.kindSnip': 'スニペット', 'spells.kindChain': '連鎖', 'spells.edit': '編集', 'create.descPh': '説明',
         'submit.title': '📤 STOREに提出する',
         'submit.steps': '① 下のJSON（アイコン/説明/コード全部入り）をコピー　② 管理者にGitHub PR か メールで送る　③ 承認されるとSTOREに並びます（author を自分の名前に）',
@@ -11513,7 +11562,7 @@ const I18N = {
         'spells.import': 'Import', 'spells.exportAll': 'Export all',
         'spells.create': '✨ Create from code', 'create.title': '✨ Create a spell from code',
         'create.steps': '① Copy the AI prompt → paste into ChatGPT etc.　② Paste the returned JSON below　③ Register & test on the board (also shows in ⌘K)',
-        'create.aiCopy': '🤖 Copy AI prompt', 'create.run': 'Register & test',
+        'create.aiCopy': '🤖 Copy AI prompt', 'create.run': 'Register & test', 'create.draft': '📝 Save as draft',
         'spells.fromSelf': 'mine', 'spells.fromStore': 'STORE', 'spells.fromImport': 'imported', 'spells.fromCode': 'code', 'spells.kindSnip': 'snippet', 'spells.kindChain': 'chain', 'spells.edit': 'Edit', 'create.descPh': 'description',
         'submit.title': '📤 Submit to STORE',
         'submit.steps': '① Copy the JSON below (icon/desc/code all included)　② Send it to a maintainer via GitHub PR or email　③ Once approved it appears in the STORE (set author to your name)',
@@ -11795,6 +11844,10 @@ function centerTermPanel() {
             return { kind:'js', ico: it._jsicon || '⚡', name: it.cmd, type: cat, desc: hint, favKey, fav,
                 run() { recordRecent(it.cmd); close(); try { pushHistory(it.cmd); } catch (_) {} if (window._runJsSpell) window._runJsSpell(it.cmd, ''); } };
         }
+        if (it._draft) {   // ⭐ドラフト魔法（作りかけ）→ 登録せず1回だけ実行
+            return { kind:'draft', ico: it._dicon || '📝', name: it.cmd, type: cat, desc: hint, favKey, fav,
+                run() { recordRecent('draft:' + it.cmd); close(); if (window._runDraft) window._runDraft(it._draft); } };
+        }
         if (it._preset) {   // ⭐内蔵プリセット魔法 → runCustomCmd で実行
             return { kind:'preset', ico: it._picon || '🪄', name: it.cmd, type: cat, desc: hint, favKey, fav,
                 run() { recordRecent(it.cmd); close(); try { pushHistory(it.cmd); } catch (_) {} if (typeof runCustomCmd === 'function') runCustomCmd(it.cmd, ''); } };
@@ -11980,7 +12033,12 @@ function centerTermPanel() {
         const jsPool = ((window._getUserJsSpells && window._getUserJsSpells()) || []).map(j => ({
             cmd: j.name, cat: 'spell', hint: j.desc || ((j.source === 'store' ? 'STORE' : '自作') + 'のコード魔法'), hintEn: j.desc || ('code spell (' + j.source + ')'),
             _js: j.name, _jsicon: j.icon || '⚡', kw: '魔法 spell コード js ' + j.source + ' ' + j.name }));
-        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, snipPool, chainPool, presetPool, jsPool);
+        // ⭐ドラフト魔法（作りかけ・登録前）を 📝ドラフト カテゴリで出す
+        const draftPool = ((window._getDrafts && window._getDrafts()) || []).map(d => ({
+            cmd: d.name, cat: 'draft', hint: d.desc || (LANG === 'en' ? 'draft spell (in progress)' : '作りかけの魔法'),
+            hintEn: d.desc || 'draft spell (in progress)', _draft: d.name, _dicon: d.icon || '📝',
+            kw: 'ドラフト draft 作りかけ wip 魔法 ' + d.name }));
+        const POOL = OMNI_CMDS.concat([formCmd], linkPool, spellPool, draftPool, snipPool, chainPool, presetPool, jsPool);
         const cmds = !q ? POOL.slice()
             : POOL.map(it => ({ it, sc: score(q, it) })).filter(x => x.sc >= 0).sort((a, b) => b.sc - a.sc).map(x => x.it);
         rows = []; _favCount = 0; _recentCount = 0;
