@@ -1389,6 +1389,11 @@
         .set-seg { display: flex; gap: 5px; flex-wrap: wrap; border-radius: 9px; }
         /* ⭐キーボードで選んでいる行（↑↓で移動・←→で切替）＝マウス無しでも今どこにいるか分かる */
         .set-seg.kb-focus { box-shadow: 0 0 0 1px rgba(255,255,255,0.34), 0 0 14px rgba(255,255,255,0.06); }
+        /* ⭐コマンド/魔法タブの行選択（↑↓で移動・↵で操作） */
+        .set-cmdrow.kb-row, .set-spellrow.kb-row {
+            background: rgba(255,255,255,0.09);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
+        }
         .set-seg button {
             flex: 1; min-width: 52px;
             background: rgba(255,255,255,0.05);
@@ -7647,9 +7652,14 @@ function commitStickyEdit() {
     saveHistory(); redrawAll();
 }
 stickyEditor.addEventListener('keydown', e => {
-    // Esc commits & closes; Cmd/Ctrl+Enter also commits; plain Enter inserts newline
+    // ⭐テキストと同じ手つきに揃える：Esc＝確定 · Enter＝確定 · ⇧Enter＝改行（⌘/Ctrl+Enterも確定）
+    // ⚠️IME変換中の Enter（isComposing / keyCode 229）は確定に使わない。
+    //   これが無いと日本語の変換確定 Enter で付箋が閉じてしまう（付箋には元々このガードが無かった）。
     if (e.key === 'Escape') { e.preventDefault(); commitStickyEdit(); }
-    else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commitStickyEdit(); }
+    else if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+        if (e.shiftKey) { e.stopPropagation(); return; }   // ⇧Enter＝改行（既定に任せる）
+        e.preventDefault(); commitStickyEdit();
+    }
     e.stopPropagation();
 });
 stickyEditor.addEventListener('input', () => {
@@ -11476,6 +11486,7 @@ tiEl.addEventListener('paste', e => {
         if (panes.general)  panes.general.hidden  = (name !== 'general');
         if (panes.commands) panes.commands.hidden = (name !== 'commands');
         if (panes.spells)   { panes.spells.hidden = (name !== 'spells'); if (name === 'spells') renderSpells(); }
+        if (window._settingsKbListReset) window._settingsKbListReset();   // ⭐タブを移ったら行選択は外す
         // 幅は固定（.settings-card に集約）＝タブ切替で跳ねさせない
         if (name === 'commands') { recCmd = null; recMsg = ''; renderCmds(); setTimeout(() => cmdSearch && cmdSearch.focus(), 0); }
     }
@@ -11495,9 +11506,50 @@ tiEl.addEventListener('paste', e => {
         if (rec) { recCmd = rec.getAttribute('data-rec'); recMsg = ''; renderCmds(); return; }
     });
     window._settingsRenderCmds = () => { if (panes.commands && !panes.commands.hidden) renderCmds(); };
-    // ⭐魔法/スニペット/連鎖/リンクを足したら、開いている一覧をその場で描き直す
-    //   （これが無いと「保存したのに出てこない」に見える）
-    window._settingsRenderSpells = () => { if (panes.spells && !panes.spells.hidden) renderSpells(); };
+    // ⚠️_settingsRenderSpells は上（renderSpells の定義側）で既に公開済み。
+    //   ここで同名を足すと後勝ちで前が黙って死ぬので足さない [[feedback_check_existing_before_adding]]
+
+    // ⭐コマンド/魔法タブも矢印キーで操作する（木下「他もそうだが」）
+    //   ↑↓＝行を移動 · ↵＝コマンド=ショートカット録音を開始 / 魔法=名前を編集
+    //   Delete＝コマンド=割当を解除 / 魔法=削除。検索欄に文字を打っている間もそのまま使える。
+    let _kbListIdx = -1;
+    function _kbListRows() {
+        if (curTab === 'commands') return Array.from(overlay.querySelectorAll('.set-cmdrow'));
+        if (curTab === 'spells')   return Array.from(overlay.querySelectorAll('.set-spellrow'));
+        return [];
+    }
+    function _kbListPaint() {
+        const rows = _kbListRows();
+        if (_kbListIdx >= rows.length) _kbListIdx = rows.length - 1;
+        rows.forEach((r, i) => r.classList.toggle('kb-row', i === _kbListIdx));
+        const cur = rows[_kbListIdx];
+        if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+    }
+    window._settingsKbListReset = () => { _kbListIdx = -1; };
+    document.addEventListener('keydown', e => {
+        if (!isOpen() || curTab === 'general') return;
+        if (recCmd) return;                       // ⚠️ショートカット録音中はキーを奪わない
+        const rows = _kbListRows(); if (!rows.length) return;
+        const inInput = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable);
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault(); e.stopPropagation();
+            const d = (e.key === 'ArrowDown' ? 1 : -1);
+            _kbListIdx = (_kbListIdx < 0 ? (d > 0 ? 0 : rows.length - 1) : (_kbListIdx + d + rows.length) % rows.length);
+            _kbListPaint(); return;
+        }
+        const cur = rows[_kbListIdx]; if (!cur) return;
+        if (e.key === 'Enter') {
+            e.preventDefault(); e.stopPropagation();
+            const hit = cur.querySelector(curTab === 'commands' ? '[data-rec]' : '[data-edit]');
+            if (hit) { hit.click(); setTimeout(_kbListPaint, 0); }
+            return;
+        }
+        // ⚠️検索欄で文字を消している最中は奪わない（Deleteは入力の方が優先）
+        if ((e.key === 'Delete' || e.key === 'Backspace') && !inInput) {
+            const hit = cur.querySelector(curTab === 'commands' ? '[data-clear]' : '[data-del]');
+            if (hit) { e.preventDefault(); e.stopPropagation(); hit.click(); setTimeout(_kbListPaint, 0); }
+        }
+    }, true);
 
     function open()  {
         overlay.classList.add('open'); sync(); switchTab(curTab);
