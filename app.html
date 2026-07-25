@@ -253,8 +253,8 @@
             color: #f4f2ec;
             white-space: nowrap;
         }
-        @media (max-width: 700px) { .logo-word { font-size: 13px; margin-left: 9px; letter-spacing: 0.16em; } }
-        @media (max-width: 700px) {
+        @media (max-width: 700px), (min-width: 701px) and (max-width: 1024px) and (orientation: portrait) { .logo-word { font-size: 13px; margin-left: 9px; letter-spacing: 0.16em; } }
+        @media (max-width: 700px), (min-width: 701px) and (max-width: 1024px) and (orientation: portrait) {
             .logo-img { height: 26px; }
             /* Hide the header FLUSH button on mobile — still reachable via the
                `flush` / `clear` terminal command and the in-terminal flush. */
@@ -2305,7 +2305,7 @@
         /* ══════════════════════════════════
            MOBILE
         ══════════════════════════════════ */
-        @media (max-width: 700px) {
+        @media (max-width: 700px), (min-width: 701px) and (max-width: 1024px) and (orientation: portrait) {
             main { flex-direction: column; overflow: hidden; }
 
             .toolbar {
