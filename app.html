@@ -11673,7 +11673,7 @@ const OMNI_CMDS = [
     { cmd:'rec',     cat:'io',      hint:'ボードを動画(WebM)に録画（rec 6 で6秒）', hintEn:'Record the board as video/WebM (rec 6 = 6s)', args:true, kw:'rec 録画 動画 video webm 書き出し キャプチャ capture' },
     { cmd:'connect', cat:'insert',  hint:'選択した2つ以上を矢印でつなぐ', hintEn:'Connect 2+ selected objects with arrows', kw:'つなぐ connect 矢印 図解 フロー 結ぶ' },
     { cmd:'align',   cat:'edit',    hint:'選択を揃える（align left/right/top/bottom/center/middle）', hintEn:'Align selection (left/right/top/bottom/center/middle)', args:true, kw:'align 整列 揃える 配置 そろえる' },
-    { cmd:'swap',    cat:'panel',   hint:'ボードを右/左に入替（利き手）', hintEn:'Swap board to the right/left (handedness)', args:true, kw:'左右 入替 利き手 swap layout 右利き 左利き right left' },
+    { cmd:'swap',    cat:'panel',   hint:'ボードを右/左に入替（利き手）· ↵でそのまま入替', hintEn:'Swap board to the right/left (handedness) · ↵ to toggle', args:true, argsOpt:true, kw:'左右 入替 利き手 swap layout 右利き 左利き right left' },
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙' },
     { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import' },
@@ -11904,7 +11904,9 @@ function centerTermPanel() {
             run() {
                 const q = input.value.trim(); const fsp = q.indexOf(' ');
                 const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
-                if (it.args && !typedArgs) { input.value = it.cmd + ' '; refresh(); return; }
+                // ⚠️argsOpt＝引数が「任意」のコマンド（swap 等）は、引数なし↵でそのまま実行する。
+                //   これが無いと args:true が一律「必須」扱いになり、⌘Kから永久に実行できない。
+                if (it.args && !typedArgs && !it.argsOpt) { input.value = it.cmd + ' '; refresh(); return; }
                 const cmd = (it.args && typedArgs) ? (it.cmd + ' ' + typedArgs) : it.cmd;
                 recordRecent(it.cmd);   // ⭐使用履歴（最近使ったものを上部に）
                 close(); try { pushHistory(cmd); } catch (_) {}
