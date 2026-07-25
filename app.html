@@ -7526,7 +7526,9 @@ textInput.addEventListener('keydown', e => {
     // IME-conversion Enter (keyCode 229 / isComposing) is left to the IME so
     // 漢字変換の確定 Enter doesn't fire a commit nor insert a stray newline.
     if (e.key === 'Escape') { e.preventDefault(); commitText(); if (typeof setTool === 'function') setTool('select'); }
-    else if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && (e.shiftKey || e.metaKey || e.ctrlKey)) {
+    else if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+        // ⭐⇧Enter＝改行（段落を落とす）／Enter＝確定。他の道具と同じ手つきに揃える（木下指定）
+        if (e.shiftKey) { e.stopPropagation(); return; }   // 改行はブラウザ既定に任せる
         e.preventDefault(); commitText(); if (typeof setTool === 'function') setTool('select');
     }
     e.stopPropagation();
@@ -7567,6 +7569,15 @@ textInput.addEventListener('blur', () => {
     // doesn't double-fire with the button's click handler.
     setTimeout(() => { if (textOverlay.style.display === 'block') commitText(); }, 0);
 });
+
+// ⚠️盤面を押しても確定しないことがあった（木下報告）＝ボードは pointerdown で
+//   preventDefault するため、textarea から focus が外れず blur が飛ばないため。
+//   編集欄の外を押したら、その場で確定する（blur を待たない）。追加のみ・確定処理は共通。
+document.addEventListener('pointerdown', e => {
+    if (textOverlay.style.display !== 'block') return;
+    if (e.target && e.target.closest && e.target.closest('#textOverlay')) return;
+    commitText();
+}, true);
 
 // Mobile "✓" Done button — explicit commit trigger when the iOS keyboard
 // can't easily produce a Shift/⌘ combo. mousedown (not click) so the
