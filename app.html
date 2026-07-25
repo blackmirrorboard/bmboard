@@ -1386,7 +1386,9 @@
         .set-body[hidden] { display: none; }
         .set-row { display: flex; flex-direction: column; gap: 7px; }
         .set-label { font-size: 10px; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); }
-        .set-seg { display: flex; gap: 5px; flex-wrap: wrap; }
+        .set-seg { display: flex; gap: 5px; flex-wrap: wrap; border-radius: 9px; }
+        /* ⭐キーボードで選んでいる行（↑↓で移動・←→で切替）＝マウス無しでも今どこにいるか分かる */
+        .set-seg.kb-focus { box-shadow: 0 0 0 1px rgba(255,255,255,0.34), 0 0 14px rgba(255,255,255,0.06); }
         .set-seg button {
             flex: 1; min-width: 52px;
             background: rgba(255,255,255,0.05);
@@ -10983,6 +10985,42 @@ tiEl.addEventListener('paste', e => {
     overlay.querySelectorAll('.set-seg button').forEach(b =>
         b.addEventListener('click', () => apply(b.parentElement.dataset.set, b.dataset.v)));
 
+    // ⭐キーボードだけで設定を変える（木下「マウスを使用しなくても変更できる」）
+    //   ↑↓＝行を移動 · ←→＝その行の選択肢を切り替えて即適用 · Esc＝閉じる（既存）
+    //   一般タブのときだけ矢印を受ける（コマンド/魔法タブは検索欄とリストが主役なので奪わない）
+    let _kbRow = 0;
+    const _kbSegs = () => Array.from(overlay.querySelectorAll('[data-pane="general"] .set-seg'));
+    function _kbPaint() {
+        const segs = _kbSegs();
+        if (_kbRow >= segs.length) _kbRow = 0;
+        segs.forEach((sg, i) => sg.classList.toggle('kb-focus', i === _kbRow));
+        const cur = segs[_kbRow];
+        if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+    }
+    function _kbClear() { _kbSegs().forEach(sg => sg.classList.remove('kb-focus')); }
+    window._settingsKbReset = () => { _kbRow = 0; _kbPaint(); };
+    document.addEventListener('keydown', e => {
+        if (!isOpen() || curTab !== 'general') return;
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        const segs = _kbSegs(); if (!segs.length) return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault(); e.stopPropagation();
+            _kbRow = (_kbRow + (e.key === 'ArrowDown' ? 1 : -1) + segs.length) % segs.length;
+            _kbPaint(); return;
+        }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            e.preventDefault(); e.stopPropagation();
+            const sg = segs[_kbRow]; if (!sg) return;
+            const btns = Array.from(sg.querySelectorAll('button')); if (!btns.length) return;
+            let i = btns.findIndex(b => b.classList.contains('active'));
+            if (i < 0) i = 0;
+            i = (i + (e.key === 'ArrowRight' ? 1 : -1) + btns.length) % btns.length;
+            apply(sg.dataset.set, btns[i].dataset.v);
+            _kbPaint(); return;
+        }
+    }, true);
+
     // ══════ ⭐タブ ＋ コマンド/ショートカット一覧（Raycast風マネージャ） ══════
     const tabs    = Array.from(overlay.querySelectorAll('.set-tab'));
     const panes   = { general: overlay.querySelector('[data-pane="general"]'), commands: overlay.querySelector('[data-pane="commands"]'), spells: overlay.querySelector('[data-pane="spells"]') };
@@ -11463,6 +11501,7 @@ tiEl.addEventListener('paste', e => {
 
     function open()  {
         overlay.classList.add('open'); sync(); switchTab(curTab);
+        if (window._settingsKbReset) window._settingsKbReset();   // ⭐開いた時点で先頭行にキーボード位置を置く
         // ⭐開くたびに申請を取りに行く（失敗しても黙って隠れるだけ＝アプリは止まらない）
         try { loadInbox(false); } catch (_) {}
     }
