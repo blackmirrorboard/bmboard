@@ -14449,29 +14449,45 @@ function setTermWidthPct(pct, persist) {
 
             // ⭐ログインURLを貼る＝パネルの中でそのサイトにログインする。
             //   認証を持つのはその埋め込み先(アトリエ等)＝BMBoardは認証を持たない。
-            //   ログイン後のトークン入りURL(#access_token=…)をiframeに直接読み込ませる＝
-            //   別タブと"共有"するのでなく iframe が自分の領域でログインする（ストレージ分離を回避）。
+            //   ログインのリンクを iframe に直接読み込ませる＝別タブと"共有"するのでなく
+            //   iframe が自分の領域でログインする（ブラウザのストレージ分離を回避）。
+            //   ⭐一番確実＝メールのmagic linkを「開かずに」貼る（iframeの中でverifyが走って完結する）。
+            //     一度ブラウザで開いたリンクは使用済みで再利用できない。
+            //   ⚠️ログイン後のアドレスバーURLは、着地側が #access_token=… を読んだ直後に消すので
+            //     コピーしても空になっていることが多い（トークンが入っていなければ警告を出す）。
             //   ⚠️Chromeは通りやすい／Safariはサードパーティストレージを塞ぐことがある。
             const loginBtn = bar.querySelector('.tv-login');
             if (loginBtn) loginBtn.addEventListener('click', () => {
                 const _en = (window.getLang && window.getLang() === 'en');
                 const origin = (() => { try { return new URL(conf.url).origin; } catch (_) { return conf.url; } })();
                 const url = window.prompt(_en
-                    ? `Paste your login URL for ${host}.\n(In a tab: sign in, then copy the address-bar URL that contains #access_token=… and paste it here.)`
-                    : `${host} のログインURLを貼ってください。\n（別タブでログイン → アドレスバーの #access_token=… が入ったURLをコピーして貼る）`, '');
+                    ? `Paste your sign-in link for ${host}.\nBest: copy the magic link from your email WITHOUT opening it — a link you already opened is used up.`
+                    : `${host} のログインリンクを貼ってください。\n⭐おすすめ＝メールのリンクを「開かずに」コピーして貼る（一度開いたリンクは使用済みで使えません）`, '');
                 if (!url) return;
                 let u;
                 try { u = new URL(url.trim()); } catch (_) {
                     if (typeof printRaw === 'function') printRaw(_L('URLの形式が正しくありません', 'That is not a valid URL'), 't-err'); return;
                 }
-                // 安全：同じサイトのURLだけ受け付ける（他サイトを勝手に開かせない）
-                if (u.origin !== origin) {
-                    if (typeof printRaw === 'function') printRaw(_L(`このパネルは ${host} 専用です（貼れるのは同じサイトのURLだけ）`, `This panel is for ${host} only (same-site URLs).`), 't-err');
+                // 安全：最終的に そのサイトに着地するURLだけ受け付ける（他サイトを勝手に開かせない）
+                //  (a) 同じサイトのURL  (b) 認証サーバのリンクで redirect_to が同じサイト＝未使用のmagic link
+                const landing = (() => {
+                    const r = u.searchParams.get('redirect_to') || u.searchParams.get('redirectTo') || '';
+                    try { return r ? new URL(r).origin : ''; } catch (_) { return ''; }
+                })();
+                if (u.origin !== origin && landing !== origin) {
+                    if (typeof printRaw === 'function') printRaw(_L(`このパネルは ${host} 専用です（貼れるのは ${host} に着地するURLだけ）`, `This panel is for ${host} only (the link must land on ${host}).`), 't-err');
                     return;
                 }
-                ifr.src = u.href;   // トークン入りURLをiframeに読ませる＝パネル内でログイン
-                showView(v);
-                if (typeof printRaw === 'function') printRaw(_L('ログインURLを読み込みました。パネル内でログイン状態になれば成功です', 'Loaded the login URL. If the panel shows you signed in, it worked.'), 't-dim');
+                // ログイン情報が入っていないURLは、読み込んでも未ログインのまま＝先に気づけるようにする
+                const hasToken = /access_token=|refresh_token=/.test(u.hash) || u.searchParams.has('token')
+                    || u.searchParams.has('code') || u.searchParams.has('token_hash') || landing === origin;
+                // ⚠️printRaw は _panelShowLog でログビューに引き戻すので、必ず先に出してから表示を切り替える
+                if (typeof printRaw === 'function') printRaw(hasToken
+                    ? _L('ログインリンクを読み込みました。パネル内でログイン状態になれば成功です', 'Loaded the sign-in link. If the panel shows you signed in, it worked.')
+                    : _L('⚠️このURLにログイン情報が入っていません（開いた後のURLはトークンが消えます）。メールのリンクを開かずにコピーして貼ってください', '⚠️No sign-in token in that URL (it is stripped once the page opens). Copy the link from your email without opening it.'),
+                    hasToken ? 't-dim' : 't-err');
+                ifr.src = u.href;   // ログインリンクをiframeに読ませる＝パネル内でログイン
+                showView(v);        // ⭐printRawの後に呼ぶ（順序を戻すとログ画面に飛ばされる）
             });
         }
         // 選んだビューだけ表示
