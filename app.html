@@ -1387,6 +1387,8 @@
         .set-row { display: flex; flex-direction: column; gap: 7px; }
         .set-label { font-size: 10px; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); }
         .set-seg { display: flex; gap: 5px; flex-wrap: wrap; border-radius: 9px; }
+        .set-port { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .set-porthint { font-size: 10.5px; color: rgba(255,255,255,0.38); line-height: 1.5; flex: 1 1 100%; }
         /* ⭐キーボードで選んでいる行（↑↓で移動・←→で切替）＝マウス無しでも今どこにいるか分かる */
         .set-seg.kb-focus { box-shadow: 0 0 0 1px rgba(255,255,255,0.34), 0 0 14px rgba(255,255,255,0.06); }
         /* ⭐コマンド/魔法タブの行選択（↑↓で移動・↵で操作） */
@@ -3152,6 +3154,17 @@
                     <button type="button" data-v="white" data-i18n="set.white">白リング</button>
                     <button type="button" data-v="red" data-i18n="set.red">赤リング</button>
                 </div>
+            </div>
+            <!-- ⭐道具の持ち運び＝魔法・呼び名・ショートカット・設定を1ファイルにして別のPCへ。
+                 ログイン無しでデバイスを移れる（クラウドを待たなくていい） -->
+            <div class="set-row">
+                <div class="set-label" data-i18n="port.label">道具の持ち運び</div>
+                <div class="set-port">
+                    <span class="set-cmdbtn" id="portExport" data-i18n="port.export">⬇ すべて書き出す</span>
+                    <span class="set-cmdbtn" id="portImport" data-i18n="port.import">⬆ 読み込む</span>
+                    <span class="set-porthint" data-i18n="port.hint">魔法・呼び名・ショートカット・設定を1ファイルに。別のPCで読み込めば同じ道具立てになります</span>
+                </div>
+                <input type="file" id="portFileInput" accept=".json,application/json" style="display:none">
             </div>
         </div>
         <div class="set-cmds" data-pane="commands" hidden>
@@ -11618,6 +11631,73 @@ tiEl.addEventListener('paste', e => {
             if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); inp.blur(); }
         });
     }
+    // ══════ ⭐道具の持ち運び（設定・魔法・呼び名・ショートカットを1ファイルに） ══════
+    //   ⚠️板の中身(objects/画像)は IndexedDB にあるので**含めない**。ここは「道具」だけ。
+    //     作品は既存の save/load・export data が担当＝道具と作品を混ぜない。
+    //   ⭐ログインもクラウドも無しでデバイスを移れる＝「アカウント不要」の強みを保ったまま解決する。
+    {
+        const PORT_SKIP = ['bm_termFloatGeo'];   // 画面サイズ依存＝別PCで窓が画面外に出る
+        const portBtnE = overlay.querySelector('#portExport');
+        const portBtnI = overlay.querySelector('#portImport');
+        const portFile = overlay.querySelector('#portFileInput');
+        const _t = k => (window.t ? window.t(k) : k);
+
+        function collect() {
+            const data = {};
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (!k || !k.startsWith('bm_')) continue;
+                    if (PORT_SKIP.indexOf(k) >= 0) continue;
+                    data[k] = localStorage.getItem(k);
+                }
+            } catch (_) {}
+            return data;
+        }
+        if (portBtnE) portBtnE.addEventListener('click', () => {
+            const data = collect();
+            const n = Object.keys(data).length;
+            if (!n) { if (typeof printRaw === 'function') printRaw(_t('port.nothing'), 't-err'); return; }
+            const payload = { format: 'bmboard-tools', v: 1, savedAt: new Date().toISOString(), count: n, data };
+            if (typeof bmDeliverJson === 'function') bmDeliverJson(JSON.stringify(payload, null, 2), 'bmboard-tools.json');
+            if (typeof printRaw === 'function') printRaw(_t('port.done') + ' (' + n + ')', 't-ok');
+        });
+        if (portBtnI && portFile) {
+            portBtnI.addEventListener('click', () => portFile.click());
+            portFile.addEventListener('change', e => {
+                const f = e.target.files && e.target.files[0]; if (!f) return;
+                const rd = new FileReader();
+                rd.onload = () => {
+                    let obj;
+                    try { obj = JSON.parse(rd.result); } catch (err) {
+                        if (typeof printRaw === 'function') printRaw(_t('port.bad') + ' — ' + err.message, 't-err');
+                        portFile.value = ''; return;
+                    }
+                    const data = obj && obj.data;
+                    if (!data || typeof data !== 'object' || obj.format !== 'bmboard-tools') {
+                        if (typeof printRaw === 'function') printRaw(_t('port.bad'), 't-err');
+                        portFile.value = ''; return;
+                    }
+                    const keys = Object.keys(data).filter(k => k.startsWith('bm_') && PORT_SKIP.indexOf(k) < 0);
+                    if (!keys.length) { if (typeof printRaw === 'function') printRaw(_t('port.bad'), 't-err'); portFile.value = ''; return; }
+                    // ⚠️今の道具を上書きするので必ず確認を取る（bmConfirmが無い環境ではそのまま進める）
+                    const go = () => {
+                        let n = 0;
+                        keys.forEach(k => { try { localStorage.setItem(k, String(data[k])); n++; } catch (_) {} });
+                        if (typeof printRaw === 'function') printRaw(_t('port.loaded') + ' (' + n + ') — ' + _t('port.reload'), 't-ok');
+                        portFile.value = '';
+                        // 反映しきれないもの（描き味・壁紙など）があるので読み直しを促す
+                        setTimeout(() => { try { location.reload(); } catch (_) {} }, 900);
+                    };
+                    try {
+                        if (typeof bmConfirm === 'function') bmConfirm(_t('port.confirmTitle'), _t('port.confirmBody') + ' (' + keys.length + ')').then(ok => { if (ok) go(); else portFile.value = ''; });
+                        else go();
+                    } catch (_) { go(); }
+                };
+                rd.readAsText(f);
+            });
+        }
+    }
     window._settingsRenderCmds = () => { if (panes.commands && !panes.commands.hidden) renderCmds(); };
     // ⚠️_settingsRenderSpells は上（renderSpells の定義側）で既に公開済み。
     //   ここで同名を足すと後勝ちで前が黙って死ぬので足さない [[feedback_check_existing_before_adding]]
@@ -11745,6 +11825,11 @@ const I18N = {
         'pal.enterInput': '内容を入力して ↵ で実行。', 'pal.example': '例',
         'pal.optArg': '↵で実行', 'pal.enterRunOrArg': '↵ でそのまま実行。引数を足してもOK。',
         'setcmd.cAlias': '呼び名', 'setcmd.aliasPh': '＋ 自分の呼び名',
+        'port.label': '道具の持ち運び', 'port.export': '⬇ すべて書き出す', 'port.import': '⬆ 読み込む',
+        'port.hint': '魔法・呼び名・ショートカット・設定を1ファイルに。別のPCで読み込めば同じ道具立てになります（板の中身は含みません）',
+        'port.done': '道具を書き出しました', 'port.loaded': '道具を読み込みました', 'port.reload': '読み直します…',
+        'port.bad': 'このファイルは道具の書き出しではないようです', 'port.nothing': '書き出すものがまだありません',
+        'port.confirmTitle': '◼ 道具を読み込む', 'port.confirmBody': '今の魔法・呼び名・ショートカット・設定を上書きします。よろしいですか？',
         'pal.warnBrowser': 'そのキーはブラウザが使うので効きません — 別のキーにしてください',
         'pal.assign': '⌨ ショートカット割当', 'pal.change': '⌨ ショートカット変更', 'pal.clearSc': '解除',
         'pal.capTo': 'に割り当てるキーを押す…', 'pal.capHint': '好きなキー（⌘/⌥/⌃と組み合わせも可） · Esc取消',
@@ -11806,6 +11891,11 @@ const I18N = {
         'pal.enterInput': 'Type your input, then ↵ to run.', 'pal.example': 'e.g.',
         'pal.optArg': '↵ to run', 'pal.enterRunOrArg': '↵ runs it as-is — or add an argument. ',
         'setcmd.cAlias': 'Alias', 'setcmd.aliasPh': '+ your own name',
+        'port.label': 'Take your tools with you', 'port.export': '⬇ Export all', 'port.import': '⬆ Import',
+        'port.hint': 'Spells, aliases, shortcuts and settings in one file. Import it on another machine to get the same setup (board content not included).',
+        'port.done': 'Exported your tools', 'port.loaded': 'Imported your tools', 'port.reload': 'reloading…',
+        'port.bad': "That file doesn't look like a tools export", 'port.nothing': 'Nothing to export yet',
+        'port.confirmTitle': '◼ Import tools', 'port.confirmBody': 'This overwrites your current spells, aliases, shortcuts and settings. Continue?',
         'pal.warnBrowser': 'The browser takes that key — please pick another one',
         'pal.assign': '⌨ Assign shortcut', 'pal.change': '⌨ Change shortcut', 'pal.clearSc': 'clear',
         'pal.capTo': '— press the keys to assign…', 'pal.capHint': 'any key (⌘/⌥/⌃ combos too) · Esc to cancel',
