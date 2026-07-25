@@ -1436,7 +1436,15 @@
         .set-cmds-list::-webkit-scrollbar { width: 4px; }
         .set-cmds-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
         /* ⭐Raycast列グリッド：☆ | 名前 | 説明 | 種類 | ショートカット */
-        .set-cmdhdr, .set-cmdrow { display: grid; grid-template-columns: 18px minmax(74px, 132px) 1fr minmax(104px, auto); align-items: center; gap: 10px; padding: 7px 10px; }
+        .set-cmdhdr, .set-cmdrow { display: grid; grid-template-columns: 18px minmax(74px, 132px) 1fr minmax(92px, 116px) minmax(104px, auto); align-items: center; gap: 10px; padding: 7px 10px; }
+        /* ⭐自分で付ける呼び名（Alias）。空のときは薄く「＋ 呼び名」とだけ見せる */
+        .set-cmdalias { font-size: 11px; font-family: var(--ui-mono); color: rgba(255,255,255,0.62);
+            background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 3px 6px; width: 100%;
+            outline: none; transition: border-color .12s, background .12s, color .12s; }
+        .set-cmdalias::placeholder { color: rgba(255,255,255,0.20); }
+        .set-cmdrow:hover .set-cmdalias { border-color: rgba(255,255,255,0.10); }
+        .set-cmdalias:focus { border-color: rgba(255,255,255,0.30); background: rgba(255,255,255,0.06); color: #fff; }
+        .set-cmdalias.has { color: rgba(255,255,255,0.86); border-color: rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); }
         .set-cmdhdr { position: sticky; top: 0; z-index: 2; padding-top: 10px; padding-bottom: 8px; font-size: 9px; letter-spacing: 0.09em; font-weight: 600; text-transform: uppercase; color: rgba(255,255,255,0.32); background: linear-gradient(180deg, rgba(20,18,23,0.96), rgba(20,18,23,0.82)); }
         .set-cmdhdr .r { text-align: right; }
         .set-cmdfolder { grid-column: 1 / -1; padding: 12px 2px 4px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; color: rgba(255,255,255,0.3); text-transform: uppercase; }
@@ -11078,6 +11086,7 @@ tiEl.addEventListener('paste', e => {
     const BUILTIN_MATCH = { '⌘B':'m:b', '⌘,':'m:,' };
 
     function usc()  { return (window._bmUsc  && window._bmUsc.get())  || {}; }
+    function getAliasMap() { return (window._bmAlias && window._bmAlias.get()) || {}; }
     function favOn(k){ return !!(window._bmFavs && window._bmFavs.isFav(k)); }
     function effHot(it, u) { const user = u[it.cmd]; if (user) return { disp: user.disp, user: true }; if (it.sc) return { disp: it.sc, user: false }; return null; }
     function computeConflicts(u) {
@@ -11131,7 +11140,7 @@ tiEl.addEventListener('paste', e => {
         const order = []; const groups = {};
         items.forEach(it => { if (!groups[it.cat]) { groups[it.cat] = []; order.push(it.cat); } groups[it.cat].push(it); });
         // ⭐Raycast風の列ヘッダ（名前 / 説明 / ショートカット）
-        let html = `<div class="set-cmdhdr"><span></span><span>${esc(T('setcmd.cName'))}</span><span>${esc(T('setcmd.cDesc'))}</span><span class="r">${esc(T('setcmd.cHot'))}</span></div>`;
+        let html = `<div class="set-cmdhdr"><span></span><span>${esc(T('setcmd.cName'))}</span><span>${esc(T('setcmd.cDesc'))}</span><span>${esc(T('setcmd.cAlias'))}</span><span class="r">${esc(T('setcmd.cHot'))}</span></div>`;
         order.forEach(cat => {
             const label = (typeof catLabel === 'function') ? catLabel(cat) : cat;
             html += `<div class="set-cmdfolder">${esc(label)}</div>`;
@@ -11151,7 +11160,9 @@ tiEl.addEventListener('paste', e => {
                 } else {
                     hotHtml = `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.recordHot'))}</span>`;
                 }
-                html += `<div class="set-cmdrow${isConf ? ' conflict' : ''}${isRec ? ' recording' : ''}">${star}<span class="set-cmdname">${esc(it.cmd)}</span><span class="set-cmdhint">${esc(hint)}</span><span class="set-cmdhot">${hotHtml}</span></div>`;
+                const _al = getAliasMap()[it.cmd] || '';
+                const aliasHtml = `<input class="set-cmdalias${_al ? ' has' : ''}" data-alias="${esc(it.cmd)}" value="${esc(_al)}" placeholder="${esc(T('setcmd.aliasPh'))}" spellcheck="false" autocomplete="off">`;
+                html += `<div class="set-cmdrow${isConf ? ' conflict' : ''}${isRec ? ' recording' : ''}">${star}<span class="set-cmdname">${esc(it.cmd)}</span><span class="set-cmdhint">${esc(hint)}</span>${aliasHtml}<span class="set-cmdhot">${hotHtml}</span></div>`;
             });
         });
         // ⭐変更できないキーを最後にまとめて見せる（木下「何がどのショートカットかを全部確認できるように」）
@@ -11164,7 +11175,7 @@ tiEl.addEventListener('paste', e => {
                 `<div class="set-cmdcat">${esc(title)}</div>` +
                 rows.map(([k, d]) => `<div class="set-cmdrow"><span class="set-cmdstar" style="visibility:hidden">☆</span>`
                     + `<span class="set-cmdname" style="font-family:var(--ui-mono)">${esc(k)}</span>`
-                    + `<span class="set-cmdhint">${esc(d)}</span>`
+                    + `<span class="set-cmdhint">${esc(d)}</span><span></span>`
                     + `<span class="set-cmdhot"><span class="k def">${esc(badge)}</span></span></div>`).join('');
             const B_FIX  = _jp ? '変更不可' : 'fixed';
             const B_NG   = _jp ? '効かない' : 'no effect';
@@ -11590,6 +11601,23 @@ tiEl.addEventListener('paste', e => {
         const rec = e.target.closest('[data-rec]');
         if (rec) { recCmd = rec.getAttribute('data-rec'); recMsg = ''; renderCmds(); return; }
     });
+    // ⭐別名（Alias）の編集＝打った内容をその場で保存し、⌘Kの検索に即反映する。
+    //   ⚠️renderCmds で作り直すと入力中のフォーカスが飛ぶので、ここでは再描画しない。
+    if (cmdList) {
+        cmdList.addEventListener('input', e => {
+            const inp = e.target.closest('.set-cmdalias'); if (!inp) return;
+            const cmd = inp.getAttribute('data-alias'); if (!cmd) return;
+            if (window._bmAlias) window._bmAlias.set(cmd, inp.value);
+            inp.classList.toggle('has', !!inp.value.trim());
+            if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen();
+        });
+        // Enter / Esc で入力を終える（Escは設定を閉じさせない）
+        cmdList.addEventListener('keydown', e => {
+            const inp = e.target.closest('.set-cmdalias'); if (!inp) return;
+            e.stopPropagation();
+            if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); inp.blur(); }
+        });
+    }
     window._settingsRenderCmds = () => { if (panes.commands && !panes.commands.hidden) renderCmds(); };
     // ⚠️_settingsRenderSpells は上（renderSpells の定義側）で既に公開済み。
     //   ここで同名を足すと後勝ちで前が黙って死ぬので足さない [[feedback_check_existing_before_adding]]
@@ -11716,6 +11744,7 @@ const I18N = {
         'pal.none': '該当なし', 'pal.wait': '入力待ち', 'pal.run': '実行', 'pal.close': '閉じる',
         'pal.enterInput': '内容を入力して ↵ で実行。', 'pal.example': '例',
         'pal.optArg': '↵で実行', 'pal.enterRunOrArg': '↵ でそのまま実行。引数を足してもOK。',
+        'setcmd.cAlias': '呼び名', 'setcmd.aliasPh': '＋ 自分の呼び名',
         'pal.warnBrowser': 'そのキーはブラウザが使うので効きません — 別のキーにしてください',
         'pal.assign': '⌨ ショートカット割当', 'pal.change': '⌨ ショートカット変更', 'pal.clearSc': '解除',
         'pal.capTo': 'に割り当てるキーを押す…', 'pal.capHint': '好きなキー（⌘/⌥/⌃と組み合わせも可） · Esc取消',
@@ -11776,6 +11805,7 @@ const I18N = {
         'pal.none': 'No results', 'pal.wait': 'awaiting input', 'pal.run': 'run', 'pal.close': 'close',
         'pal.enterInput': 'Type your input, then ↵ to run.', 'pal.example': 'e.g.',
         'pal.optArg': '↵ to run', 'pal.enterRunOrArg': '↵ runs it as-is — or add an argument. ',
+        'setcmd.cAlias': 'Alias', 'setcmd.aliasPh': '+ your own name',
         'pal.warnBrowser': 'The browser takes that key — please pick another one',
         'pal.assign': '⌨ Assign shortcut', 'pal.change': '⌨ Change shortcut', 'pal.clearSc': 'clear',
         'pal.capTo': '— press the keys to assign…', 'pal.capHint': 'any key (⌘/⌥/⌃ combos too) · Esc to cancel',
@@ -12036,6 +12066,18 @@ function centerTermPanel() {
     function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (_) { return []; } }
     function recordRecent(k) { if (!k) return; const a = getRecent().filter(x => x !== k); a.unshift(k); if (a.length > 8) a.length = 8; try { localStorage.setItem(RECENT_KEY, JSON.stringify(a)); } catch (_) {} }
     // ⭐ユーザー割当ショートカット（bm_user_sc: { コマンド名: {disp,match} }）。修飾キー必須で1キーツールと衝突しない
+    // ⭐Alias＝ユーザーが自分の呼び名を付ける（Raycastの中核）。
+    //   「アトリエ」「きりかえ」など、自分が思いつく言葉で引けるようにする。
+    //   ⚠️これが無いと、検索語(kw)を足して回る作者の想像力が永遠に上限になる。
+    const ALIAS_KEY = 'bm_alias';
+    function getAlias() { try { return JSON.parse(localStorage.getItem(ALIAS_KEY) || '{}'); } catch (_) { return {}; } }
+    function setAlias(cmd, text) {
+        const m = getAlias();
+        const v = String(text == null ? '' : text).trim();
+        if (v) m[cmd] = v; else delete m[cmd];
+        try { localStorage.setItem(ALIAS_KEY, JSON.stringify(m)); } catch (_) {}
+    }
+    window._bmAlias = { get: getAlias, set: setAlias };
     const USC_KEY = 'bm_user_sc';
     function getUsc() { try { return JSON.parse(localStorage.getItem(USC_KEY) || '{}'); } catch (_) { return {}; } }
     function setUsc(cmd, combo) { const m = getUsc(); if (combo) { for (const k in m) { if (m[k] && m[k].match === combo.match) delete m[k]; } m[cmd] = combo; } else delete m[cmd]; try { localStorage.setItem(USC_KEY, JSON.stringify(m)); } catch (_) {} }
@@ -12083,6 +12125,13 @@ function centerTermPanel() {
     function score(q, it) {
         const c = it.cmd.toLowerCase();
         if (c === q) return 100;
+        // ⭐自分で付けた呼び名(Alias)はコマンド名と同じくらい強く効かせる
+        const al = (getAlias()[it.cmd] || '').toLowerCase();
+        if (al) {
+            if (al === q) return 99;
+            if (al.startsWith(q)) return 78;
+            if (al.includes(q)) return 54;
+        }
         if (c.startsWith(q)) return 80 - (c.length - q.length) * 0.4;
         if (c.includes(q)) return 55;
         if (isSub(q, c)) return 32;
