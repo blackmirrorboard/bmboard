@@ -13840,7 +13840,9 @@ document.addEventListener('click', (e) => {
         if (!bPop) return;
         bPop.querySelectorAll('.board-size-opt').forEach(b =>
             b.classList.toggle('active', b.dataset.size === (typeof BOARD_SIZE !== 'undefined' ? BOARD_SIZE : 'free')));
-        if (bBtn) bBtn.classList.toggle('active', typeof BOARD_SIZE !== 'undefined' && BOARD_SIZE !== 'free');
+        // ⭐ボードサイズは「道具の選択中」ではないので、レールのボタンはアクティブ表示しない
+        //   （道具のハイライトと紛らわしいため）。現在のサイズはメニューを開けば ✓ で分かる。
+        if (bBtn) bBtn.classList.remove('active');
     };
     if (bBtn) bBtn.addEventListener('click', e => {
         e.stopPropagation(); if (typeof playClick === 'function') playClick(false);
