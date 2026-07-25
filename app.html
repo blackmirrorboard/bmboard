@@ -12793,7 +12793,7 @@ let _eraseAccum = 0;
 let _erasedWidthMax = 0;             // 直近で消した線の最大幅（消しカスの大きさに反映）
 let _erasedCScale = 1.0;             // 直近で消した芯の 消しカス大きさ係数（芯ごと）
 let _erasedCFreq = 0.8;              // 直近で消した芯の 消しカス出やすさ（芯ごと）
-const ERASE_CRUMB_THRESHOLD = 17;    // これだけ黒鉛を剥がすと1本カスが出る（大きいほど少ない）
+const ERASE_CRUMB_THRESHOLD = 12;    // これだけ黒鉛を剥がすと1本カスが出る（大きいほど少ない）。17は高すぎて短い消しで全く出なかった→12（短い消しでも出る・長くても2個で多すぎない）
 // ⭐カスの量の倍率（1.0=標準／小さいほど少ない）。`crumb 50` で50%に。実機で詰めるための調整つまみ
 let CRUMB_RATE = (() => {
     try { const v = parseFloat(localStorage.getItem('bm_crumbRate'));
