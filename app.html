@@ -1717,6 +1717,13 @@
             font-size: 12.5px; color: #ebe9e3; white-space: nowrap; }
         .bcm-item:hover { background: rgba(255,255,255,0.09); }
         .bcm-item .k { margin-left: auto; font-size: 10px; color: rgba(255,255,255,0.4); }
+        /* ⭐付箋の色スウォッチ（右クリック→色を変える） */
+        .bcm-swatches { display: flex; gap: 6px; padding: 6px 11px 9px; }
+        .bcm-sw { width: 20px; height: 20px; border-radius: 5px; cursor: pointer;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset, 0 0 0 1px rgba(255,255,255,0.12);
+            transition: transform .12s; }
+        .bcm-sw:hover { transform: scale(1.14); }
+        .bcm-sw.on { box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,0.4); }
         .bcm-ico { width: 18px; text-align: center; font-size: 13px; }
         .bcm-item.danger:hover { background: rgba(255,80,80,0.16); }
         .bcm-sep { height: 1px; background: rgba(255,255,255,0.09); margin: 4px 6px; }
@@ -11435,6 +11442,7 @@ const I18N = {
         'submit.steps': '① 下のJSON（アイコン/説明/コード全部入り）をコピー　② 管理者にGitHub PR か メールで送る　③ 承認されるとSTOREに並びます（author を自分の名前に）',
         'submit.copy': 'JSONをコピー', 'submit.download': 'JSONを保存', 'submit.github': '🐙 GitHubで公開申請',
         'ctx.here': 'ここに', 'ctx.text': 'テキストを置く', 'ctx.sticky': '付箋を置く', 'ctx.selectAll': '全選択', 'ctx.sweep': '消しカスを払う', 'ctx.store': 'STORE を開く',
+        'ctx.color': '色を変える',
         'ctx.dup': '複製', 'ctx.saveSpell': '選択を魔法に保存', 'ctx.front': '前面へ', 'ctx.back': '背面へ', 'ctx.delete': '削除',
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
         'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
@@ -11492,6 +11500,7 @@ const I18N = {
         'submit.steps': '① Copy the JSON below (icon/desc/code all included)　② Send it to a maintainer via GitHub PR or email　③ Once approved it appears in the STORE (set author to your name)',
         'submit.copy': 'Copy JSON', 'submit.download': 'Save JSON', 'submit.github': '🐙 Submit via GitHub',
         'ctx.here': 'Here', 'ctx.text': 'Add text', 'ctx.sticky': 'Add sticky', 'ctx.selectAll': 'Select all', 'ctx.sweep': 'Sweep crumbs', 'ctx.store': 'Open STORE',
+        'ctx.color': 'Color',
         'ctx.dup': 'Duplicate', 'ctx.saveSpell': 'Save as spell', 'ctx.front': 'Bring to front', 'ctx.back': 'Send to back', 'ctx.delete': 'Delete',
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
         'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
@@ -16308,6 +16317,29 @@ document.addEventListener('contextmenu', e => {
         if (hit) {
             selectOnly(hit); redrawAll();
             menu.appendChild(head(hit.type));
+            // ⭐付箋なら色スウォッチ（BMBrowserにあった右クリック色変更）。鉛筆モードでは白黒表示だが色データは持つ＝classicで効く
+            if (hit.type === 'sticky') {
+                menu.appendChild(head(T('ctx.color')));
+                const COLORS = ['#FFE873', '#FFC1CC', '#B5E7A0', '#A0D2FF', '#D9C2FF', '#FFD8A8', '#FFFFFF', '#D9D6CE'];
+                const sw = document.createElement('div');
+                sw.className = 'bcm-swatches';
+                COLORS.forEach(col => {
+                    const s = document.createElement('div');
+                    s.className = 'bcm-sw' + ((hit.data.color || '#FFE873').toUpperCase() === col ? ' on' : '');
+                    s.style.background = col;
+                    s.title = col;
+                    s.addEventListener('click', () => {
+                        hit.data.color = col;
+                        if (typeof saveHistory === 'function') saveHistory();
+                        if (typeof redrawAll === 'function') redrawAll();
+                        // スウォッチの選択枠だけ更新（メニューは開いたまま＝続けて試せる）
+                        sw.querySelectorAll('.bcm-sw').forEach(x => x.classList.toggle('on', x.title.toUpperCase() === col));
+                    });
+                    sw.appendChild(s);
+                });
+                menu.appendChild(sw);
+                menu.appendChild(sep());
+            }
             menu.appendChild(row('⧉', T('ctx.dup'), () => { if (typeof duplicateSelection === 'function') duplicateSelection(); }, { k: '⌘D' }));
             menu.appendChild(row('🪄', T('ctx.saveSpell'), () => { const r = window._addSpellFromSelection && window._addSpellFromSelection(''); if (r && r.ok && typeof printRaw === 'function') printRaw((window.getLang && window.getLang() === 'en') ? `spell "${r.name}" saved (${r.count})` : `魔法「${r.name}」を保存（${r.count}個）`, 't-dim'); }));
             menu.appendChild(sep());
