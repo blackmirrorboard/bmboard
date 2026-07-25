@@ -1109,6 +1109,38 @@
             min-height: 0;
         }
 
+        /* ⭐パネル上部の切替タブ（ログ / アトリエ …）。ヘッダのドラッグ領域の右端に置く */
+        .term-tabs { display: flex; gap: 2px; margin-left: auto; }
+        .term-tab {
+            background: none; border: none; cursor: pointer;
+            font-family: inherit; font-size: 9px; letter-spacing: 0.10em;
+            color: var(--dim); opacity: 0.6;
+            padding: 4px 8px; border-radius: 6px; line-height: 1;
+            transition: background .15s, opacity .15s, color .15s;
+        }
+        .term-tab:hover { opacity: 0.9; background: rgba(255,255,255,0.06); }
+        .term-tab.active { opacity: 1; color: var(--ink); background: rgba(255,255,255,0.10); }
+
+        /* ⭐切替ビュー（埋め込み）。#tb と同じ位置に重ならず、flex で入れ替わる */
+        .term-view {
+            flex: 1; min-height: 0; position: relative;
+            display: flex; flex-direction: column;
+            background: rgba(10,10,12,0.35);
+        }
+        .term-view iframe {
+            flex: 1; width: 100%; border: 0; background: #fff;
+        }
+        .term-view .tv-bar {
+            flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+            padding: 6px 12px; border-bottom: 1px solid var(--line);
+            font-size: 10px; color: var(--dim);
+        }
+        .term-view .tv-bar a {
+            margin-left: auto; color: var(--dim); text-decoration: none;
+            font-size: 10px; opacity: 0.75;
+        }
+        .term-view .tv-bar a:hover { opacity: 1; color: var(--ink); }
+
         .term-body::-webkit-scrollbar { width: 2px; }
         .term-body::-webkit-scrollbar-thumb { background: var(--line); }
 
@@ -2915,8 +2947,15 @@
         <div class="term-hd">
             <div class="term-dots"><span></span><span></span><span></span></div>
             <span class="term-title">◼ BLACK MIRROR</span>
+            <!-- ⭐パネルの上部に映すもの＝タブで切替（ログ / アトリエ）。入力欄と描画コアには触らない -->
+            <div class="term-tabs" id="termTabs">
+                <button class="term-tab active" data-view="log" data-i18n="panel.log">ログ</button>
+                <button class="term-tab" data-view="atelier" data-i18n="panel.atelier">アトリエ</button>
+            </div>
         </div>
         <div class="term-body" id="tb"></div>
+        <!-- ⭐切替ビュー：ログの代わりに埋め込みを映す。#tb は消さず hidden で残す -->
+        <div id="termView" class="term-view" hidden></div>
         <div id="voicePreview" style="display:none">
             <span class="vp-hint" data-i18n="voice.hint">↵ 実行　Esc キャンセル</span>
             <input type="text" id="vpInput" autocomplete="off" spellcheck="false">
@@ -7107,6 +7146,7 @@ let tQueue = [];
 let tBusy  = false;
 
 function enqueue(cmd, lines, cls = 't-out') {
+    if (window._panelShowLog) window._panelShowLog();   // ⭐出力が出たらログビューに戻す（入力＝常にボードの命令口）
     tQueue.push({ cmd, lines, cls });
     if (!tBusy) pump();
 }
@@ -7159,6 +7199,7 @@ function printLines(lines, cls = 't-out') {
 }
 
 function printRaw(text, cls = 't-dim') {
+    if (window._panelShowLog) window._panelShowLog();   // ⭐出力が出たらログビューに戻す
     const el = mk('div', cls); el.textContent = text; tb.appendChild(el); scroll();
 }
 
@@ -11309,6 +11350,7 @@ var LANG = (function () { try { return localStorage.getItem('bm_lang') || 'ja'; 
 const I18N = {
     ja: {
         'usage.search': '検索（コマンド・キー・やりたいこと）',
+        'panel.log': 'ログ', 'panel.atelier': 'アトリエ',
         'inbox.head': '📥 届いている申請', 'inbox.reload': '再読込', 'inbox.openGh': '🐙 GitHubで見る',
         'inbox.try': 'ボードで試す', 'inbox.copy': 'catalog.json 用にコピー',
         'inbox.code': '⚡コード', 'inbox.decl': '図形', 'inbox.noJson': 'JSONが読めません',
@@ -11365,6 +11407,7 @@ const I18N = {
     },
     en: {
         'usage.search': 'Search commands, keys, or what you want to do',
+        'panel.log': 'Log', 'panel.atelier': 'Atelier',
         'inbox.head': '📥 Submissions', 'inbox.reload': 'Reload', 'inbox.openGh': '🐙 View on GitHub',
         'inbox.try': 'Try it on the board', 'inbox.copy': 'Copy as a catalog.json entry',
         'inbox.code': '⚡code', 'inbox.decl': 'shapes', 'inbox.noJson': "couldn't read the JSON",
@@ -14184,6 +14227,76 @@ function setTermWidthPct(pct, persist) {
     }
     window.addEventListener('resize', clearMobileInline);
     clearMobileInline();
+})();
+
+// ══════════════════════════════════════════════════
+// ⭐パネル上部ビューの切替（ログ ⇄ アトリエ）＝机の比喩の「メモ」
+//   入力欄(#ti)と描画コアには一切触らない。#tb はログ、#termView は埋め込み。
+//   ⚠️埋め込めるのは「拒否ヘッダを送っていないサイト」だけ＝木下の道具/Atelier/KODOCO。
+//     他社(figma等)は X-Frame-Options で表示できない → Tauri待ち（最終フェーズ）。
+// ══════════════════════════════════════════════════
+(function initPanelViews() {
+    const tabsWrap = document.getElementById('termTabs');
+    const tb   = document.getElementById('tb');
+    const view = document.getElementById('termView');
+    if (!tabsWrap || !tb || !view) return;
+
+    // 映せる先。name=タブに出す名前 / url=埋め込み先（拒否ヘッダの無いものだけ）
+    const VIEWS = {
+        atelier: { label: 'アトリエ', labelEn: 'Atelier', url: 'https://atelistudio.com/' },
+    };
+
+    let cur = 'log';
+    let loaded = {};   // 一度読んだら iframe を残す（タブ往復で再読込しない）
+
+    function setView(v) {
+        cur = v;
+        tabsWrap.querySelectorAll('.term-tab').forEach(b =>
+            b.classList.toggle('active', b.dataset.view === v));
+        if (v === 'log') {
+            tb.hidden = false; view.hidden = true;
+            return;
+        }
+        const conf = VIEWS[v];
+        if (!conf) { tb.hidden = false; view.hidden = true; return; }
+        tb.hidden = true; view.hidden = false;
+        if (!loaded[v]) {
+            const en = (window.getLang && window.getLang() === 'en');
+            const name = en ? (conf.labelEn || conf.label) : conf.label;
+            const host = (() => { try { return new URL(conf.url).host; } catch (_) { return conf.url; } })();
+            const bar = document.createElement('div');
+            bar.className = 'tv-bar';
+            bar.innerHTML = `<span>${host}</span><a href="${conf.url}" target="_blank" rel="noopener">${en ? 'open ↗' : '新しいタブで開く ↗'}</a>`;
+            const ifr = document.createElement('iframe');
+            ifr.src = conf.url;
+            ifr.setAttribute('title', name);
+            ifr.setAttribute('loading', 'lazy');
+            const box = document.createElement('div');
+            box.className = 'tv-pane';
+            box.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column';
+            box.dataset.v = v;
+            box.appendChild(bar); box.appendChild(ifr);
+            view.appendChild(box);
+            loaded[v] = box;
+        }
+        // 選んだビューだけ表示
+        view.querySelectorAll('.tv-pane').forEach(p =>
+            p.style.display = (p.dataset.v === v) ? 'flex' : 'none');
+    }
+
+    tabsWrap.addEventListener('click', e => {
+        const btn = e.target.closest('.term-tab');
+        if (!btn) return;
+        e.stopPropagation();          // ヘッダのドラッグ開始を邪魔しない
+        setView(btn.dataset.view);
+    });
+    // タブ部分ではヘッダのドラッグを始めない（掴んで動かすのはタイトル側）
+    tabsWrap.addEventListener('pointerdown', e => e.stopPropagation());
+
+    // ⭐入力欄は常にボードへの命令口のまま＝ログを見ていなくても、コマンドを打ったらログに切り替えて結果を見せる
+    window._panelShowLog = () => { if (cur !== 'log') setView('log'); };
+
+    window._panelSetView = setView;
 })();
 
 // ══════════════════════════════════════════════════
