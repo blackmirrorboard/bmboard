@@ -572,18 +572,53 @@
         }
 
         /* Tool Popovers — position:fixed, display toggled via inline style (never clipped) */
+        /* ⭐chrome（レール/バー/ポップオーバー）はボードのモードで色を変えない。
+           ⚠️ここだけ background: var(--wb) ＝ボードの白を拾っていたので、紙/ライトでは
+             白地に白文字（.tool-btn の色は暗い面向け）になって中身が読めなかった。
+             左レールと同じ暗いフロストガラスに固定して、道具の顔を常に一致させる。 */
         .tool-popover {
             position: fixed;
             z-index: 9999;
-            background: var(--wb);
-            border: 1px solid #ccc;
-            box-shadow: 2px 4px 14px rgba(0,0,0,0.15);
+            background: linear-gradient(180deg, rgba(32,30,36,0.97) 0%, rgba(17,16,20,0.98) 100%);
+            -webkit-backdrop-filter: blur(26px) saturate(1.35);
+            backdrop-filter: blur(26px) saturate(1.35);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.45), inset 0 1.5px 0 rgba(255,255,255,0.16);
             display: none;
             flex-direction: column;
             padding: 4px;
             gap: 2px;
             touch-action: manipulation;
+            /* 中の部品（.w-btn / .board-size-opt / .mode-btn …）が拾うトークンを
+               暗い面向けに差し替える＝個別に色を書き直さなくても全部ついてくる */
+            --wb:              #161616;
+            --wb-border:       rgba(255,255,255,0.10);
+            --wb-icon:         rgba(255,255,255,0.70);
+            --wb-icon-hover:   rgba(255,255,255,0.92);
+            --wb-icon-active:  #ffffff;
+            --bm-fg:           #F0EDE6;
+            --bm-fg-dim:       rgba(255,255,255,0.62);
+            --bm-sep:          rgba(255,255,255,0.10);
+            --bm-pop-bg:       #161616;
+            --bm-pop-border:   rgba(255,255,255,0.10);
+            --bm-tb-icon:        rgba(255,255,255,0.70);
+            --bm-tb-icon-hover:  #ffffff;
+            --bm-tb-icon-active: #ffffff;
+            --bm-tb-border:      rgba(255,255,255,0.14);
+            --bm-tb-hover-bg:    rgba(255,255,255,0.08);
+            --bm-tb-active-bg:   rgba(255,255,255,0.14);
         }
+        /* 変数を見ていないハードコード分だけ、ポップオーバーの中でだけ暗い面向けに上書き */
+        .tool-popover .pop-sep-line        { background: rgba(255,255,255,0.10); }
+        .tool-popover .pop-label           { color: rgba(255,255,255,0.55); }
+        .tool-popover .w-btn:hover         { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); }
+        .tool-popover .w-btn.active        { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.30); color: #fff; }
+        .tool-popover .board-size-opt:hover  { background: rgba(255,255,255,0.08); }
+        .tool-popover .board-size-opt.active { background: #fff; color: #111; }
+        .tool-popover .mode-btn            { background: transparent; color: rgba(255,255,255,0.70); border-color: rgba(255,255,255,0.14); }
+        .tool-popover .mode-btn:hover      { background: rgba(255,255,255,0.08); }
+        .tool-popover .mode-btn.active     { background: #fff; color: #111; border-color: #fff; }
+        .tool-popover .pcl-range           { background: rgba(255,255,255,0.20); }
         .tool-popover .tool-btn { width: 36px; height: 34px; }
         /* Row of buttons inside a column-direction popover */
         .pop-row { display: flex; flex-direction: row; gap: 2px; }
@@ -2219,12 +2254,8 @@
         body.bm-gray .toolbar .tool-btn.active { background: var(--bm-tb-active-bg); border-color: var(--bm-accent);     color: var(--bm-tb-icon-active); box-shadow: 0 0 0 1px var(--bm-accent) inset; }
         body.bm-dark .tool-sep,
         body.bm-gray .tool-sep                 { background: var(--bm-sep); }
-        body.bm-dark .tool-popover,
-        body.bm-gray .tool-popover             {
-            background: var(--bm-pop-bg);
-            border-color: var(--bm-pop-border);
-            box-shadow: var(--bm-pop-shadow);
-        }
+        /* ⭐ポップオーバーの地は全モード共通（.tool-popover の暗いガラス）。
+           ここでモードごとに単色へ戻すとレールとの家族感が崩れるので上書きしない。 */
         body.bm-dark .tool-popover .tool-btn,
         body.bm-gray .tool-popover .tool-btn        { color: var(--bm-tb-icon); border-color: transparent; }
         body.bm-dark .tool-popover .tool-btn:hover,
@@ -2258,9 +2289,7 @@
             border-right: 1px solid var(--bm-tb-border);
             box-shadow: 2px 0 10px rgba(22,0,162,0.06);
         }
-        body.bm-gray .tool-popover {
-            border: 1px solid var(--bm-pop-border);
-        }
+        /* （グレーでも枠は共通のガラス枠のまま＝上書きしない） */
         body.bm-dark .shape-hint   { color: rgba(255,255,255,0.22); }
         body.bm-gray .shape-hint   { color: rgba(0,0,0,0.35); }
         body.bm-dark #textOverlay input,
