@@ -4,6 +4,22 @@
   "note": "BMBoard STORE のカタログ。魔法(spell)を足すだけでアプリのSTOREに並びます（バックエンド不要）。ops は BM.create の白リスト型のみ: square / sticky / text / circle / triangle / arrow。dx,dy はビュー中心からの相対（square/sticky/text=左上, circle=中心, arrow=props の x1,y1,x2,y2 が相対）。",
   "spells": [
     {
+      "name": "近づける",
+      "icon": "🧲",
+      "desc": "似た色・種類のものを引き寄せて塊にする。気づかなかったグループが見える",
+      "author": "kinoshita studio",
+      "tag": "new",
+      "action": "const objs=(BM.getSelected().length?BM.getSelected():BM.all()).filter(o=>o&&o.data&&o.type!=='image');\nif(objs.length<2){BM.log('色や種類の違うものを2つ以上置いてから','t-dim');return;}\nconst cen=o=>{const d=o.data;if(o.type==='circle')return{x:d.cx,y:d.cy};if(o.type==='triangle')return{x:(d.x1+d.x2+d.x3)/3,y:(d.y1+d.y2+d.y3)/3};if(o.type==='arrow')return{x:(d.x1+d.x2)/2,y:(d.y1+d.y2)/2};return{x:d.x+(d.w||0)/2,y:d.y+(d.h||0)/2};};\nconst key=o=>(o.data.color||o.data.fill||o.data.stroke||o.type||'_').toString().toLowerCase();\nconst groups={};objs.forEach(o=>{const k=key(o);(groups[k]=groups[k]||[]).push(o);});\nconst keys=Object.keys(groups);const vc=BM.viewCenter();const R=keys.length>1?280:0;\nkeys.forEach((k,i)=>{const ang=(i/keys.length)*Math.PI*2;const ax=vc.x+Math.cos(ang)*R,ay=vc.y+Math.sin(ang)*R;groups[k].forEach(o=>{const c=cen(o);BM.translate(o,ax+BM.rand(-80,80)-c.x,ay+BM.rand(-80,80)-c.y);});});\nBM.log(keys.length+'つの塊に近づけました','t-ok');\nBM.redraw();"
+    },
+    {
+      "name": "シャッフル",
+      "icon": "🔀",
+      "desc": "付箋やメモをランダムに並べ替え、思わぬ隣り合わせから発見を生む（偶然の装置）",
+      "author": "kinoshita studio",
+      "tag": "new",
+      "action": "const objs=(BM.getSelected().length?BM.getSelected():BM.all()).filter(o=>o&&o.data&&o.type!=='image');\nif(objs.length<2){BM.log('付箋やメモを2つ以上置いてから唱えてください','t-dim');return;}\nconst cen=o=>{const d=o.data;if(o.type==='circle')return{x:d.cx,y:d.cy};if(o.type==='triangle')return{x:(d.x1+d.x2+d.x3)/3,y:(d.y1+d.y2+d.y3)/3};if(o.type==='arrow')return{x:(d.x1+d.x2)/2,y:(d.y1+d.y2)/2};return{x:d.x+(d.w||0)/2,y:d.y+(d.h||0)/2};};\nlet minX=1/0,minY=1/0,maxX=-1/0,maxY=-1/0;\nobjs.forEach(o=>{const c=cen(o);minX=Math.min(minX,c.x);minY=Math.min(minY,c.y);maxX=Math.max(maxX,c.x);maxY=Math.max(maxY,c.y);});\nif(maxX-minX<40){minX-=120;maxX+=120;}if(maxY-minY<40){minY-=120;maxY+=120;}\nobjs.forEach(o=>{const c=cen(o);const tx=BM.rand(minX,maxX),ty=BM.rand(minY,maxY);BM.translate(o,tx-c.x,ty-c.y);});\nBM.log('シャッフルしました。思わぬ隣り合わせを探してみて','t-ok');\nBM.redraw();"
+    },
+    {
       "name": "カンバン",
       "icon": "🗂",
       "desc": "To Do / Doing / Done の3レーン",
