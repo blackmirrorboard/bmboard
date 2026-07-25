@@ -583,7 +583,7 @@
             -webkit-backdrop-filter: blur(26px) saturate(1.35);
             backdrop-filter: blur(26px) saturate(1.35);
             border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.45), inset 0 1.5px 0 rgba(255,255,255,0.16);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.24), inset 0 1.5px 0 rgba(255,255,255,0.16);
             display: none;
             flex-direction: column;
             padding: 4px;
@@ -1371,7 +1371,7 @@
             -webkit-backdrop-filter: blur(34px) saturate(1.35); backdrop-filter: blur(34px) saturate(1.35);
             border: 1px solid rgba(255,255,255,0.14);
             border-radius: 18px;
-            box-shadow: 0 30px 90px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06);
             overflow: hidden;
             font-family: ui-monospace, 'SF Mono', Menlo, monospace;
         }
@@ -1571,7 +1571,7 @@
             /* ⭐枠は border でなく inset の内側リングで描く＝backdrop-filter+transform時の右/下端シーム（変な線）を防ぐ */
             border: 0; background-clip: padding-box;
             border-radius: 15px;
-            box-shadow: 0 32px 100px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.07);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.07);
             overflow: hidden;
             font-family: var(--ui-sans);   /* ⭐Raycast方向：サンセリフでアプリらしく */
         }
@@ -2819,10 +2819,10 @@
         </button>
         <!-- ⭐消しカスを払う（sweep）＝消しゴムの隣。紙モードのみ表示 -->
         <button class="tool-btn" id="sweepBtn" title="消しカスを払う" data-i18n-title="tt.sweep">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12.6" y1="2.6" x2="7.4" y2="7.8"/>
-                <path d="M7.4 7.8 L10.2 10.6 L6.6 13.4 Q3.4 11.8 3.6 8.6 Z"/>
-                <path d="M5.2 9.6 L6.6 12.6 M6.9 8.9 L8.4 11.7"/>
+            <!-- ⭐払う（木下指定の差し替え）。元SVGの fill 固定色は currentColor にしてテーマ追従させている -->
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
+                <path d="M9.44444 4.44444L12.3917 0.760432C12.7762 0.279794 13.3583 0 13.9738 0C15.0929 0 16 0.907148 16 2.02617C16 2.64169 15.7202 3.22383 15.2396 3.60835L11.5556 6.55556L12.2454 7.24538C12.7286 7.72855 13 8.38388 13 9.0672C13 9.66992 12.7887 10.2536 12.4028 10.7166L11.8246 11.4104L4.58957 4.17536L5.2834 3.59717C5.74643 3.21131 6.33008 3 6.9328 3C7.61612 3 8.27145 3.27145 8.75462 3.75462L9.44444 4.44444Z"/>
+                <path d="M0 8L3.04679 5.46101L10.539 12.9532L8 16L0 8Z"/>
             </svg>
         </button>
         <div class="tool-sep"></div>
@@ -2858,10 +2858,11 @@
 
         <!-- Upload Image -->
         <label class="tool-btn" id="uploadImgBtn" title="Upload image (I)" style="cursor:pointer">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="3.5" width="12" height="9" rx="2.2"/>
-                <circle cx="5.4" cy="6.7" r="1.1"/>
-                <path d="M2.6 11.6 L6 8.4 L8.3 10.4 L10.3 8.7 L13.4 11.6"/>
+            <!-- ⭐画像を置く（木下指定の差し替え）。⚠️元SVGは fill 固定色だったので currentColor に変えてある
+                 ＝テーマに追従する。他のレールアイコンは線画なので、ここだけ塗りになる点は承知の上 -->
+            <svg width="16" height="16" viewBox="0 0 64 64" fill="currentColor" stroke="none">
+                <path d="M60,0H4C1.789,0,0,1.789,0,4v56c0,2.211,1.789,4,4,4h56c2.211,0,4-1.789,4-4V4C64,1.789,62.211,0,60,0z M8,8h48v32.688l-9.113-9.113c-1.562-1.559-4.094-1.559-5.656,0L16.805,56H8V8z"/>
+                <circle cx="24" cy="24" r="8"/>
             </svg>
             <input type="file" id="imgFileInput" accept="image/*" style="display:none">
             <input type="file" id="spellFileInput" accept=".json,application/json" style="display:none">
@@ -2870,17 +2871,16 @@
 
         <!-- Export PNG -->
         <button class="tool-btn" id="exportPngBtn" title="Export PNG (X)">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2.5" y="2.5" width="11" height="11" rx="2.2"/>
-                <path d="M8 5 V9.3"/>
-                <path d="M5.9 7.4 L8 9.5 L10.1 7.4"/>
+            <!-- ⭐書き出し＝ミニマルなダウンロード（矢印＋受け皿） -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3V16M12 16L16 11.625M12 16L8 11.625"/>
+                <path d="M15 21H9C6.17157 21 4.75736 21 3.87868 20.1213C3 19.2426 3 17.8284 3 15M21 15C21 17.8284 21 19.2426 20.1213 20.1213C19.8215 20.4211 19.4594 20.6186 19 20.7487"/>
             </svg>
         </button>
         <button class="tool-btn" id="copyImgBtn" title="Copy as image to clipboard (⌘⇧C) — paste into Figma / Miro / Slack">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="4.6" width="12" height="8.4" rx="2.2"/>
-                <path d="M5.6 4.6 L6.5 3 H9.5 L10.4 4.6"/>
-                <circle cx="8" cy="8.8" r="2.2"/>
+            <!-- ⭐カメラ→コピー（機能はクリップボードに画像コピー＝アイコンを機能に合わせた） -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 15H5C3.89543 15 3 14.1046 3 13V5C3 3.89543 3.89543 3 5 3H13C14.1046 3 15 3.89543 15 5V9M11 21H19C20.1046 21 21 20.1046 21 19V11C21 9.89543 20.1046 9 19 9H11C9.89543 9 9 9.89543 9 11V19C9 20.1046 9.89543 21 11 21Z"/>
             </svg>
         </button>
         <button class="tool-btn" id="termToggleBtn" onclick="toggleTermPanel()" title="Toggle terminal panel" style="display:none">
@@ -3009,8 +3009,8 @@
             <span class="term-title">◼ BLACK MIRROR</span>
             <!-- ⭐パネルの上部に映すもの＝タブで切替（ログ / アトリエ）。入力欄と描画コアには触らない -->
             <div class="term-tabs" id="termTabs">
-                <button class="term-tab active" data-view="log" data-i18n="panel.log">ログ</button>
-                <button class="term-tab" data-view="atelier" data-i18n="panel.atelier">アトリエ</button>
+                <button class="term-tab active" data-view="log" data-i18n="panel.log">LOG</button>
+                <button class="term-tab" data-view="atelier" data-i18n="panel.atelier">Ateli.er</button>
             </div>
         </div>
         <div class="term-body" id="tb"></div>
@@ -9391,6 +9391,21 @@ function runCommand(val) {
         if (window._openCmdK) { window._openCmdK(); setTimeout(() => { if (window._openStoreView) window._openStoreView(); }, 0); }
         printRaw((typeof LANG!=='undefined'&&LANG==='en') ? 'opening STORE…' : 'STORE を開きます…', 't-dim'); return;
     }
+    // ⭐パネルの表示をコマンドから切り替える（LOG ⇄ Ateli.er）
+    //   ⚠️これが要る理由：アトリエ(iframe)にフォーカスがある間、キー入力は iframe 側に行くので
+    //     親のショートカット（⌘S=swap など）も ⌘K も届かない。cross-origin なので親からは拾えない。
+    //     ＝ボードを一度クリックして戻る導線が要る。⌘K から切り替えられれば手が止まらない。
+    //   ⚠️printRaw は _panelShowLog でログに引き戻すので、必ず先に出してから切り替える。
+    if (head==='atelier' || low==='アトリエ' || head==='ateli.er') {
+        printRaw(_L('パネルを Ateli.er に切り替えました', 'Switched the panel to Ateli.er'), 't-dim');
+        if (window._panelSetView) window._panelSetView('atelier');
+        return;
+    }
+    if (head==='log' || low==='ログ') {
+        if (window._panelSetView) window._panelSetView('log');
+        printRaw(_L('パネルを LOG に切り替えました', 'Switched the panel to LOG'), 't-dim');
+        return;
+    }
     if (head==='english' || head==='en') { if (window.setLang) window.setLang('en'); printRaw('UI language → English', 't-dim'); return; }
     if (head==='japanese' || head==='ja' || low==='日本語') { if (window.setLang) window.setLang('ja'); printRaw('表示を日本語にしました', 't-dim'); return; }
     // ⭐連鎖：chain add 名前 cmd1 ; cmd2 / chain 名前（順に実行）/ chain list / chain forget 名前
@@ -11610,7 +11625,7 @@ var LANG = (function () { try { return localStorage.getItem('bm_lang') || 'ja'; 
 const I18N = {
     ja: {
         'usage.search': '検索（コマンド・キー・やりたいこと）',
-        'panel.log': 'ログ', 'panel.atelier': 'アトリエ',
+        'panel.log': 'LOG', 'panel.atelier': 'Ateli.er',
         'inbox.head': '📥 届いている申請', 'inbox.reload': '再読込', 'inbox.openGh': '🐙 GitHubで見る',
         'inbox.try': 'ボードで試す', 'inbox.copy': 'catalog.json 用にコピー',
         'inbox.code': '⚡コード', 'inbox.decl': '図形', 'inbox.noJson': 'JSONが読めません',
@@ -11626,6 +11641,7 @@ const I18N = {
         'pal.none': '該当なし', 'pal.wait': '入力待ち', 'pal.run': '実行', 'pal.close': '閉じる',
         'pal.enterInput': '内容を入力して ↵ で実行。', 'pal.example': '例',
         'pal.optArg': '↵で実行', 'pal.enterRunOrArg': '↵ でそのまま実行。引数を足してもOK。',
+        'pal.warnBrowser': 'そのキーはブラウザが使うので効きません — 別のキーにしてください',
         'pal.assign': '⌨ ショートカット割当', 'pal.change': '⌨ ショートカット変更', 'pal.clearSc': '解除',
         'pal.capTo': 'に割り当てるキーを押す…', 'pal.capHint': '⌘/⌥/⌃＋キー · Esc取消',
         'pal.warnUsed': 'その組合せは使用中', 'pal.warnMod': '⌘/⌥/⌃ と組合せて',
@@ -11669,7 +11685,7 @@ const I18N = {
     },
     en: {
         'usage.search': 'Search commands, keys, or what you want to do',
-        'panel.log': 'Log', 'panel.atelier': 'Atelier',
+        'panel.log': 'LOG', 'panel.atelier': 'Ateli.er',
         'inbox.head': '📥 Submissions', 'inbox.reload': 'Reload', 'inbox.openGh': '🐙 View on GitHub',
         'inbox.try': 'Try it on the board', 'inbox.copy': 'Copy as a catalog.json entry',
         'inbox.code': '⚡code', 'inbox.decl': 'shapes', 'inbox.noJson': "couldn't read the JSON",
@@ -11685,6 +11701,7 @@ const I18N = {
         'pal.none': 'No results', 'pal.wait': 'awaiting input', 'pal.run': 'run', 'pal.close': 'close',
         'pal.enterInput': 'Type your input, then ↵ to run.', 'pal.example': 'e.g.',
         'pal.optArg': '↵ to run', 'pal.enterRunOrArg': '↵ runs it as-is — or add an argument. ',
+        'pal.warnBrowser': 'The browser takes that key — please pick another one',
         'pal.assign': '⌨ Assign shortcut', 'pal.change': '⌨ Change shortcut', 'pal.clearSc': 'clear',
         'pal.capTo': '— press the keys to assign…', 'pal.capHint': '⌘/⌥/⌃＋key · Esc to cancel',
         'pal.warnUsed': 'That combo is in use', 'pal.warnMod': 'Combine with ⌘/⌥/⌃',
@@ -11772,7 +11789,7 @@ const OMNI_CMDS = [
     { cmd:'6b',      cat:'grade',   hint:'芯を 6B に', hintEn:'Set lead to 6B', kw:'鉛筆 pencil 芯 しん grade' },
     { cmd:'float',   cat:'panel',   hint:'ターミナルを浮かす', hintEn:'Float the terminal', sc:'⌘B' },
     { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す', hintEn:'Dock the terminal to the right', sc:'⌘B' },
-    { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', hintEn:'Split width (panel 30 / float / dock / center)', args:true,
+    { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', hintEn:'Split width (panel 30 / float / dock / center)', args:true, argsOpt:true,
       subs:[['dock','パネルを右に戻す（マグネット）','Dock the panel back to the side'],
             ['float','パネルを浮かせる（フロート）','Float the panel'],
             ['center','パネルを画面の中央へ','Center the panel'],
@@ -11781,9 +11798,9 @@ const OMNI_CMDS = [
     { cmd:'crumb',   cat:'draw',    hint:'消しカスの量（crumb 50）', hintEn:'Eraser crumb amount (crumb 50)', args:true, argsOpt:true,
       subs:[['0','消しカスを出さない','No eraser crumbs'],['50','消しカスを半分に','Half the crumbs'],['100','消しカスを標準に','Default amount'],['200','消しカスを多めに','Twice the crumbs']], kw:'消しカス けしかす crumb debris eraser' },
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙' },
-    { cmd:'gif',     cat:'io',      hint:'ボードをGIFに録画（gif 4 で4秒）', hintEn:'Record the board as a GIF (gif 4 = 4s)', args:true,
+    { cmd:'gif',     cat:'io',      hint:'ボードをGIFに録画（gif 4 で4秒）', hintEn:'Record the board as a GIF (gif 4 = 4s)', args:true, argsOpt:true,
       subs:[['4','GIFに4秒録画する','Record a 4s GIF'],['8','GIFに8秒録画する','Record an 8s GIF']], kw:'gif アニメ 録画 書き出し 動画 sakura 共有 export' },
-    { cmd:'rec',     cat:'io',      hint:'ボードを動画(WebM)に録画（rec 6 で6秒）', hintEn:'Record the board as video/WebM (rec 6 = 6s)', args:true,
+    { cmd:'rec',     cat:'io',      hint:'ボードを動画(WebM)に録画（rec 6 で6秒）', hintEn:'Record the board as video/WebM (rec 6 = 6s)', args:true, argsOpt:true,
       subs:[['6','動画に6秒録画する','Record a 6s video'],['15','動画に15秒録画する','Record a 15s video'],['30','動画に30秒録画する','Record a 30s video']], kw:'rec 録画 動画 video webm 書き出し キャプチャ capture' },
     { cmd:'connect', cat:'insert',  hint:'選択した2つ以上を矢印でつなぐ', hintEn:'Connect 2+ selected objects with arrows', kw:'つなぐ connect 矢印 図解 フロー 結ぶ' },
     { cmd:'align',   cat:'edit',    hint:'選択を揃える（align left/right/top/bottom/center/middle）', hintEn:'Align selection (left/right/top/bottom/center/middle)', args:true, kw:'align 整列 揃える 配置 そろえる',
@@ -11827,6 +11844,9 @@ const OMNI_CMDS = [
             ['off','BGMを止める','Stop the music']] },
     { cmd:'usage',   cat:'help',    hint:'使い方 / ヘルプ', hintEn:'How to use / help' },
     { cmd:'settings',cat:'help',    hint:'設定を開く（ボード/描き味/芯/壁紙）', hintEn:'Open settings (board / draw / grade / wallpaper)', sc:'⌘,', _settings:true, kw:'設定 setting 環境 preferences 歯車' },
+    // ⭐パネルの切替＝アトリエ(iframe)にフォーカスがあるとキーが親に届かないので、⌘Kからも戻れるように
+    { cmd:'atelier', cat:'panel',   hint:'パネルに Ateli.er を表示', hintEn:'Show Ateli.er in the panel', kw:'アトリエ atelier ateli.er パネル 切替 タブ メモ' },
+    { cmd:'log',     cat:'panel',   hint:'パネルを LOG に戻す', hintEn:'Show LOG in the panel', kw:'ログ log パネル 切替 タブ ターミナル 戻る' },
     { cmd:'english', cat:'help',    hint:'表示を英語に切替', hintEn:'Switch UI to English', _lang:'en', kw:'en english 英語 language lang 言語 切替' },
     { cmd:'日本語',  cat:'help',    hint:'表示を日本語に切替', hintEn:'Switch UI to Japanese', _lang:'ja', kw:'ja jp japanese 日本語 language lang 言語 切替' },
     { cmd:'open',    cat:'link',    hint:'URLをボードに開く（open example.com）', hintEn:'Open a URL on the board (open example.com)', args:true, kw:'url web リンク 開く browser サイト' },
@@ -11963,6 +11983,14 @@ function centerTermPanel() {
         const k = (e.key || '').toLowerCase();
         if (e.shiftKey) return ['z', 'c', 'b'].indexOf(k) >= 0;
         return ['z', 'y', 'a', 'c', 'x', 'v', 'd', 'k', 'b', ','].indexOf(k) >= 0;
+    }
+    // ⚠️ブラウザ/OSが先に持っていくキー＝Webページからは preventDefault しても止められない。
+    //   割り当てても「押しても何も起きない」ことになるので、録音中に押されたらその場で断る。
+    //   （⌘S や ⌘P はページ側で止められるので、ここには入れない＝使ってよい）
+    const OS_TAKEN = ['w', 't', 'n', 'q', 'm', 'h'];
+    function osTakenCombo(e) {
+        if (!(e.metaKey || e.ctrlKey)) return false;
+        return OS_TAKEN.indexOf((e.key || '').toLowerCase()) >= 0;
     }
     let capSc = null, capMsg = '';   // 捕捉中のコマンド名 / 警告文
     const isOpen = () => overlay.classList.contains('open');
@@ -12331,6 +12359,7 @@ function centerTermPanel() {
             e.preventDefault(); e.stopPropagation();
             if (e.key === 'Escape') { capSc = null; capMsg = ''; updateFoot(); return; }
             if (e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift') return;
+            if (osTakenCombo(e)) { capMsg = t('pal.warnBrowser'); updateFoot(); return; }   // ブラウザが奪うキー
             if (reservedCombo(e)) { capMsg = t('pal.warnUsed'); updateFoot(); return; }
             const c = comboOf(e);
             if (!c) { capMsg = t('pal.warnMod'); updateFoot(); return; }
@@ -14591,7 +14620,7 @@ function setTermWidthPct(pct, persist) {
 
     // 映せる先。name=タブに出す名前 / url=埋め込み先（拒否ヘッダの無いものだけ）
     const VIEWS = {
-        atelier: { label: 'アトリエ', labelEn: 'Atelier', url: 'https://atelistudio.com/' },
+        atelier: { label: 'Ateli.er', labelEn: 'Ateli.er', url: 'https://atelistudio.com/' },
     };
 
     let cur = 'log';
