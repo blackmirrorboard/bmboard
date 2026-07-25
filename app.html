@@ -14042,6 +14042,24 @@ if (textStyleBtn && textStylePopover) {
     });
 }
 
+// ⭐Aa（テキストスタイル）は テキスト/付箋 を選んでいる間だけ出す。
+//   ⚠️構造バグ：HTML側が style="display:none" なのに、それを戻す処理がどこにも無かった
+//     （git履歴を見ても一度も存在しない）。＝フォント(標準/明朝/Noto)・太字・縦書き/横書きは
+//     完成していたのに UI から永久に到達できない状態だった。
+//   選択・描画ロジックには触らず、選択が変わりうる操作の後に状態を見に行くだけ（追加のみ）。
+function _syncTextStyleBtn() {
+    if (!textStyleBtn) return;
+    const on = _textStyleTargets().length > 0;
+    textStyleBtn.style.display = on ? '' : 'none';   // '' → .tool-btn の flex に戻す
+    if (on) { try { _refreshTextStyleActive(); } catch (_) {} }
+    else if (textStylePopoverOpen) closeTextStylePopover();
+}
+// pointerup=クリック/ドラッグ選択の後 · keyup=Tab選択/Delete/コマンド実行の後
+// setTimeout 0 で「選択が確定した後」に見る
+['pointerup', 'keyup'].forEach(ev =>
+    document.addEventListener(ev, () => setTimeout(_syncTextStyleBtn, 0)));
+_syncTextStyleBtn();
+
 document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
     // Skip buttons inside popovers — they have their own dedicated listeners
     if (btn.closest('#shapePopover') || btn.closest('#penPopover')) return;
