@@ -1367,7 +1367,7 @@
         .settings-card {
             width: min(720px, 94vw);   /* ⭐固定幅：タブ切替で跳ねさせない（一般/コマンド共通・余白広め＋将来の項目用） */
             /* ⭐透過フロスト（ボイスUIと同じ質感） */
-            background: rgba(18,16,20,0.58);
+            background: rgba(18,16,20,0.88);
             -webkit-backdrop-filter: blur(34px) saturate(1.35); backdrop-filter: blur(34px) saturate(1.35);
             border: 1px solid rgba(255,255,255,0.14);
             border-radius: 18px;
@@ -1559,7 +1559,7 @@
             max-height: 66vh;
             display: flex; flex-direction: column;
             /* ⭐パネル自体を透過フロスト（背後の盤面だけを磨りガラスで透かす） */
-            background: linear-gradient(180deg, rgba(33,31,37,0.66) 0%, rgba(19,18,22,0.70) 46%, rgba(14,13,17,0.72) 100%);
+            background: linear-gradient(180deg, rgba(33,31,37,0.86) 0%, rgba(19,18,22,0.89) 46%, rgba(14,13,17,0.91) 100%);
             -webkit-backdrop-filter: blur(30px) saturate(1.4); backdrop-filter: blur(30px) saturate(1.4);
             /* ⭐枠は border でなく inset の内側リングで描く＝backdrop-filter+transform時の右/下端シーム（変な線）を防ぐ */
             border: 0; background-clip: padding-box;
@@ -11446,6 +11446,9 @@ tiEl.addEventListener('paste', e => {
         if (rec) { recCmd = rec.getAttribute('data-rec'); recMsg = ''; renderCmds(); return; }
     });
     window._settingsRenderCmds = () => { if (panes.commands && !panes.commands.hidden) renderCmds(); };
+    // ⭐魔法/スニペット/連鎖/リンクを足したら、開いている一覧をその場で描き直す
+    //   （これが無いと「保存したのに出てこない」に見える）
+    window._settingsRenderSpells = () => { if (panes.spells && !panes.spells.hidden) renderSpells(); };
 
     function open()  {
         overlay.classList.add('open'); sync(); switchTab(curTab);
@@ -12355,7 +12358,7 @@ function centerTermPanel() {
     }
     function isBlocked(u) { try { const h = new URL(u).hostname.replace(/^www\./, ''); return BLOCKED.some(d => h === d || h.endsWith('.' + d)); } catch (_) { return false; } }
     function getLinks() { try { return JSON.parse(localStorage.getItem(LINKS_KEY) || '{}'); } catch (_) { return {}; } }
-    function saveLink(name, url) { const o = getLinks(); o[name] = normUrl(url); try { localStorage.setItem(LINKS_KEY, JSON.stringify(o)); } catch (_) {} }
+    function saveLink(name, url) { const o = getLinks(); o[name] = normUrl(url); try { localStorage.setItem(LINKS_KEY, JSON.stringify(o)); } catch (_) {} if (window._bmRefreshLibraries) window._bmRefreshLibraries(); }
     function rmLink(name) { const o = getLinks(); delete o[name]; try { localStorage.setItem(LINKS_KEY, JSON.stringify(o)); } catch (_) {} }
     window._getLinks = getLinks; window._saveLink = saveLink; window._rmLink = rmLink;
 
@@ -13258,7 +13261,15 @@ function duplicateSelection() {
 // ══════════════════════════════════════════════════
 const SPELLS_KEY = 'bm_spells';
 function getSpells() { try { return JSON.parse(localStorage.getItem(SPELLS_KEY) || '[]'); } catch (_) { return []; } }
-function saveSpells(a) { try { localStorage.setItem(SPELLS_KEY, JSON.stringify(a)); } catch (_) {} }
+// ⭐作ったもの（魔法/スニペット/連鎖/リンク）を保存したら、その場で ⌘K と設定の一覧に反映する。
+//   ⚠️これが無いと「保存したのに ⌘K にも設定にも出てこない」＝作った実感が消える（木下の指摘）。
+function _bmRefreshLibraries() {
+    try { if (window._cmdkRefreshIfOpen)   window._cmdkRefreshIfOpen(); }   catch (_) {}
+    try { if (window._settingsRenderSpells) window._settingsRenderSpells(); } catch (_) {}
+    try { if (window._settingsRenderCmds)   window._settingsRenderCmds(); }   catch (_) {}
+}
+window._bmRefreshLibraries = _bmRefreshLibraries;
+function saveSpells(a) { try { localStorage.setItem(SPELLS_KEY, JSON.stringify(a)); } catch (_) {} _bmRefreshLibraries(); }
 function _spellBounds(objs) {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const o of objs) { const b = getObjBounds(o); if (!b) continue; minX = Math.min(minX, b.x); minY = Math.min(minY, b.y); maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h); }
@@ -13345,7 +13356,7 @@ function installSpell(s) {
 // ⭐スニペット＝よく書く定型文を名前で呼び出して付箋で置く（ユーザーが作れるコマンドの第2種）
 const SNIPS_KEY = 'bm_snippets';
 function getSnips() { try { return JSON.parse(localStorage.getItem(SNIPS_KEY) || '{}'); } catch (_) { return {}; } }
-function saveSnip(n, t) { if (!n) return; const m = getSnips(); m[n] = String(t == null ? '' : t); try { localStorage.setItem(SNIPS_KEY, JSON.stringify(m)); } catch (_) {} }
+function saveSnip(n, t) { if (!n) return; const m = getSnips(); m[n] = String(t == null ? '' : t); try { localStorage.setItem(SNIPS_KEY, JSON.stringify(m)); } catch (_) {} _bmRefreshLibraries(); }
 function rmSnip(n) { const m = getSnips(); if (!(n in m)) return false; delete m[n]; try { localStorage.setItem(SNIPS_KEY, JSON.stringify(m)); } catch (_) {} return true; }
 function placeSnip(text) {
     const o = BM.create('sticky', { text: String(text == null ? '' : text) });
@@ -13362,7 +13373,7 @@ window._getSnips = getSnips; window._saveSnip = saveSnip; window._rmSnip = rmSni
 // ⭐連鎖(chain)＝既存コマンドを順に実行する自作マクロ。コマンド名の列だけ＝任意JS無しで安全に配れる
 const CHAINS_KEY = 'bm_chains';
 function getChains() { try { return JSON.parse(localStorage.getItem(CHAINS_KEY) || '{}'); } catch (_) { return {}; } }
-function saveChain(n, arr) { if (!n || !Array.isArray(arr) || !arr.length) return; const m = getChains(); m[n] = arr; try { localStorage.setItem(CHAINS_KEY, JSON.stringify(m)); } catch (_) {} }
+function saveChain(n, arr) { if (!n || !Array.isArray(arr) || !arr.length) return; const m = getChains(); m[n] = arr; try { localStorage.setItem(CHAINS_KEY, JSON.stringify(m)); } catch (_) {} _bmRefreshLibraries(); }
 function rmChain(n) { const m = getChains(); if (!(n in m)) return false; delete m[n]; try { localStorage.setItem(CHAINS_KEY, JSON.stringify(m)); } catch (_) {} return true; }
 function runChain(list) {
     const arr = Array.isArray(list) ? list.slice() : [];
@@ -16607,7 +16618,18 @@ document.addEventListener('contextmenu', e => {
                 menu.appendChild(sep());
             }
             menu.appendChild(row('⧉', T('ctx.dup'), () => { if (typeof duplicateSelection === 'function') duplicateSelection(); }, { k: '⌘D' }));
-            menu.appendChild(row('🪄', T('ctx.saveSpell'), () => { const r = window._addSpellFromSelection && window._addSpellFromSelection(''); if (r && r.ok && typeof printRaw === 'function') printRaw((window.getLang && window.getLang() === 'en') ? `spell "${r.name}" saved (${r.count})` : `魔法「${r.name}」を保存（${r.count}個）`, 't-dim'); }));
+            menu.appendChild(row('🪄', T('ctx.saveSpell'), () => {
+                const r = window._addSpellFromSelection && window._addSpellFromSelection('');
+                const _en = (window.getLang && window.getLang() === 'en');
+                if (r && r.ok) {
+                    if (typeof printRaw === 'function') printRaw(_en ? `spell "${r.name}" saved (${r.count}) — use it from ⌘K` : `魔法「${r.name}」を保存（${r.count}個）— ⌘Kから使えます`, 't-ok');
+                    if (window._cmdkRefreshIfOpen) window._cmdkRefreshIfOpen();          // ⌘Kが開いていれば即反映
+                    if (window._settingsRenderSpells) window._settingsRenderSpells();    // 設定の魔法タブも
+                } else if (typeof printRaw === 'function') {
+                    // ⚠️以前は失敗しても無言だった＝「保存したのに出てこない」に見えていた
+                    printRaw(_en ? 'could not save the spell (nothing selected)' : '魔法に保存できませんでした（選択が空です）', 't-err');
+                }
+            }));
             menu.appendChild(sep());
             menu.appendChild(row('⬆', T('ctx.front'), () => bringFront(hit)));
             menu.appendChild(row('⬇', T('ctx.back'), () => sendBack(hit)));
@@ -16630,7 +16652,15 @@ document.addEventListener('contextmenu', e => {
         if (y + mh > window.innerHeight - 8) y = window.innerHeight - mh - 8;
         menu.style.left = Math.max(8, x) + 'px'; menu.style.top = Math.max(8, y) + 'px';
     };
-    document.addEventListener('mousedown', e => { if (menu.classList.contains('open') && !e.target.closest('#boardCtxMenu')) hide(); }, true);
+    // ⚠️mousedown だけを見ていると閉じない：ボードは pointer events で描くので
+    //   onDown 側の preventDefault によって mousedown が発火しないことがある
+    //   （木下報告「ボードを押してもパネルが閉じない」）。pointerdown/touchstart も拾う。
+    ['pointerdown', 'mousedown', 'touchstart'].forEach(ev =>
+        document.addEventListener(ev, e => {
+            if (menu.classList.contains('open') && !e.target.closest('#boardCtxMenu')) hide();
+        }, true));
+    // 盤面を動かした時も残さない（ズーム/パンでメニューだけ取り残されるのを防ぐ）
+    window.addEventListener('wheel', () => { if (menu.classList.contains('open')) hide(); }, { passive: true });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && menu.classList.contains('open')) hide(); });
     window.addEventListener('blur', hide);
 })();
