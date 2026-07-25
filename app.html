@@ -11100,7 +11100,16 @@ tiEl.addEventListener('paste', e => {
         const u = usc();
         const conflict = computeConflicts(u);
         const q = (cmdSearch && cmdSearch.value.trim().toLowerCase()) || '';
-        const CMDS = (typeof OMNI_CMDS !== 'undefined') ? OMNI_CMDS : [];
+        // ⭐サブコマンドも一覧に出す＋親のすぐ下に並べる（似たものが固まって見える）
+        //   ⚠️これが無いと `panel dock` 等にショートカットを割り当てられなかった（⌘Kからしか触れない）
+        const _base = (typeof OMNI_CMDS !== 'undefined') ? OMNI_CMDS : [];
+        const CMDS = [];
+        _base.forEach(c => {
+            CMDS.push(c);
+            (c.subs || []).forEach(([a, ja, en2]) => CMDS.push({
+                cmd: c.cmd + ' ' + a, cat: c.cat, hint: ja, hintEn: en2, kw: (c.kw || '') + ' ' + a,
+            }));
+        });
         const en = (window.getLang && window.getLang() === 'en');
         const items = CMDS.filter(it => {
             if (it._lang || it._form) return false;
@@ -11145,6 +11154,47 @@ tiEl.addEventListener('paste', e => {
                 html += `<div class="set-cmdrow${isConf ? ' conflict' : ''}${isRec ? ' recording' : ''}">${star}<span class="set-cmdname">${esc(it.cmd)}</span><span class="set-cmdhint">${esc(hint)}</span><span class="set-cmdhot">${hotHtml}</span></div>`;
             });
         });
+        // ⭐変更できないキーを最後にまとめて見せる（木下「何がどのショートカットかを全部確認できるように」）
+        //   ⚠️これが無いと「⌘Vを割り当てたつもりが実は予約で弾かれていた」に気づけない。
+        //   実際に起きた：⌘Vはペースト→出力が出る→パネルがログに切り替わる、を
+        //   「⌘VでLOGに切り替わる」と誤解した。
+        if (!q) {
+            const _jp = !en;
+            const G = (title, rows, badge) =>
+                `<div class="set-cmdcat">${esc(title)}</div>` +
+                rows.map(([k, d]) => `<div class="set-cmdrow"><span class="set-cmdstar" style="visibility:hidden">☆</span>`
+                    + `<span class="set-cmdname" style="font-family:var(--ui-mono)">${esc(k)}</span>`
+                    + `<span class="set-cmdhint">${esc(d)}</span>`
+                    + `<span class="set-cmdhot"><span class="k def">${esc(badge)}</span></span></div>`).join('');
+            const B_FIX  = _jp ? '変更不可' : 'fixed';
+            const B_NG   = _jp ? '効かない' : 'no effect';
+            const B_TOOL = _jp ? '道具用'   : 'tool key';
+            html += G(_jp ? '⌨ アプリが使っている（変更できない）' : '⌨ Used by the app (fixed)', _jp ? [
+                ['⌘K', 'コマンドパレット'], ['⌘B', 'パネル ドック⇔フロート'], ['⌘⇧B', 'パネルを中央へ'], ['⌘,', '設定'],
+                ['⌘Z', '元に戻す'], ['⌘⇧Z / ⌘Y', 'やり直す'], ['⌘A', 'すべて選択'], ['⌘C', 'コピー'],
+                ['⌘X', '切り取り'], ['⌘V', '貼り付け'], ['⌘D', '複製'], ['⌘⇧C', '画像としてコピー'],
+            ] : [
+                ['⌘K', 'Command palette'], ['⌘B', 'Panel dock/float'], ['⌘⇧B', 'Center the panel'], ['⌘,', 'Settings'],
+                ['⌘Z', 'Undo'], ['⌘⇧Z / ⌘Y', 'Redo'], ['⌘A', 'Select all'], ['⌘C', 'Copy'],
+                ['⌘X', 'Cut'], ['⌘V', 'Paste'], ['⌘D', 'Duplicate'], ['⌘⇧C', 'Copy as image'],
+            ], B_FIX);
+            html += G(_jp ? '⌨ ブラウザが持っていく（割り当てても効かない）' : '⌨ Taken by the browser (cannot work)', _jp ? [
+                ['⌘W', 'タブを閉じる'], ['⌘T', '新しいタブ'], ['⌘N', '新しいウィンドウ'],
+                ['⌘Q', '終了'], ['⌘M', '最小化'], ['⌘H', '隠す'],
+            ] : [
+                ['⌘W', 'Close tab'], ['⌘T', 'New tab'], ['⌘N', 'New window'],
+                ['⌘Q', 'Quit'], ['⌘M', 'Minimize'], ['⌘H', 'Hide'],
+            ], B_NG);
+            html += G(_jp ? '⌨ 盤面の道具（単キー・割り当てると道具が反応しなくなる）' : '⌨ Board tools (single keys — assigning one disables the tool)', _jp ? [
+                ['S', '選択'], ['P', '鉛筆'], ['N', 'パス'], ['E', '消しゴム'], ['T', 'テキスト'],
+                ['C / G / Q / A', '円 / 三角 / 四角 / 矢印'], ['X', 'PNG書き出し'], ['I', '画像を置く'],
+                ['F', '塗り'], ['1 / 2 / 3', '線の太さ'],
+            ] : [
+                ['S', 'Select'], ['P', 'Pen'], ['N', 'Path'], ['E', 'Eraser'], ['T', 'Text'],
+                ['C / G / Q / A', 'Circle / Triangle / Square / Arrow'], ['X', 'Export PNG'], ['I', 'Place image'],
+                ['F', 'Fill'], ['1 / 2 / 3', 'Stroke width'],
+            ], B_TOOL);
+        }
         cmdList.innerHTML = html;
     }
     // ⭐魔法タブ：保存した魔法を一覧・単体DL・削除
