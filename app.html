@@ -5748,6 +5748,35 @@ function renderSticky(obj) {
     const { x, y, w, h, text, color } = obj.data;
     const fill = color || '#FFE873';
     ctx.save();
+    // ⭐鉛筆モードだけ「紙に鉛筆で囲った箱」＝白黒・手書き。黄色い付箋は classic/fude の世界のもの。
+    //   保存データ(color/text)は変えない＝classic に戻すと黄色い付箋がそのまま蘇る。
+    const _pencilSticky = (typeof S !== 'undefined' && S.drawMode === 'pencil');
+    if (_pencilSticky) {
+        const ink = _pencilInk();
+        const dark = (typeof MODE !== 'undefined' && MODE === 'dark');
+        // 塗りはほぼ透け＝紙が見える。黒板では逆にごく薄く明るく。
+        ctx.fillStyle = dark ? 'rgba(236,232,224,0.05)' : 'rgba(255,255,255,0.28)';
+        ctx.fillRect(x, y, w, h);
+        // 鉛筆の枠（少し手描き感を出すため2度描き・わずかにオフセット）
+        ctx.strokeStyle = ink;
+        ctx.globalAlpha = 0.85;
+        ctx.lineWidth = 1.4 / VIEW.scale;
+        ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        const j = 0.6 / VIEW.scale;   // ゆらぎ
+        ctx.strokeRect(x, y, w, h);
+        ctx.globalAlpha = 0.4;
+        ctx.strokeRect(x + j, y - j, w, h);   // 二度目をわずかにずらす＝手描きの重ね
+        ctx.globalAlpha = 1;
+        // 右上に控えめな角折り（ドッグイヤー）
+        const dg = Math.min(w, h) * 0.14;
+        ctx.beginPath();
+        ctx.moveTo(x + w - dg, y);
+        ctx.lineTo(x + w, y + dg);
+        ctx.globalAlpha = 0.7;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.restore(); ctx.save();   // 枠の設定をリセットして文字描画へ
+    } else {
     // Drop shadow for "stuck on board" feel
     ctx.shadowColor   = 'rgba(0,0,0,0.18)';
     ctx.shadowBlur    = 10 / VIEW.scale;
@@ -5762,6 +5791,7 @@ function renderSticky(obj) {
     ctx.strokeStyle = 'rgba(0,0,0,0.10)';
     ctx.lineWidth = 1 / VIEW.scale;
     ctx.strokeRect(x, y, w, h);
+    }
     // Auto-fit text
     if (text && obj.id !== S.editingStickyId) {
         const pad = Math.min(w, h) * 0.08;
@@ -5770,7 +5800,9 @@ function renderSticky(obj) {
         const sf = obj.data.fontFamily || STICKY_FONT;
         const sw = obj.data.bold ? 800 : 600;
         const { fs, lines } = stickyAutoFit(ctx, text, innerW, innerH, sf, sw);
-        ctx.fillStyle = '#1a1a1a';
+        // ⭐鉛筆モードは黒鉛色（真っ黒でなく紙/黒板に馴染む）。それ以外は従来どおり黒。
+        const _txtInk = (typeof S !== 'undefined' && S.drawMode === 'pencil') ? _pencilInk() : '#1a1a1a';
+        ctx.fillStyle = _txtInk;
         ctx.font = `${sw} ${fs}px ${sf}`;
         ctx.textBaseline = 'middle';
         const noteMode = !!obj.data.bullet;          // left-aligned, top-anchored bullet list
@@ -5780,7 +5812,7 @@ function renderSticky(obj) {
         const lineX  = noteMode ? (x + pad) : (x + w/2);
         const startY = noteMode ? (y + pad + lineH/2) : (y + h/2 - totalH/2 + lineH/2);
         const boldStroke = !!obj.data.bold;       // faux-bold stroke (Hiragino Kaku has no 800 cut)
-        if (boldStroke) { ctx.lineWidth = Math.max(0.5, fs * 0.05); ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a1a1a'; }
+        if (boldStroke) { ctx.lineWidth = Math.max(0.5, fs * 0.05); ctx.lineJoin = 'round'; ctx.strokeStyle = _txtInk; }
         for (let i = 0; i < lines.length; i++) {
             const ly = startY + i * lineH;
             ctx.fillText(lines[i], lineX, ly);
