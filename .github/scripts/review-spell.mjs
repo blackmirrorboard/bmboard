@@ -16,7 +16,7 @@ import path from 'node:path';
    片方だけ変えると審査と実際の動作がズレるので、変更時は必ず両方直すこと。 */
 const OP_TYPES = ['square', 'sticky', 'text', 'circle', 'triangle', 'arrow'];
 const BM_API = ['all', 'clear', 'create', 'exportSvg', 'find', 'getById', 'getMode', 'getSelected',
-                'log', 'rand', 'redraw', 'remove', 'save', 'setFill', 'setMode', 'setStroke',
+                'log', 'panel', 'rand', 'redraw', 'remove', 'save', 'setFill', 'setMode', 'setStroke',
                 'translate', 'update', 'viewCenter'];
 
 /* 使われていたら止めるもの。ボードを描く以外のことをしようとしている合図 */

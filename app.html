@@ -8102,6 +8102,11 @@ window.BM = {
     redraw() { redrawAll(); },
     save()   { saveHistory(); },
     log(msg, cls = 't-ok') { printRaw(`[BM] ${msg}`, cls); },
+    // ⭐panel: 書いたHTMLをパネルに安全にプレビュー表示する。
+    //   魔法(action)は document を触れないが、これ経由なら sandbox iframe に描ける＝
+    //   コーダーモードA(打つ→プロト)/B案(描く→コード)を「魔法」として作れるようにする口。
+    //   sandbox=allow-scripts のみ＝スクリプトは動くが外部通信もトップ遷移も禁止＝安全。
+    panel(html, opts) { if (window._panelPreview) return window._panelPreview(String(html == null ? '' : html), opts || {}); return false; },
     viewCenter() { return { x: (CW/2-VIEW.tx)/VIEW.scale, y: (CH/2-VIEW.ty)/VIEW.scale }; },
     rand(min, max) { return min + Math.random() * (max - min); },
     setMode(m) { setMode(m); },
@@ -14369,17 +14374,61 @@ function setTermWidthPct(pct, persist) {
             p.style.display = (p.dataset.v === v) ? 'flex' : 'none');
     }
 
+    // ⭐BM.panel(html) の実体：sandbox iframe に書いたHTMLを流してプレビュー。
+    //   「プロト」タブを必要になった時だけ作る。安全＝sandbox="allow-scripts"（外部通信/遷移 不可）。
+    let _protoIfr = null;
+    window._panelPreview = (html, opts) => {
+        // プロト用ペインを用意（初回だけ）
+        let pane = view.querySelector('.tv-pane[data-v="proto"]');
+        if (!pane) {
+            pane = document.createElement('div');
+            pane.className = 'tv-pane'; pane.dataset.v = 'proto';
+            pane.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column';
+            const bar = document.createElement('div');
+            bar.className = 'tv-bar';
+            const en = (window.getLang && window.getLang() === 'en');
+            bar.innerHTML = `<span>${en ? 'live preview' : 'ライブプレビュー'}</span>`;
+            _protoIfr = document.createElement('iframe');
+            _protoIfr.setAttribute('sandbox', 'allow-scripts');   // ⭐スクリプトは動くが外部通信/遷移は禁止
+            _protoIfr.setAttribute('title', en ? 'prototype' : 'プロト');
+            pane.appendChild(bar); pane.appendChild(_protoIfr);
+            view.appendChild(pane);
+            // タブが無ければ「プロト」タブを足す
+            if (!tabsWrap.querySelector('.term-tab[data-view="proto"]')) {
+                const t = document.createElement('button');
+                t.className = 'term-tab'; t.dataset.view = 'proto';
+                t.textContent = en ? 'Proto' : 'プロト';
+                tabsWrap.appendChild(t);
+            }
+        }
+        _protoIfr.srcdoc = html;
+        showView('proto');
+        return true;
+    };
+
+    // ⭐プロトは VIEWS に無い独立ペイン。setView は VIEWS 前提なので、表示切替はここで共通化
+    function showView(v) {
+        cur = v;
+        tabsWrap.querySelectorAll('.term-tab').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+        if (v === 'log') { tb.hidden = false; view.hidden = true; return; }
+        if (VIEWS[v]) { setView(v); return; }
+        // proto など独立ペイン
+        tb.hidden = true; view.hidden = false;
+        view.querySelectorAll('.tv-pane').forEach(p => p.style.display = (p.dataset.v === v) ? 'flex' : 'none');
+    }
+
     tabsWrap.addEventListener('click', e => {
         const btn = e.target.closest('.term-tab');
         if (!btn) return;
         e.stopPropagation();          // ヘッダのドラッグ開始を邪魔しない
-        setView(btn.dataset.view);
+        showView(btn.dataset.view);
     });
     // タブ部分ではヘッダのドラッグを始めない（掴んで動かすのはタイトル側）
     tabsWrap.addEventListener('pointerdown', e => e.stopPropagation());
 
     // ⭐入力欄は常にボードへの命令口のまま＝ログを見ていなくても、コマンドを打ったらログに切り替えて結果を見せる
-    window._panelShowLog = () => { if (cur !== 'log') setView('log'); };
+    // ⚠️プロト表示中は勝手にログへ戻さない（打ち込み→横でプロトが育つ体験を壊さないため）
+    window._panelShowLog = () => { if (cur !== 'log' && cur !== 'proto') showView('log'); };
 
     window._panelSetView = setView;
 })();
