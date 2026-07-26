@@ -3151,6 +3151,7 @@
                 <div class="set-seg" data-set="wall">
                     <button type="button" data-v="white" data-i18n="set.white">白リング</button>
                     <button type="button" data-v="red" data-i18n="set.red">赤リング</button>
+                    <button type="button" data-v="aurora" data-i18n="set.aurora">オーロラ</button>
                 </div>
             </div>
         </div>
@@ -11026,7 +11027,7 @@ tiEl.addEventListener('paste', e => {
             else if (group === 'term')  { if (v === 'float') { window._termFloat && window._termFloat(); } else { window._termDock && window._termDock(); } }
             else if (group === 'wall')  {
                 const wall = document.getElementById('termWall');
-                const _wallUrl = "url('assets/term-bg" + (v === 'red' ? '-red' : '') + ".webp')";
+                const _wallUrl = (window.BM_WALLS && window.BM_WALLS[v]) || window.BM_WALLS.white;
                 document.documentElement.style.setProperty('--term-wall', _wallUrl);   // ⭐モバイルのパネル内壁紙もこれで追従
                 if (wall) wall.style.backgroundImage = _wallUrl;
                 try { localStorage.setItem('bm_wall', v); } catch (_) {}
@@ -11702,10 +11703,24 @@ tiEl.addEventListener('paste', e => {
         if (e.key === 'Escape' && isOpen()) { e.stopPropagation(); close(); }
     }, true);
 
+    // ⭐壁紙の表＝ここに1行足すだけで増やせる。
+    //   background-image は画像URLでも gradient でも受け取れるので、
+    //   「オーロラ」は画像を作らず CSS で描いている（読み込みゼロ＝軽い・すぐ差し替えられる）。
+    //   ⚠️木下が紫のグラフィック画像を作ったら、下の aurora を url('assets/term-bg-purple.webp') に
+    //     差し替えるだけで置き換わる（他のコードは触らなくていい）。
+    window.BM_WALLS = {
+        white:  "url('assets/term-bg.webp')",
+        red:    "url('assets/term-bg-red.webp')",
+        aurora: "radial-gradient(58% 42% at 16% 10%, rgba(74,58,255,.60), transparent 70%),"
+              + "radial-gradient(54% 38% at 88% 32%, rgba(139,92,246,.52), transparent 72%),"
+              + "radial-gradient(66% 50% at 28% 90%, rgba(42,108,255,.46), transparent 70%)",
+    };
+
     // 起動時：保存済み壁紙を復元
-    try { if (localStorage.getItem('bm_wall') === 'red') {
-        document.documentElement.style.setProperty('--term-wall', "url('assets/term-bg-red.webp')");
-        const wall = document.getElementById('termWall'); if (wall) wall.style.backgroundImage = "url('assets/term-bg-red.webp')";
+    try { const _w = localStorage.getItem('bm_wall'); if (_w && _w !== 'white') {
+        const _u = (window.BM_WALLS && window.BM_WALLS[_w]) || window.BM_WALLS.white;
+        document.documentElement.style.setProperty('--term-wall', _u);
+        const wall = document.getElementById('termWall'); if (wall) wall.style.backgroundImage = _u;
     } } catch (_) {}
 })();
 
@@ -11751,7 +11766,7 @@ const I18N = {
         'pal.warnUsed': 'その組合せは使用中', 'pal.warnMod': '⌘/⌥/⌃ と組合せて',
         'pal.calcCap': '計算 · CALCULATOR', 'pal.expr': '式', 'pal.result': '結果', 'pal.copyAns': '↵ 答えをコピー', 'pal.doRun': '↵ で実行',
         'set.title': '設定', 'set.board': 'ボード', 'set.draw': '描き味', 'set.grade': '芯', 'set.term': 'ターミナル', 'set.wall': '壁紙', 'set.lang': '言語',
-        'set.layout': 'レイアウト', 'set.boardLeft': 'ボード左', 'set.boardRight': 'ボード右', 'set.pencil': '鉛筆', 'set.brush': '筆', 'set.classic': 'クラシック', 'set.white': '白リング', 'set.red': '赤リング',
+        'set.layout': 'レイアウト', 'set.boardLeft': 'ボード左', 'set.boardRight': 'ボード右', 'set.pencil': '鉛筆', 'set.brush': '筆', 'set.classic': 'クラシック', 'set.aurora': 'オーロラ', 'set.white': '白リング', 'set.red': '赤リング',
         'set.foot': '⌘,  で開閉 · Esc で閉じる',
         'lang.name': '言語 / LANGUAGE',
         'tt.zoom100': 'ダブルクリックで100%', 'tt.settings': '設定 (⌘,)', 'tt.confirm': '確定', 'tt.resize': 'ドラッグでサイズ変更',
@@ -11812,7 +11827,7 @@ const I18N = {
         'pal.warnUsed': 'That combo is in use', 'pal.warnMod': 'Combine with ⌘/⌥/⌃',
         'pal.calcCap': 'CALCULATOR', 'pal.expr': 'expr', 'pal.result': 'result', 'pal.copyAns': '↵ copy answer', 'pal.doRun': '↵ to run',
         'set.title': 'Settings', 'set.board': 'BOARD', 'set.draw': 'DRAW', 'set.grade': 'GRADE', 'set.term': 'TERMINAL', 'set.wall': 'WALLPAPER', 'set.lang': 'LANGUAGE',
-        'set.layout': 'Layout', 'set.boardLeft': 'Board left', 'set.boardRight': 'Board right', 'set.pencil': 'Pencil', 'set.brush': 'Brush', 'set.classic': 'Classic', 'set.white': 'White ring', 'set.red': 'Red ring',
+        'set.layout': 'Layout', 'set.boardLeft': 'Board left', 'set.boardRight': 'Board right', 'set.pencil': 'Pencil', 'set.brush': 'Brush', 'set.classic': 'Classic', 'set.aurora': 'Aurora', 'set.white': 'White ring', 'set.red': 'Red ring',
         'set.foot': '⌘,  toggle · Esc to close',
         'lang.name': 'Language',
         'tt.zoom100': 'Double-click for 100%', 'tt.settings': 'Settings (⌘,)', 'tt.confirm': 'Confirm', 'tt.resize': 'Drag to resize',
