@@ -220,277 +220,277 @@ body.lang-en .en{display:inline}
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.4+ · 順送り</span>
+        <span class="tag"><span class="ja">v1.4+ · 順送り</span><span class="en">v1.4+ · Cycling</span></span>
         <span class="when">2026-07-27</span>
       </div>
-      <h2>1キーで順送り・モバイルの ⌘K・ドキュメントの自動生成</h2>
+      <h2><span class="ja">1キーで順送り・モバイルの ⌘K・ドキュメントの自動生成</span><span class="en">Cycle with one key, ⌘K on mobile, generated docs</span></h2>
       <ul>
-        <li><b>順送り</b>を追加＝<code>board next</code> / <code>grade</code> / <code>theme</code> / <code>drawmode</code> / <code>crumb next</code>。ショートカットは1コマンドにしか付かないため。⚠️「選ぶもの」（align / export / gif / rec）には付けていない。</li>
-        <li>モバイルの上部バーに <b>⌘K ボタン</b>を追加。スマホにはキーボードが無いので、全機能の入口が押せない状態だった。</li>
-        <li>引数が必須のコマンドにキーを割り当てると「押しても入力待ちになるだけ」なので、設定の一覧で赤く伝えるようにした。</li>
-        <li><b>usage / commands / story を app.html から自動生成</b>する方式に変更。手書きの一覧は必ず本体から遅れる（usage は2ヶ月、commands は2ヶ月半止まっていた）。CI でズレを検出する。</li>
-        <li>サイトの上部に全ページのナビを追加。孤立していた頁への導線を作った。</li>
+        <li><span class="ja"><b>順送り</b>を追加＝<code>board next</code> / <code>grade</code> / <code>theme</code> / <code>drawmode</code> / <code>crumb next</code>。ショートカットは1コマンドにしか付かないため。⚠️「選ぶもの」（align / export / gif / rec）には付けていない。</span><span class="en">Added <b>cycling</b>: <code>board next</code> / <code>grade</code> / <code>theme</code> / <code>drawmode</code> / <code>crumb next</code>, because a shortcut can only point at one command. ⚠️Not added to things you pick (align / export / gif / rec).</span></li>
+        <li><span class="ja">モバイルの上部バーに <b>⌘K ボタン</b>を追加。スマホにはキーボードが無いので、全機能の入口が押せない状態だった。</span><span class="en">Added a <b>⌘K button</b> to the mobile top bar. Phones have no keyboard, so the entrance to every feature was unpressable.</span></li>
+        <li><span class="ja">引数が必須のコマンドにキーを割り当てると「押しても入力待ちになるだけ」なので、設定の一覧で赤く伝えるようにした。</span><span class="en">Binding a key to a command that requires an argument only opens the palette and waits — the settings list now says so in red.</span></li>
+        <li><span class="ja"><b>usage / commands / story を app.html から自動生成</b>する方式に変更。手書きの一覧は必ず本体から遅れる（usage は2ヶ月、commands は2ヶ月半止まっていた）。CI でズレを検出する。</span><span class="en"><b>usage / commands / story are now generated from app.html</b>. A hand-written list always falls behind (usage was two months stale, commands two and a half). CI fails when the output drifts.</span></li>
+        <li><span class="ja">サイトの上部に全ページのナビを追加。孤立していた頁への導線を作った。</span><span class="en">Added a site-wide nav at the top — pages that nothing linked to are reachable again.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.4+ · サイト</span>
+        <span class="tag"><span class="ja">v1.4+ · サイト</span><span class="en">v1.4+ · Site</span></span>
         <span class="when">2026-07-26</span>
       </div>
-      <h2>サイトを作り直す — コンセプトとキービジュアル</h2>
+      <h2><span class="ja">サイトを作り直す — コンセプトとキービジュアル</span><span class="en">Rebuilding the site — concept and key visual</span></h2>
       <ul>
-        <li>コンセプトを1行に：<b>手で書く。キーで動かす。</b>／Write by hand. Move at speed.</li>
-        <li>見出しを8〜12字に圧縮し、絵文字をゼロに。モバイルは 8.1画面 → 5.8画面に。</li>
-        <li>重かった原因を特定して<b>それだけ</b>消した（blur(90px)の巨大な円3つ＋全面 grain の mix-blend-mode）。42fps → 61fps。</li>
-        <li>キービジュアルは木下作。⚠️透過PNGの縁に元の背景が焼き込まれる問題は、背景と立体を合成した1枚で根治した。</li>
-        <li>外部フォントをやめてシステムフォントに戻した（前の方が Apple っぽい、という判断）。</li>
+        <li><span class="ja">コンセプトを1行に：<b>手で書く。キーで動かす。</b>／Write by hand. Move at speed.</span><span class="en">The concept became one line: <b>Write by hand. Move at speed.</b></span></li>
+        <li><span class="ja">見出しを8〜12字に圧縮し、絵文字をゼロに。モバイルは 8.1画面 → 5.8画面に。</span><span class="en">Headings were cut to 8–12 characters and every emoji removed. Mobile went from 8.1 screens to 5.8.</span></li>
+        <li><span class="ja">重かった原因を特定して<b>それだけ</b>消した（blur(90px)の巨大な円3つ＋全面 grain の mix-blend-mode）。42fps → 61fps。</span><span class="en">The slowness was traced and <b>only that</b> was removed (three blur(90px) circles plus a full-screen mix-blend-mode grain). 42fps → 61fps.</span></li>
+        <li><span class="ja">キービジュアルは木下作。⚠️透過PNGの縁に元の背景が焼き込まれる問題は、背景と立体を合成した1枚で根治した。</span><span class="en">The key visual is Kinoshita’s own. ⚠️The purple fringe baked into the transparent PNG was cured by compositing background and solid into one image.</span></li>
+        <li><span class="ja">外部フォントをやめてシステムフォントに戻した（前の方が Apple っぽい、という判断）。</span><span class="en">Web fonts were dropped for system fonts — the earlier version simply felt more like Apple.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.4+ · 入口の掃除</span>
+        <span class="tag"><span class="ja">v1.4+ · 入口の掃除</span><span class="en">v1.4+ · Reachability</span></span>
         <span class="when">2026-07-25</span>
       </div>
-      <h2>「完成しているのに入口が死んでいる」を一掃</h2>
+      <h2><span class="ja">「完成しているのに入口が死んでいる」を一掃</span><span class="en">Clearing out "finished, but unreachable"</span></h2>
       <ul>
-        <li>この日の不具合の<b>大半が同じ型</b>だった＝機能は完成しているのに、誰も押せない場所にあった。</li>
-        <li>Aa（フォント/太字/縦書き）が UI から到達不能（display:none を戻す処理が git 履歴上一度も無かった）。</li>
-        <li>ポップオーバーが紙／ライトで白地に白文字。3モード×6ポップでコントラストを実測して固定。</li>
-        <li>引数を取るコマンド21件の大半が ⌘K から実行できなかった（↵で引数待ちに戻るだけ）。サブコマンドを1行ずつ展開して解決。</li>
-        <li>設定をキーボードだけで操作できるように（↑↓で行移動・←→で即適用）。</li>
+        <li><span class="ja">この日の不具合の<b>大半が同じ型</b>だった＝機能は完成しているのに、誰も押せない場所にあった。</span><span class="en"><b>Most of the day’s bugs were the same shape</b>: the feature was finished, but nobody could reach it.</span></li>
+        <li><span class="ja">Aa（フォント/太字/縦書き）が UI から到達不能（display:none を戻す処理が git 履歴上一度も無かった）。</span><span class="en">The text-style panel (font / bold / vertical writing) was unreachable — the <code>display:none</code> that hid it was never removed in the whole git history.</span></li>
+        <li><span class="ja">ポップオーバーが紙／ライトで白地に白文字。3モード×6ポップでコントラストを実測して固定。</span><span class="en">Popovers rendered white-on-white in paper and light themes. Contrast was measured across 3 modes × 6 popovers and fixed.</span></li>
+        <li><span class="ja">引数を取るコマンド21件の大半が ⌘K から実行できなかった（↵で引数待ちに戻るだけ）。サブコマンドを1行ずつ展開して解決。</span><span class="en">Most of the 21 argument-taking commands could not be run from ⌘K (Enter just returned to waiting for input). Expanding subcommands as their own rows fixed it.</span></li>
+        <li><span class="ja">設定をキーボードだけで操作できるように（↑↓で行移動・←→で即適用）。</span><span class="en">Settings became fully keyboard-operable (↑↓ to move, ←→ to apply).</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.4 · 公開</span>
+        <span class="tag"><span class="ja">v1.4 · 公開</span><span class="en">v1.4 · Ship</span></span>
         <span class="when">2026-07-24 — ship date</span>
       </div>
-      <h2>本番マージ — 98 commit</h2>
+      <h2><span class="ja">本番マージ — 98 commit</span><span class="en">Merged to production — 98 commits</span></h2>
       <ul>
-        <li><code>main</code> に早送りマージして bmboard.studio を更新。app.html は 11,426行/528KB → 15,924行/848KB。</li>
-        <li>戻り先タグを先に切ってから公開（<code>prod-before-merge</code> / <code>v1.4-paper</code>）＝いつでも1コマンドで戻せる状態にした。</li>
-        <li>ヘッドレスで全コマンド・プリセット・STORE・API を通し、エラーゼロを確認してから出した。</li>
+        <li><span class="ja"><code>main</code> に早送りマージして bmboard.studio を更新。app.html は 11,426行/528KB → 15,924行/848KB。</span><span class="en">Fast-forward merged to <code>main</code>. app.html went from 11,426 lines / 528KB to 15,924 lines / 848KB.</span></li>
+        <li><span class="ja">戻り先タグを先に切ってから公開（<code>prod-before-merge</code> / <code>v1.4-paper</code>）＝いつでも1コマンドで戻せる状態にした。</span><span class="en">Rollback tags were cut <b>before</b> shipping (<code>prod-before-merge</code> / <code>v1.4-paper</code>) — one command returns to the old build.</span></li>
+        <li><span class="ja">ヘッドレスで全コマンド・プリセット・STORE・API を通し、エラーゼロを確認してから出した。</span><span class="en">Every command, preset, STORE flow and API was run headless with zero errors before release.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.4 · 魔法と STORE</span>
+        <span class="tag"><span class="ja">v1.4 · 魔法と STORE</span><span class="en">v1.4 · Spells & STORE</span></span>
         <span class="when">2026-07-24</span>
       </div>
-      <h2>自分の道具を作って、配れるようにする</h2>
+      <h2><span class="ja">自分の道具を作って、配れるようにする</span><span class="en">Make your own tools, and hand them to someone</span></h2>
       <ul>
-        <li>選択を <code>spell 名前</code> で保存＝宣言的なボードデータ（任意JS無し）。⌘K に🔮として並ぶ。</li>
-        <li>コードで書く魔法（JS）も登録できる。<b>安全は2階層</b>＝ops型は白リストで完全安全／JS型は「コード実行」を明示して審査でキュレート。</li>
-        <li>STORE＝<code>store/catalog.json</code> を読むだけの静的な一覧。サーバー無し・費用0。</li>
-        <li>提出 → GitHub Actions で<b>自動一次審査</b>（禁止API・BM API の実在チェック・ops白リスト・名前重複・構文）→ アプリ内の申請ボックスに届く。</li>
-        <li>スニペット・連鎖（既存コマンドを順に実行する自作マクロ）も追加。</li>
+        <li><span class="ja">選択を <code>spell 名前</code> で保存＝宣言的なボードデータ（任意JS無し）。⌘K に🔮として並ぶ。</span><span class="en">Save a selection as a spell with <code>spell name</code> — declarative board data, no arbitrary JS. It appears in ⌘K.</span></li>
+        <li><span class="ja">コードで書く魔法（JS）も登録できる。<b>安全は2階層</b>＝ops型は白リストで完全安全／JS型は「コード実行」を明示して審査でキュレート。</span><span class="en">Spells written in code are supported too. <b>Safety has two tiers</b>: ops-type is a strict whitelist; JS-type is labeled "runs code" and curated by review.</span></li>
+        <li><span class="ja">STORE＝<code>store/catalog.json</code> を読むだけの静的な一覧。サーバー無し・費用0。</span><span class="en">The STORE is just <code>store/catalog.json</code> read over HTTP. No server, no cost.</span></li>
+        <li><span class="ja">提出 → GitHub Actions で<b>自動一次審査</b>（禁止API・BM API の実在チェック・ops白リスト・名前重複・構文）→ アプリ内の申請ボックスに届く。</span><span class="en">Submissions get an <b>automatic first pass</b> in GitHub Actions (banned APIs, whether each BM API actually exists, ops whitelist, name collisions, syntax), then land in an inbox inside the app.</span></li>
+        <li><span class="ja">スニペット・連鎖（既存コマンドを順に実行する自作マクロ）も追加。</span><span class="en">Snippets and chains (macros that run existing commands in order) were added as well.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.4 · ⌘K</span>
+        <span class="tag"><span class="ja">v1.4 · ⌘K</span><span class="en">v1.4 · ⌘K</span></span>
         <span class="when">2026-07-23 → 2026-07-24</span>
       </div>
-      <h2>ターミナルからコマンドパレットへ</h2>
+      <h2><span class="ja">ターミナルからコマンドパレットへ</span><span class="en">From a terminal to a command palette</span></h2>
       <ul>
-        <li>覚えるのは <b>⌘K ひとつ</b>に。打つと候補が出るランチャー型に作り替え、お気に入り／最近使った／自分でショートカットを割り当てを追加。</li>
-        <li>設定パネルをタブ化（一般 / コマンド / 魔法）。全コマンドに好きなキーを割り当てられる一覧と、衝突の赤警告。</li>
-        <li>⌥キーは macOS で e.key が化ける（⌥B → ∫）ため、<b>e.code（物理キー）基準</b>に変更。</li>
-        <li>EN / JP 切替をパレット・設定・盤面ツールチップまで通した。</li>
-        <li>サブコマンド（panel dock / board a4 …）を一覧に展開＝⌘K からしか触れなかったものに割り当て可能に。</li>
+        <li><span class="ja">覚えるのは <b>⌘K ひとつ</b>に。打つと候補が出るランチャー型に作り替え、お気に入り／最近使った／自分でショートカットを割り当てを追加。</span><span class="en">One thing to remember: <b>⌘K</b>. Rebuilt as a launcher that filters as you type, with favorites, recents, and your own key bindings.</span></li>
+        <li><span class="ja">設定パネルをタブ化（一般 / コマンド / 魔法）。全コマンドに好きなキーを割り当てられる一覧と、衝突の赤警告。</span><span class="en">Settings became tabbed (General / Commands / Spells), with a full command list you can bind keys in, and a red warning on collisions.</span></li>
+        <li><span class="ja">⌥キーは macOS で e.key が化ける（⌥B → ∫）ため、<b>e.code（物理キー）基準</b>に変更。</span><span class="en">On macOS, Option mangles <code>e.key</code> (⌥B → ∫), so binding now reads <b>e.code — the physical key</b>.</span></li>
+        <li><span class="ja">EN / JP 切替をパレット・設定・盤面ツールチップまで通した。</span><span class="en">EN / JP switching now reaches the palette, settings and the on-board tooltips.</span></li>
+        <li><span class="ja">サブコマンド（panel dock / board a4 …）を一覧に展開＝⌘K からしか触れなかったものに割り当て可能に。</span><span class="en">Subcommands (panel dock / board a4 …) were expanded into the list — previously they were only reachable from ⌘K and could not be bound.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.4 · 紙と鉛筆</span>
+        <span class="tag"><span class="ja">v1.4 · 紙と鉛筆</span><span class="en">v1.4 · Paper & pencil</span></span>
         <span class="when">2026-07-22 → 2026-07-23</span>
       </div>
-      <h2>書きなぐれる黒板 — 黒鉛の粒・消しカス・紙の目</h2>
+      <h2><span class="ja">書きなぐれる黒板 — 黒鉛の粒・消しカス・紙の目</span><span class="en">A blackboard you can scribble on — graphite grains, crumbs, paper tooth</span></h2>
       <ul>
-        <li>描き味を <b>黒鉛の粒を arc-length で連打する</b>方式に転換。1本の太い帯＋ノイズは炭やマーカーであって鉛筆ではない、という判断。</li>
-        <li>紙の目（tooth）＝キャンバス座標に固定した決定論ノイズ。粒ごとに乱数を振るとスプレーになる。</li>
-        <li>grain は<b>線を描いてから destination-out で紙の目を削り取る</b>（線側をざらつかせるのは間違い）。</li>
-        <li>消しゴムが消しカスを出す。払わないと残る（sweep）。芯の濃さ 2H〜6B で出る量が変わる。</li>
-        <li>紙をひっくり返す（flip）＝canvas 側で X 反転し、入力・pan・zoom も同じ反転に統一。裏面から表の線は選べない。裏写りは2パスの紙色ウォッシュ。</li>
+        <li><span class="ja">描き味を <b>黒鉛の粒を arc-length で連打する</b>方式に転換。1本の太い帯＋ノイズは炭やマーカーであって鉛筆ではない、という判断。</span><span class="en">The stroke became <b>graphite grains stamped along arc-length</b>. One thick band with noise reads as charcoal or marker — not pencil.</span></li>
+        <li><span class="ja">紙の目（tooth）＝キャンバス座標に固定した決定論ノイズ。粒ごとに乱数を振るとスプレーになる。</span><span class="en">Paper tooth is deterministic noise <b>pinned to canvas coordinates</b>. Randomizing per grain turns it into spray.</span></li>
+        <li><span class="ja">grain は<b>線を描いてから destination-out で紙の目を削り取る</b>（線側をざらつかせるのは間違い）。</span><span class="en">Grain is made by <b>drawing the line first, then carving the tooth out with destination-out</b> — roughening the stroke itself is wrong.</span></li>
+        <li><span class="ja">消しゴムが消しカスを出す。払わないと残る（sweep）。芯の濃さ 2H〜6B で出る量が変わる。</span><span class="en">The eraser leaves crumbs, and they stay until you sweep them. How many depends on the pencil grade (2H–6B).</span></li>
+        <li><span class="ja">紙をひっくり返す（flip）＝canvas 側で X 反転し、入力・pan・zoom も同じ反転に統一。裏面から表の線は選べない。裏写りは2パスの紙色ウォッシュ。</span><span class="en">Flip the sheet — the canvas mirrors on X, and input, pan and zoom mirror with it. Front strokes cannot be selected from the back; the bleed-through is a two-pass paper-color wash.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.3 · VOICE INPUT</span>
+        <span class="tag"><span class="ja">v1.3 · 音声入力</span><span class="en">v1.3 · VOICE INPUT</span></span>
         <span class="when">2026-06-15</span>
       </div>
-      <h2>音声入力 — マイクボタンでターミナルにコマンドを発話</h2>
+      <h2><span class="ja">音声入力 — マイクボタンでターミナルにコマンドを発話</span><span class="en">Voice input — speak a command into the terminal</span></h2>
       <ul>
-        <li><b>マイクボタン</b> — ターミナル入力行右端に SVG マイクアイコンを追加。Web Speech API (<code>SpeechRecognition</code> / <code>webkitSpeechRecognition</code>) 非対応ブラウザでは <code>display:none</code> のまま自動非表示。</li>
-        <li><b>音声→コマンド実行</b> — クリックで認識開始、発話終了後にトランスクリプトを <code>#ti</code> に挿入し自動 <code>runCommand()</code>。再クリックでキャンセル（<code>cancelled</code> フラグ）。</li>
-        <li><b>listening アニメ</b> — 認識中は <code>.listening</code> クラスを付与、0.7s のパルス (opacity 1 → 0.25) でフィードバック。</li>
-        <li><b>エラー処理</b> — <code>no-speech</code> / <code>aborted</code> はサイレント。それ以外は <code>mic: &lt;error&gt;</code> をターミナルに赤ログ。</li>
-        <li><b>動作確認</b> — Playwright headless Chromium でボタン表示・listening クラス付け外し・キャンセルフロー検証済み。Mac 実機での動作確認は pending。</li>
+        <li><span class="ja"><b>マイクボタン</b> — ターミナル入力行右端に SVG マイクアイコンを追加。Web Speech API (<code>SpeechRecognition</code> / <code>webkitSpeechRecognition</code>) 非対応ブラウザでは <code>display:none</code> のまま自動非表示。</span><span class="en"><b>Mic button</b> — an SVG mic icon at the right end of the terminal input. Hidden automatically where the Web Speech API is unavailable.</span></li>
+        <li><span class="ja"><b>音声→コマンド実行</b> — クリックで認識開始、発話終了後にトランスクリプトを <code>#ti</code> に挿入し自動 <code>runCommand()</code>。再クリックでキャンセル（<code>cancelled</code> フラグ）。</span><span class="en"><b>Speech → command</b> — click to listen; the transcript is inserted and run automatically. Click again to cancel.</span></li>
+        <li><span class="ja"><b>listening アニメ</b> — 認識中は <code>.listening</code> クラスを付与、0.7s のパルス (opacity 1 → 0.25) でフィードバック。</span><span class="en"><b>Listening feedback</b> — a 0.7s pulse while recognition is active.</span></li>
+        <li><span class="ja"><b>エラー処理</b> — <code>no-speech</code> / <code>aborted</code> はサイレント。それ以外は <code>mic: &lt;error&gt;</code> をターミナルに赤ログ。</span><span class="en"><b>Errors</b> — <code>no-speech</code> and <code>aborted</code> stay silent; anything else is logged in red.</span></li>
+        <li><span class="ja"><b>動作確認</b> — Playwright headless Chromium でボタン表示・listening クラス付け外し・キャンセルフロー検証済み。Mac 実機での動作確認は pending。</span><span class="en"><b>Verified headless</b> — button visibility, the listening class and the cancel flow. Real-device check still pending.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.2+ · DOMAIN + ICONS + DOCS</span>
+        <span class="tag"><span class="ja">v1.2+ · ドメインと入口</span><span class="en">v1.2+ · DOMAIN + ICONS + DOCS</span></span>
         <span class="when">2026-05-01</span>
       </div>
-      <h2>Custom domain · favicon set · OGP png · onboarding rewrite</h2>
+      <h2><span class="ja">独自ドメイン・アイコン一式・OGP・入口の書き直し</span><span class="en">Custom domain · favicon set · OGP png · onboarding rewrite</span></h2>
       <ul>
-        <li><b>Custom domain</b> — <code>bmboard.studio</code> acquired via お名前.com, registry NS pointed at <code>01-04.dnsv.jp</code> after a detour where records were saved on dnsv.jp but the registry was still <code>dns1/dns2.onamae.com</code>. Live at <code>https://bmboard.studio/</code> with <code>Enforce HTTPS</code> on. Old <code>blackmirrorboard.github.io/bmboard/</code> still resolves but all OGP / canonical URLs migrated.</li>
-        <li><b>Favicon set from <code>logo.png</code></b> — the round black smiley logo became the brand mark in the tab. Generated <code>favicon.ico</code> (16/32/48), <code>favicon-16x16.png</code>, <code>favicon-32x32.png</code>, <code>apple-touch-icon.png</code> (180), <code>icon-192.png</code>, <code>icon-512.png</code> from a 1024² source. Added <code>manifest.json</code> for PWA / iOS home-screen.</li>
-        <li><b>OGP <code>og-image.png</code> (1200×630)</b> — black ground, white inverted smiley left, <code>BMBOARD</code> title + tagline + version strip on the right. Replaces the old <code>og-image.svg</code> across all 6 HTML files. Twitter Card validator now picks up the new card.</li>
-        <li><b>Title de-duplication</b> — every <code>&lt;title&gt;</code> dropped its leading <code>⬛</code> / <code>◼</code> emoji glyph; the favicon (smiley) is the brand now and two glyphs side-by-side in the tab read as a duplicate logo. The <code>applyTabBrand()</code> dynamic favicon SVG-swap logic was retired with the static smiley taking over.</li>
-        <li><b>URL cleanup — <code>/app</code> over <code>/app.html</code></b> — internal hrefs and OGP <code>og:url</code> migrated to the cleaner extensionless form. <code>/app.html</code> still serves the same content (GitHub Pages auto-resolution), so all existing bookmarks survive. <code>index.html</code>'s splash-transition <code>endsWith</code> intercept widened to recognize both forms.</li>
-        <li><b>Security / reliability hardening</b> — terminal log <code>innerHTML</code> on import is now sanitized to allow only <code>&lt;span class="t-*"&gt;</code> elements (was XSS-able via crafted JSON). Camera <code>MediaStream</code> tracks are now released on <code>beforeunload</code> + <code>pagehide</code>. Share-URL decode failures surface in the terminal with a hash strip so reload doesn't loop. <code>saveCmds()</code> IndexedDB / localStorage write errors no longer get swallowed.</li>
-        <li><b>Repo wiring</b> — local <code>projects/black_mirror/</code> connected to <code>github.com/blackmirrorboard/bmboard</code> via <code>git init</code> + <code>git remote add</code> + <code>git fetch</code> + <code>git reset origin/main</code> (working tree preserved). GitHub Desktop now manages BMBoard alongside Atelier, replacing the previous web-UI-upload workflow. <code>kinoshitastudio</code> added as collaborator on <code>blackmirrorboard/bmboard</code> for push access.</li>
-        <li><b>Onboarding rewrite — <code>commands.html</code></b> — added a <b>Quick Start</b> categorized "I want to → type X" lookup grid at the top (Draw / Edit / Terminal / Save-Share / Spell / Easter eggs), plus a <b>Write Your First Spell</b> section with a 5-step walkthrough (try preset → register your own → BM API cheat sheet → share → ask AI to write one). The studio's own author had reopened BMBoard after a break and needed a "what can I do here?" reorientation; this is the cure.</li>
-        <li><b>Cross-linking</b> — <code>index.html</code> nav now points to <code>commands.html</code> directly; the footer adds deep links to <code>#quickstart</code> and <code>#first-spell</code> so the spell-authoring path is reachable in two clicks from the landing.</li>
-        <li><b>Manual rebrand</b> — every "99letters studio" reference in the EN + JA v1.2 manuals (22 files) corrected to "kinoshita studio".</li>
+        <li><span class="ja"><b>独自ドメイン</b> — <code>bmboard.studio</code> を取得。DNSはレジストリ側のネームサーバーが古いままで一度ハマった。HTTPS強制で <code>https://bmboard.studio/</code> が本番に。</span><span class="en"><b>Custom domain</b> — <code>bmboard.studio</code> acquired via お名前.com, registry NS pointed at <code>01-04.dnsv.jp</code> after a detour where records were saved on dnsv.jp but the registry was still <code>dns1/dns2.onamae.com</code>. Live at <code>https://bmboard.studio/</code> with <code>Enforce HTTPS</code> on. Old <code>blackmirrorboard.github.io/bmboard/</code> still resolves but all OGP / canonical URLs migrated.</span></li>
+        <li><span class="ja"><b>アイコン一式</b> — 丸いにこちゃんをタブの顔にした。1024²から <code>favicon.ico</code> / 16 / 32 / apple-touch / 192 / 512 を生成し、<code>manifest.json</code> も追加。</span><span class="en"><b>Favicon set from <code>logo.png</code></b> — the round black smiley logo became the brand mark in the tab. Generated <code>favicon.ico</code> (16/32/48), <code>favicon-16x16.png</code>, <code>favicon-32x32.png</code>, <code>apple-touch-icon.png</code> (180), <code>icon-192.png</code>, <code>icon-512.png</code> from a 1024² source. Added <code>manifest.json</code> for PWA / iOS home-screen.</span></li>
+        <li><span class="ja"><b>OGP画像を差し替え</b> — 黒地に白抜きのにこちゃん＋タイトル＋バージョン。6つのHTML全部を新しいものに。</span><span class="en"><b>OGP <code>og-image.png</code> (1200×630)</b> — black ground, white inverted smiley left, <code>BMBOARD</code> title + tagline + version strip on the right. Replaces the old <code>og-image.svg</code> across all 6 HTML files. Twitter Card validator now picks up the new card.</span></li>
+        <li><span class="ja"><b>タイトルの重複を解消</b> — <code>&lt;title&gt;</code> 先頭の絵文字を全部落とした。ファビコン（にこちゃん）がブランドなので、並ぶと同じ記号が2つ見える。</span><span class="en"><b>Title de-duplication</b> — every <code>&lt;title&gt;</code> dropped its leading <code>⬛</code> / <code>◼</code> emoji glyph; the favicon (smiley) is the brand now and two glyphs side-by-side in the tab read as a duplicate logo. The <code>applyTabBrand()</code> dynamic favicon SVG-swap logic was retired with the static smiley taking over.</span></li>
+        <li><span class="ja"><b>URLの整理</b> — <code>/app.html</code> から拡張子なしの <code>/app</code> へ。旧URLもそのまま開くのでブックマークは生き残る。</span><span class="en"><b>URL cleanup — <code>/app</code> over <code>/app.html</code></b> — internal hrefs and OGP <code>og:url</code> migrated to the cleaner extensionless form. <code>/app.html</code> still serves the same content (GitHub Pages auto-resolution), so all existing bookmarks survive. <code>index.html</code>'s splash-transition <code>endsWith</code> intercept widened to recognize both forms.</span></li>
+        <li><span class="ja"><b>安全性の強化</b> — 取り込んだログの <code>innerHTML</code> を <code>&lt;span class="t-*"&gt;</code> だけ許すように制限（細工したJSONでXSSが通る状態だった）。カメラは離脱時に解放。保存の失敗も握り潰さない。</span><span class="en"><b>Security / reliability hardening</b> — terminal log <code>innerHTML</code> on import is now sanitized to allow only <code>&lt;span class="t-*"&gt;</code> elements (was XSS-able via crafted JSON). Camera <code>MediaStream</code> tracks are now released on <code>beforeunload</code> + <code>pagehide</code>. Share-URL decode failures surface in the terminal with a hash strip so reload doesn't loop. <code>saveCmds()</code> IndexedDB / localStorage write errors no longer get swallowed.</span></li>
+        <li><span class="ja"><b>リポジトリ整備</b> — <code>projects/black_mirror/</code> を <code>blackmirrorboard/bmboard</code> に接続し、Webアップロード運用から GitHub Desktop に移した。</span><span class="en"><b>Repo wiring</b> — local <code>projects/black_mirror/</code> connected to <code>github.com/blackmirrorboard/bmboard</code> via <code>git init</code> + <code>git remote add</code> + <code>git fetch</code> + <code>git reset origin/main</code> (working tree preserved). GitHub Desktop now manages BMBoard alongside Atelier, replacing the previous web-UI-upload workflow. <code>kinoshitastudio</code> added as collaborator on <code>blackmirrorboard/bmboard</code> for push access.</span></li>
+        <li><span class="ja"><b>入口の書き直し</b> — <code>commands.html</code> の頭に「◯◯したい → これを打つ」の早見表と、最初の魔法を書くまでの5手を置いた。作者自身が久しぶりに開いて迷ったのが理由。</span><span class="en"><b>Onboarding rewrite — <code>commands.html</code></b> — added a <b>Quick Start</b> categorized "I want to → type X" lookup grid at the top (Draw / Edit / Terminal / Save-Share / Spell / Easter eggs), plus a <b>Write Your First Spell</b> section with a 5-step walkthrough (try preset → register your own → BM API cheat sheet → share → ask AI to write one). The studio's own author had reopened BMBoard after a break and needed a "what can I do here?" reorientation; this is the cure.</span></li>
+        <li><span class="ja"><b>導線</b> — トップのナビからコマンド一覧へ直接。フッターからも2クリックで魔法の書き方に届くように。</span><span class="en"><b>Cross-linking</b> — <code>index.html</code> nav now points to <code>commands.html</code> directly; the footer adds deep links to <code>#quickstart</code> and <code>#first-spell</code> so the spell-authoring path is reachable in two clicks from the landing.</span></li>
+        <li><span class="ja"><b>マニュアルの表記統一</b> — 日英22ファイルの「99letters studio」を「kinoshita studio」に。</span><span class="en"><b>Manual rebrand</b> — every "99letters studio" reference in the EN + JA v1.2 manuals (22 files) corrected to "kinoshita studio".</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.2+ · POST-RELEASE EVOLUTION</span>
+        <span class="tag"><span class="ja">v1.2+ · 公開後</span><span class="en">v1.2+ · POST-RELEASE EVOLUTION</span></span>
         <span class="when">2026-04-20 → 2026-04-22 (ongoing)</span>
       </div>
-      <h2>Brand routing · capabilities grid · responsive chrome · OGP</h2>
+      <h2><span class="ja">ドメイン移行・機能一覧・レスポンシブ・OGP</span><span class="en">Brand routing · capabilities grid · responsive chrome · OGP</span></h2>
       <ul>
-        <li><b>URL migration</b> — moved from <code>99letters.github.io/projects/black_mirror/</code> to the canonical <code>bmboard.studio/</code>. All <code>../../md.html</code> / <code>../../history.html</code> references absolutized to <code>https://99letters.github.io/…</code> so the new origin still reaches the dev log.</li>
-        <li><b>Rebrand</b> — studio name corrected everywhere: "99letters studio" → "kinoshita studio" across 22 manual files, <code>README.md</code>, usage docs, app.html footer, terminal ghost lines (<code>Playing: kinoshita studio / Black Mirror Board</code>), and INDEX frontmatter tags. The <code>99letters</code> domain remains as the GitHub identity only.</li>
-        <li><b>ASCII-art render fix</b> — the BM pixel logo in README/overview collapsed because Courier New / SF Mono render <code>█</code> (U+2588) shorter than the cell, leaving vertical gaps. Loaded <b>JetBrains Mono</b> via Google Fonts and force-applied <code>font-size: 14px; line-height: 1; letter-spacing: 0; word-spacing: 0</code> to the logo <code>&lt;pre&gt;</code> with <code>!important</code>.</li>
-        <li><b>index.html — CAPABILITIES section</b> — six new feature cards ship below the Dual Perspective section, each with a 16:9 demo-frame SVG illustration: SVG Export / Transparent PNG / Image Brainstorm / Custom Spells / SNS Share / Camera + YouTube Live. Monochrome 1-bit aesthetic preserved.</li>
-        <li><b>index.html — light / dark theme</b> — a 1-bit inversion toggle (<code>● · ○</code>) next to the EN/JA switch. All colors run through CSS variables (<code>--ink</code> / <code>--void</code> / <code>--scan-color</code> / <code>--glow-halo</code> / <code>--checker-fill</code> / <code>--header-bg</code>); hard-coded whites and blacks were removed. <code>prefers-color-scheme</code> is honored on first visit; choice persists via <code>bmboard.theme</code> in <code>localStorage</code>. An inline head script applies the saved theme before paint to defeat flash-of-wrong-theme. Dark-ink <code>logo.png</code> is inverted via CSS <code>filter: invert(1)</code> in dark mode only, left as-is in light mode.</li>
-        <li><b>app.html — theme extension</b> — <code>dark</code> and <code>gray</code> commands now also theme the header (background, border, <code>.hbtn</code>, <code>.hlink</code>, <code>.zoom-label</code>, <code>.logo*</code>). All colors read from the existing <code>--bm-tb-*</code> / <code>--bm-fg</code> / <code>--bm-fg-dim</code> tokens. Logo PNG inverted only in dark mode.</li>
-        <li><b>app.html — mobile header</b> — logo pinned to the left, right-side chrome optimized for narrow viewports: <code>FLUSH</code> + <code>CLEAR</code> hidden (still reachable via terminal), icon+label stacked vertically inside each <code>.hbtn</code> (36px square), <code>OVERVIEW</code> split across two lines as <code>OVER</code> / <code>VIEW</code> with the arrow removed. All buttons' icons centered in their box via <code>inline-flex; justify-content: center</code>.</li>
-        <li><b>app.html — header grid</b> — replaced the old <code>margin-left: auto</code> trick with an explicit 2-column grid (<code>grid-template-columns: auto 1fr</code>), logo in column 1, right buttons in column 2 with <code>justify-self: end</code>. Predictable on every viewport.</li>
-        <li><b>OGP image</b> — <code>og-image.svg</code> (1200×630) authored for both <code>index.html</code> and <code>app.html</code>: black ground with scanline texture, corner brackets, top-right <code>● REC ON AIR</code>, 400-px logo (base64-embedded, SVG <code>feColorMatrix</code> inverted to white), title stack <code>BLACK MIRROR / BOARD</code>, subtitle <code>DRAW · SPEAK · CAST</code>, version strip.</li>
-        <li><b>Overview <code>README</code> tab</b> — BM pixel ASCII now renders crisply in Courier-deprived browsers via the JetBrains Mono fix + <code>font-feature-settings: "liga" 0, "calt" 0</code>.</li>
+        <li><span class="ja"><b>URL移行</b> — <code>99letters.github.io/projects/black_mirror/</code> から <code>bmboard.studio/</code> へ。相対リンクは絶対URLに直して、新しい場所からでも開発ログに届くようにした。</span><span class="en"><b>URL migration</b> — moved from <code>99letters.github.io/projects/black_mirror/</code> to the canonical <code>bmboard.studio/</code>. All <code>../../md.html</code> / <code>../../history.html</code> references absolutized to <code>https://99letters.github.io/…</code> so the new origin still reaches the dev log.</span></li>
+        <li><span class="ja"><b>名前の統一</b> — 「99letters studio」→「kinoshita studio」をマニュアル22ファイル・README・app.html まで全部直した。<code>99letters</code> は GitHub のIDとしてだけ残す。</span><span class="en"><b>Rebrand</b> — studio name corrected everywhere: "99letters studio" → "kinoshita studio" across 22 manual files, <code>README.md</code>, usage docs, app.html footer, terminal ghost lines (<code>Playing: kinoshita studio / Black Mirror Board</code>), and INDEX frontmatter tags. The <code>99letters</code> domain remains as the GitHub identity only.</span></li>
+        <li><span class="ja"><b>ASCIIアートの表示崩れ</b> — <code>█</code> がフォントによってセルより低く描かれ、縦に隙間が空いていた。等幅フォントを指定し、行間と字間を固定して直した。</span><span class="en"><b>ASCII-art render fix</b> — the BM pixel logo in README/overview collapsed because Courier New / SF Mono render <code>█</code> (U+2588) shorter than the cell, leaving vertical gaps. Loaded <b>JetBrains Mono</b> via Google Fonts and force-applied <code>font-size: 14px; line-height: 1; letter-spacing: 0; word-spacing: 0</code> to the logo <code>&lt;pre&gt;</code> with <code>!important</code>.</span></li>
+        <li><span class="ja"><b>index.html に機能一覧</b> — 16:9 の作例SVG付きのカードを6枚追加（SVG書き出し／透過PNG／画像ブレスト／自作の魔法／共有／カメラ）。</span><span class="en"><b>index.html — CAPABILITIES section</b> — six new feature cards ship below the Dual Perspective section, each with a 16:9 demo-frame SVG illustration: SVG Export / Transparent PNG / Image Brainstorm / Custom Spells / SNS Share / Camera + YouTube Live. Monochrome 1-bit aesthetic preserved.</span></li>
+        <li><span class="ja"><b>index.html にライト/ダーク</b> — 全色をCSS変数に通し、初回は <code>prefers-color-scheme</code> を尊重、選択は保存。描画前に適用して一瞬の色化けを防ぐ。</span><span class="en"><b>index.html — light / dark theme</b> — a 1-bit inversion toggle (<code>● · ○</code>) next to the EN/JA switch. All colors run through CSS variables (<code>--ink</code> / <code>--void</code> / <code>--scan-color</code> / <code>--glow-halo</code> / <code>--checker-fill</code> / <code>--header-bg</code>); hard-coded whites and blacks were removed. <code>prefers-color-scheme</code> is honored on first visit; choice persists via <code>bmboard.theme</code> in <code>localStorage</code>. An inline head script applies the saved theme before paint to defeat flash-of-wrong-theme. Dark-ink <code>logo.png</code> is inverted via CSS <code>filter: invert(1)</code> in dark mode only, left as-is in light mode.</span></li>
+        <li><span class="ja"><b>app.html のテーマ拡張</b> — <code>dark</code> / <code>gray</code> がヘッダーの色まで変えるようにした。色は既存のトークンから読む。</span><span class="en"><b>app.html — theme extension</b> — <code>dark</code> and <code>gray</code> commands now also theme the header (background, border, <code>.hbtn</code>, <code>.hlink</code>, <code>.zoom-label</code>, <code>.logo*</code>). All colors read from the existing <code>--bm-tb-*</code> / <code>--bm-fg</code> / <code>--bm-fg-dim</code> tokens. Logo PNG inverted only in dark mode.</span></li>
+        <li><span class="ja"><b>app.html のモバイルヘッダー</b> — ロゴを左に固定し、狭い画面では使わないボタンを隠して、アイコンとラベルを縦積みに。</span><span class="en"><b>app.html — mobile header</b> — logo pinned to the left, right-side chrome optimized for narrow viewports: <code>FLUSH</code> + <code>CLEAR</code> hidden (still reachable via terminal), icon+label stacked vertically inside each <code>.hbtn</code> (36px square), <code>OVERVIEW</code> split across two lines as <code>OVER</code> / <code>VIEW</code> with the arrow removed. All buttons' icons centered in their box via <code>inline-flex; justify-content: center</code>.</span></li>
+        <li><span class="ja"><b>ヘッダーのレイアウト</b> — <code>margin-left:auto</code> をやめて2カラムのグリッドに。どの画面幅でも崩れない。</span><span class="en"><b>app.html — header grid</b> — replaced the old <code>margin-left: auto</code> trick with an explicit 2-column grid (<code>grid-template-columns: auto 1fr</code>), logo in column 1, right buttons in column 2 with <code>justify-self: end</code>. Predictable on every viewport.</span></li>
+        <li><span class="ja"><b>OGP画像</b> — 1200×630 を作成。黒地・走査線・ロゴ・タイトル・バージョン表記。</span><span class="en"><b>OGP image</b> — <code>og-image.svg</code> (1200×630) authored for both <code>index.html</code> and <code>app.html</code>: black ground with scanline texture, corner brackets, top-right <code>● REC ON AIR</code>, 400-px logo (base64-embedded, SVG <code>feColorMatrix</code> inverted to white), title stack <code>BLACK MIRROR / BOARD</code>, subtitle <code>DRAW · SPEAK · CAST</code>, version strip.</span></li>
+        <li><span class="ja"><b>Overview の README タブ</b> — 等幅指定と合字オフで、ピクセルロゴがどのブラウザでも崩れないようにした。</span><span class="en"><b>Overview <code>README</code> tab</b> — BM pixel ASCII now renders crisply in Courier-deprived browsers via the JetBrains Mono fix + <code>font-feature-settings: "liga" 0, "calt" 0</code>.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.2 · SPELLBOOK RELEASE</span>
+        <span class="tag"><span class="ja">v1.2 · 魔法書</span><span class="en">v1.2 · SPELLBOOK RELEASE</span></span>
         <span class="when">2026-04-19 — ship date</span>
       </div>
-      <h2>SVG export · camera wipe · share URL · custom spells</h2>
+      <h2><span class="ja">SVG書き出し・カメラ・共有URL・自作の魔法</span><span class="en">SVG export · camera wipe · share URL · custom spells</span></h2>
       <ul>
-        <li><b>SVG export</b> — typing <code>svg</code> in the terminal writes a native SVG of the current selection (or the whole canvas). Every primitive translates: circle→<code>&lt;ellipse&gt;</code>, square→<code>&lt;rect&gt;</code>, triangle→<code>&lt;polygon&gt;</code>, arrow→<code>&lt;line&gt;+&lt;polygon&gt;</code>, text→<code>&lt;text dominant-baseline="hanging"&gt;</code>, pen stroke→<code>&lt;path M…Q…&gt;</code>, image→<code>&lt;image&gt;</code>. Rotation wraps as <code>&lt;g transform="rotate()"&gt;</code>. Colors resolved via <code>resolveFill()</code>. Opens in Figma / Illustrator / Inkscape editable.</li>
-        <li><b>Black Mirror camera wipe</b> — the phrase <code>Black Mirror</code> flips on <code>getUserMedia</code> and docks a 220×165 PIP in the top-right (128×170 on mobile). Red REC dot, <code>◼ BLACK MIRROR</code> label in <code>mix-blend-mode: difference</code>, selfie-mirrored with a faint grayscale + contrast filter for the CRT look. Hover exposes an <code>×</code> close; <code>Black Mirror off</code> also releases all tracks. The wipe is <b>draggable</b> — place it anywhere on screen.</li>
-        <li><b>Share URL</b> — <code>share</code> with no args gzips the canvas + terminal state via native <code>CompressionStream</code>, base64-urls it, and copies a self-contained link. Opening the URL on any device restores the full board. <code>share</code> vs <code>share url</code> selects between file download and clipboard.</li>
-        <li><b>Custom spells</b> — pasting a JSON payload into the terminal runs a schema check, binds it to IndexedDB, and exposes it as a named command. Features travel as text, one line at a time. <code>BM API</code> + natural language prompts to Claude / ChatGPT produce runnable spells.</li>
-        <li><b>Preset library</b> — <code>scatter</code>, <code>grid-3x3</code>, <code>biwako-blue</code>, <code>fetch-img</code>, <code>monoclo</code>, <code>svg</code> ship with the app, each as JSON-portable spells that can be dumped, remixed, and re-shared.</li>
-        <li><b>Image brainstorm</b> — <code>fetch-img &lt;keyword&gt;</code> pulls public images for the word, scatters them on the canvas with rotation + margin, turning the board into a self-writing mood-board.</li>
-        <li><b>Del / Backspace fix</b> — the delete key was swallowed by inputs outside text-edit mode; now correctly removes the selection, with the text-edit exception restored.</li>
-        <li><b>FEEDBACK modal</b> — tap the logo → prefilled feedback form with subject auto-stamped per version; studio email + Instagram + X links consolidated.</li>
-        <li><b>Manual split</b> — v1.2 manual authored in Obsidian (JP + EN), exported as markdown files under <code>v1.2_manual_ja/</code> and <code>v1.2_manual_en/</code>.</li>
+        <li><span class="ja"><b>SVG書き出し</b> — ターミナルで <code>svg</code>。選択（無ければ全体）をそのままベクターで書き出す。円→<code>ellipse</code>、四角→<code>rect</code>、三角→<code>polygon</code>、線→<code>path</code> と、全てのプリミティブが対応する。Figma / Illustrator でそのまま編集できる。</span><span class="en"><b>SVG export</b> — typing <code>svg</code> in the terminal writes a native SVG of the current selection (or the whole canvas). Every primitive translates: circle→<code>&lt;ellipse&gt;</code>, square→<code>&lt;rect&gt;</code>, triangle→<code>&lt;polygon&gt;</code>, arrow→<code>&lt;line&gt;+&lt;polygon&gt;</code>, text→<code>&lt;text dominant-baseline="hanging"&gt;</code>, pen stroke→<code>&lt;path M…Q…&gt;</code>, image→<code>&lt;image&gt;</code>. Rotation wraps as <code>&lt;g transform="rotate()"&gt;</code>. Colors resolved via <code>resolveFill()</code>. Opens in Figma / Illustrator / Inkscape editable.</span></li>
+        <li><span class="ja"><b>カメラ</b> — <code>Black Mirror</code> と打つとカメラが入り、右上に小窓が出る。ドラッグで好きな位置へ。<code>Black Mirror off</code> でトラックも解放する。</span><span class="en"><b>Black Mirror camera wipe</b> — the phrase <code>Black Mirror</code> flips on <code>getUserMedia</code> and docks a 220×165 PIP in the top-right (128×170 on mobile). Red REC dot, <code>◼ BLACK MIRROR</code> label in <code>mix-blend-mode: difference</code>, selfie-mirrored with a faint grayscale + contrast filter for the CRT look. Hover exposes an <code>×</code> close; <code>Black Mirror off</code> also releases all tracks. The wipe is <b>draggable</b> — place it anywhere on screen.</span></li>
+        <li><span class="ja"><b>共有URL</b> — <code>share</code> でキャンバスとログを <code>CompressionStream</code> で圧縮してURLに載せる。開けばどの端末でも同じ板が復元される。</span><span class="en"><b>Share URL</b> — <code>share</code> with no args gzips the canvas + terminal state via native <code>CompressionStream</code>, base64-urls it, and copies a self-contained link. Opening the URL on any device restores the full board. <code>share</code> vs <code>share url</code> selects between file download and clipboard.</span></li>
+        <li><span class="ja"><b>自作の魔法</b> — JSONをターミナルに貼るとスキーマ検査を通り、IndexedDB に登録されて名前付きコマンドになる。機能が文字列として持ち運べる。</span><span class="en"><b>Custom spells</b> — pasting a JSON payload into the terminal runs a schema check, binds it to IndexedDB, and exposes it as a named command. Features travel as text, one line at a time. <code>BM API</code> + natural language prompts to Claude / ChatGPT produce runnable spells.</span></li>
+        <li><span class="ja"><b>内蔵の魔法</b> — <code>scatter</code> / <code>grid-3x3</code> / <code>biwako-blue</code> / <code>monoclo</code> / <code>svg</code> などを同じJSON形式で同梱。書き出して作り替えて配れる。</span><span class="en"><b>Preset library</b> — <code>scatter</code>, <code>grid-3x3</code>, <code>biwako-blue</code>, <code>fetch-img</code>, <code>monoclo</code>, <code>svg</code> ship with the app, each as JSON-portable spells that can be dumped, remixed, and re-shared.</span></li>
+        <li><span class="ja"><b>画像でブレスト</b> — <code>fetch-img &lt;キーワード&gt;</code> で公開画像を集め、回転と余白を付けて撒く。板が勝手にムードボードになる。</span><span class="en"><b>Image brainstorm</b> — <code>fetch-img &lt;keyword&gt;</code> pulls public images for the word, scatters them on the canvas with rotation + margin, turning the board into a self-writing mood-board.</span></li>
+        <li><span class="ja"><b>Del / Backspace の修正</b> — テキスト編集中でないのに入力欄がキーを飲んでいた。選択を正しく消せるようにし、テキスト編集中の例外だけ残した。</span><span class="en"><b>Del / Backspace fix</b> — the delete key was swallowed by inputs outside text-edit mode; now correctly removes the selection, with the text-edit exception restored.</span></li>
+        <li><span class="ja"><b>フィードバック</b> — ロゴを押すと、件名にバージョンが入った状態のフォームが開く。</span><span class="en"><b>FEEDBACK modal</b> — tap the logo → prefilled feedback form with subject auto-stamped per version; studio email + Instagram + X links consolidated.</span></li>
+        <li><span class="ja"><b>マニュアル</b> — v1.2 のマニュアルを日英で書き、<code>v1.2_manual_ja/</code> と <code>v1.2_manual_en/</code> に出した。</span><span class="en"><b>Manual split</b> — v1.2 manual authored in Obsidian (JP + EN), exported as markdown files under <code>v1.2_manual_ja/</code> and <code>v1.2_manual_en/</code>.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.1 · INTERIM POLISH</span>
+        <span class="tag"><span class="ja">v1.1 · 手触りの調整</span><span class="en">v1.1 · INTERIM POLISH</span></span>
         <span class="when">2026-04-17 → 2026-04-18</span>
       </div>
-      <h2>Modifier reliability · Cursor language · Escape routes</h2>
+      <h2><span class="ja">修飾キーの信頼性・カーソルの言語・逃げ道</span><span class="en">Modifier reliability · Cursor language · Escape routes</span></h2>
       <ul>
-        <li><b>Modifier pipeline</b> — Shift / Alt read from a window-level <code>S.modifiers</code> ledger so holding a key mid-drag updates geometry instantly; <code>window blur</code> resets the ledger to defeat the classic "stuck Shift after tab-swap" bug.</li>
-        <li><b>Directional cursors</b> — corner / edge / rotate handles expose OS cursors matching their drag axis; dashed directional glyphs on hover.</li>
-        <li><b>Escape routes</b> — <code>Esc</code> abandons any in-flight gesture (drag, marquee, rotate, resize, text edit) back to neutral; double-click exits text mode cleanly.</li>
-        <li><b>Text editing rigour</b> — commit on blur or <code>Enter</code>, cancel on <code>Esc</code>; click outside drops focus without losing the object.</li>
+        <li><span class="ja"><b>修飾キーの経路</b> — Shift / Alt を window 側の <code>S.modifiers</code> から読む。ドラッグ途中で押しても即反映され、ウィンドウが blur したら台帳をリセットして「タブを戻すと Shift が押しっぱなし」を潰した。</span><span class="en"><b>Modifier pipeline</b> — Shift / Alt read from a window-level <code>S.modifiers</code> ledger so holding a key mid-drag updates geometry instantly; <code>window blur</code> resets the ledger to defeat the classic "stuck Shift after tab-swap" bug.</span></li>
+        <li><span class="ja"><b>方向を示すカーソル</b> — 角・辺・回転の各ハンドルが、その方向に合ったOSカーソルを出す。</span><span class="en"><b>Directional cursors</b> — corner / edge / rotate handles expose OS cursors matching their drag axis; dashed directional glyphs on hover.</span></li>
+        <li><span class="ja"><b>逃げ道</b> — <code>Esc</code> でドラッグ・範囲選択・回転・拡縮・テキスト編集のどれからも中立に戻れる。</span><span class="en"><b>Escape routes</b> — <code>Esc</code> abandons any in-flight gesture (drag, marquee, rotate, resize, text edit) back to neutral; double-click exits text mode cleanly.</span></li>
+        <li><span class="ja"><b>テキスト編集の作法</b> — フォーカスを外すか <code>Enter</code> で確定、<code>Esc</code> で取り消し。外をクリックしてもオブジェクトは消えない。</span><span class="en"><b>Text editing rigour</b> — commit on blur or <code>Enter</code>, cancel on <code>Esc</code>; click outside drops focus without losing the object.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v1.0 · STUDIO RELEASE</span>
+        <span class="tag"><span class="ja">v1.0 · 公開</span><span class="en">v1.0 · STUDIO RELEASE</span></span>
         <span class="when">2026-04-16 — ship date</span>
       </div>
-      <h2>Gray mode · Hit-test 2.0 · Shift-lock resize</h2>
+      <h2><span class="ja">グレーモード・当たり判定2.0・Shift固定リサイズ</span><span class="en">Gray mode · Hit-test 2.0 · Shift-lock resize</span></h2>
       <ul>
-        <li><b>Gray mode</b> — pebble ground <code>#DCDBD5</code> / cobalt ink <code>#1600A2</code>. Dedicated CSS-variable theme alongside light/dark, triggered by <code>gray</code> command.</li>
-        <li><b>Hit-test 2.0</b> — segment-distance hit testing on strokes; 8px invisible padding; hover glow + directional cursors.</li>
-        <li><b>Shift-lock resize</b> — aspect-ratio preserved on corner handles; Alt anchors to center; images lock by default.</li>
-        <li><b>Snap scale</b> — ×0.5 / ×1 / ×1.5 / ×2 magnet windows during Shift-resize.</li>
-        <li><b>Theme-aware selection</b> — selection box and marquee auto-invert for max contrast in each mode.</li>
+        <li><span class="ja"><b>グレーモード</b> — 地 <code>#DCDBD5</code>／インク <code>#1600A2</code>。light/dark と並ぶ独立テーマとして <code>gray</code> で切替。</span><span class="en"><b>Gray mode</b> — pebble ground <code>#DCDBD5</code> / cobalt ink <code>#1600A2</code>. Dedicated CSS-variable theme alongside light/dark, triggered by <code>gray</code> command.</span></li>
+        <li><span class="ja"><b>当たり判定2.0</b> — 線はセグメントとの距離で判定。見た目より8px広く取り、ホバー時に光らせて方向カーソルを出す。</span><span class="en"><b>Hit-test 2.0</b> — segment-distance hit testing on strokes; 8px invisible padding; hover glow + directional cursors.</span></li>
+        <li><span class="ja"><b>Shift固定リサイズ</b> — 角のハンドルで比率を保つ。Alt で中心固定。画像は既定で比率固定。</span><span class="en"><b>Shift-lock resize</b> — aspect-ratio preserved on corner handles; Alt anchors to center; images lock by default.</span></li>
+        <li><span class="ja"><b>スナップ</b> — Shiftリサイズ中、×0.5 / ×1 / ×1.5 / ×2 に磁石で吸い付く。</span><span class="en"><b>Snap scale</b> — ×0.5 / ×1 / ×1.5 / ×2 magnet windows during Shift-resize.</span></li>
+        <li><span class="ja"><b>テーマ連動の選択表示</b> — 選択枠と範囲選択が、各モードで一番見える色に自動反転する。</span><span class="en"><b>Theme-aware selection</b> — selection box and marquee auto-invert for max contrast in each mode.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v0.9 · VOID THEME</span>
+        <span class="tag"><span class="ja">v0.9 · 暗転</span><span class="en">v0.9 · VOID THEME</span></span>
         <span class="when">2026-04-14</span>
       </div>
-      <h2>Dark mode + fill-swatch theming</h2>
+      <h2><span class="ja">ダークモードと塗りのテーマ化</span><span class="en">Dark mode + fill-swatch theming</span></h2>
       <ul>
-        <li>Terminal command <code>dark mode</code> / <code>light mode</code> engages a glitch-flash mode transition.</li>
-        <li>All object fills invert on mode switch (<code>resolveFill()</code> channel inversion).</li>
-        <li>Swatch SVGs refactored to class-based CSS variables so the toolbar flips in lockstep.</li>
-        <li>Toolbar elevated off pure-black canvas with a subtle shadow for contrast.</li>
+        <li><span class="ja">ターミナルの <code>dark mode</code> / <code>light mode</code> でグリッチ風に切り替わる。</span><span class="en">Terminal command <code>dark mode</code> / <code>light mode</code> engages a glitch-flash mode transition.</span></li>
+        <li><span class="ja">モード切替で全オブジェクトの塗りが反転する（<code>resolveFill()</code> のチャンネル反転）。</span><span class="en">All object fills invert on mode switch (<code>resolveFill()</code> channel inversion).</span></li>
+        <li><span class="ja">スウォッチSVGをクラス＋CSS変数にして、ツールバーも同時に反転するようにした。</span><span class="en">Swatch SVGs refactored to class-based CSS variables so the toolbar flips in lockstep.</span></li>
+        <li><span class="ja">真っ黒の上でツールバーが沈むので、影を足して浮かせた。</span><span class="en">Toolbar elevated off pure-black canvas with a subtle shadow for contrast.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v0.7 · EXPORT</span>
+        <span class="tag"><span class="ja">v0.7 · 書き出し</span><span class="en">v0.7 · EXPORT</span></span>
         <span class="when">2026-04-13</span>
       </div>
-      <h2>JSON persistence + transparent PNG</h2>
+      <h2><span class="ja">JSON保存と透過PNG書き出し</span><span class="en">JSON persistence + transparent PNG</span></h2>
       <ul>
-        <li>Export entire project (canvas + terminal log) as a single JSON blob.</li>
-        <li>PNG export on offscreen canvas — tight bbox + transparent background.</li>
-        <li>Selection-aware export: exports only selected objects when present.</li>
-        <li>3× DPR cap to prevent memory spikes on high-resolution exports.</li>
+        <li><span class="ja">キャンバスとターミナルのログを丸ごと1つの JSON に書き出す。</span><span class="en">Export entire project (canvas + terminal log) as a single JSON blob.</span></li>
+        <li><span class="ja">PNGはオフスクリーンキャンバスで——余白を詰めた透過画像。</span><span class="en">PNG export on offscreen canvas — tight bbox + transparent background.</span></li>
+        <li><span class="ja">選択中があればそれだけを書き出す。</span><span class="en">Selection-aware export: exports only selected objects when present.</span></li>
+        <li><span class="ja">高解像度で書き出す時のメモリ暴走を防ぐため DPR は3倍で頭打ち。</span><span class="en">3× DPR cap to prevent memory spikes on high-resolution exports.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v0.5 · VECTOR EDIT</span>
+        <span class="tag"><span class="ja">v0.5 · ベクター編集</span><span class="en">v0.5 · VECTOR EDIT</span></span>
         <span class="when">2026-04-12</span>
       </div>
-      <h2>Illustrator-style anchor system</h2>
+      <h2><span class="ja">Illustrator 風のアンカー編集</span><span class="en">Illustrator-style anchor system</span></h2>
       <ul>
-        <li>Per-vertex anchor handles on pen strokes & triangles.</li>
-        <li>8-handle bbox resize on squares / images / text.</li>
-        <li>Cardinal handles on circles (single-radius edits).</li>
-        <li>RDP simplification on freehand strokes → editable anchor count.</li>
+        <li><span class="ja">ペンの線と三角形は頂点ごとにアンカーを掴める。</span><span class="en">Per-vertex anchor handles on pen strokes & triangles.</span></li>
+        <li><span class="ja">四角・画像・テキストは8ハンドルで拡縮。</span><span class="en">8-handle bbox resize on squares / images / text.</span></li>
+        <li><span class="ja">円は上下左右のハンドルで半径を変える。</span><span class="en">Cardinal handles on circles (single-radius edits).</span></li>
+        <li><span class="ja">フリーハンドは RDP で単純化してから、編集できる数のアンカーにする。</span><span class="en">RDP simplification on freehand strokes → editable anchor count.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v0.3 · INTERACTION</span>
+        <span class="tag"><span class="ja">v0.3 · 操作</span><span class="en">v0.3 · INTERACTION</span></span>
         <span class="when">2026-04-10</span>
       </div>
-      <h2>Selection, drag, rotation, zoom</h2>
+      <h2><span class="ja">選択・ドラッグ・回転・ズーム</span><span class="en">Selection, drag, rotation, zoom</span></h2>
       <ul>
-        <li>Unified Pointer Event handling for mouse / touch / pen.</li>
-        <li>Space-key pan + pinch-zoom for tablet parity.</li>
-        <li>Rotation handle above the bounding box.</li>
-        <li>Multi-select via marquee drag; group move / resize / rotate.</li>
+        <li><span class="ja">マウス／タッチ／ペンを Pointer Event 1本に統一。</span><span class="en">Unified Pointer Event handling for mouse / touch / pen.</span></li>
+        <li><span class="ja">スペースキーでパン＋ピンチズーム（タブレットでも同じ操作に）。</span><span class="en">Space-key pan + pinch-zoom for tablet parity.</span></li>
+        <li><span class="ja">バウンディングボックスの上に回転ハンドル。</span><span class="en">Rotation handle above the bounding box.</span></li>
+        <li><span class="ja">範囲ドラッグで複数選択、まとめて移動・拡縮・回転。</span><span class="en">Multi-select via marquee drag; group move / resize / rotate.</span></li>
       </ul>
     </article>
 
     <article class="entry">
       <div class="meta">
-        <span class="tag">v0.1 · PROTOTYPE</span>
+        <span class="tag"><span class="ja">v0.1 · 試作</span><span class="en">v0.1 · PROTOTYPE</span></span>
         <span class="when">2026-04-08 — initial commit</span>
       </div>
-      <h2>Terminal + canvas skeleton</h2>
+      <h2><span class="ja">ターミナル＋キャンバスの骨格</span><span class="en">Terminal + canvas skeleton</span></h2>
       <ul>
-        <li>Split pane layout: canvas (left) + terminal (right).</li>
-        <li>Basic shapes — circle / square / triangle / arrow / text.</li>
-        <li>Pen tool with freehand stroke capture.</li>
-        <li>ASCII-only UI chrome, no colors beyond greyscale.</li>
+        <li><span class="ja">左にキャンバス／右にターミナルの2分割。</span><span class="en">Split pane layout: canvas (left) + terminal (right).</span></li>
+        <li><span class="ja">基本図形——円・四角・三角・矢印・テキスト。</span><span class="en">Basic shapes — circle / square / triangle / arrow / text.</span></li>
+        <li><span class="ja">フリーハンドで線を取るペン。</span><span class="en">Pen tool with freehand stroke capture.</span></li>
+        <li><span class="ja">UIはASCIIのみ、色はグレースケールまで。</span><span class="en">ASCII-only UI chrome, no colors beyond greyscale.</span></li>
       </ul>
     </article>
 

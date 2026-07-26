@@ -29,15 +29,25 @@ const key = e => (String(e.date).match(/\d{4}-\d{2}-\d{2}/) || ['0000-00-00'])[0
 const sorted = entries.map((e, i) => ({ e, i })).sort((a, b) =>
   key(b.e).localeCompare(key(a.e)) || b.i - a.i).map(x => x.e);
 
+/* ⭐日英の出し分け。⚠️片方しか無いエントリは、その言語のまま両方で出す
+   （無い言語を空にすると、切り替えた瞬間に記録が消えて見える＝入口が死ぬのと同じ） */
+const bi = v => {
+  if (v && typeof v === 'object') {
+    const ja = v.ja || v.en || '', en = v.en || v.ja || '';
+    return `<span class="ja">${ja}</span><span class="en">${en}</span>`;
+  }
+  return String(v == null ? '' : v);
+};
+
 const list = sorted.map(e => `
     <article class="entry">
       <div class="meta">
-        <span class="tag">${e.tag}</span>
+        <span class="tag">${bi(e.tag)}</span>
         <span class="when">${e.date}</span>
       </div>
-      <h2>${e.title}</h2>
+      <h2>${bi(e.title)}</h2>
       <ul>
-${e.items.map(it => `        <li>${it}</li>`).join('\n')}
+${e.items.map(it => `        <li>${bi(it)}</li>`).join('\n')}
       </ul>
     </article>`).join('\n');
 
