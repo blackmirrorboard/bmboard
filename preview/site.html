@@ -84,16 +84,9 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
   padding:132px 26px 92px;text-align:center;overflow:hidden;isolation:isolate}
 /* 背景＝そのまま敷く。下端だけ溶かして次のセクションへ繋ぐ */
 .hero::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
-  background:url('../kv/kv-bg.webp') center center / cover no-repeat;
+  background:url('../kv/kv-hero.webp') center center / cover no-repeat;
   -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 68%,transparent 100%);
   mask-image:linear-gradient(180deg,#000 0%,#000 68%,transparent 100%)}
-/* 立体＝背景の上に重ねる。位置と大きさはここだけで決まる */
-.kvwrap{position:absolute;inset:0;z-index:1;display:grid;place-items:center;pointer-events:none}
-.kvsolid{width:min(72%,720px);height:auto;display:block;
-  transform:translate(4%,4%) scale(.97);
-  filter:drop-shadow(0 40px 90px rgba(0,0,0,.55));
-  transition:transform 1.3s cubic-bezier(.2,.7,.2,1)}
-.kvsolid.up{transform:translate(4%,4%) scale(1)}
 /* コピー＝いちばん上。背後にごく薄い暗がりを敷いて読めるようにする */
 .herocopy{position:relative;z-index:2}
 /* ⭐KVを素材のまま見せるため背後の暗がりをやめた。可読性は文字側で作る。
@@ -192,8 +185,6 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
      ⚠️本来はモバイル用の絵を別に用意するのが正しい（<picture> の source を差し替えるだけ）。 */
   .hero{min-height:min(88vh,780px);padding:118px 22px 76px}
   .hero::before{background-position:56% center}
-  .kvsolid{width:min(104%,560px);transform:translate(2%,12%) scale(.98)}
-  .kvsolid.up{transform:translate(2%,12%) scale(1)}
   nav.stuck{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
   .btn2{backdrop-filter:none;-webkit-backdrop-filter:none}
   .win{box-shadow:0 18px 44px rgba(0,0,0,.5);transform:rotateX(7deg) scale(.99)}
@@ -236,34 +227,6 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
 
   <!-- ══ HERO ══ -->
   <header class="hero" id="top">
-    <!-- ⭐KV（木下作）＝背景の上に立体。ここが1枚の塊 -->
-    <div class="kvwrap">
-      <picture>
-        <!-- ⚠️モバイル用の絵ができたら srcset を差し替えるだけでいい -->
-        <source media="(max-width:700px)" srcset="../kv/kv-solid.webp">
-        <img class="kvsolid" id="win" src="../kv/kv-solid.webp" alt="" loading="eager">
-      </picture>
-    </div>
-
-    <div class="herocopy shell">
-    <h1 class="rv" data-d="1">
-      <span class="ja">手で書く。<span class="l2">キーで動かす。</span></span>
-      <span class="en">Write by hand.<span class="l2">Move at speed.</span></span>
-    </h1>
-    <div class="h1en rv" data-d="1">Write by hand. Move at speed.</div>
-
-    <p class="lead rv" data-d="2">
-      <span class="ja">ブラウザで開く、一枚の紙。鉛筆の手ざわりと <span class="k">⌘K</span> の速さが、同じ面にあります。</span>
-      <span class="en">A sheet of paper that opens in your browser — with the feel of pencil and the speed of <span class="k">⌘K</span> on the same surface.</span>
-    </p>
-
-    <div class="ctas rv" data-d="3">
-      <a class="btn1" href="../app.html"><span class="ja">ブラウザで開く</span><span class="en">Open in browser</span></a>
-      <a class="btn2" href="#paper"><span class="ja">何ができるか</span><span class="en">See what it does</span></a>
-    </div>
-    <div class="meta rv" data-d="4">one file &nbsp;·&nbsp; zero deps &nbsp;·&nbsp; works offline &nbsp;·&nbsp; free</div>
-
-    </div>
   </header>
 
   <!-- ══ 01 ══ -->
