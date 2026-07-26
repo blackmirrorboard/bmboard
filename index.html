@@ -196,6 +196,11 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
 .brand{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:15px;
   letter-spacing:.16em;font-weight:700}
 .brand img{width:27px;height:27px;filter:invert(1)}
+.pages{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pages::-webkit-scrollbar{display:none}
+.pages a{font-size:13.5px;color:var(--dim);padding:8px 13px;border-radius:9px;white-space:nowrap;
+  transition:color .18s,background .18s}
+.pages a:hover{color:var(--fg);background:rgba(255,255,255,.06)}
 .navsp{flex:1}
 .lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-family:var(--mono);font-size:11px}
 .lang button{background:none;border:0;color:var(--dim2);padding:6px 11px;cursor:pointer;transition:.15s}
@@ -354,6 +359,11 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
   .stage{margin-top:56px}
   .facts{grid-template-columns:1fr}
   .navcta{padding:8px 15px;font-size:12.5px}
+  /* ⭐モバイルはページ列を2段目に回して横スクロール（ロゴ・言語・開くは1段目のまま） */
+  nav{flex-wrap:wrap;gap:10px;padding:12px 16px}
+  .pages{order:3;width:100%;margin:0 -16px;padding:0 16px 2px}
+  .pages a{font-size:12.5px;padding:6px 10px}
+  .navsp{order:2}
   .final{padding:128px 0}
 }
 @media(prefers-reduced-motion:reduce){
@@ -372,6 +382,16 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
 
 <nav id="nav">
   <a class="brand" href="#top"><img src="logo.png" alt=""><span>BM BOARD</span></a>
+  <!-- ⭐上部にページを並べる（Raycast型）。⚠️各ページ側は .github/scripts/lib/page.mjs の NAV が正。
+       ここだけ手書きなので、増やす時は両方を揃えること。 -->
+  <div class="pages">
+    <a href="usage.html"><span class="ja">使い方</span><span class="en">Usage</span></a>
+    <a href="commands.html"><span class="ja">コマンド</span><span class="en">Commands</span></a>
+    <a href="spell-spec.html"><span class="ja">魔法</span><span class="en">Spells</span></a>
+    <a href="story.html"><span class="ja">つくった理由</span><span class="en">Story</span></a>
+    <a href="dev-log.html"><span class="ja">開発ログ</span><span class="en">Dev log</span></a>
+    <a href="browser/">BM Browser</a>
+  </div>
   <span class="navsp"></span>
   <div class="lang">
     <button type="button" data-lang="ja" class="on">JP</button>

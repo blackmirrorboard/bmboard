@@ -1,1638 +1,600 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BM BOARD — COMMAND REFERENCE</title>
-<meta name="description" content="Black Mirror Board — command reference for the canvas terminal.">
-<!-- OGP / Twitter -->
-<meta property="og:title" content="BMBOARD — Command Reference">
-<meta property="og:description" content="The full command reference for Black Mirror Board.">
-<meta property="og:type" content="website">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BM BOARD — コマンド / Commands</title>
+<!-- ⚠️このファイルは自動生成です。直接編集しても次の生成で消えます。
+     生成元は app.html の中のデータ。項目を足すならそちらに1行足す。 -->
+<meta name="description" content="BM BOARD の全コマンド 48個（サブコマンド 52個）。⌘K を押して名前を打つだけ。日本語 / English。">
+<link rel="canonical" href="https://bmboard.studio/commands.html">
+<meta property="og:title" content="BM BOARD — コマンド一覧">
+<meta property="og:description" content="⌘K で呼べる 48 のコマンド。">
+<meta property="og:type" content="article">
 <meta property="og:url" content="https://bmboard.studio/commands.html">
 <meta property="og:image" content="https://bmboard.studio/og-image.png">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:site_name" content="BMBOARD">
+<meta property="og:site_name" content="BM BOARD">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BM BOARD — コマンド一覧">
 <meta name="twitter:image" content="https://bmboard.studio/og-image.png">
-<!-- Favicons (logo-based: black smiley on white) -->
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0c0c0c">
-<!-- Apply stored theme before paint. Shares `bmboard.theme` with index.html. -->
-<script>
-(function () {
-    try {
-        var t = localStorage.getItem('bmboard.theme');
-        if (t !== 'light' && t !== 'dark') {
-            t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
-        }
-        document.documentElement.setAttribute('data-theme', t);
-    } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    }
-})();
+<meta name="theme-color" content="#08080a">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "BM BOARD のコマンド一覧",
+  "inLanguage": [
+    "ja",
+    "en"
+  ],
+  "url": "https://bmboard.studio/commands.html",
+  "about": {
+    "@type": "SoftwareApplication",
+    "name": "BM BOARD",
+    "alternateName": [
+      "Black Mirror Board",
+      "BMBOARD"
+    ],
+    "url": "https://bmboard.studio/"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "木下 貴博",
+    "url": "https://kinoshita.studio/"
+  }
+}
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ⭐トップページと同じ顔（システムフォント・暗い地・SF Monoのチップ）。
+   ⚠️Webフォントは読まない＝外部依存ゼロ。BM BOARD本体の思想と揃える。 */
+:root{
+  --ink:#08080a; --ink2:#0e0e12; --fg:#f2f0ec;
+  --dim:rgba(242,240,236,.56); --dim2:rgba(242,240,236,.34);
+  --line:rgba(255,255,255,.09);
+  --blue:#0a12e0;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans','Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scroll-padding-top:150px}
+body{background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.8;
+  letter-spacing:.01em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.shell{max-width:1160px;margin:0 auto;padding:0 26px}
 
-    :root {
-        /* DARK MODE (default) */
-        --void:  #0b0b0b;
-        --void2: #141414;
-        --ink:   #F0EDE6;
-        --dim:   rgba(240,237,230,0.60);
-        --faint: rgba(240,237,230,0.32);
-        --line:  rgba(240,237,230,0.14);
-        --rule:  rgba(240,237,230,0.08);
-        --accent:#F0EDE6;
-        --warn:  #FF3B30;
-        --mono:  'Space Mono','Courier New',Courier,monospace;
-        --tech:  'JetBrains Mono','Space Mono',monospace;
-        --scan-color: rgba(255,255,255,0.02);
-        --scan-blend: screen;
-        --pill-tint:  rgba(240,237,230,0.08);
-        --card-tint:  rgba(240,237,230,0.018);
-    }
+/* 背景の光。⚠️読む頁なので動かさない（動く光は目が滑る） */
+.glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.glow i{position:absolute;display:block;border-radius:50%;filter:blur(80px);opacity:.20}
+.glow i:nth-child(1){width:52vw;height:52vw;left:-16vw;top:-14vh;background:#4a3aff}
+.glow i:nth-child(2){width:48vw;height:48vw;right:-14vw;top:52vh;background:#2a6cff}
+main,nav,footer{position:relative;z-index:1}
 
-    /* LIGHT MODE — inverted 1-bit palette */
-    html[data-theme="light"] {
-        --void:  #FAFAF8;
-        --void2: #F0EEE8;
-        --ink:   #0c0c0c;
-        --dim:   rgba(12,12,12,0.64);
-        --faint: rgba(12,12,12,0.34);
-        --line:  rgba(12,12,12,0.14);
-        --rule:  rgba(12,12,12,0.08);
-        --accent:#0c0c0c;
-        --scan-color: rgba(0,0,0,0.022);
-        --scan-blend: multiply;
-        --pill-tint:  rgba(12,12,12,0.06);
-        --card-tint:  rgba(12,12,12,0.018);
-    }
+nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:16px;
+  padding:13px 26px;background:rgba(8,8,10,.74);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:15px;
+  letter-spacing:.16em;font-weight:700;flex:none}
+.brand img{width:27px;height:27px;filter:invert(1)}
+.pages{display:flex;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;
+  scrollbar-width:none}
+.pages::-webkit-scrollbar{display:none}
+.pages a{font-size:13.5px;color:var(--dim);padding:8px 13px;border-radius:9px;white-space:nowrap}
+.pages a:hover{color:var(--fg);background:rgba(255,255,255,.06)}
+.pages a.on{color:var(--fg);background:rgba(255,255,255,.09)}
+.lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  font-family:var(--mono);font-size:11px;flex:none}
+.lang button{background:transparent;border:0;color:var(--dim2);padding:6px 11px;cursor:pointer;font:inherit}
+.lang button.on{background:var(--fg);color:var(--ink)}
+.navcta{font-size:13px;font-weight:500;padding:9px 20px;border-radius:9px;
+  background:var(--fg);color:var(--ink);flex:none}
 
-    html, body { background: var(--void); color: var(--ink); }
-    html { -webkit-text-size-adjust: 100%; }
-    body {
-        font-family: var(--mono);
-        font-size: 14px;
-        line-height: 1.75;
-        -webkit-font-smoothing: antialiased;
-        min-height: 100vh;
-        overflow-x: hidden;       /* prevent horizontal page scroll on mobile */
-        max-width: 100%;
-    }
-    /* prevent any descendant from forcing the whole page wider than the viewport */
-    img, table, pre, code { max-width: 100%; }
-    pre { -webkit-overflow-scrolling: touch; }
-    ::selection { background: var(--ink); color: var(--void); }
+header.head{padding:78px 0 30px}
+h1{font-size:clamp(30px,5vw,54px);font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.sub{margin-top:16px;font-size:15px;color:var(--dim);max-width:660px}
+.sub b{color:var(--fg);font-weight:600}
+.count{margin-top:22px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--dim2)}
 
-    /* CRT scanlines — flip color + blend mode per theme */
-    body::before {
-        content: '';
-        position: fixed; inset: 0;
-        pointer-events: none;
-        z-index: 100;
-        background: repeating-linear-gradient(
-            to bottom,
-            transparent 0 2px,
-            var(--scan-color) 2px 3px
-        );
-        mix-blend-mode: var(--scan-blend);
-    }
+.tools{position:sticky;top:60px;z-index:20;padding:14px 0 12px;margin-top:22px;
+  background:linear-gradient(180deg,rgba(8,8,10,.96),rgba(8,8,10,.80));
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+#q{width:100%;max-width:420px;font:inherit;font-size:14px;color:var(--fg);
+  background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:11px;padding:12px 16px}
+#q::placeholder{color:var(--dim2)}
+#q:focus{outline:none;border-color:rgba(255,255,255,.28)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--dim);
+  border:1px solid var(--line);border-radius:999px;padding:7px 14px;background:rgba(255,255,255,.03)}
+.chip:hover{color:var(--fg);border-color:rgba(255,255,255,.24)}
+.chip .i{font-size:13px}
 
-    a { color: var(--ink); text-decoration: none; }
-    a:hover { color: var(--ink); }
+.cat{padding:46px 0 8px;border-top:1px solid var(--line);margin-top:34px}
+.cat h2{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:700;letter-spacing:-.01em}
+.cat h2 .i{font-size:20px}
+.note{margin-top:10px;color:var(--dim);font-size:14px}
+.rows{margin-top:24px;display:grid;gap:2px}
+.row{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:baseline;
+  padding:14px 16px;border-radius:11px}
+.row:hover{background:rgba(255,255,255,.035)}
+.key{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+kbd{font-family:var(--mono);font-size:12px;color:var(--fg);white-space:nowrap;
+  background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:7px;padding:4px 9px}
+.key i{font-style:normal;color:var(--dim2);font-size:11px}
+.key .arg{font-family:var(--mono);font-size:11.5px;color:var(--dim2)}
+.desc{font-size:14.5px}
+.desc small{display:block;margin-top:5px;font-size:12.5px;color:var(--dim);line-height:1.75}
+.desc b{font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:rgba(255,255,255,.07);
+  border:1px solid var(--line);border-radius:6px;padding:2px 6px}
 
-    /* ── LAYOUT ──────────────────────────────────────────────────── */
-    .shell {
-        display: grid;
-        grid-template-columns: 260px 1fr;
-        min-height: 100vh;
-    }
-    @media (max-width: 820px) {
-        .shell { grid-template-columns: 1fr; }
-    }
+.card{margin-top:44px;border:1px solid var(--line);border-radius:16px;padding:28px 26px;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015))}
+.card h3{font-size:17px;font-weight:700}
+.card p{margin-top:10px;font-size:14px;color:var(--dim)}
+.card .warn{color:#ffd9a8}
+.more{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.more a{font-size:13.5px;border:1px solid var(--line);border-radius:10px;padding:10px 18px;
+  background:rgba(255,255,255,.04)}
+.more a:hover{background:rgba(255,255,255,.09)}
 
-    /* Mobile-only hamburger that collapses the TOC (hidden on PC) */
-    .toc-toggle {
-        display: none;
-        margin-left: auto;
-        background: transparent;
-        border: 1px solid var(--line);
-        color: var(--ink);
-        padding: 4px 10px 4px 6px;
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.2em;
-        cursor: pointer;
-        align-items: center;
-        gap: 6px;
-    }
-    .toc-toggle .bar { width: 14px; height: 2px; background: var(--ink); display: none; }
-    .toc-toggle .lbl { letter-spacing: 0.24em; }
-    .toc-toggle::after { content: '▾'; color: var(--faint); }
-    aside.toc.open .toc-toggle::after { content: '▴'; }
+.empty{display:none;padding:40px 16px;color:var(--dim);font-size:14px}
+body.searching .cat{border-top:0;padding-top:0;margin-top:18px}
+body.searching .note,body.searching .tools .chips{display:none}
 
-    /* ── TOC (left rail) ─────────────────────────────────────────── */
-    aside.toc {
-        position: sticky;
-        top: 0;
-        align-self: start;
-        height: 100vh;
-        overflow-y: auto;
-        padding: 36px 24px 32px 32px;
-        border-right: 1px solid var(--rule);
-        background: var(--void);
-    }
-    @media (max-width: 820px) {
-        aside.toc {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            height: auto;
-            border-right: 0;
-            border-bottom: 1px solid var(--line);
-            padding: 12px 14px;
-            background: var(--void);
-        }
-        .toc-brand { margin-bottom: 0; align-items: center; gap: 10px; }
-        .toc-meta { display: none; }
-        .toc-toggle { display: inline-flex; }
-        aside.toc:not(.open) .toc-content { display: none; }
-        aside.toc.open .toc-content { padding-top: 14px; }
-        aside.toc.open .toc-list a { padding: 10px 0; font-size: 13px; }
-        aside.toc.open .toc-list a .n { font-size: 11px; }
-        aside.toc.open .toc-search { margin-bottom: 14px; }
-        aside.toc.open .back-link { margin-top: 18px; padding-top: 12px; }
-    }
-    .toc-brand {
-        display: flex; align-items: center; gap: 10px;
-        margin-bottom: 18px;
-    }
-    .toc-brand .mark {
-        width: 12px; height: 12px;
-        background: var(--ink);
-    }
-    .toc-brand .name {
-        font-size: 11px;
-        letter-spacing: 0.32em;
-        color: var(--ink);
-    }
-    .toc-meta {
-        font-size: 9px;
-        letter-spacing: 0.24em;
-        color: var(--faint);
-        margin-bottom: 28px;
-    }
-    .toc-list {
-        list-style: none;
-        padding: 0; margin: 0;
-    }
-    .toc-list li { margin: 6px 0; }
-    .toc-list a {
-        display: flex;
-        align-items: baseline;
-        gap: 10px;
-        color: var(--dim);
-        font-size: 12px;
-        letter-spacing: 0.04em;
-        padding: 4px 0;
-        border-bottom: 1px dashed transparent;
-        transition: color .15s, border-color .15s;
-    }
-    .toc-list a:hover {
-        color: var(--ink);
-        border-bottom-color: var(--line);
-    }
-    .toc-list a.active { color: var(--ink); }
-    .toc-list a .n {
-        font-family: var(--tech);
-        color: var(--faint);
-        min-width: 26px;
-        font-size: 10px;
-    }
-    .toc-list a:hover .n { color: var(--ink); }
+footer{margin-top:90px;padding:34px 0 60px;border-top:1px solid var(--line)}
+.frow{display:flex;flex-wrap:wrap;align-items:center;gap:18px;font-size:12.5px;color:var(--dim)}
+.frow a:hover{color:var(--fg)}
+.fnote{margin-top:16px;font-size:11.5px;color:var(--dim2)}
 
-    .toc-search {
-        margin-bottom: 18px;
-        border: 1px solid var(--line);
-        padding: 6px 10px;
-    }
-    .toc-search input {
-        background: transparent;
-        border: 0;
-        outline: none;
-        color: var(--ink);
-        font-family: var(--mono);
-        font-size: 12px;
-        width: 100%;
-    }
-    .toc-search input::placeholder { color: var(--faint); }
+.en{display:none}
+body.lang-en .ja{display:none}
+body.lang-en .en{display:inline}
 
-    .back-link {
-        margin-top: 22px;
-        display: block;
-        font-size: 10px;
-        letter-spacing: 0.28em;
-        color: var(--dim);
-        border-top: 1px solid var(--rule);
-        padding-top: 14px;
-    }
-    .back-link:hover { color: var(--ink); }
+@media(max-width:900px){
+  .shell{padding:0 20px}
+  nav{padding:11px 16px;gap:10px;flex-wrap:wrap}
+  .pages{order:3;width:100%;flex-basis:100%;margin:0 -16px;padding:0 16px 2px}
+  .pages a{font-size:12.5px;padding:7px 11px}
+  html{scroll-padding-top:190px}
+  .tools{top:104px}
+  header.head{padding:52px 0 24px}
+  .row{grid-template-columns:1fr;gap:8px;padding:14px 12px}
+  .cat{padding-top:36px}
+}
 
-    /* ── MAIN (right rail) ───────────────────────────────────────── */
-    main.body {
-        max-width: 860px;
-        padding: 48px 44px 140px;
-    }
-    @media (max-width: 820px) {
-        main.body { padding: 24px 16px 120px; max-width: 100%; }
-    }
-    @media (max-width: 520px) {
-        main.body { padding: 20px 14px 120px; }
-    }
-
-    header.hero {
-        padding-bottom: 28px;
-        border-bottom: 1px solid var(--rule);
-        margin-bottom: 40px;
-    }
-    .eyebrow {
-        font-size: 10px;
-        letter-spacing: 0.32em;
-        color: var(--faint);
-        text-transform: uppercase;
-        margin-bottom: 14px;
-    }
-    h1 {
-        font-size: 30px;
-        font-weight: 700;
-        letter-spacing: 0.03em;
-        line-height: 1.2;
-    }
-    h1 .chev { color: var(--faint); }
-    .tagline {
-        margin-top: 16px;
-        color: var(--dim);
-        font-size: 13.5px;
-        max-width: 58ch;
-    }
-
-    /* sections */
-    section.section {
-        margin: 48px 0;
-    }
-    section.section > h2 {
-        font-family: var(--tech);
-        font-size: 18px;
-        letter-spacing: 0.08em;
-        margin-bottom: 10px;
-        color: var(--ink);
-    }
-    section.section > h2 .num {
-        color: var(--faint);
-        margin-right: 10px;
-        font-size: 14px;
-    }
-    section.section > p.lede {
-        color: var(--dim);
-        font-size: 13px;
-        margin-bottom: 22px;
-        max-width: 66ch;
-    }
-
-    /* ── Command cards ───────────────────────────────────────────── */
-    details.cmd {
-        border: 1px solid var(--line);
-        padding: 14px 18px;
-        margin-bottom: 10px;
-        background: var(--card-tint);
-        transition: border-color .15s;
-    }
-    details.cmd[open] { border-color: var(--ink); }
-    details.cmd summary {
-        list-style: none;
-        cursor: pointer;
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 18px;
-    }
-    details.cmd summary::-webkit-details-marker { display: none; }
-    details.cmd summary .chev {
-        color: var(--faint);
-        font-family: var(--tech);
-        transition: transform .15s, color .15s;
-    }
-    details.cmd[open] summary .chev { transform: rotate(90deg); color: var(--ink); }
-    details.cmd summary .lead {
-        display: flex;
-        align-items: baseline;
-        gap: 14px;
-        flex: 1;
-        min-width: 0;
-    }
-    details.cmd summary code.glyph {
-        font-family: var(--tech);
-        color: var(--ink);
-        font-size: 14px;
-        background: var(--pill-tint);
-        border: 1px solid var(--line);
-        padding: 2px 10px;
-        letter-spacing: 0.04em;
-    }
-    details.cmd summary .tag {
-        font-size: 10px;
-        letter-spacing: 0.22em;
-        color: var(--faint);
-    }
-    details.cmd summary .desc {
-        color: var(--dim);
-        font-size: 12.5px;
-    }
-    details.cmd .body {
-        padding-top: 14px;
-        margin-top: 12px;
-        border-top: 1px dashed var(--rule);
-        color: var(--dim);
-        font-size: 13px;
-    }
-    details.cmd .body p { margin: 8px 0; }
-    details.cmd .body strong { color: var(--ink); font-weight: 700; }
-
-    details.cmd .body code,
-    section.section code,
-    .mini code {
-        font-family: var(--tech);
-        color: var(--ink);
-        background: var(--pill-tint);
-        padding: 1px 6px;
-        font-size: 12px;
-    }
-    details.cmd .body pre {
-        font-family: var(--tech);
-        font-size: 12.5px;
-        background: var(--void2);
-        border: 1px solid var(--rule);
-        padding: 14px 16px;
-        margin: 12px 0;
-        overflow-x: auto;
-        line-height: 1.65;
-        color: var(--ink);
-        white-space: pre;
-    }
-    details.cmd .body ul {
-        padding-left: 20px;
-        margin: 10px 0;
-    }
-    details.cmd .body ul li { margin: 4px 0; }
-
-    /* simple inline tables */
-    table.tbl {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 16px 0;
-        font-size: 12.5px;
-    }
-    table.tbl th, table.tbl td {
-        border-bottom: 1px solid var(--rule);
-        padding: 8px 10px;
-        text-align: left;
-        color: var(--dim);
-        vertical-align: top;
-    }
-    table.tbl th {
-        font-size: 9px;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: var(--faint);
-        font-weight: 400;
-    }
-    table.tbl td code {
-        font-family: var(--tech);
-        color: var(--ink);
-        background: var(--pill-tint);
-        padding: 1px 6px;
-        font-size: 11.5px;
-    }
-
-    /* footer */
-    footer.end {
-        margin-top: 56px;
-        padding-top: 20px;
-        border-top: 1px solid var(--rule);
-        font-size: 10px;
-        letter-spacing: 0.28em;
-        color: var(--faint);
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    footer.end a { color: var(--ink); }
-
-    /* Theme toggle — fixed top-right so it's visible on every viewport */
-    .theme-toggle {
-        position: fixed;
-        top: 12px;
-        right: 14px;
-        z-index: 300;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border: 1px solid var(--line);
-        background: var(--void);
-        font-family: var(--mono);
-        font-size: 12px;
-        cursor: pointer;
-        transition: border-color .15s;
-        user-select: none;
-    }
-    .theme-toggle:hover { border-color: var(--ink); }
-    .theme-toggle .theme-tok {
-        color: var(--faint);
-        padding: 0 3px;
-        cursor: pointer;
-        transition: color .15s;
-    }
-    .theme-toggle .theme-tok:hover { color: var(--dim); }
-    .theme-toggle .theme-sep { color: var(--faint); }
-    html[data-theme="dark"]  .theme-toggle [data-set-theme="dark"],
-    html:not([data-theme="light"]) .theme-toggle [data-set-theme="dark"],
-    html[data-theme="light"] .theme-toggle [data-set-theme="light"] {
-        color: var(--ink);
-    }
-
-    /* keyboard key style */
-    kbd {
-        font-family: var(--tech);
-        background: var(--void2);
-        border: 1px solid var(--line);
-        padding: 1px 6px;
-        font-size: 11px;
-        color: var(--ink);
-    }
-
-    /* ════════════════════════════════════════════════════════════
-       MOBILE TUNING — ≤820 (tablet & phone), ≤520 (phone tight)
-       ════════════════════════════════════════════════════════════ */
-    @media (max-width: 820px) {
-        /* Hero scale */
-        header.hero { padding-bottom: 20px; margin-bottom: 28px; }
-        h1 { font-size: 24px; line-height: 1.2; }
-        .tagline { font-size: 13px; max-width: 100%; }
-        .eyebrow { font-size: 9px; letter-spacing: 0.24em; }
-
-        /* Sections */
-        section.section { margin: 34px 0; }
-        section.section > h2 { font-size: 15px; letter-spacing: 0.06em; }
-        section.section > h2 .num { font-size: 12px; margin-right: 8px; }
-        section.section > p.lede { font-size: 12px; max-width: 100%; }
-
-        /* Command cards — compact summary, allow wrap */
-        details.cmd { padding: 12px 14px; }
-        details.cmd summary { gap: 10px; flex-wrap: wrap; }
-        details.cmd summary .lead { gap: 10px; flex-wrap: wrap; min-width: 0; }
-        details.cmd summary code.glyph { font-size: 12px; padding: 2px 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        details.cmd summary .desc { font-size: 11.5px; }
-        details.cmd summary .tag {
-            font-size: 9px;
-            order: 3;
-            flex-basis: 100%;
-            margin-top: 2px;
-            color: var(--faint);
-            letter-spacing: 0.18em;
-        }
-        details.cmd summary .chev { order: 4; margin-left: auto; }
-        details.cmd .body { font-size: 12.5px; padding-top: 10px; margin-top: 10px; }
-        details.cmd .body pre { font-size: 11.5px; padding: 10px 12px; }
-
-        /* Tables — shrink */
-        table.tbl { font-size: 11.5px; }
-        table.tbl th, table.tbl td { padding: 6px 8px; }
-
-        /* Theme toggle tucks tighter */
-        .theme-toggle {
-            padding: 3px 8px;
-            top: 8px;
-            right: 10px;
-            font-size: 11px;
-            /* float BELOW the sticky TOC on mobile to avoid overlapping the hamburger */
-            top: auto;
-            bottom: 12px;
-            right: 12px;
-        }
-
-        /* Footer stacks */
-        footer.end { flex-direction: column; gap: 6px; text-align: center; font-size: 9px; }
-    }
-
-    @media (max-width: 520px) {
-        h1 { font-size: 20px; }
-        .tagline { font-size: 12.5px; }
-        section.section > h2 { font-size: 14px; }
-        details.cmd { padding: 10px 12px; }
-        details.cmd summary code.glyph { font-size: 11.5px; padding: 1px 7px; }
-        details.cmd summary .desc { display: block; width: 100%; }
-        table.tbl th, table.tbl td { padding: 5px 6px; font-size: 11px; }
-        /* code blocks: shrink + soft-wrap so long lines fit without horizontal scroll */
-        details.cmd .body pre {
-            font-size: 10.5px;
-            padding: 8px 10px;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        /* tap targets: TOC links and command summaries grow taller for fingers */
-        aside.toc.open .toc-list a { padding: 12px 0; }
-        details.cmd summary { min-height: 36px; }
-        /* TOC search input: full-width + readable */
-        .toc-search input { font-size: 13px; padding: 4px 0; }
-        /* theme toggle: smaller pill, anchor bottom-right */
-        .theme-toggle { font-size: 10px; padding: 3px 7px; }
-    }
-    /* very narrow phones (iPhone SE, etc.) — last-mile readability */
-    @media (max-width: 360px) {
-        main.body { padding: 16px 10px 100px; }
-        details.cmd { padding: 8px 10px; }
-        details.cmd summary code.glyph { font-size: 10.5px; padding: 1px 6px; }
-        h1 { font-size: 18px; }
-        section.section > h2 { font-size: 13px; }
-    }
-
-    /* ── QUICK START GRID ────────────────────────────────────── */
-    .qs-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 14px;
-        margin-top: 14px;
-    }
-    .qs-card {
-        border: 1px solid var(--line);
-        background: var(--card-tint, rgba(240,237,230,0.018));
-        padding: 16px 18px;
-        transition: border-color .15s, background .15s;
-    }
-    .qs-card:hover {
-        border-color: var(--ink);
-    }
-    .qs-cat {
-        font-family: var(--tech);
-        font-size: 10px;
-        letter-spacing: 0.22em;
-        color: var(--faint);
-        margin-bottom: 12px;
-    }
-    .qs-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-    .qs-list li {
-        padding: 6px 0;
-        border-bottom: 1px dashed var(--rule);
-        font-size: 12.5px;
-        line-height: 1.65;
-        color: var(--dim);
-    }
-    .qs-list li:last-child { border-bottom: 0; }
-    .qs-list li b {
-        color: var(--ink);
-        font-weight: 400;
-    }
-    .qs-list li code {
-        font-family: var(--tech);
-        font-size: 11.5px;
-        color: var(--ink);
-        background: var(--pill-tint, rgba(240,237,230,0.08));
-        padding: 1px 6px;
-        margin: 0 1px;
-    }
-    .qs-list li code i {
-        color: var(--dim);
-        font-style: normal;
-    }
-
-    /* ── WRITE YOUR FIRST SPELL — step cards ────────────────── */
-    .spell-step {
-        display: grid;
-        grid-template-columns: 50px 1fr;
-        gap: 18px;
-        padding: 16px 0;
-        border-top: 1px solid var(--rule);
-        align-items: start;
-    }
-    .spell-step:last-of-type { border-bottom: 1px solid var(--rule); }
-    .spell-step-num {
-        font-family: var(--tech);
-        font-size: 12px;
-        letter-spacing: 0.18em;
-        color: var(--ink);
-        background: var(--pill-tint, rgba(240,237,230,0.08));
-        padding: 6px 10px;
-        text-align: center;
-        align-self: start;
-    }
-    .spell-step-body {
-        font-size: 13.5px;
-        line-height: 1.75;
-        color: var(--ink);
-    }
-    .spell-step-body b {
-        font-weight: 400;
-        letter-spacing: 0.04em;
-    }
-    .spell-step-body code {
-        font-family: var(--tech);
-        font-size: 12px;
-        background: var(--pill-tint, rgba(240,237,230,0.08));
-        padding: 1px 6px;
-    }
-    .spell-step-body code i {
-        color: var(--dim);
-        font-style: normal;
-    }
-    @media (max-width: 600px) {
-        .spell-step { grid-template-columns: 1fr; gap: 8px; }
-        .spell-step-num { width: fit-content; }
-    }
-
-    /* ════════════════════════════════════════════════════════════
-       MOBILE OVERFLOW HARD-FIX
-       — 横スクロールの根本対策。pre/table/code の長文を必ず折り返す。
-       ════════════════════════════════════════════════════════════ */
-    @media (max-width: 820px) {
-        html, body {
-            overflow-x: hidden !important;
-            max-width: 100% !important;
-        }
-        /* pre / code: 横スクロール禁止、ソフトラップで折り返す */
-        pre, code, kbd, samp {
-            white-space: pre-wrap !important;
-            word-break: break-word !important;
-            overflow-wrap: anywhere !important;
-            max-width: 100% !important;
-            box-sizing: border-box;
-            overflow-x: visible !important;
-        }
-        pre {
-            font-size: 11px !important;
-            padding: 10px 12px !important;
-            line-height: 1.5 !important;
-        }
-        /* table: 行内で横スクロール（ページ全体ではなく） */
-        table {
-            display: block;
-            overflow-x: auto !important;
-            max-width: 100% !important;
-            -webkit-overflow-scrolling: touch;
-        }
-        /* grid 系を 1 カラムに統一 */
-        .qs-grid, .spell-step {
-            grid-template-columns: 1fr !important;
-        }
-        /* 画像・動画オーバーフロー対策 */
-        img, video, iframe, svg {
-            max-width: 100% !important;
-            height: auto;
-        }
-        /* main 全体の左右パディング & 余分な要素抑制 */
-        main.body { padding-left: 14px !important; padding-right: 14px !important; }
-        section.section { max-width: 100% !important; overflow: hidden; }
-    }
+/* この頁だけ：サブコマンドと「引数が要る」バッジ */
+.subs{color:var(--dim2);line-height:1.9}
+.arg{font-size:11px;color:#ff9d7a;white-space:nowrap}
 </style>
 </head>
 <body>
+<div class="glow"><i></i><i></i></div>
 
-<div class="shell">
+<nav>
+  <a class="brand" href="index.html"><img src="logo.png" alt=""><span>BM BOARD</span></a>
+  <div class="pages">
+    <a href="usage.html"><span class="ja">使い方</span><span class="en">Usage</span></a>
+    <a href="commands.html" class="on"><span class="ja">コマンド</span><span class="en">Commands</span></a>
+    <a href="spell-spec.html"><span class="ja">魔法</span><span class="en">Spells</span></a>
+    <a href="story.html"><span class="ja">つくった理由</span><span class="en">Story</span></a>
+    <a href="dev-log.html"><span class="ja">開発ログ</span><span class="en">Dev log</span></a>
+    <a href="browser/">BM Browser</a>
+  </div>
+  <div class="lang">
+    <button type="button" data-lang="ja" class="on">JP</button>
+    <button type="button" data-lang="en">EN</button>
+  </div>
+  <a class="navcta" href="app.html"><span class="ja">開く</span><span class="en">Open</span></a>
+</nav>
 
-<aside class="toc" id="sideToc">
-    <div class="toc-brand">
-        <span class="mark" aria-hidden="true"></span>
-        <span class="name">BM BOARD</span>
-        <button class="toc-toggle" id="tocToggle" aria-expanded="false" aria-label="toggle table of contents">
-            <span class="bar"></span><span class="bar"></span><span class="bar"></span>
-            <span class="lbl">INDEX</span>
-        </button>
-    </div>
-    <div class="toc-meta">COMMAND REFERENCE · v1.2</div>
-
-    <div class="toc-content" id="tocContent">
-        <div class="toc-search">
-            <input id="tocSearch" type="text" placeholder="filter commands…" autocomplete="off" spellcheck="false">
-        </div>
-
-        <ul class="toc-list" id="tocList">
-            <li><a href="#quickstart"><span class="n">▸</span>Quick Start — I want to…</a></li>
-            <li><a href="#first-spell"><span class="n">▸</span>Write Your First Spell</a></li>
-            <li><a href="#themes"><span class="n">01</span>Themes</a></li>
-            <li><a href="#canvas"><span class="n">02</span>Canvas Control</a></li>
-            <li><a href="#camera"><span class="n">03</span>Camera / Wipe</a></li>
-            <li><a href="#project"><span class="n">04</span>Project Persistence</a></li>
-            <li><a href="#export"><span class="n">05</span>Export</a></li>
-            <li><a href="#spellbook"><span class="n">06</span>Spellbook</a></li>
-            <li><a href="#presets"><span class="n">07</span>Preset Spells</a></li>
-            <li><a href="#imgbrain"><span class="n">08</span>Image Brainstorm</a></li>
-            <li><a href="#share"><span class="n">09</span>Share</a></li>
-            <li><a href="#help"><span class="n">10</span>Help / Docs</a></li>
-            <li><a href="#eggs"><span class="n">11</span>Easter Eggs</a></li>
-            <li><a href="#ideas"><span class="n">12</span>Ideas to Extend</a></li>
-            <li><a href="#shortcuts"><span class="n">13</span>Shortcuts</a></li>
-            <li><a href="#bmapi"><span class="n">14</span>BM API</a></li>
-        </ul>
-
-        <a href="./app" class="back-link">← OPEN BOARD</a>
-    </div>
-</aside>
-
-<!-- Theme toggle — floats top-right on every viewport -->
-<div class="theme-toggle" id="themeToggle" role="group" aria-label="switch theme" title="dark / light">
-    <span class="theme-tok" data-set-theme="dark">●</span>
-    <span class="theme-sep">·</span>
-    <span class="theme-tok" data-set-theme="light">○</span>
-</div>
-
-<main class="body">
-
-<header class="hero">
-    <div class="eyebrow">KINOSHITA STUDIO · BLACK MIRROR BOARD · SPELLBOOK</div>
-    <h1>◼ COMMAND REFERENCE <span class="chev">— v1.2</span></h1>
-    <p class="tagline">
-        あなた専用のスペルブック。左の目次をクリックすると、各コマンドの詳細がこちら側で展開します。
-        <code>$command</code> の形式は "呪文（spell）" — プリセットとユーザー定義どちらも同じ表記です。
+<main class="shell">
+  <header class="head">
+    <h1><span class="ja">コマンド</span><span class="en">Commands</span></h1>
+    <p class="sub">
+      <span class="ja"><b>⌘K</b> を押して、名前を打つ。<br>覚える必要はない——思いついた言葉で引くと候補が出る。</span>
+      <span class="en">Hit <b>⌘K</b> and type the name.<br>No need to memorize — type what comes to mind and it shows up.</span>
     </p>
-</header>
+    <p class="count">15 groups &nbsp;·&nbsp; 48 commands &nbsp;·&nbsp; 52 subcommands</p>
+  </header>
 
-<!-- ════════════════════════════════════════════════════════
-     QUICK START — "I want to do X, type Y"
-     ════════════════════════════════════════════════════════ -->
-<section class="section" id="quickstart">
-    <h2><span class="num">▸</span>Quick Start — I want to…</h2>
-    <p style="margin: 0 0 18px; color: var(--dim);">
-        BMBoard を久しぶりに開いて「あれ、何ができるんだっけ？」となった時のチートシート。<br>
-        やりたい事 → 打つコマンドの逆引きです。詳細は各セクションへ。
+  <div class="tools">
+    <input id="q" type="search" autocomplete="off" placeholder="絞り込む — flip / spell / export …">
+    <div class="chips">
+      <a class="chip" href="#c-calc"><span class="i">🔢</span><span class="ja">計算</span><span class="en">Calc</span></a>
+      <a class="chip" href="#c-capture"><span class="i">📝</span><span class="ja">メモ</span><span class="en">Note</span></a>
+      <a class="chip" href="#c-board"><span class="i">🌓</span><span class="ja">ボード</span><span class="en">Board</span></a>
+      <a class="chip" href="#c-draw"><span class="i">✏️</span><span class="ja">描き味</span><span class="en">Draw</span></a>
+      <a class="chip" href="#c-grade"><span class="i">🖍</span><span class="ja">芯</span><span class="en">Grade</span></a>
+      <a class="chip" href="#c-panel"><span class="i">🪟</span><span class="ja">パネル</span><span class="en">Panel</span></a>
+      <a class="chip" href="#c-edit"><span class="i">🧹</span><span class="ja">編集</span><span class="en">Edit</span></a>
+      <a class="chip" href="#c-io"><span class="i">💾</span><span class="ja">I/O</span><span class="en">I/O</span></a>
+      <a class="chip" href="#c-insert"><span class="i">➕</span><span class="ja">挿入</span><span class="en">Insert</span></a>
+      <a class="chip" href="#c-spell"><span class="i">🪄</span><span class="ja">魔法</span><span class="en">Spell</span></a>
+      <a class="chip" href="#c-chain"><span class="i">⛓</span><span class="ja">連鎖</span><span class="en">Chain</span></a>
+      <a class="chip" href="#c-snippet"><span class="i">📋</span><span class="ja">スニペット</span><span class="en">Snippet</span></a>
+      <a class="chip" href="#c-media"><span class="i">🎵</span><span class="ja">音</span><span class="en">Sound</span></a>
+      <a class="chip" href="#c-help"><span class="i">❓</span><span class="ja">ヘルプ</span><span class="en">Help</span></a>
+      <a class="chip" href="#c-link"><span class="i">🔗</span><span class="ja">リンク</span><span class="en">Link</span></a>
+    </div>
+  </div>
+
+  <div id="list">
+
+    <section class="cat" id="c-calc">
+      <h2><span class="i">🔢</span><span class="ja">計算</span><span class="en">Calc</span></h2>
+      <div class="rows">
+        <div class="row" data-s="calc 計算（calc 12*8） calculate (calc 12*8) math compute calculator sum ">
+          <div class="key"><kbd>calc</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="desc"><span class="ja">計算（calc 12*8）</span><span class="en">Calculate (calc 12*8)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-capture">
+      <h2><span class="i">📝</span><span class="ja">メモ</span><span class="en">Note</span></h2>
+      <div class="rows">
+        <div class="row" data-s="t 中央にテキスト（t アイデア） drop text at center (t idea) note write text add jot ">
+          <div class="key"><kbd>t</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="desc"><span class="ja">中央にテキスト（t アイデア）</span><span class="en">Drop text at center (t idea)</span></div>
+        </div>
+        <div class="row" data-s="todo todoを置く（todo 牛乳） place a to-do (todo milk) task checkbox check list ">
+          <div class="key"><kbd>todo</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="desc"><span class="ja">ToDoを置く（todo 牛乳）</span><span class="en">Place a to-do (todo milk)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-board">
+      <h2><span class="i">🌓</span><span class="ja">ボード</span><span class="en">Board</span></h2>
+      <div class="rows">
+        <div class="row" data-s="dark ボードを暗く（黒板） darken the board (blackboard) blackboard night theme appearance ">
+          <div class="key"><kbd>dark</kbd></div>
+          <div class="desc"><span class="ja">ボードを暗く（黒板）</span><span class="en">Darken the board (blackboard)</span></div>
+        </div>
+        <div class="row" data-s="light ボードを明るく（紙） lighten the board (paper) paper white theme appearance ">
+          <div class="key"><kbd>light</kbd></div>
+          <div class="desc"><span class="ja">ボードを明るく（紙）</span><span class="en">Lighten the board (paper)</span></div>
+        </div>
+        <div class="row" data-s="gray グレー環境 gray environment grey theme appearance neutral ">
+          <div class="key"><kbd>gray</kbd></div>
+          <div class="desc"><span class="ja">グレー環境</span><span class="en">Gray environment</span></div>
+        </div>
+        <div class="row" data-s="theme テーマを順番に送る（暗い→明るい→グレー） cycle the theme (dark → light → gray) テーマ 配色 色 切替 暗い 明るい グレー theme mode dark light gray cycle toggle appearance dark 暗いテーマにする dark theme light 明るいテーマにする light theme gray グレーにする gray theme">
+          <div class="key"><kbd>theme</kbd></div>
+          <div class="desc"><span class="ja">テーマを順番に送る（暗い→明るい→グレー）</span><span class="en">Cycle the theme (dark → light → gray)</span><small class="subs"><span class="ja">theme dark — 暗いテーマにする</span><span class="en">theme dark — Dark theme</span><br><span class="ja">theme light — 明るいテーマにする</span><span class="en">theme light — Light theme</span><br><span class="ja">theme gray — グレーにする</span><span class="en">theme gray — Gray theme</span></small></div>
+        </div>
+        <div class="row" data-s="flip 紙を裏返す（表が薄く透ける） flip the paper (front bleeds through) 裏返す ひっくり返す 裏 めくる flip reverse back 紙 turn reverse back backside other side ">
+          <div class="key"><kbd>flip</kbd></div>
+          <div class="desc"><span class="ja">紙を裏返す（表が薄く透ける）</span><span class="en">Flip the paper (front bleeds through)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-draw">
+      <h2><span class="i">✏️</span><span class="ja">描き味</span><span class="en">Draw</span></h2>
+      <div class="rows">
+        <div class="row" data-s="enpitsu 鉛筆（紙）で描く draw with pencil (paper) 鉛筆 えんぴつ pencil 描き味 draw pencil graphite paper draw feel ">
+          <div class="key"><kbd>enpitsu</kbd></div>
+          <div class="desc"><span class="ja">鉛筆（紙）で描く</span><span class="en">Draw with pencil (paper)</span></div>
+        </div>
+        <div class="row" data-s="fude 筆で描く draw with brush 筆 ふで brush 描き味 draw brush ink calligraphy feel ">
+          <div class="key"><kbd>fude</kbd></div>
+          <div class="desc"><span class="ja">筆で描く</span><span class="en">Draw with brush</span></div>
+        </div>
+        <div class="row" data-s="classic クラシックな線 classic stroke 鉛筆 線 classic 描き味 draw pen marker default line feel ">
+          <div class="key"><kbd>classic</kbd></div>
+          <div class="desc"><span class="ja">クラシックな線</span><span class="en">Classic stroke</span></div>
+        </div>
+        <div class="row" data-s="crumb 消しカスの量（crumb 50） eraser crumb amount (crumb 50) 消しカス けしかす crumb debris eraser debris dust eraser shavings next 量を順番に送る（0→50→100→200） cycle the amount (0→50→100→200) 0 消しカスを出さない no eraser crumbs 50 消しカスを半分に half the crumbs 100 消しカスを標準に default amount 200 消しカスを多めに twice the crumbs">
+          <div class="key"><kbd>crumb</kbd></div>
+          <div class="desc"><span class="ja">消しカスの量（crumb 50）</span><span class="en">Eraser crumb amount (crumb 50)</span><small class="subs"><span class="ja">crumb next — 量を順番に送る（0→50→100→200）</span><span class="en">crumb next — Cycle the amount (0→50→100→200)</span><br><span class="ja">crumb 0 — 消しカスを出さない</span><span class="en">crumb 0 — No eraser crumbs</span><br><span class="ja">crumb 50 — 消しカスを半分に</span><span class="en">crumb 50 — Half the crumbs</span><br><span class="ja">crumb 100 — 消しカスを標準に</span><span class="en">crumb 100 — Default amount</span><br><span class="ja">crumb 200 — 消しカスを多めに</span><span class="en">crumb 200 — Twice the crumbs</span></small></div>
+        </div>
+        <div class="row" data-s="drawmode 描き味を順番に送る（鉛筆→筆→クラシック） cycle the drawing feel (pencil → brush → classic) 描き味 筆 鉛筆 クラシック 切替 drawmode feel pencil brush classic cycle switch enpitsu 鉛筆（紙）で描く draw with pencil on paper fude 筆で描く draw with a brush classic クラシックな線 classic stroke">
+          <div class="key"><kbd>drawmode</kbd></div>
+          <div class="desc"><span class="ja">描き味を順番に送る（鉛筆→筆→クラシック）</span><span class="en">Cycle the drawing feel (pencil → brush → classic)</span><small class="subs"><span class="ja">drawmode enpitsu — 鉛筆（紙）で描く</span><span class="en">drawmode enpitsu — Draw with pencil on paper</span><br><span class="ja">drawmode fude — 筆で描く</span><span class="en">drawmode fude — Draw with a brush</span><br><span class="ja">drawmode classic — クラシックな線</span><span class="en">drawmode classic — Classic stroke</span></small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-grade">
+      <h2><span class="i">🖍</span><span class="ja">芯</span><span class="en">Grade</span></h2>
+      <div class="rows">
+        <div class="row" data-s="hb 芯を hb に set lead to hb 鉛筆 pencil 芯 しん grade lead grade pencil ">
+          <div class="key"><kbd>hb</kbd></div>
+          <div class="desc"><span class="ja">芯を HB に</span><span class="en">Set lead to HB</span></div>
+        </div>
+        <div class="row" data-s="2b 芯を 2b に set lead to 2b 鉛筆 pencil 芯 しん grade lead grade pencil soft ">
+          <div class="key"><kbd>2b</kbd></div>
+          <div class="desc"><span class="ja">芯を 2B に</span><span class="en">Set lead to 2B</span></div>
+        </div>
+        <div class="row" data-s="4b 芯を 4b に set lead to 4b 鉛筆 pencil 芯 しん grade lead grade pencil soft ">
+          <div class="key"><kbd>4b</kbd></div>
+          <div class="desc"><span class="ja">芯を 4B に</span><span class="en">Set lead to 4B</span></div>
+        </div>
+        <div class="row" data-s="6b 芯を 6b に set lead to 6b 鉛筆 pencil 芯 しん grade lead grade pencil softest ">
+          <div class="key"><kbd>6b</kbd></div>
+          <div class="desc"><span class="ja">芯を 6B に</span><span class="en">Set lead to 6B</span></div>
+        </div>
+        <div class="row" data-s="grade 鉛筆の芯を順番に送る（2h→…→6b） cycle the pencil grade (2h → … → 6b) 芯 濃さ 鉛筆 硬さ 順送り grade pencil lead hardness soft hard cycle hb 芯を hb に set grade to hb 2b 芯を 2b に set grade to 2b 4b 芯を 4b に set grade to 4b 6b 芯を 6b に set grade to 6b">
+          <div class="key"><kbd>grade</kbd></div>
+          <div class="desc"><span class="ja">鉛筆の芯を順番に送る（2H→…→6B）</span><span class="en">Cycle the pencil grade (2H → … → 6B)</span><small class="subs"><span class="ja">grade hb — 芯を HB に</span><span class="en">grade hb — Set grade to HB</span><br><span class="ja">grade 2b — 芯を 2B に</span><span class="en">grade 2b — Set grade to 2B</span><br><span class="ja">grade 4b — 芯を 4B に</span><span class="en">grade 4b — Set grade to 4B</span><br><span class="ja">grade 6b — 芯を 6B に</span><span class="en">grade 6b — Set grade to 6B</span></small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-panel">
+      <h2><span class="i">🪟</span><span class="ja">パネル</span><span class="en">Panel</span></h2>
+      <div class="rows">
+        <div class="row" data-s="float ターミナルを浮かす float the terminal window floating pane detach ">
+          <div class="key"><kbd>float</kbd></div>
+          <div class="desc"><span class="ja">ターミナルを浮かす</span><span class="en">Float the terminal</span></div>
+        </div>
+        <div class="row" data-s="dock ターミナルを右に戻す dock the terminal to the right window dock attach snap side ">
+          <div class="key"><kbd>dock</kbd></div>
+          <div class="desc"><span class="ja">ターミナルを右に戻す</span><span class="en">Dock the terminal to the right</span></div>
+        </div>
+        <div class="row" data-s="panel 分割幅（panel 30 / float / dock / center） split width (panel 30 / float / dock / center) sidebar split pane terminal window dock パネルを右に戻す（マグネット） dock the panel back to the side float パネルを浮かせる（フロート） float the panel center パネルを画面の中央へ center the panel reset 分割幅を既定に戻す reset the split width">
+          <div class="key"><kbd>panel</kbd></div>
+          <div class="desc"><span class="ja">分割幅（panel 30 / float / dock / center）</span><span class="en">Split width (panel 30 / float / dock / center)</span><small class="subs"><span class="ja">panel dock — パネルを右に戻す（マグネット）</span><span class="en">panel dock — Dock the panel back to the side</span><br><span class="ja">panel float — パネルを浮かせる（フロート）</span><span class="en">panel float — Float the panel</span><br><span class="ja">panel center — パネルを画面の中央へ</span><span class="en">panel center — Center the panel</span><br><span class="ja">panel reset — 分割幅を既定に戻す</span><span class="en">panel reset — Reset the split width</span></small></div>
+        </div>
+        <div class="row" data-s="swap ボードを右/左に入替（利き手）· ↵でそのまま入替 swap board to the right/left (handedness) · ↵ to toggle 左右 入替 利き手 swap layout 右利き 左利き right left handedness left right side mirror layout ">
+          <div class="key"><kbd>swap</kbd></div>
+          <div class="desc"><span class="ja">ボードを右/左に入替（利き手）· ↵でそのまま入替</span><span class="en">Swap board to the right/left (handedness) · ↵ to toggle</span></div>
+        </div>
+        <div class="row" data-s="view パネルを log ⇄ ateli.er で切り替える（押すたび交互） toggle the panel between log and ateli.er 切替 きりかえ 切り替え トグル 行き来 往復 パネル view toggle ログ アトリエ タブ toggle switch sidebar pane flip between ">
+          <div class="key"><kbd>view</kbd></div>
+          <div class="desc"><span class="ja">パネルを LOG ⇄ Ateli.er で切り替える（押すたび交互）</span><span class="en">Toggle the panel between LOG and Ateli.er</span></div>
+        </div>
+        <div class="row" data-s="atelier パネルに ateli.er を表示 show ateli.er in the panel アトリエ atelier ateli.er パネル 切替 タブ メモ notes memo sidebar workspace ">
+          <div class="key"><kbd>atelier</kbd></div>
+          <div class="desc"><span class="ja">パネルに Ateli.er を表示</span><span class="en">Show Ateli.er in the panel</span></div>
+        </div>
+        <div class="row" data-s="log パネルを log に戻す show log in the panel ログ log パネル 切替 タブ ターミナル 戻る terminal console output messages ">
+          <div class="key"><kbd>log</kbd></div>
+          <div class="desc"><span class="ja">パネルを LOG に戻す</span><span class="en">Show LOG in the panel</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-edit">
+      <h2><span class="i">🧹</span><span class="ja">編集</span><span class="en">Edit</span></h2>
+      <div class="rows">
+        <div class="row" data-s="clear ボードを消す clear the board reset erase all wipe ">
+          <div class="key"><kbd>clear</kbd></div>
+          <div class="desc"><span class="ja">ボードを消す</span><span class="en">Clear the board</span></div>
+        </div>
+        <div class="row" data-s="sweep 消しカスを払う sweep eraser crumbs off the paper 消しカス カス 払う 掃除 sweep dust crumb clean 紙 clean dust tidy brush away ">
+          <div class="key"><kbd>sweep</kbd></div>
+          <div class="desc"><span class="ja">消しカスを払う</span><span class="en">Sweep eraser crumbs off the paper</span></div>
+        </div>
+        <div class="row" data-s="align 選択を揃える（align left/right/top/bottom/center/middle） align selection (left/right/top/bottom/center/middle) align 整列 揃える 配置 そろえる arrange tidy distribute layout left 選択を左に揃える align selection left right 選択を右に揃える align selection right top 選択を上に揃える align selection top bottom 選択を下に揃える align selection bottom center 選択を左右の中央に center selection horizontally middle 選択を上下の中央に center selection vertically">
+          <div class="key"><kbd>align</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="desc"><span class="ja">選択を揃える（align left/right/top/bottom/center/middle）</span><span class="en">Align selection (left/right/top/bottom/center/middle)</span><small class="subs"><span class="ja">align left — 選択を左に揃える</span><span class="en">align left — Align selection left</span><br><span class="ja">align right — 選択を右に揃える</span><span class="en">align right — Align selection right</span><br><span class="ja">align top — 選択を上に揃える</span><span class="en">align top — Align selection top</span><br><span class="ja">align bottom — 選択を下に揃える</span><span class="en">align bottom — Align selection bottom</span><br><span class="ja">align center — 選択を左右の中央に</span><span class="en">align center — Center selection horizontally</span><br><span class="ja">align middle — 選択を上下の中央に</span><span class="en">align middle — Center selection vertically</span></small></div>
+        </div>
+        <div class="row" data-s="board ボードサイズ（board a4 / a3 / free） board size (board a4 / a3 / free) ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size page size paper canvas format next サイズを順番に送る（1キーで回せる） cycle through the sizes (one key) free 枠なし（無限に広い板） no page frame (infinite board) a4 a4（縦） a4 portrait a4l a4（横） a4 landscape a3 a3 a3 b5 b5 b5 letter レター letter square 正方形 square">
+          <div class="key"><kbd>board</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="desc"><span class="ja">ボードサイズ（board a4 / a3 / free）</span><span class="en">Board size (board a4 / a3 / free)</span><small class="subs"><span class="ja">board next — サイズを順番に送る（1キーで回せる）</span><span class="en">board next — Cycle through the sizes (one key)</span><br><span class="ja">board free — 枠なし（無限に広い板）</span><span class="en">board free — No page frame (infinite board)</span><br><span class="ja">board a4 — A4（縦）</span><span class="en">board a4 — A4 portrait</span><br><span class="ja">board a4l — A4（横）</span><span class="en">board a4l — A4 landscape</span><br><span class="ja">board a3 — A3</span><span class="en">board a3 — A3</span><br><span class="ja">board b5 — B5</span><span class="en">board b5 — B5</span><br><span class="ja">board letter — レター</span><span class="en">board letter — Letter</span><br><span class="ja">board square — 正方形</span><span class="en">board square — Square</span></small></div>
+        </div>
+        <div class="row" data-s="flush ターミナルのログを消す clear the terminal log reset clear storage ">
+          <div class="key"><kbd>flush</kbd></div>
+          <div class="desc"><span class="ja">ターミナルのログを消す</span><span class="en">Clear the terminal log</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-io">
+      <h2><span class="i">💾</span><span class="ja">I/O</span><span class="en">I/O</span></h2>
+      <div class="rows">
+        <div class="row" data-s="gif ボードをgifに録画（gif 4 で4秒） record the board as a gif (gif 4 = 4s) gif アニメ 録画 書き出し 動画 sakura 共有 export record capture animation screencast 4 gifに4秒録画する record a 4s gif 8 gifに8秒録画する record an 8s gif">
+          <div class="key"><kbd>gif</kbd></div>
+          <div class="desc"><span class="ja">ボードをGIFに録画（gif 4 で4秒）</span><span class="en">Record the board as a GIF (gif 4 = 4s)</span><small class="subs"><span class="ja">gif 4 — GIFに4秒録画する</span><span class="en">gif 4 — Record a 4s GIF</span><br><span class="ja">gif 8 — GIFに8秒録画する</span><span class="en">gif 8 — Record an 8s GIF</span></small></div>
+        </div>
+        <div class="row" data-s="rec ボードを動画(webm)に録画（rec 6 で6秒） record the board as video/webm (rec 6 = 6s) rec 録画 動画 video webm 書き出し キャプチャ capture record capture video screencast movie 6 動画に6秒録画する record a 6s video 15 動画に15秒録画する record a 15s video 30 動画に30秒録画する record a 30s video">
+          <div class="key"><kbd>rec</kbd></div>
+          <div class="desc"><span class="ja">ボードを動画(WebM)に録画（rec 6 で6秒）</span><span class="en">Record the board as video/WebM (rec 6 = 6s)</span><small class="subs"><span class="ja">rec 6 — 動画に6秒録画する</span><span class="en">rec 6 — Record a 6s video</span><br><span class="ja">rec 15 — 動画に15秒録画する</span><span class="en">rec 15 — Record a 15s video</span><br><span class="ja">rec 30 — 動画に30秒録画する</span><span class="en">rec 30 — Record a 30s video</span></small></div>
+        </div>
+        <div class="row" data-s="export 書き出し（png / pptx / data） export (png / pptx / data) download save png image file png png画像で書き出す export as a png image pptx powerpointで書き出す export as powerpoint data プロジェクトを丸ごと書き出す export the whole project data magic 魔法をまとめて書き出す export all your spells">
+          <div class="key"><kbd>export</kbd></div>
+          <div class="desc"><span class="ja">書き出し（png / pptx / data）</span><span class="en">Export (png / pptx / data)</span><small class="subs"><span class="ja">export png — PNG画像で書き出す</span><span class="en">export png — Export as a PNG image</span><br><span class="ja">export pptx — PowerPointで書き出す</span><span class="en">export pptx — Export as PowerPoint</span><br><span class="ja">export data — プロジェクトを丸ごと書き出す</span><span class="en">export data — Export the whole project data</span><br><span class="ja">export magic — 魔法をまとめて書き出す</span><span class="en">export magic — Export all your spells</span></small></div>
+        </div>
+        <div class="row" data-s="share urlで画面を共有 share the canvas via url copy link url ">
+          <div class="key"><kbd>share</kbd></div>
+          <div class="desc"><span class="ja">URLで画面を共有</span><span class="en">Share the canvas via URL</span></div>
+        </div>
+        <div class="row" data-s="save プロジェクト保存 save the project project file snapshot ">
+          <div class="key"><kbd>save</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="desc"><span class="ja">プロジェクト保存</span><span class="en">Save the project</span></div>
+        </div>
+        <div class="row" data-s="load プロジェクト読込 load a project project file restore open ">
+          <div class="key"><kbd>load</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="desc"><span class="ja">プロジェクト読込</span><span class="en">Load a project</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-insert">
+      <h2><span class="i">➕</span><span class="ja">挿入</span><span class="en">Insert</span></h2>
+      <div class="rows">
+        <div class="row" data-s="connect 選択した2つ以上を矢印でつなぐ connect 2+ selected objects with arrows つなぐ connect 矢印 図解 フロー 結ぶ link arrow join wire relate ">
+          <div class="key"><kbd>connect</kbd></div>
+          <div class="desc"><span class="ja">選択した2つ以上を矢印でつなぐ</span><span class="en">Connect 2+ selected objects with arrows</span></div>
+        </div>
+        <div class="row" data-s="tpl テンプレを置く insert a template テンプレ template 雛形 tpl template layout preset scaffold wireframe ワイヤーフレームを置く insert a wireframe kanban カンバンを置く insert a kanban board mindmap マインドマップを置く insert a mind map moodboard ムードボードを置く insert a moodboard">
+          <div class="key"><kbd>tpl</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="desc"><span class="ja">テンプレを置く</span><span class="en">Insert a template</span><small class="subs"><span class="ja">tpl wireframe — ワイヤーフレームを置く</span><span class="en">tpl wireframe — Insert a wireframe</span><br><span class="ja">tpl kanban — カンバンを置く</span><span class="en">tpl kanban — Insert a kanban board</span><br><span class="ja">tpl mindmap — マインドマップを置く</span><span class="en">tpl mindmap — Insert a mind map</span><br><span class="ja">tpl moodboard — ムードボードを置く</span><span class="en">tpl moodboard — Insert a moodboard</span></small></div>
+        </div>
+        <div class="row" data-s="sticky 付箋を置く（文字を入れてもok） place a sticky note (text optional) 付箋 sticky ふせん メモ note note postit memo ">
+          <div class="key"><kbd>sticky</kbd></div>
+          <div class="desc"><span class="ja">付箋を置く（文字を入れてもOK）</span><span class="en">Place a sticky note (text optional)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-spell">
+      <h2><span class="i">🪄</span><span class="ja">魔法</span><span class="en">Spell</span></h2>
+      <div class="rows">
+        <div class="row" data-s="spell 選択を魔法に保存（spell 名前）→⌘kで再配置 save selection as a spell (spell name) 魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import magic template stamp macro snippet save list 保存した魔法の一覧 list your saved spells">
+          <div class="key"><kbd>spell</kbd></div>
+          <div class="desc"><span class="ja">選択を魔法に保存（spell 名前）→⌘Kで再配置</span><span class="en">Save selection as a spell (spell name)</span><small class="subs"><span class="ja">spell list — 保存した魔法の一覧</span><span class="en">spell list — List your saved spells</span></small></div>
+        </div>
+        <div class="row" data-s="store store を開く（魔法をインストール） open the store (install spells) store ストア 魔法 install インストール ダウンロード 追加 マーケット extensions marketplace install browse plugins ">
+          <div class="key"><kbd>store</kbd></div>
+          <div class="desc"><span class="ja">STORE を開く（魔法をインストール）</span><span class="en">Open the STORE (install spells)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-chain">
+      <h2><span class="i">⛓</span><span class="ja">連鎖</span><span class="en">Chain</span></h2>
+      <div class="rows">
+        <div class="row" data-s="chain 連鎖（chain add 名前 cmd1 ; cmd2） chains (chain add name cmd1 ; cmd2) 連鎖 chain マクロ 一括 まとめて 自動 add macro sequence batch automation list 作った連鎖の一覧 list your chains">
+          <div class="key"><kbd>chain</kbd></div>
+          <div class="desc"><span class="ja">連鎖（chain add 名前 cmd1 ; cmd2）</span><span class="en">Chains (chain add name cmd1 ; cmd2)</span><small class="subs"><span class="ja">chain list — 作った連鎖の一覧</span><span class="en">chain list — List your chains</span></small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-snippet">
+      <h2><span class="i">📋</span><span class="ja">スニペット</span><span class="en">Snippet</span></h2>
+      <div class="rows">
+        <div class="row" data-s="snip スニペット（snip add 名前 本文 / snip 名前） snippets (snip add name text / snip name) スニペット snippet 定型 テンプレ 付箋 add 登録 snippet text template phrase list 登録したスニペットの一覧 list your snippets">
+          <div class="key"><kbd>snip</kbd></div>
+          <div class="desc"><span class="ja">スニペット（snip add 名前 本文 / snip 名前）</span><span class="en">Snippets (snip add name text / snip name)</span><small class="subs"><span class="ja">snip list — 登録したスニペットの一覧</span><span class="en">snip list — List your snippets</span></small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-media">
+      <h2><span class="i">🎵</span><span class="ja">音</span><span class="en">Sound</span></h2>
+      <div class="rows">
+        <div class="row" data-s="bgm bgm（bgm on / off） background music (bgm on / off) music sound audio ambient background on bgmを鳴らす start the music off bgmを止める stop the music">
+          <div class="key"><kbd>bgm</kbd></div>
+          <div class="desc"><span class="ja">BGM（bgm on / off）</span><span class="en">Background music (bgm on / off)</span><small class="subs"><span class="ja">bgm on — BGMを鳴らす</span><span class="en">bgm on — Start the music</span><br><span class="ja">bgm off — BGMを止める</span><span class="en">bgm off — Stop the music</span></small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-help">
+      <h2><span class="i">❓</span><span class="ja">ヘルプ</span><span class="en">Help</span></h2>
+      <div class="rows">
+        <div class="row" data-s="usage 使い方 / ヘルプ how to use / help help manual docs guide shortcuts cheatsheet ">
+          <div class="key"><kbd>usage</kbd></div>
+          <div class="desc"><span class="ja">使い方 / ヘルプ</span><span class="en">How to use / help</span></div>
+        </div>
+        <div class="row" data-s="settings 設定を開く（ボード/描き味/芯/壁紙） open settings (board / draw / grade / wallpaper) 設定 setting 環境 preferences 歯車 preferences config options ">
+          <div class="key"><kbd>settings</kbd></div>
+          <div class="desc"><span class="ja">設定を開く（ボード/描き味/芯/壁紙）</span><span class="en">Open settings (board / draw / grade / wallpaper)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="c-link">
+      <h2><span class="i">🔗</span><span class="ja">リンク</span><span class="en">Link</span></h2>
+      <div class="rows">
+        <div class="row" data-s="open urlをボードに開く（open example.com） open a url on the board (open example.com) url web リンク 開く browser サイト url web browse site link ">
+          <div class="key"><kbd>open</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="desc"><span class="ja">URLをボードに開く（open example.com）</span><span class="en">Open a URL on the board (open example.com)</span></div>
+        </div>
+        <div class="row" data-s="link お気に入りurl（link add 名前 url / link 名前） favorite urls (link add name url / link name) url web お気に入り リンク favorite ブックマーク bookmark favorite url shortcut list お気に入りurlの一覧 list your favorite urls">
+          <div class="key"><kbd>link</kbd></div>
+          <div class="desc"><span class="ja">お気に入りURL（link add 名前 url / link 名前）</span><span class="en">Favorite URLs (link add name url / link name)</span><small class="subs"><span class="ja">link list — お気に入りURLの一覧</span><span class="en">link list — List your favorite URLs</span></small></div>
+        </div>
+      </div>
+    </section>
+    <p class="empty" id="empty"><span class="ja">見つからない。別の言葉で打ってみて。</span><span class="en">Nothing found — try another word.</span></p>
+  </div>
+
+  <div class="card">
+    <h3><span class="ja">1キーで順番に送る</span><span class="en">Cycle with one key</span></h3>
+    <p>
+      <span class="ja">ショートカットは1つのコマンドにしか付かない。だから状態が3つ以上あるものは、<code>board next</code> <code>grade</code> <code>theme</code> <code>drawmode</code> <code>crumb next</code> で<b>順番に送れる</b>ようにしてある。狙って飛びたいときは <code>board a4</code> のように直接。</span>
+      <span class="en">A shortcut can only point at one command, so anything with three or more states can be cycled: <code>board next</code>, <code>grade</code>, <code>theme</code>, <code>drawmode</code>, <code>crumb next</code>. To jump straight to one, name it — <code>board a4</code>.</span>
     </p>
+  </div>
 
-    <div class="qs-grid">
-        <div class="qs-card">
-            <div class="qs-cat">— DRAW</div>
-            <ul class="qs-list">
-                <li><b>図形を出したい</b> → キーボード <code>C</code>（円）/ <code>Q</code>（四角）/ <code>G</code>（三角）/ <code>A</code>（矢印）</li>
-                <li><b>フリーハンドで描く</b> → <code>P</code>（pen）</li>
-                <li><b>テキスト</b> → <code>T</code> → クリックして入力</li>
-                <li><b>画像を貼る</b> → <code>I</code>（ファイル選択） / 直接ドラッグ&ドロップ / スクショ → <code>⌘ + V</code> でペースト</li>
-                <li><b>スクショの撮り方</b> → Mac <code>⌘ + Shift + Ctrl + 4</code>（クリップボード）/ <code>⌘ + Shift + 4</code>（ファイル → D&D） · Windows <code>PrtScn</code>（通常キー）/ <code>Win + Shift + S</code></li>
-                <li><b>キーワードで画像を呼ぶ</b> → <code>fetch-img <i>mountain 6</i></code></li>
-            </ul>
-        </div>
-
-        <div class="qs-card">
-            <div class="qs-cat">— EDIT</div>
-            <ul class="qs-list">
-                <li><b>選択</b> → <code>S</code> → クリック / 範囲ドラッグ</li>
-                <li><b>削除</b> → 選択して <code>Delete</code> / <code>Backspace</code></li>
-                <li><b>取り消し</b> → <code>⌘ + Z</code> / やり直し <code>⌘ + Shift + Z</code></li>
-                <li><b>パン</b> → <code>Space</code> + ドラッグ</li>
-                <li><b>ズーム</b> → ホイール or ピンチ / リセット <code>ダブルタップ</code></li>
-                <li><b>画像を白黒に</b> → 選択して <code>monoclo</code></li>
-            </ul>
-        </div>
-
-        <div class="qs-card">
-            <div class="qs-cat">— TERMINAL</div>
-            <ul class="qs-list">
-                <li><b>テーマ切替</b> → <code>light</code> / <code>dark</code> / <code>gray</code></li>
-                <li><b>履歴を消す</b> → <code>clear</code></li>
-                <li><b>プリセット魔法を見る</b> → <code>list</code></li>
-                <li><b>過去の入力を呼ぶ</b> → ターミナルで <code>↑</code> / <code>↓</code></li>
-                <li><b>ヘルプ</b> → <code>help</code></li>
-            </ul>
-        </div>
-
-        <div class="qs-card">
-            <div class="qs-cat">— SAVE / SHARE</div>
-            <ul class="qs-list">
-                <li><b>キャンバスを保存</b> → <code>save <i>name</i></code></li>
-                <li><b>保存一覧</b> → <code>ls</code></li>
-                <li><b>呼び戻し</b> → <code>load <i>name</i></code></li>
-                <li><b>PNG で書き出し</b> → <code>X</code> または <code>export</code></li>
-                <li><b>SVG で書き出し</b> → <code>svg</code>（Illustrator/Figma 編集可）</li>
-                <li><b>URL でシェア</b> → <code>share</code>（gzip+URL に圧縮）</li>
-            </ul>
-        </div>
-
-        <div class="qs-card">
-            <div class="qs-cat">— SPELL（魔法）</div>
-            <ul class="qs-list">
-                <li><b>魔法を一発実行</b> → <code>$<i>spell-name</i></code> または <code><i>spell-name</i></code></li>
-                <li><b>登録済の魔法を見る</b> → <code>list</code></li>
-                <li><b>自分で魔法を作る</b> → <a href="#first-spell" style="color: var(--ink); border-bottom: 1px solid var(--ink);">↓ Write Your First Spell</a></li>
-                <li><b>他人の魔法を取り込む</b> → JSON を canvas に drag-drop</li>
-                <li><b>魔法を共有</b> → <code>share <i>spell-name</i></code> でクリップボードにコピー</li>
-            </ul>
-        </div>
-
-        <div class="qs-card">
-            <div class="qs-cat">— EASTER EGGS</div>
-            <ul class="qs-list">
-                <li><b>自撮りカメラで自分を映す</b> → <code>Black Mirror</code></li>
-                <li><b>カメラ OFF</b> → <code>Black Mirror off</code></li>
-                <li><b>?</b> → <code>youtube</code></li>
-            </ul>
-        </div>
-    </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════
-     WRITE YOUR FIRST SPELL — make-your-own intro
-     ════════════════════════════════════════════════════════ -->
-<section class="section" id="first-spell">
-    <h2><span class="num">▸</span>Write Your First Spell</h2>
-    <p style="margin: 0 0 18px; color: var(--dim);">
-        "魔法 (spell)" は <b>選択中の図形を変形させる JS スニペット</b>。
-        <code>register</code> で名前付き登録 → 以降は <code>$その名前</code> で何度でも呼び出せる。
-        他人にも JSON 1 個で送れる。
+  <div class="card">
+    <h3><span class="ja">自分のキーを決める・自分の呼び名を付ける</span><span class="en">Your keys, your names</span></h3>
+    <p>
+      <span class="ja"><code>⌘,</code> → コマンド から、どのコマンドにも好きなキーを割り当てられる。「呼び名」を付ければ、自分の言葉（例：アトリエ）で引ける。<br>⚠️引数が必須のコマンドにキーを付けると、押しても<b>入力待ちになるだけ</b>。すぐ動かしたいならサブコマンドの側に付ける。</span>
+      <span class="en">Open <code>⌘,</code> → Commands to bind any key, or give a command your own name so you can find it your way.<br>⚠️Binding a key to a command that requires an argument only opens the palette and waits — bind the subcommand instead.</span>
     </p>
-
-    <div class="spell-step">
-        <div class="spell-step-num">01</div>
-        <div class="spell-step-body">
-            <b>まずプリセットを試す</b><br>
-            円を描いて選択 → ターミナルに <code>$biwako-blue</code> と打つ → 線が琵琶湖ブルー (#0044CC) に。<br>
-            これが「魔法」の最小例。1 行で全選択を一括変換します。
-        </div>
+    <div class="more">
+      <a href="usage.html"><span class="ja">使い方</span><span class="en">How to use</span></a>
+      <a href="spell-spec.html"><span class="ja">魔法の書式</span><span class="en">Spell format</span></a>
+      <a href="app.html"><span class="ja">とにかく触る →</span><span class="en">Just open it →</span></a>
     </div>
+  </div>
 
-    <div class="spell-step">
-        <div class="spell-step-num">02</div>
-        <div class="spell-step-body">
-            <b>自作してみる（コピペで OK）</b><br>
-            ターミナルに以下を 1 行で打つ：
-            <pre style="background: var(--pre-bg, #050505); color: var(--pre-text, #9a9690); padding: 14px; margin: 10px 0; font-size: 12px; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">register paint-red for(const o of BM.all()){BM.setStroke(o,'#FF0000')}BM.redraw();BM.log('painted red!')</pre>
-            登録完了。次から <code>$paint-red</code> で全図形が赤線になる。
-        </div>
-    </div>
-
-    <div class="spell-step">
-        <div class="spell-step-num">03</div>
-        <div class="spell-step-body">
-            <b>仕組み</b><br>
-            <code>register <i>spell-name</i> <i>JS コード</i></code> の形式で登録。コードの中で <code>BM.xxx()</code> という API が使える。
-            よく使う API：
-            <ul style="margin: 8px 0 0 20px; line-height: 1.7;">
-                <li><code>BM.all()</code> — 全図形の配列</li>
-                <li><code>BM.getSelected()</code> — 今選択中の図形</li>
-                <li><code>BM.setStroke(obj, color)</code> — 線の色を変える</li>
-                <li><code>BM.translate(obj, dx, dy)</code> — 位置をずらす</li>
-                <li><code>BM.create(type, props)</code> — 新規作成 (`circle` / `square` / `triangle` / `arrow` / `text`)</li>
-                <li><code>BM.redraw()</code> — 反映</li>
-                <li><code>BM.log(text)</code> — ターミナルにメッセージ</li>
-            </ul>
-            全 API は <a href="#bmapi" style="color: var(--ink); border-bottom: 1px solid var(--ink);">↓ BM API</a> へ。
-        </div>
-    </div>
-
-    <div class="spell-step">
-        <div class="spell-step-num">04</div>
-        <div class="spell-step-body">
-            <b>魔法を共有</b><br>
-            <code>share paint-red</code> → JSON がクリップボードへ。SNS や Discord に貼り付ければ、相手はそれを drag-drop or paste するだけで使える。<br>
-            「自分の作品 + 自作魔法」をワンセットで人に送れるのが BMBoard の核です。
-        </div>
-    </div>
-
-    <div class="spell-step">
-        <div class="spell-step-num">05</div>
-        <div class="spell-step-body">
-            <b>AI に書いてもらう</b><br>
-            ChatGPT / Claude / Gemini に下のプロンプトをそのまま貼れば、エラーなく動く JSON が返ってくる。出力された 1 行の JSON を BMBoard ターミナル入力欄にペーストするだけで自動登録される。<br>
-
-            <pre style="background: var(--pre-bg, #050505); color: var(--pre-text, #9a9690); padding: 14px; margin: 12px 0; font-size: 11.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;">You are creating a "spell" for BMBoard.
-OUTPUT FORMAT (mandatory): {"command":"NAME","action":"JAVASCRIPT_CODE_AS_STRING"}
-Output 1 line, no Markdown, no explanation.
-
-The action is RAW JS executed via new Function('BM','args',action).
-API: BM.log(msg,cls?) / BM.viewCenter() / BM.create(type,props) /
-BM.translate / BM.update / BM.remove / BM.setStroke / BM.setFill /
-BM.all() / BM.getSelected() / BM.clear() / BM.redraw() / BM.save() /
-BM.rand(min,max) / args (string).
-
-Object types: circle{cx,cy,rx,ry,rotation,fill} | square{x,y,w,h,rotation,fill} |
-triangle{x,y,w,h,rotation,fill} | arrow{x1,y1,x2,y2,rotation} |
-text{x,y,text,fontSize,rotation} | sticky{x,y,w,h,text,color,rotation}.
-
-NEVER use: internalName, displayName, description, icon, category, cost,
-cooldown, mp, PROJECTILE, particle, onHit, magic create, /bmboard, /reload,
-plugins/, skills/. Those are not BMBoard.
-
-Always end with BM.redraw(). For meaningful changes call BM.save().
-
-Now create a spell: <DESCRIBE WHAT YOU WANT HERE></pre>
-
-            完全な仕様（AI が直接 fetch する用）: <a href="./spell-spec.md" style="color: var(--ink); border-bottom: 1px solid var(--ink);">spell-spec.md</a> · LLM index: <a href="./llms.txt" style="color: var(--ink); border-bottom: 1px solid var(--ink);">llms.txt</a>
-        </div>
-    </div>
-
-    <div style="margin-top: 24px; padding: 16px 18px; background: var(--card-tint, rgba(240,237,230,0.018)); border: 1px solid var(--rule); font-size: 13px; line-height: 1.7;">
-        <b>⚠ 注意：</b> <code>register</code> は JS をそのまま実行できます。
-        <b>知らない人から受け取った魔法を取り込む前に、JSON の中身を確認</b>してください。怪しいコードは登録しない。
-    </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="themes">
-    <h2><span class="num">01</span>Themes</h2>
-    <p class="lede">一語でパレット全体を切り替える。キャンバス / ツールバー / ポップオーバー / ヘッダが連動。</p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">light</code><span class="desc">paper ground · default</span></span>
-        <span class="tag">THEME</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>背景 <code>#FAFAF8</code> / インク <code>#0c0c0c</code>。標準テーマ。</p>
-        <p>別名: <code>light mode</code></p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">dark</code><span class="desc">void / CRT phosphor</span></span>
-        <span class="tag">THEME</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>背景 <code>#000000</code> / インク <code>#F0EDE6</code>。ダークモード。</p>
-        <p>別名: <code>dark mode</code></p>
-        <p>注: オブジェクトのfillは元のlight-modeの色を保持しており、描画時に <code>resolveFill()</code> で反転される（破壊的変更なし）。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">gray</code><span class="desc">pebble + cobalt · studio palette</span></span>
-        <span class="tag">THEME</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>背景 <code>#DCDBD5</code>（暖かい石色）/ アクセント <code>#1600A2</code>（エレクトリックコバルト）。</p>
-        <p>別名: <code>grey</code>, <code>gray mode</code>, <code>grey mode</code></p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="canvas">
-    <h2><span class="num">02</span>Canvas Control</h2>
-    <p class="lede">ターミナルの出力を消す。キャンバス上のオブジェクトは消えない（それはヘッダの <code>CLEAR</code> ボタンや選択→Del で）。</p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">clear</code><span class="desc">wipe terminal output</span></span>
-        <span class="tag">TERMINAL</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>ターミナルの出力ログをクリア。キャンバスは無変更。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">flush</code><span class="desc">alias of clear</span></span>
-        <span class="tag">TERMINAL</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p><code>clear</code> と同じ。</p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="camera">
-    <h2><span class="num">03</span>Camera / Black Mirror Wipe</h2>
-    <p class="lede">自分のウェブカメラをセルフミラーでPIP表示。ドラッグで好きな場所に置ける。YouTubeライブ/スクリーン収録/描きながら自分を見たいときに。</p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">Black Mirror</code><span class="desc">camera ON · draggable PIP</span></span>
-        <span class="tag">CAMERA</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p><code>getUserMedia</code> を呼び、右上にPIP (220×165 / モバイル 128×170) を配置。赤い REC ドットが点滅、<code>◼ BLACK MIRROR</code> ラベルは <code>mix-blend-mode: difference</code>。</p>
-        <p>フレームを掴むとドラッグで移動可能。ホバーで <code>×</code> クローズが表示。</p>
-        <p>別名: <code>Black Mirror on</code></p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">Black Mirror off</code><span class="desc">release camera tracks</span></span>
-        <span class="tag">CAMERA</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>トラックを全解放してPIPを閉じる。タブを閉じなくてもカメラのインジケーターはすぐに消える。</p>
-        <p>別名: <code>Black Mirror-off</code></p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="project">
-    <h2><span class="num">04</span>Project Persistence</h2>
-    <p class="lede">すべて <code>IndexedDB</code> にローカル保存。サーバー無し、クラウド無し。</p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">save &lt;name&gt;</code><span class="desc">snapshot canvas + view</span></span>
-        <span class="tag">IndexedDB</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>キャンバス全体とビュー (scale / tx / ty) を <code>&lt;name&gt;</code> で保存。</p>
-        <p>名前ルール: <code>[a-zA-Z0-9][a-zA-Z0-9_\-. ]{0,40}</code></p>
-        <pre>&gt; save biwako-study
-→ serializing...
-→ 23 object(s)
-[SUCCESS] Snapshot 'biwako-study' committed.</pre>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">ls</code><span class="desc">list all snapshots</span></span>
-        <span class="tag">IndexedDB</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>保存済みのスナップショット一覧。新しい順。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">load &lt;name&gt;</code><span class="desc">restore a snapshot</span></span>
-        <span class="tag">IndexedDB</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>指定のスナップショットに戻す。選択状態はリセットされ、ビューも復元される。</p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="export">
-    <h2><span class="num">05</span>Export</h2>
-    <p class="lede">SVG / PNG / JSON バンドル。全てローカル、クラウド不要。</p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">$svg</code><span class="desc">editable SVG for Figma / Illustrator</span></span>
-        <span class="tag">EXPORT</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>選択オブジェクト（無ければ全体）をネイティブSVGに書き出し。すべてのプリミティブが対応:</p>
-        <ul>
-            <li><code>circle</code> → <code>&lt;ellipse&gt;</code></li>
-            <li><code>square</code> → <code>&lt;rect&gt;</code></li>
-            <li><code>triangle</code> → <code>&lt;polygon&gt;</code></li>
-            <li><code>arrow</code> → <code>&lt;line&gt;</code> + <code>&lt;polygon&gt;</code> 頭</li>
-            <li><code>text</code> → <code>&lt;text dominant-baseline="hanging"&gt;</code></li>
-            <li><code>stroke</code> → <code>&lt;path M…Q…&gt;</code></li>
-            <li><code>image</code> → <code>&lt;image&gt;</code></li>
-            <li>回転は <code>&lt;g transform="rotate(θ cx cy)"&gt;</code> でラップ</li>
-        </ul>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">export</code><span class="desc">project → .json</span></span>
-        <span class="tag">EXPORT</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>現在のプロジェクトを <code>.json</code> で書き出し。ヘッダの <code>SAVE</code> ボタンと同等。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">export-all</code><span class="desc">project + spells → .json bundle</span></span>
-        <span class="tag">EXPORT</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>プロジェクト + 登録済みスペル全部を1つの <code>.json</code> に。自分のBMセットアップの完全バックアップ。</p>
-        <p>別名: <code>exportall</code></p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">export-spells [names...]</code><span class="desc">spells only</span></span>
-        <span class="tag">EXPORT</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>スペルだけ。名前を空白区切りで指定すると、それだけを含む。無指定なら全ユーザースペル。</p>
-        <p>別名: <code>exportspells</code></p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><kbd>X</kbd><span class="desc">transparent PNG (keyboard)</span></span>
-        <span class="tag">PNG</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>選択オブジェクト（無ければ全体）をbbox切り抜きの透過PNGで書き出し。3× DPR上限でメモリスパイク抑止。</p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="spellbook">
-    <h2><span class="num">06</span>Spellbook</h2>
-    <p class="lede">機能は買うものじゃなく、呪文として共有するもの。1行のJSで新機能を登録、JSONで他人と交換。</p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">list</code><span class="desc">every registered spell</span></span>
-        <span class="tag">META</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>登録済みコマンド全部を <code>[preset]</code> または <code>[ user ]</code> タグ付きで列挙。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">register &lt;name&gt; &lt;js&gt;</code><span class="desc">install a new spell</span></span>
-        <span class="tag">META</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>新しいスペルを登録。名前の制約: <code>[a-z0-9][a-z0-9_-]{0,30}</code>。</p>
-        <pre>&gt; register hi BM.log('hello, spellbook!')
-→ compiling...
-→ persisting...
-[OK] $hi — try it now.</pre>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">alias &lt;new&gt;=&lt;old&gt;</code><span class="desc">clone an existing spell</span></span>
-        <span class="tag">META</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>既存スペルに別名を付ける。短縮名を作りたい時に。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">forget &lt;name&gt;</code><span class="desc">remove a user spell</span></span>
-        <span class="tag">META</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>ユーザースペルを削除。プリセットは削除できない。</p>
-        <p>別名: <code>unregister</code></p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">paste JSON</code><span class="desc">install from a payload</span></span>
-        <span class="tag">META</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>JSONペイロードをターミナルに貼るだけでスペル登録。形式:</p>
-        <pre>{
-  "command": "my-spell",
-  "action": "BM.log('hello from JSON')"
-}</pre>
-        <p>スキーマチェックが通ると IndexedDB にバインドされ、以後 <code>$my-spell</code> で呼べる。</p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="presets">
-    <h2><span class="num">07</span>Preset Spells</h2>
-    <p class="lede">ビルトインのスペル。いずれも <code>$name</code> の形で呼び出し。貼り直せば上書き可能。</p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">$scatter</code><span class="desc">random-jitter the selection</span></span>
-        <span class="tag">PRESET</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>選択オブジェクトを ±400px (x) / ±300px (y) の範囲でランダムに移動。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">$grid-3x3</code><span class="desc">place 9 squares</span></span>
-        <span class="tag">PRESET</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>ビューの中心に 80×80 の四角を 3×3 で配置。ワイヤーフレームの下敷きに。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">$biwako-blue</code><span class="desc">retint all objects #0044CC</span></span>
-        <span class="tag">PRESET</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>全オブジェクトのストローク（と存在すればfill）を <code>#0044CC</code> に。"Biwako Silence" パレット。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">$svg</code><span class="desc">export SVG</span></span>
-        <span class="tag">PRESET</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p><a href="#export">Export</a> セクション参照。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">$monoclo</code><span class="desc">grayscale selected image(s)</span></span>
-        <span class="tag">PRESET</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>選択画像をグレースケール化（<code>grayscale(100%) contrast(110%) brightness(95%)</code>）。オフスクリーンcanvasでdataURLを書き換え、元画像はそのまま残さない（上書き）。</p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="imgbrain">
-    <h2><span class="num">08</span>Image Brainstorm</h2>
-    <p class="lede">キーワードを投げると、イメージが散らばる。ブレスト用、思考のノンストップ。</p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">$fetch-img [keyword] [n]</code><span class="desc">mood-board scatter</span></span>
-        <span class="tag">PRESET</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p><strong>使い方</strong></p>
-        <ul>
-            <li><code>$fetch-img</code> — 1枚 (<code>biwako</code>)</li>
-            <li><code>$fetch-img ocean</code> — 1枚 (キーワード <code>ocean</code>)</li>
-            <li><code>$fetch-img ocean 9</code> — 9枚（上限 25）</li>
-        </ul>
-        <p>公開画像フィードから取得、ランダム回転と余白でキャンバスに散布。CORS安全な画像は永続化可能、ブロックされた画像はプレースホルダで代替。</p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="share">
-    <h2><span class="num">09</span>Share</h2>
-    <p class="lede">機能もキャンバスも、テキスト一片。テキストは、どこにでも届く。</p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">share</code><span class="desc">canvas → URL (modal)</span></span>
-        <span class="tag">SHARE</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>シェアモーダルを開く。</p>
-        <ul>
-            <li><strong>Copy URL</strong> — <code>CompressionStream</code> でgzip → base64url → コピー。開いた側でそのまま復元。</li>
-            <li><strong>Open in New Tab</strong> — 同じURLを新規タブでプレビュー。</li>
-            <li><strong>Download .json</strong> — ファイル配布。</li>
-        </ul>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">share &lt;spell-name&gt;</code><span class="desc">copy spell JSON</span></span>
-        <span class="tag">SHARE</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>指定スペルのJSONをクリップボードへ。Slack / X / gist / 友人のDM に貼り、彼らがペーストすれば自動登録。</p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="help">
-    <h2><span class="num">10</span>Help / Docs</h2>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">help</code><span class="desc">quick reference card</span></span>
-        <span class="tag">DOC</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>ターミナル内でクイックリファレンスを表示。登録済みスペル数と主要コマンドをまとめて確認できる。</p>
-        <p>別名: <code>?</code></p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">usage</code><span class="desc">open full USAGE panel</span></span>
-        <span class="tag">DOC</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>詳細なマニュアルパネルを開く。Escで閉じる。</p>
-        <p>別名: <code>man</code>, <code>docs</code></p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="eggs">
-    <h2><span class="num">11</span>Easter Eggs / Diagnostics</h2>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">youtube</code><span class="desc">trigger animation</span></span>
-        <span class="tag">EGG</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>YouTube イースターエッグのアニメーションを発火。別名 <code>yt</code>, <code>youtube.com</code>。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">objects</code><span class="desc">print raw objects array</span></span>
-        <span class="tag">DIAG</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>内部の <code>S.objects</code> 配列をダンプ。スペル作成時のデバッグに。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">test-parse &lt;text&gt;</code><span class="desc">echo tokens</span></span>
-        <span class="tag">DIAG</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>入力のパース結果を返す。スペル作成時の引数挙動確認に。</p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="ideas">
-    <h2><span class="num">12</span>Ideas to Extend</h2>
-    <p class="lede">
-        以下はまだ実装していない候補。いずれも <code>register</code> か JSON ペーストで追加できる。
-        Claude や ChatGPT に <a href="#bmapi">BM API</a> と一文の意図を渡せば、動くJSONが返ってくる。
+  <div class="card">
+    <h3><span class="ja">ここに無いもの</span><span class="en">Not on this list</span></h3>
+    <p>
+      <span class="ja">自分で作った<b>魔法・スニペット・連鎖・リンク</b>も ⌘K に並ぶ。それは人によって違うので、この一覧には出てこない。</span>
+      <span class="en">Your own <b>spells, snippets, chains and links</b> also live in ⌘K. Those differ per person, so they are not listed here.</span>
     </p>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">align &lt;edge&gt;</code><span class="desc">align selection</span></span>
-        <span class="tag">IDEA · LAYOUT</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>選択オブジェクトを共通の辺に揃える: <code>left</code> / <code>right</code> / <code>top</code> / <code>bottom</code> / <code>center-x</code> / <code>center-y</code>。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">distribute-h / distribute-v</code><span class="desc">equal spacing</span></span>
-        <span class="tag">IDEA · LAYOUT</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>3つ以上の選択オブジェクト間のギャップを均等化。水平 / 垂直を別コマンドに。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">group / ungroup</code><span class="desc">virtual grouping</span></span>
-        <span class="tag">IDEA · STRUCTURE</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>選択オブジェクトを仮想グループ化。<code>S</code> に <code>groups</code> マップを追加し、ヒットテストがグループを優先する。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">bring-front / send-back</code><span class="desc">z-order swap</span></span>
-        <span class="tag">IDEA · STRUCTURE</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>描画順を直接操作。<code>raise</code> / <code>lower</code> で1段ずつ、<code>bring-front</code> / <code>send-back</code> で両端に。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">flip-h / flip-v / mirror &lt;axis&gt;</code><span class="desc">flip selection</span></span>
-        <span class="tag">IDEA · GEOMETRY</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>選択オブジェクトを水平/垂直反転。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">palette &lt;name&gt;</code><span class="desc">apply a palette</span></span>
-        <span class="tag">IDEA · COLOR</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>名前付きパレットを一括適用（<code>biwako</code> / <code>ink-brush</code> / <code>crt</code> / ...）。<code>$biwako-blue</code> をベースに多色化。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">sepia / noir / neon / duotone</code><span class="desc">image filters</span></span>
-        <span class="tag">IDEA · IMAGE</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p><code>$monoclo</code> の兄弟コマンド。<code>duotone &lt;hex1&gt; &lt;hex2&gt;</code> で2色マッピング。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">grain &lt;amount&gt;</code><span class="desc">sprinkle pixel noise</span></span>
-        <span class="tag">IDEA · IMAGE</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>選択画像にピクセルグレインを散らす。<code>amount</code> で強度調整。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">sticky &lt;text&gt;</code><span class="desc">post-it note object</span></span>
-        <span class="tag">IDEA · INPUT</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>黄色い付箋風テキストオブジェクト。リサイズ可・回転可。ブレスト専用。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">checkbox &lt;text&gt;</code><span class="desc">interactive tickbox</span></span>
-        <span class="tag">IDEA · INPUT</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>クリックで✓が入る小さなトグル付きテキスト。TODO用。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">callout &lt;text&gt;</code><span class="desc">arrow + label combo</span></span>
-        <span class="tag">IDEA · INPUT</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>矢印+ラベルをまとめた一発作成。画面キャプチャに注釈をつけるワークフロー向け。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">timer &lt;min&gt;</code><span class="desc">pomodoro countdown</span></span>
-        <span class="tag">IDEA · PRODUCTIVITY</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>PIPスロットでカウントダウン。0で通知。集中作業支援。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">count</code><span class="desc">object type stats</span></span>
-        <span class="tag">IDEA · DIAG</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>キャンバス上のオブジェクトをtype別に集計。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">search &lt;keyword&gt;</code><span class="desc">highlight matches</span></span>
-        <span class="tag">IDEA · DIAG</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>テキストオブジェクトの本文・タグから検索し、マッチしたものを点滅ハイライト。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">speak &lt;text&gt;</code><span class="desc">Web Speech TTS</span></span>
-        <span class="tag">IDEA · AUDIO</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>Web Speech API でテキストを読み上げる。配信やプレゼンテーションに。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">hear</code><span class="desc">speech → text</span></span>
-        <span class="tag">IDEA · AUDIO</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>Web Speech Recognition で音声入力。認識結果をテキストオブジェクトとして配置。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">ai &lt;prompt&gt;</code><span class="desc">ask AI for a spell</span></span>
-        <span class="tag">IDEA · AI</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>プロンプトをAIに渡し、返ってきたJSONをそのまま登録。<code>fetch</code> で OpenAI / Anthropic / Gemini 互換APIを叩く設計に。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">replay</code><span class="desc">stroke animation</span></span>
-        <span class="tag">IDEA · FUN</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>ストローク生成順を記録しておき、アニメーションで再生。制作プロセスの記録に。</p>
-    </div></details>
-
-    <details class="cmd"><summary>
-        <span class="lead"><code class="glyph">layer new / layer hide</code><span class="desc">named layers</span></span>
-        <span class="tag">IDEA · STRUCTURE</span><span class="chev">›</span>
-    </summary><div class="body">
-        <p>オブジェクトに <code>layer</code> タグを付与し、表示/非表示を切替。最小限の階層化。</p>
-    </div></details>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="shortcuts">
-    <h2><span class="num">13</span>Keyboard Shortcuts</h2>
-    <p class="lede">キーボードから直接触れるアクション一覧。</p>
-
-    <table class="tbl">
-        <thead><tr><th>Key</th><th>Action</th></tr></thead>
-        <tbody>
-            <tr><td><kbd>S</kbd></td><td>select</td></tr>
-            <tr><td><kbd>P</kbd></td><td>pen (freehand)</td></tr>
-            <tr><td><kbd>N</kbd></td><td>path (bezier)</td></tr>
-            <tr><td><kbd>E</kbd></td><td>eraser</td></tr>
-            <tr><td><kbd>C</kbd></td><td>circle</td></tr>
-            <tr><td><kbd>G</kbd></td><td>triangle</td></tr>
-            <tr><td><kbd>Q</kbd></td><td>square</td></tr>
-            <tr><td><kbd>A</kbd></td><td>arrow</td></tr>
-            <tr><td><kbd>T</kbd></td><td>text</td></tr>
-            <tr><td><kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd></td><td>stroke width 1 / 2 / 3</td></tr>
-            <tr><td><kbd>Space</kbd> + drag</td><td>pan view</td></tr>
-            <tr><td><kbd>X</kbd></td><td>export selection (or all) → transparent PNG</td></tr>
-            <tr><td><kbd>Ctrl/⌘</kbd> + <kbd>Z</kbd></td><td>undo</td></tr>
-            <tr><td><kbd>Ctrl/⌘</kbd> + <kbd>Y</kbd> or <kbd>Shift+Z</kbd></td><td>redo</td></tr>
-            <tr><td><kbd>Del</kbd> / <kbd>Backspace</kbd></td><td>delete selected (ignored during text edit)</td></tr>
-            <tr><td><kbd>Shift</kbd> (during drag)</td><td>aspect-lock resize</td></tr>
-            <tr><td><kbd>Alt</kbd> (during drag)</td><td>resize from the opposite anchor</td></tr>
-            <tr><td><kbd>Esc</kbd></td><td>cancel gesture / exit text edit</td></tr>
-        </tbody>
-    </table>
-</section>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<section class="section" id="bmapi">
-    <h2><span class="num">14</span>The BM API</h2>
-    <p class="lede">
-        スペル作者向けの最小API。スペルのJSは <code>args</code>（コマンド以降の文字列）と <code>BM</code> オブジェクトを使える。
-    </p>
-
-    <details class="cmd" open><summary>
-        <span class="lead"><code class="glyph">BM.*</code><span class="desc">spell runtime surface</span></span>
-        <span class="tag">API</span><span class="chev">›</span>
-    </summary><div class="body">
-        <pre>BM.all()                  // array of every object on the canvas
-BM.getSelected()          // array of currently-selected objects
-BM.clear()                // wipe all canvas objects
-BM.create(type, props)    // new object; type =
-                          //   'circle' | 'square' | 'triangle'
-                          //   | 'arrow' | 'text' | 'sticky'
-BM.update(idOrObj, patch) // patch obj.data with given properties
-BM.translate(obj, dx, dy) // move by delta
-BM.remove(obj)            // delete an object
-BM.setStroke(obj, color)  // per-object line color
-BM.setFill(obj, color)    // per-object fill
-BM.viewCenter()           // { x, y } in world coords
-BM.rand(a, b)             // random float in [a, b)
-BM.redraw()               // mark dirty, re-render (call after mutations)
-BM.save()                 // commit to undo history
-BM.log(msg, cls?)         // print to terminal ('t-ok' | 't-err' | 't-dim')
-BM.exportSvg(targets?)    // same as $svg (default: selection or all)
-args                      // string passed at invocation</pre>
-
-        <p style="margin-top: 14px;">
-            <b>Object types and props:</b>
-        </p>
-        <pre>circle:   {cx, cy, rx, ry, rotation, fill, strokeOff}
-square:   {x, y, w, h, rotation, fill, strokeOff}
-triangle: {x, y, w, h, rotation, fill, strokeOff}
-arrow:    {x1, y1, x2, y2, rotation}
-text:     {x, y, text, fontSize, rotation}
-sticky:   {x, y, w, h, text, color, rotation}  // default color: '#FFE873'</pre>
-
-        <p style="margin-top: 14px;"><b>機械可読仕様（AI 用）:</b> <a href="./spell-spec.md">spell-spec.md</a> · LLM index: <a href="./llms.txt">llms.txt</a></p>
-
-        <p style="margin-top: 14px;"><b>禁止語（NOT BMBoard, never use):</b> <code>internalName</code>, <code>displayName</code>, <code>description</code>, <code>icon</code>, <code>category</code>, <code>cost</code>, <code>mp</code>, <code>cooldown</code>, <code>PROJECTILE</code>, <code>particle</code>, <code>onHit</code>, <code>magic create</code>, <code>/bmboard</code>, <code>/reload</code>, <code>plugins/</code>, <code>skills/</code></p>
-
-        <p style="margin-top: 14px;">最小のスペル例:</p>
-        <pre>{
-  "command": "spread",
-  "action": "const sel = BM.getSelected(); if (!sel.length) { BM.log('select first.', 't-err'); return; } for (const o of sel) BM.translate(o, BM.rand(-600, 600), 0); BM.log('spread ' + sel.length + ' object(s) horizontally.');"
-}</pre>
-        <p>ターミナルに貼るだけで <code>$spread</code> が恒久登録される。</p>
-    </div></details>
-</section>
-
-<footer class="end">
-    <span>◼ BLACK MIRROR BOARD · v1.2 · 2026-04-22</span>
-    <span><a href="./app">→ OPEN BOARD</a>  ·  <a href="./commands.md">→ commands.md</a>  ·  <a href="./dev-log.html">→ DEV LOG</a></span>
-</footer>
-
+  </div>
 </main>
 
-</div>
+<footer class="shell">
+  <div class="frow">
+    <span class="brand" style="font-size:12px"><img src="logo.png" alt="" style="width:18px;height:18px"><span>BM BOARD</span></span>
+    <span style="flex:1"></span>
+    <a href="index.html"><span class="ja">トップ</span><span class="en">Home</span></a>
+    <a href="usage.html"><span class="ja">使い方</span><span class="en">Usage</span></a>
+    <a href="commands.html"><span class="ja">コマンド</span><span class="en">Commands</span></a>
+    <a href="spell-spec.html"><span class="ja">魔法</span><span class="en">Spells</span></a>
+    <a href="story.html"><span class="ja">つくった理由</span><span class="en">Story</span></a>
+    <a href="dev-log.html"><span class="ja">開発ログ</span><span class="en">Dev log</span></a>
+    <a href="browser/">BM Browser</a>
+  </div>
+  <p class="fnote">
+    <span class="ja">BM BOARD は Black Mirror Board の略。つくっているのは <a href="https://kinoshita.studio/">kinoshita studio</a>。</span>
+    <span class="en">BM BOARD is short for Black Mirror Board. Made by <a href="https://kinoshita.studio/">kinoshita studio</a>.</span>
+  </p>
+</footer>
 
 <script>
-// ── TOC active-state + mobile collapse ────────────────────────────
-(function () {
-    const links = document.querySelectorAll('.toc-list a');
-    const sections = [...document.querySelectorAll('section.section')];
-    const sideToc  = document.getElementById('sideToc');
-    const tocToggle = document.getElementById('tocToggle');
-    const isMobile = () => window.matchMedia('(max-width: 820px)').matches;
+const KEY = 'bm_site_lang';
+function setLang(l){
+  document.body.classList.toggle('lang-en', l === 'en');
+  document.documentElement.lang = l;
+  document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
+  try { localStorage.setItem(KEY, l); } catch (_) {}
+}
+document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+try { setLang(localStorage.getItem(KEY) || ((navigator.language || '').startsWith('ja') ? 'ja' : 'en')); } catch (_) { setLang('ja'); }
 
-    function onScroll() {
-        const y = window.scrollY + 120;
-        let current = sections[0].id;
-        for (const s of sections) {
-            if (s.offsetTop <= y) current = s.id;
-        }
-        links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current));
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-
-    // Mobile hamburger: open/close the TOC panel
-    tocToggle?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const open = sideToc.classList.toggle('open');
-        tocToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+const q = document.getElementById('q'), empty = document.getElementById('empty');
+if (q) {
+  q.addEventListener('input', () => {
+    const v = q.value.trim().toLowerCase();
+    document.body.classList.toggle('searching', !!v);
+    let hit = 0;
+    document.querySelectorAll('.cat').forEach(cat => {
+      let n = 0;
+      cat.querySelectorAll('.row').forEach(r => {
+        const on = !v || r.dataset.s.includes(v);
+        r.style.display = on ? '' : 'none';
+        if (on) n++;
+      });
+      cat.style.display = n ? '' : 'none';
+      hit += n;
     });
-    // Tap outside → close (mobile only)
-    document.addEventListener('click', (e) => {
-        if (!isMobile()) return;
-        if (!sideToc.classList.contains('open')) return;
-        if (e.target.closest('#sideToc') || e.target.closest('#tocToggle')) return;
-        sideToc.classList.remove('open');
-        tocToggle?.setAttribute('aria-expanded', 'false');
-    });
-
-    // Smooth scroll for TOC clicks + auto-close on mobile
-    links.forEach(a => {
-        a.addEventListener('click', (e) => {
-            const id = a.getAttribute('href').slice(1);
-            const el = document.getElementById(id);
-            if (!el) return;
-            e.preventDefault();
-            // account for sticky TOC on mobile
-            const offset = isMobile() ? (sideToc.offsetHeight + 12) : 24;
-            window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
-            history.replaceState(null, '', '#' + id);
-            if (isMobile()) {
-                sideToc.classList.remove('open');
-                tocToggle?.setAttribute('aria-expanded', 'false');
-            }
-        });
-    });
-})();
-
-// ── Theme toggle — syncs with index/usage/dev-log via bmboard.theme ─
-(function () {
-    const KEY = 'bmboard.theme';
-    const root = document.documentElement;
-    const current = () => root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-    const apply = (t) => {
-        const next = (t === 'light') ? 'light' : 'dark';
-        root.setAttribute('data-theme', next);
-        try { localStorage.setItem(KEY, next); } catch {}
-    };
-    document.querySelectorAll('.theme-toggle .theme-tok').forEach(tok => {
-        tok.addEventListener('click', (e) => { e.stopPropagation(); apply(tok.dataset.setTheme); });
-    });
-    document.getElementById('themeToggle')?.addEventListener('click', (e) => {
-        if (e.target.matches('.theme-tok')) return;
-        apply(current() === 'dark' ? 'light' : 'dark');
-    });
-})();
-
-// ── Filter TOC + sections by search term ──────────────────────────
-(function () {
-    const input = document.getElementById('tocSearch');
-    if (!input) return;
-    const sections = [...document.querySelectorAll('section.section')];
-    const tocItems = [...document.querySelectorAll('.toc-list li')];
-
-    input.addEventListener('input', () => {
-        const q = input.value.trim().toLowerCase();
-        if (!q) {
-            sections.forEach(s => s.style.display = '');
-            tocItems.forEach(li => li.style.display = '');
-            document.querySelectorAll('details.cmd').forEach(d => d.style.display = '');
-            return;
-        }
-        sections.forEach(section => {
-            const cmds = section.querySelectorAll('details.cmd');
-            let any = false;
-            cmds.forEach(d => {
-                const hit = d.textContent.toLowerCase().includes(q);
-                d.style.display = hit ? '' : 'none';
-                if (hit) {
-                    any = true;
-                    d.open = true;         // expand matches
-                }
-            });
-            const titleHit = section.querySelector('h2').textContent.toLowerCase().includes(q);
-            if (titleHit) any = true;
-            section.style.display = any ? '' : 'none';
-        });
-        tocItems.forEach(li => {
-            const id = li.querySelector('a')?.getAttribute('href').slice(1);
-            const target = document.getElementById(id);
-            li.style.display = (target && target.style.display !== 'none') ? '' : 'none';
-        });
-    });
-})();
+    if (empty) empty.style.display = hit ? 'none' : 'block';
+  });
+  addEventListener('keydown', e => {
+    if ((e.key === '/' && e.target !== q) || ((e.metaKey || e.ctrlKey) && e.key === 'k')) { e.preventDefault(); q.focus(); }
+  });
+}
 </script>
 </body>
 </html>
