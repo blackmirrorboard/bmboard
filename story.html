@@ -16,23 +16,21 @@
   <meta name="twitter:image" content="https://bmboard.studio/og-image.png">
   <link rel="canonical" href="https://bmboard.studio/story.html">
   <link rel="icon" href="favicon.ico">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Zen+Kaku+Gothic+New:wght@300;400&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    :root { --bg: #0e0e0c; --ink: #e8e5de; --ink-faint: #6a6a60; --gold: #a89060; --line: rgba(240,237,232,0.1); }
+    :root { --bg: #07070b; --ink: #f2f0ec; --ink-faint: rgba(242,240,236,.46); --gold: #8b93ff; --line: rgba(255,255,255,.10); }
     html { scroll-behavior: smooth; }
-    body { background: var(--bg); color: var(--ink); font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 400; line-height: 1.8; }
+    body { background: var(--bg); color: var(--ink); font-family: -apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans','Noto Sans JP',sans-serif; font-weight: 400; line-height: 1.8; }
     nav { padding: 2rem 3rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
-    .nav-logo { font-family: 'Space Mono', monospace; font-size: .65rem; letter-spacing: .2em; color: var(--ink); text-decoration: none; text-transform: uppercase; }
-    .nav-back { font-family: 'Space Mono', monospace; font-size: .58rem; letter-spacing: .15em; color: var(--ink-faint); text-decoration: none; transition: color .3s; }
+    .nav-logo { font-family: 'SF Mono','JetBrains Mono', monospace; font-size: .65rem; letter-spacing: .2em; color: var(--ink); text-decoration: none; text-transform: uppercase; }
+    .nav-back { font-family: 'SF Mono','JetBrains Mono', monospace; font-size: .58rem; letter-spacing: .15em; color: var(--ink-faint); text-decoration: none; transition: color .3s; }
     .nav-back:hover { color: var(--gold); }
     .hero { padding: 6rem 3rem 4rem; border-bottom: 1px solid var(--line); max-width: 800px; margin: 0 auto; }
-    .hero-label { font-family: 'Space Mono', monospace; font-size: .55rem; letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: 2rem; }
+    .hero-label { font-family: 'SF Mono','JetBrains Mono', monospace; font-size: .55rem; letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: 2rem; }
     .hero-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 400; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: .02em; }
-    .hero-sub { font-family: 'Space Mono', monospace; font-size: .7rem; color: var(--ink-faint); letter-spacing: .1em; line-height: 2; }
+    .hero-sub { font-family: 'SF Mono','JetBrains Mono', monospace; font-size: .7rem; color: var(--ink-faint); letter-spacing: .1em; line-height: 2; }
     .section { padding: 5rem 3rem; border-bottom: 1px solid var(--line); max-width: 800px; margin: 0 auto; }
-    .section-num { font-family: 'Space Mono', monospace; font-size: .55rem; color: var(--gold); letter-spacing: .25em; margin-bottom: 1.5rem; }
+    .section-num { font-family: 'SF Mono','JetBrains Mono', monospace; font-size: .55rem; color: var(--gold); letter-spacing: .25em; margin-bottom: 1.5rem; }
     .section-title { font-size: 1.4rem; font-weight: 400; margin-bottom: 2rem; letter-spacing: .04em; }
     .section-body { font-size: .9rem; color: #b8b4ac; line-height: 2.4; }
     .section-body p + p { margin-top: 1.4em; }
@@ -41,16 +39,16 @@
     .quote p { font-size: 1.1rem; line-height: 1.8; color: var(--ink); }
     .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.5rem; }
     .spec-item { border: 1px solid var(--line); padding: 1.5rem; }
-    .spec-label { font-family: 'Space Mono', monospace; font-size: .5rem; letter-spacing: .25em; color: var(--gold); text-transform: uppercase; margin-bottom: .6rem; }
+    .spec-label { font-family: 'SF Mono','JetBrains Mono', monospace; font-size: .5rem; letter-spacing: .25em; color: var(--gold); text-transform: uppercase; margin-bottom: .6rem; }
     .spec-value { font-size: .82rem; color: var(--ink); line-height: 1.8; }
     .studio-note { padding: 4rem 3rem; background: rgba(168,144,96,.06); border-top: 1px solid var(--line); }
     .studio-note-inner { max-width: 800px; margin: 0 auto; }
-    .studio-note-label { font-family: 'Space Mono', monospace; font-size: .5rem; letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: 1.5rem; }
+    .studio-note-label { font-family: 'SF Mono','JetBrains Mono', monospace; font-size: .5rem; letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: 1.5rem; }
     .studio-note-body { font-size: .82rem; color: #b8b4ac; line-height: 2.4; margin-bottom: 1.5rem; }
-    .studio-link { font-family: 'Space Mono', monospace; font-size: .58rem; color: var(--gold); text-decoration: none; letter-spacing: .12em; border-bottom: 1px solid var(--gold); padding-bottom: .1rem; transition: color .3s; }
+    .studio-link { font-family: 'SF Mono','JetBrains Mono', monospace; font-size: .58rem; color: var(--gold); text-decoration: none; letter-spacing: .12em; border-bottom: 1px solid var(--gold); padding-bottom: .1rem; transition: color .3s; }
     .studio-link:hover { color: #c8a870; }
     footer { padding: 2rem 3rem; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
-    footer span, footer a { font-family: 'Space Mono', monospace; font-size: .5rem; color: var(--ink-faint); letter-spacing: .12em; text-decoration: none; }
+    footer span, footer a { font-family: 'SF Mono','JetBrains Mono', monospace; font-size: .5rem; color: var(--ink-faint); letter-spacing: .12em; text-decoration: none; }
     footer a:hover { color: var(--gold); }
     @media(max-width:600px) { nav, .hero, .section, .studio-note, footer { padding-left: 1.5rem; padding-right: 1.5rem; } .spec-grid { grid-template-columns: 1fr; } }
   </style>
