@@ -8,9 +8,6 @@
 <!-- ⚠️これは preview。本番 index.html の meta/OG/JSON-LD は移植していない。
      差し替える時は必ず旧 index.html から meta・OG・twitter・JSON-LD(FAQPage含む)を持ってくること。 -->
 <link rel="icon" href="../favicon.ico">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════════════════════════
    ⭐仮のグラデーション（差し替える前提）
@@ -30,13 +27,15 @@
   --g2:#8b5cf6;
   --g3:#2a6cff;
 
-  --mono:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
-  --sans:'Zen Kaku Gothic New',-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;
+  /* ⭐旧サイトと同じシステムフォント（San Francisco / ヒラギノ）＝Appleの顔。
+     ⚠️Webフォントは読まない＝外部依存ゼロ・表示も速い（BMBoard本体の思想と揃える） */
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans','Noto Sans JP',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{
-  background:var(--ink);color:var(--fg);font-family:var(--sans);font-weight:300;
+  background:var(--ink);color:var(--fg);font-family:var(--sans);font-weight:400;
   line-height:1.75;letter-spacing:.01em;overflow-x:hidden;
   -webkit-font-smoothing:antialiased;
 }
@@ -45,7 +44,7 @@ a{color:inherit;text-decoration:none}
 
 /* ── 仮のグラデ背景（差し替え前提）────────────────── */
 .glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.glow i{position:absolute;display:block;border-radius:50%;filter:blur(90px);opacity:.30;
+.glow i{position:absolute;display:block;border-radius:50%;filter:blur(76px);opacity:.30;
   animation:drift 26s ease-in-out infinite alternate}
 .glow i:nth-child(1){width:52vw;height:52vw;left:-14vw;top:-12vh;background:var(--g1)}
 .glow i:nth-child(2){width:46vw;height:46vw;right:-12vw;top:26vh;background:var(--g2);animation-duration:32s}
@@ -158,13 +157,25 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
 
 /* ── モバイル ───────────────────────────────────── */
 @media(max-width:900px){
+  /* ⚠️モバイルが重かった原因＝blur(90px)の巨大な円×3が常時アニメーションし、
+     さらに全面固定の grain を mix-blend-mode で重ねていた（GPUに過負荷）。
+     ⭐光は「動かさず・浅く」、grain は切る。見た目の方向は保ったまま軽くする。 */
+  .glow i{animation:none;filter:blur(54px);opacity:.24}
+  .glow i:nth-child(1){width:78vw;height:78vw;left:-20vw;top:-8vh}
+  .glow i:nth-child(2){width:70vw;height:70vw;right:-22vw;top:30vh}
+  .glow i:nth-child(3){width:80vw;height:80vw;left:-14vw;top:70vh}
+  .grain{display:none}
+  nav.stuck{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .btn2{backdrop-filter:none;-webkit-backdrop-filter:none}
+  .win{box-shadow:0 18px 44px rgba(0,0,0,.5);transform:rotateX(7deg) scale(.99)}
+  .win.up{transform:rotateX(0) scale(1)}
+  .shot{box-shadow:0 14px 34px rgba(0,0,0,.42)}
   section{padding:112px 0}
   .shell{padding-left:22px;padding-right:22px}
   .hero{padding-top:150px}
   .duo{grid-template-columns:1fr;gap:38px}
   .duo.rev .txt{order:0}
   .stage{margin-top:56px}
-  .win{transform:none}
   .facts{grid-template-columns:1fr}
   .navcta{padding:8px 15px;font-size:12.5px}
   .final{padding:128px 0}
@@ -330,6 +341,16 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
 </div>
 
 <script>
+// ⭐動画は画面に入ってから再生する（モバイルで2本が常時回ると重い）
+document.querySelectorAll('video').forEach(v => {
+  v.removeAttribute('autoplay');
+  const vo = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.play().catch(() => {}); }
+    else { e.target.pause(); }
+  }), { threshold: .25 });
+  vo.observe(v);
+});
+
 // nav の背景（スクロールしたら出す）
 const nav = document.getElementById('nav');
 addEventListener('scroll', () => nav.classList.toggle('stuck', scrollY > 24), { passive: true });
