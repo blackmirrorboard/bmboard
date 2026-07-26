@@ -225,8 +225,10 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
 /* ⭐KVを素材のまま見せるため背後の暗がりをやめた。可読性は文字側で作る。
    ⚠️h1 は background-clip:text の透明文字なので text-shadow ではなく filter: drop-shadow を使う */
 .herocopy h1{filter:drop-shadow(0 3px 16px rgba(0,0,0,.9)) drop-shadow(0 1px 4px rgba(0,0,0,.75))}
-/* ⭐見出し＋英字サブだけを少し下へ。transform なのでリード以下の位置は動かない */
-.herocopy h1,.herocopy .h1en{transform:translateY(clamp(80px,8.8vh,98px))}
+/* ⭐見出しだけを下へ。⚠️transform は使えない＝スクロール演出の .rv.in{transform:none} に
+   詳細度で負けて、演出が終わった瞬間に打ち消される（実際これで数回ぶん効いていなかった）。
+   position:relative + top なら演出と喧嘩せず、かつ流れを動かさない＝リード以下は据え置き。 */
+.herocopy h1{position:relative;top:clamp(52px,5.6vh,66px)}
 .herocopy .h1en,.herocopy .lead,.herocopy .meta{
   text-shadow:0 2px 12px rgba(0,0,0,.9), 0 1px 4px rgba(0,0,0,.8)}
 /* ⭐リード以下（説明文・ボタン・meta）だけをもう一段下げる。
