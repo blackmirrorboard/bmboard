@@ -4,9 +4,9 @@ name: チェック / Checks
 # ⚠️狙いは「静かに壊れる」種類のバグを機械で止めること。
 on:
   push:
-    paths: ['app.html', 'usage.html', 'commands.html', 'store/catalog.json', '.github/scripts/**', '.github/workflows/checks.yml']
+    paths: ['app.html', 'usage.html', 'commands.html', 'story.html', 'store/catalog.json', '.github/scripts/**', '.github/workflows/checks.yml']
   pull_request:
-    paths: ['app.html', 'usage.html', 'commands.html', 'store/catalog.json', '.github/scripts/**']
+    paths: ['app.html', 'usage.html', 'commands.html', 'story.html', 'store/catalog.json', '.github/scripts/**']
   workflow_dispatch:
 
 permissions:
@@ -35,6 +35,10 @@ jobs:
       # ⭐commands.html も同じ理由で生成物。手書きだった頃 2026-05-08 で止まっていた。
       - name: commands.html が OMNI_CMDS とズレていないか見る
         run: node .github/scripts/build-commands.mjs --check
+
+      # ⭐story.html は本文もスクリプト側が正（手で書き換えると次の生成で消える）
+      - name: story.html が生成物と一致しているか見る
+        run: node .github/scripts/build-story.mjs --check
 
       - name: JS の構文を見る
         run: |
