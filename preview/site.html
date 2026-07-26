@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BM BOARD — 手で書く。キーで動かす。</title>
+<meta name="robots" content="noindex">
+<!-- ⚠️これは preview。本番 index.html の meta/OG/JSON-LD は移植していない。
+     差し替える時は必ず旧 index.html から meta・OG・twitter・JSON-LD(FAQPage含む)を持ってくること。 -->
+<link rel="icon" href="../favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════
+   ⭐仮のグラデーション（差し替える前提）
+   色はここだけ触れば全部変わる。--g1..--g3 が光、--ink が地。
+   ══════════════════════════════════════════════════════════ */
+:root{
+  --ink:#08080a;          /* 地 */
+  --ink2:#0e0e12;
+  --fg:#f2f0ec;           /* 文字 */
+  --dim:rgba(242,240,236,.56);
+  --dim2:rgba(242,240,236,.34);
+  --line:rgba(255,255,255,.09);
+  --paper:#f7f5f0;
+
+  /* ↓ 仮。差し替え前提 */
+  --g1:#4a3aff;
+  --g2:#8b5cf6;
+  --g3:#2a6cff;
+
+  --mono:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'Zen Kaku Gothic New',-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  background:var(--ink);color:var(--fg);font-family:var(--sans);font-weight:300;
+  line-height:1.75;letter-spacing:.01em;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+img,video{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+
+/* ── 仮のグラデ背景（差し替え前提）────────────────── */
+.glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.glow i{position:absolute;display:block;border-radius:50%;filter:blur(90px);opacity:.30;
+  animation:drift 26s ease-in-out infinite alternate}
+.glow i:nth-child(1){width:52vw;height:52vw;left:-14vw;top:-12vh;background:var(--g1)}
+.glow i:nth-child(2){width:46vw;height:46vw;right:-12vw;top:26vh;background:var(--g2);animation-duration:32s}
+.glow i:nth-child(3){width:56vw;height:56vw;left:8vw;top:66vh;background:var(--g3);animation-duration:38s}
+@keyframes drift{to{transform:translate3d(4vw,-3vh,0) scale(1.14)}}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.16;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.5'/></svg>")}
+
+/* ── 骨格 ───────────────────────────────────────── */
+.wrap{position:relative;z-index:2}
+.shell{max-width:1160px;margin:0 auto;padding-left:26px;padding-right:26px}
+section{padding:168px 0;position:relative}
+
+/* ── nav ────────────────────────────────────────── */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;
+  gap:18px;padding:16px 26px;transition:background .3s,backdrop-filter .3s,border-color .3s;
+  border-bottom:1px solid transparent}
+nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
+  -webkit-backdrop-filter:blur(22px) saturate(1.3);border-bottom-color:var(--line)}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--mono);font-size:13.5px;
+  letter-spacing:.16em;font-weight:700}
+.brand img{width:24px;height:24px;filter:invert(1)}
+.navsp{flex:1}
+.lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-family:var(--mono);font-size:11px}
+.lang button{background:none;border:0;color:var(--dim2);padding:6px 11px;cursor:pointer;transition:.15s}
+.lang button.on{background:rgba(255,255,255,.10);color:var(--fg)}
+.navcta{font-size:13px;font-weight:500;padding:9px 20px;border-radius:9px;
+  background:var(--fg);color:var(--ink);transition:transform .18s,opacity .18s}
+.navcta:hover{transform:translateY(-1px);opacity:.9}
+
+/* ── hero ───────────────────────────────────────── */
+.hero{padding:164px 26px 0;text-align:center;position:relative}
+.badge{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.08em;color:var(--dim);border:1px solid var(--line);border-radius:999px;
+  padding:7px 16px;margin-bottom:34px;background:rgba(255,255,255,.03)}
+.badge b{color:var(--fg);font-weight:400}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--g2);box-shadow:0 0 10px var(--g2)}
+
+/* ⭐コピーは大きく。短く言い切るから大きくできる */
+h1{
+  font-size:clamp(40px,8.4vw,96px);line-height:1.14;font-weight:700;letter-spacing:-.022em;
+  background:linear-gradient(180deg,#fff 22%,rgba(255,255,255,.62) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+h1 .l2{display:block}
+.h1en{margin-top:20px;font-family:var(--mono);font-size:clamp(12px,2.1vw,16px);
+  letter-spacing:.08em;color:var(--dim2)}
+.lead{margin:30px auto 0;max-width:730px;font-size:clamp(15px,2.4vw,19px);color:var(--dim);line-height:1.95}
+.k{font-family:var(--mono);font-size:.86em;border:1px solid var(--line);border-radius:6px;
+  padding:2px 7px;background:rgba(255,255,255,.05);color:var(--fg)}
+.ctas{display:flex;gap:12px;justify-content:center;margin-top:38px;flex-wrap:wrap}
+.btn1,.btn2{font-size:15px;font-weight:500;padding:15px 34px;border-radius:11px;transition:transform .18s,opacity .18s,background .18s}
+.btn1{background:var(--fg);color:var(--ink)}
+.btn1:hover{transform:translateY(-2px);opacity:.92}
+.btn2{border:1px solid var(--line);color:var(--fg);background:rgba(255,255,255,.04);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.btn2:hover{background:rgba(255,255,255,.09);transform:translateY(-2px)}
+.meta{margin-top:30px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--dim2)}
+
+/* 実機ビジュアル */
+.stage{margin:62px auto 0;max-width:1080px;perspective:1600px}
+.win{border-radius:15px;overflow:hidden;border:1px solid var(--line);
+  box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05) inset;
+  transform:rotateX(9deg) scale(.985);transform-origin:50% 0;
+  transition:transform 1.1s cubic-bezier(.2,.7,.2,1)}
+.win.up{transform:rotateX(0) scale(1)}
+
+/* ── section ────────────────────────────────────── */
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim2);
+  text-transform:uppercase;margin-bottom:26px;display:block}
+h2{font-size:clamp(32px,6.2vw,68px);line-height:1.2;font-weight:700;letter-spacing:-.02em;
+  background:linear-gradient(180deg,#fff 30%,rgba(255,255,255,.66) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.h2en{margin-top:14px;font-family:var(--mono);font-size:13px;letter-spacing:.06em;color:var(--dim2)}
+.body{margin-top:26px;max-width:560px;font-size:clamp(15px,2.2vw,18px);color:var(--dim);line-height:1.95}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:66px;align-items:center}
+.duo.rev .txt{order:2}
+.shot{border-radius:13px;overflow:hidden;border:1px solid var(--line);
+  box-shadow:0 26px 70px rgba(0,0,0,.5)}
+
+/* ── 静かな事実の行 ─────────────────────────────── */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.fact{background:var(--ink2);padding:38px 30px}
+.fact b{display:block;font-family:var(--mono);font-size:clamp(22px,3.4vw,34px);font-weight:700;letter-spacing:-.01em}
+.fact span{display:block;margin-top:10px;font-size:13px;color:var(--dim2);line-height:1.8}
+
+/* ── final ──────────────────────────────────────── */
+.final{text-align:center;padding:190px 0}
+.final h2{margin-bottom:0}
+
+/* ── footer ─────────────────────────────────────── */
+footer{border-top:1px solid var(--line);padding:52px 0;font-size:12.5px;color:var(--dim2)}
+.frow{display:flex;gap:30px;flex-wrap:wrap;align-items:center}
+.frow a:hover{color:var(--fg)}
+
+/* ── 現れ方（リッチさはここ）────────────────────── */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .95s cubic-bezier(.2,.7,.2,1),transform .95s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.rv[data-d="1"]{transition-delay:.09s}
+.rv[data-d="2"]{transition-delay:.18s}
+.rv[data-d="3"]{transition-delay:.27s}
+.rv[data-d="4"]{transition-delay:.36s}
+
+/* ── 言語 ───────────────────────────────────────── */
+.en{display:none}
+body.lang-en .ja{display:none}
+body.lang-en .en{display:inline}
+body.lang-en .h1en,body.lang-en .h2en{display:none}
+
+/* ── モバイル ───────────────────────────────────── */
+@media(max-width:900px){
+  section{padding:112px 0}
+  .shell{padding-left:22px;padding-right:22px}
+  .hero{padding-top:150px}
+  .duo{grid-template-columns:1fr;gap:38px}
+  .duo.rev .txt{order:0}
+  .stage{margin-top:56px}
+  .win{transform:none}
+  .facts{grid-template-columns:1fr}
+  .navcta{padding:8px 15px;font-size:12.5px}
+  .final{padding:128px 0}
+}
+@media(prefers-reduced-motion:reduce){
+  .glow i{animation:none}
+  .rv{opacity:1;transform:none;transition:none}
+  .win{transform:none;transition:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="glow" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="grain" aria-hidden="true"></div>
+
+<nav id="nav">
+  <a class="brand" href="#top"><img src="../logo.png" alt=""><span>BM BOARD</span></a>
+  <span class="navsp"></span>
+  <div class="lang">
+    <button type="button" data-lang="ja" class="on">JP</button>
+    <button type="button" data-lang="en">EN</button>
+  </div>
+  <a class="navcta" href="../app.html"><span class="ja">開く</span><span class="en">Open</span></a>
+</nav>
+
+<div class="wrap">
+
+  <!-- ══ HERO ══ -->
+  <header class="hero shell" id="top">
+    <span class="badge rv"><span class="dot"></span><b>v1.4</b>
+      <span class="ja">鉛筆と紙が既定に</span><span class="en">pencil on paper by default</span></span>
+
+    <h1 class="rv" data-d="1">
+      <span class="ja">手で書く。<span class="l2">キーで動かす。</span></span>
+      <span class="en">Write by hand.<span class="l2">Move at speed.</span></span>
+    </h1>
+    <div class="h1en rv" data-d="1">Write by hand. Move at speed.</div>
+
+    <p class="lead rv" data-d="2">
+      <span class="ja">ブラウザで開く、一枚の紙。鉛筆の手ざわりと <span class="k">⌘K</span> の速さが、同じ面にあります。</span>
+      <span class="en">A sheet of paper that opens in your browser — with the feel of pencil and the speed of <span class="k">⌘K</span> on the same surface.</span>
+    </p>
+
+    <div class="ctas rv" data-d="3">
+      <a class="btn1" href="../app.html"><span class="ja">ブラウザで開く</span><span class="en">Open in browser</span></a>
+      <a class="btn2" href="#paper"><span class="ja">何ができるか</span><span class="en">See what it does</span></a>
+    </div>
+    <div class="meta rv" data-d="4">one file &nbsp;·&nbsp; zero deps &nbsp;·&nbsp; works offline &nbsp;·&nbsp; free</div>
+
+    <div class="stage rv" data-d="4">
+      <div class="win" id="win"><img src="../shots/app_full.webp" alt="BM BOARD" loading="eager"></div>
+    </div>
+  </header>
+
+  <!-- ══ 01 ══ -->
+  <section id="paper">
+    <div class="shell duo">
+      <div class="txt">
+        <span class="eyebrow rv">01 — paper</span>
+        <h2 class="rv" data-d="1"><span class="ja">紙と鉛筆だけ。</span><span class="en">Just paper and pencil.</span></h2>
+        <div class="h2en rv" data-d="1">Just paper and pencil.</div>
+        <p class="body rv" data-d="2">
+          <span class="ja">芯が紙の目に引っかかる。消した所には消しカスが残る。裏返せば、表がうっすら透ける。デジタルだからできない、とは言わせない。</span>
+          <span class="en">The lead catches on the grain. Erasing leaves crumbs behind. Flip the sheet and the front shows through, faintly.</span>
+        </p>
+      </div>
+      <div class="shot rv" data-d="2">
+        <video src="../shots/pencil.mp4" poster="../shots/pencil_poster.webp" autoplay muted loop playsinline preload="none"></video>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 02 ══ -->
+  <section id="palette">
+    <div class="shell duo rev">
+      <div class="txt">
+        <span class="eyebrow rv">02 — command</span>
+        <h2 class="rv" data-d="1"><span class="ja">覚えなくていい。</span><span class="en">Nothing to memorise.</span></h2>
+        <div class="h2en rv" data-d="1">Nothing to memorise.</div>
+        <p class="body rv" data-d="2">
+          <span class="ja"><span class="k">⌘K</span> を押して、やりたいことを打つ。それだけです。呼び名は自分で付けられるので、思いついた言葉がそのまま近道になります。</span>
+          <span class="en">Press <span class="k">⌘K</span> and type what you want. Name commands whatever you call them — your words become the shortcut.</span>
+        </p>
+      </div>
+      <div class="shot rv" data-d="2">
+        <video src="../shots/cmdk.mp4" poster="../shots/cmdk_poster.webp" autoplay muted loop playsinline preload="none"></video>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 03 ══ -->
+  <section id="spells">
+    <div class="shell duo">
+      <div class="txt">
+        <span class="eyebrow rv">03 — spells</span>
+        <h2 class="rv" data-d="1"><span class="ja">機能は、配れる。</span><span class="en">Features can be shared.</span></h2>
+        <div class="h2en rv" data-d="1">Features can be shared.</div>
+        <p class="body rv" data-d="2">
+          <span class="ja">ボードの上でできることに、名前を付けたもの。並べた図をそのまま置き直したり、桜を降らせたり。ファイル1つで人に渡せます。</span>
+          <span class="en">Give a name to something the board can do — a layout you keep reusing, or petals falling. Hand it to someone as a single file.</span>
+        </p>
+      </div>
+      <div class="shot rv" data-d="2"><img src="../shots/board.webp" alt="" loading="lazy"></div>
+    </div>
+  </section>
+
+  <!-- ══ 04 ══ -->
+  <section id="keyboard">
+    <div class="shell duo rev">
+      <div class="txt">
+        <span class="eyebrow rv">04 — keyboard</span>
+        <h2 class="rv" data-d="1"><span class="ja">描けなくても、描ける。</span><span class="en">You don't have to draw.</span></h2>
+        <div class="h2en rv" data-d="1">You don't have to draw.</div>
+        <p class="body rv" data-d="2">
+          <span class="ja">選んで、動かして、つないで、揃える。手をキーボードから離さずに、図解が組み上がります。</span>
+          <span class="en">Select, move, connect, align. The diagram comes together without your hands leaving the keyboard.</span>
+        </p>
+      </div>
+      <div class="shot rv" data-d="2"><img src="../shots/usage.webp" alt="" loading="lazy"></div>
+    </div>
+  </section>
+
+  <!-- ══ 05 ══ -->
+  <section id="local">
+    <div class="shell">
+      <span class="eyebrow rv">05 — local first</span>
+      <h2 class="rv" data-d="1" style="margin-bottom:52px"><span class="ja">一枚のファイル。</span><span class="en">One file. That's it.</span></h2>
+      <div class="facts rv" data-d="2">
+        <div class="fact"><b>0</b><span class="ja">依存ライブラリ。ビルドも要りません。</span><span class="en">dependencies. No build step.</span></div>
+        <div class="fact"><b>offline</b><span class="ja">回線が切れても書けます。</span><span class="en">Keeps working with no connection.</span></div>
+        <div class="fact"><b>no account</b><span class="ja">登録なし。データは端末の中。</span><span class="en">No sign-up. Your data stays on your machine.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FINAL ══ -->
+  <section class="final shell">
+    <h2 class="rv"><span class="ja">開いて、書きなぐる。</span><span class="en">Open it and scribble.</span></h2>
+    <div class="h2en rv" data-d="1">Open it and scribble.</div>
+    <p class="lead rv" data-d="2">
+      <span class="ja">インストールも、ログインも要りません。</span>
+      <span class="en">Nothing to install. Nothing to sign up for.</span>
+    </p>
+    <div class="ctas rv" data-d="3">
+      <a class="btn1" href="../app.html"><span class="ja">ブラウザで開く</span><span class="en">Open in browser</span></a>
+    </div>
+  </section>
+
+  <footer class="shell">
+    <div class="frow">
+      <span class="brand" style="font-size:12px"><img src="../logo.png" alt="" style="width:18px;height:18px"><span>BM BOARD</span></span>
+      <span class="navsp"></span>
+      <a href="../usage.html"><span class="ja">使い方</span><span class="en">Usage</span></a>
+      <a href="../commands.html"><span class="ja">コマンド</span><span class="en">Commands</span></a>
+      <a href="../story.html"><span class="ja">つくった理由</span><span class="en">Story</span></a>
+      <a href="../dev-log.html"><span class="ja">開発ログ</span><span class="en">Dev log</span></a>
+      <a href="../browser.html">BM Browser</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// nav の背景（スクロールしたら出す）
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('stuck', scrollY > 24), { passive: true });
+
+// 現れ方
+const io = new IntersectionObserver((es) => {
+  es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { rootMargin: '0px 0px -12% 0px', threshold: .08 });
+document.querySelectorAll('.rv').forEach(el => io.observe(el));
+
+// 実機が起き上がる
+const win = document.getElementById('win');
+if (win) requestAnimationFrame(() => setTimeout(() => win.classList.add('up'), 260));
+
+// 言語
+const KEY = 'bm_site_lang';
+function setLang(l) {
+  document.body.classList.toggle('lang-en', l === 'en');
+  document.documentElement.lang = l;
+  document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
+  try { localStorage.setItem(KEY, l); } catch (_) {}
+}
+document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+try { setLang(localStorage.getItem(KEY) || (navigator.language || '').startsWith('ja') ? 'ja' : 'en'); } catch (_) { setLang('ja'); }
+</script>
+</body>
+</html>
