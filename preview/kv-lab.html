@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>KV LAB — 装置に通して出たもの</title>
+<style>
+:root{
+  --c1:#3a2aff; --c2:#7c3aed; --c3:#2a6cff;
+  --ink:#07070b; --fg:#f2f0ec;
+  --dim:rgba(242,240,236,.52); --dim2:rgba(242,240,236,.28);
+  --line:rgba(255,255,255,.10);
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0e;color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.top{position:sticky;top:0;z-index:20;padding:18px 22px;
+  background:rgba(10,10,14,.86);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.top h1{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.top .sp{flex:1}
+.top button{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--fg);
+  background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:8px;
+  padding:8px 14px;cursor:pointer;transition:.15s}
+.top button:hover{background:rgba(255,255,255,.14)}
+.top .seedin{font-family:var(--mono);font-size:11px;width:96px;color:var(--fg);
+  background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.lead{padding:26px 22px 0;color:var(--dim);font-size:13px;line-height:1.95;max-width:820px}
+.lead b{color:var(--fg);font-weight:500}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;padding:22px}
+.cell{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--ink);
+  aspect-ratio:2160/1352;container-type:size;cursor:pointer;transition:transform .18s,border-color .18s}
+.cell:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.28)}
+.cell.pick{border-color:#fff;box-shadow:0 0 0 2px #fff}
+.no{position:absolute;left:8px;top:7px;z-index:9;font-family:var(--mono);font-size:10px;
+  letter-spacing:.08em;color:rgba(255,255,255,.5);pointer-events:none}
+.bg{position:absolute;inset:0;overflow:hidden}
+.bg i{position:absolute;border-radius:50%;filter:blur(38px)}
+.grain{position:absolute;inset:0;opacity:.18;mix-blend-mode:overlay;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/></filter><rect width='150' height='150' filter='url(%23n)' opacity='.6'/></svg>")}
+.st{position:absolute;inset:0}
+.p{position:absolute}
+.p.circle{border-radius:50%}
+.p.tri{clip-path:polygon(50% 0%,100% 100%,0% 100%)}
+.p.arc{border-radius:0 0 50% 50% / 0 0 100% 100%}
+.foot{padding:10px 22px 90px;color:var(--dim2);font-family:var(--mono);font-size:10.5px;letter-spacing:.06em}
+#picked{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:12px 22px;
+  background:rgba(10,10,14,.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--line);font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;
+  color:var(--dim);display:none}
+#picked b{color:var(--fg)}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>KV LAB</h1>
+  <span style="font-family:var(--mono);font-size:11px;color:var(--dim2)">にこちゃんのパーツだけ / 色は3つだけ / あとは乱数</span>
+  <span class="sp"></span>
+  <input class="seedin" id="seed" value="1" title="シード">
+  <button id="regen">この種で出す</button>
+  <button id="next">次の30枚</button>
+</div>
+
+<p class="lead">
+  <b>作らない。見て選ぶだけ。</b> 30枚とも、円・三角・弧しか使っていない。配置も大きさも角度も仕上げも乱数。<br>
+  気になったものがあれば<b>クリック</b>すると下に番号が出る。その番号を伝えてもらえれば、そこから派生を30枚出す。
+</p>
+
+<div class="grid" id="grid"></div>
+<div class="foot" id="foot"></div>
+<div id="picked"></div>
+
+<script>
+// ── 再現できる乱数（同じ種なら同じ100枚が出る）
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+const COLORS = ['#3a2aff','#7c3aed','#2a6cff'];
+const LIGHT  = ['#5b8bff','#a78bfa','#7dd3fc'];
+
+function make(seed){
+  const R = mulberry32(seed);
+  const r = (a,b)=>a+R()*(b-a);
+  const ri = (a,b)=>Math.floor(r(a,b+1));
+  const pick = arr => arr[Math.floor(R()*arr.length)];
+
+  // ── 背景の光（常に2つ・位置と色は乱数）
+  const bg = [0,1].map(()=>({
+    c: pick(COLORS), w: r(40,80), h: r(70,120),
+    x: r(-30,70), y: r(-40,60), o: r(.28,.5)
+  }));
+
+  // ── 構成を1つ選ぶ（どれも「にこちゃんの部品」しか使わない）
+  const kind = pick(['face','giant','half','eyes','mouth','scatter','stack','ring','column','duo']);
+  const finish = pick(['solid','solid','outline','glass','glow']);  // solid を少し厚めに
+  const parts = [];
+
+  const face = (cx,cy,d,rot=0,cut='var(--ink)')=>{
+    const col = finish==='glass' ? 'linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.05))'
+              : finish==='glow'  ? `radial-gradient(circle at 40% 35%, ${pick(LIGHT)}, ${pick(COLORS)})`
+              : `linear-gradient(${ri(100,220)}deg, ${pick(LIGHT)}, ${pick(COLORS)})`;
+    const extra = finish==='outline'
+      ? `background:none;border:${(d*0.03).toFixed(1)}cqh solid ${pick(LIGHT)};`
+      : finish==='glass'
+      ? `background:${col};backdrop-filter:blur(${(d*0.05).toFixed(1)}cqh) saturate(1.5);-webkit-backdrop-filter:blur(${(d*0.05).toFixed(1)}cqh) saturate(1.5);box-shadow:inset 0 0 0 .4cqh rgba(255,255,255,.24);`
+      : `background:${col};box-shadow:0 ${(d*0.12).toFixed(1)}cqh ${(d*0.2).toFixed(1)}cqh rgba(0,0,0,.7);`;
+    parts.push(`<div class="p circle" style="left:${cx}%;top:${cy}%;width:${d}cqh;height:${d}cqh;
+      transform:translate(-50%,-50%) rotate(${rot}deg);${extra}">
+      <i class="p tri" style="left:26.5%;top:31%;width:14.4%;height:15.5%;background:${cut}"></i>
+      <i class="p tri" style="right:26.5%;top:31%;width:14.4%;height:15.5%;background:${cut}"></i>
+      <i class="p arc" style="left:22%;bottom:19%;width:56%;height:21%;background:${cut}"></i></div>`);
+  };
+  const tri = (x,y,w,h,rot,col)=>parts.push(`<div class="p tri" style="left:${x}%;top:${y}%;width:${w}cqh;height:${h}cqh;
+      transform:translate(-50%,-50%) rotate(${rot}deg);background:${col}"></div>`);
+  const arc = (x,y,w,h,rot,col)=>parts.push(`<div class="p arc" style="left:${x}%;top:${y}%;width:${w}cqh;height:${h}cqh;
+      transform:translate(-50%,-50%) rotate(${rot}deg);background:${col};box-shadow:0 ${(h*0.2).toFixed(1)}cqh ${(h*0.3).toFixed(1)}cqh rgba(0,0,0,.55)`+`"></div>`);
+  const circ = (x,y,d,col,extra='')=>parts.push(`<div class="p circle" style="left:${x}%;top:${y}%;width:${d}cqh;height:${d}cqh;
+      transform:translate(-50%,-50%);background:${col};${extra}"></div>`);
+
+  if (kind==='face')    face(r(28,72), r(30,70), r(40,72), r(-16,16));
+  if (kind==='giant')   face(r(-10,60), r(50,130), r(110,220), r(-20,20));
+  if (kind==='half')    face(pick([r(-16,6), r(94,116)]), r(30,70), r(70,120), r(-12,12));
+  if (kind==='eyes')    { const n=ri(2,3); for(let i=0;i<n;i++) tri(r(14,86), r(30,80), r(18,62), r(20,70), r(-30,30), `linear-gradient(${ri(120,220)}deg,${pick(LIGHT)},${pick(COLORS)})`); }
+  if (kind==='mouth')   { arc(r(30,70), r(50,96), r(70,160), r(24,64), r(-14,14), `linear-gradient(180deg,${pick(LIGHT)},${pick(COLORS)})`);
+                          if(R()>.4){ tri(r(24,44), r(14,34), r(8,16), r(9,18), 0, pick(LIGHT)); tri(r(56,76), r(14,34), r(8,16), r(9,18), 0, pick(LIGHT)); } }
+  if (kind==='scatter') { circ(r(10,50), r(18,60), r(20,44), `linear-gradient(150deg,${pick(LIGHT)},${pick(COLORS)})`, `box-shadow:0 4cqh 10cqh rgba(0,0,0,.6)`);
+                          tri(r(50,88), r(16,48), r(10,20), r(12,24), r(-40,40), pick(LIGHT));
+                          tri(r(52,92), r(48,84), r(8,16), r(9,18), r(-40,40), pick(COLORS));
+                          arc(r(46,84), r(66,92), r(28,52), r(10,20), r(-10,10), `linear-gradient(180deg,${pick(LIGHT)},${pick(COLORS)})`); }
+  if (kind==='stack')   { const n=ri(2,3), bx=r(34,66), by=r(34,66);
+                          for(let i=0;i<n;i++) face(bx+i*r(3,9), by+i*r(4,10), r(44,66)-i*6, r(-14,14)); }
+  if (kind==='ring')    { const d=r(70,130); circ(r(30,70), r(30,70), d, 'none',
+                            `border:${(d*0.045).toFixed(1)}cqh solid ${pick(LIGHT)};box-shadow:0 0 ${(d*0.12).toFixed(1)}cqh ${pick(COLORS)}`);
+                          if(R()>.5) face(r(30,70), r(30,70), d*r(.3,.5), 0); }
+  if (kind==='column')  { const n=ri(3,5), y=r(38,64); for(let i=0;i<n;i++){ const t=i/(n-1);
+                            circ(10+t*80, y+Math.sin(t*3.1)*r(-14,14), r(14,34)*(1-t*.5),
+                            `linear-gradient(150deg,${pick(LIGHT)},${pick(COLORS)})`, `opacity:${(1-t*.7).toFixed(2)}`); } }
+  if (kind==='duo')     { face(r(20,42), r(34,66), r(38,60), r(-14,14)); face(r(58,80), r(34,66), r(30,52), r(-14,14)); }
+
+  return { bg, parts, kind, finish };
+}
+
+function render(seed, n){
+  const grid = document.getElementById('grid'); grid.innerHTML = '';
+  const html = [];
+  for (let i=0;i<n;i++){
+    const s = seed*100000 + i;
+    const m = make(s);
+    const bgHtml = m.bg.map(b=>`<i style="left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%;background:${b.c};opacity:${b.o}"></i>`).join('');
+    html.push(`<div class="cell" data-no="${i+1}" data-seed="${s}" data-kind="${m.kind}/${m.finish}">
+      <span class="no">${String(i+1).padStart(3,'0')}</span>
+      <div class="bg">${bgHtml}</div>
+      <div class="st">${m.parts.join('')}</div>
+      <div class="grain"></div></div>`);
+  }
+  grid.innerHTML = html.join('');
+  document.getElementById('foot').textContent =
+    `seed ${seed} · ${n} 枚 · 部品は 円 / 三角×2 / 弧 のみ · 色は #3a2aff #7c3aed #2a6cff`;
+}
+
+const picked = new Set();
+document.getElementById('grid').addEventListener('click', e => {
+  const c = e.target.closest('.cell'); if(!c) return;
+  c.classList.toggle('pick');
+  const no = c.dataset.no;
+  picked.has(no) ? picked.delete(no) : picked.add(no);
+  const box = document.getElementById('picked');
+  if (picked.size){ box.style.display='block';
+    box.innerHTML = '選んだもの： <b>' + [...picked].sort((a,b)=>a-b).join(', ') + '</b> — この番号を伝えてください';
+  } else box.style.display='none';
+});
+
+let seed = 1;
+function go(){ document.getElementById('seed').value = seed; render(seed, 30); picked.clear();
+  document.getElementById('picked').style.display='none'; scrollTo(0,0); }
+document.getElementById('next').addEventListener('click', ()=>{ seed++; go(); });
+document.getElementById('regen').addEventListener('click', ()=>{ seed = parseInt(document.getElementById('seed').value)||1; go(); });
+go();
+</script>
+</body>
+</html>

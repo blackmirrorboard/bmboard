@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>TEXTURE LAB — 質感だけを振る</title>
+<style>
+:root{
+  --ink:#07070b; --fg:#f2f0ec;
+  --dim:rgba(242,240,236,.52); --dim2:rgba(242,240,236,.28);
+  --line:rgba(255,255,255,.10);
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#09090d;color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.top{position:sticky;top:0;z-index:20;padding:16px 22px;
+  background:rgba(9,9,13,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.top h1{font-size:15px;font-weight:600}
+.top .sp{flex:1}
+.top button,.top select{font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--fg);
+  background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:8px;padding:8px 13px;cursor:pointer}
+.top button:hover{background:rgba(255,255,255,.14)}
+.lead{padding:24px 22px 0;color:var(--dim);font-size:13px;line-height:1.95;max-width:840px}
+.lead b{color:var(--fg);font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;padding:22px}
+.cell{position:relative;border:1px solid var(--line);border-radius:11px;overflow:hidden;
+  background:var(--ink);aspect-ratio:2160/1352;container-type:size;cursor:pointer;transition:.18s}
+.cell:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.3)}
+.cell.pick{border-color:#fff;box-shadow:0 0 0 2px #fff}
+.no{position:absolute;left:9px;top:8px;z-index:9;font-family:var(--mono);font-size:10px;
+  color:rgba(255,255,255,.45);pointer-events:none}
+.tag{position:absolute;right:9px;bottom:8px;z-index:9;font-family:var(--mono);font-size:9px;
+  color:rgba(255,255,255,.34);pointer-events:none;letter-spacing:.06em}
+.foot{padding:8px 22px 96px;color:var(--dim2);font-family:var(--mono);font-size:10.5px}
+#picked{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:12px 22px;
+  background:rgba(9,9,13,.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--dim);display:none}
+#picked b{color:var(--fg)}
+
+/* ── 質感のレイヤー ── */
+.lay{position:absolute;inset:0;pointer-events:none}
+.obj{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%}
+.cut{position:absolute;background:var(--ink)}
+.cut.tri{clip-path:polygon(50% 0%,100% 100%,0% 100%)}
+.cut.arc{border-radius:0 0 50% 50% / 0 0 100% 100%}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>TEXTURE LAB</h1>
+  <span style="font-family:var(--mono);font-size:11px;color:var(--dim2)">形は固定 / 振るのは質感だけ</span>
+  <span class="sp"></span>
+  <select id="shape">
+    <option value="face">にこちゃん</option>
+    <option value="circle">円だけ</option>
+    <option value="arc">弧だけ</option>
+  </select>
+  <button id="next">次の30枚</button>
+</div>
+
+<p class="lead">
+  <b>形は動かさない。素材だけを振る。</b>
+  ノイズの粒度・にじみ・縁の光・内側の発光・色収差・素材（ガラス／金属／紙／液体／煙／マット）を乱数で。<br>
+  気になったものを<b>クリック</b>すると番号が出る。番号を伝えてもらえれば、その質感を軸に30枚出す。
+</p>
+
+<div class="grid" id="grid"></div>
+<div class="foot" id="foot"></div>
+<div id="picked"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="filters"></defs></svg>
+
+<script>
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const HUE = ['#3a2aff','#7c3aed','#2a6cff'];
+const LIT = ['#8ea2ff','#c4b5fd','#7dd3fc','#a78bfa'];
+
+function make(seed, shape){
+  const R = mulberry32(seed);
+  const r=(a,b)=>a+R()*(b-a), ri=(a,b)=>Math.floor(r(a,b+1)), pick=a=>a[Math.floor(R()*a.length)];
+
+  const mat = pick(['glass','metal','paper','liquid','smoke','matte','ceramic','foil']);
+  const c1 = pick(HUE), c2 = pick(HUE), lit = pick(LIT);
+  const D = r(46,64);                    // 大きさは少しだけ振る（形は固定）
+  const noiseFreq = r(.35,1.25).toFixed(2);
+  const noiseOct  = ri(2,5);
+  const noiseOp   = r(.10,.40).toFixed(2);
+  const blend     = pick(['overlay','soft-light','screen','overlay']);
+  const bloom     = r(0,.55).toFixed(2);
+  const chroma    = r(0,2.6).toFixed(1);
+  const rimW      = r(.25,1.1).toFixed(2);
+
+  // 素材ごとの「地」
+  let body = '', extra = '', over = '';
+  if (mat==='glass'){
+    body = `background:linear-gradient(${ri(140,200)}deg,rgba(255,255,255,.20),rgba(255,255,255,.04));
+      backdrop-filter:blur(${r(2,6).toFixed(1)}cqh) saturate(1.6);-webkit-backdrop-filter:blur(${r(2,6).toFixed(1)}cqh) saturate(1.6);
+      box-shadow:inset 0 0 0 ${rimW}cqh rgba(255,255,255,.28), inset 0 ${r(1,2.6).toFixed(1)}cqh 0 rgba(255,255,255,.34),
+                 0 ${r(6,12).toFixed(1)}cqh ${r(10,20).toFixed(1)}cqh rgba(0,0,0,.6);`;
+  } else if (mat==='metal'){
+    body = `background:conic-gradient(from ${ri(0,360)}deg at 42% 38%, ${c1}, ${lit}, ${c2}, #0b0b12, ${lit}, ${c1});
+      box-shadow:inset 0 0 ${r(3,8).toFixed(1)}cqh rgba(0,0,0,.55), 0 ${r(6,12).toFixed(1)}cqh ${r(12,22).toFixed(1)}cqh rgba(0,0,0,.66);`;
+    over = `<div class="lay" style="border-radius:50%;background:linear-gradient(${ri(90,270)}deg,rgba(255,255,255,.30),transparent 38%,transparent 62%,rgba(255,255,255,.14));mix-blend-mode:screen"></div>`;
+  } else if (mat==='paper'){
+    body = `background:linear-gradient(${ri(130,210)}deg,#efece4,#d9d4c8);
+      box-shadow:0 ${r(5,10).toFixed(1)}cqh ${r(9,16).toFixed(1)}cqh rgba(0,0,0,.55), inset 0 -1cqh 2cqh rgba(0,0,0,.10);`;
+  } else if (mat==='liquid'){
+    body = `background:
+      radial-gradient(60% 48% at ${ri(20,45)}% ${ri(18,40)}%, ${lit}, transparent 62%),
+      radial-gradient(52% 44% at ${ri(58,84)}% ${ri(30,58)}%, ${c2}, transparent 66%),
+      radial-gradient(70% 60% at ${ri(30,60)}% ${ri(62,88)}%, ${c1}, transparent 70%),
+      linear-gradient(160deg, ${c1}, ${c2});
+      filter:blur(${r(.2,1.1).toFixed(2)}cqh);
+      box-shadow:0 ${r(5,11).toFixed(1)}cqh ${r(10,20).toFixed(1)}cqh rgba(0,0,0,.6);`;
+  } else if (mat==='smoke'){
+    body = `background:radial-gradient(circle at 44% 40%, ${lit}, ${c1} 46%, transparent 74%);
+      filter:blur(${r(1.6,4.4).toFixed(2)}cqh);opacity:${r(.72,.96).toFixed(2)};`;
+  } else if (mat==='ceramic'){
+    body = `background:radial-gradient(circle at 36% 28%, #ffffff, ${lit} 26%, ${c1} 68%, #0d0b1c);
+      box-shadow:inset 0 -${r(2,5).toFixed(1)}cqh ${r(4,9).toFixed(1)}cqh rgba(0,0,0,.45),
+                 0 ${r(6,12).toFixed(1)}cqh ${r(12,20).toFixed(1)}cqh rgba(0,0,0,.62);`;
+  } else if (mat==='foil'){
+    body = `background:repeating-linear-gradient(${ri(60,120)}deg, ${c1} 0 ${r(2,5).toFixed(1)}cqh, ${lit} ${r(2,5).toFixed(1)}cqh ${r(5,9).toFixed(1)}cqh, ${c2} ${r(5,9).toFixed(1)}cqh ${r(8,14).toFixed(1)}cqh);
+      box-shadow:0 ${r(5,11).toFixed(1)}cqh ${r(10,18).toFixed(1)}cqh rgba(0,0,0,.6);`;
+    over = `<div class="lay" style="border-radius:50%;background:radial-gradient(circle at 38% 32%, rgba(255,255,255,.42), transparent 56%);mix-blend-mode:screen"></div>`;
+  } else { // matte
+    body = `background:linear-gradient(${ri(140,210)}deg, ${c1}, ${c2});
+      box-shadow:0 ${r(5,10).toFixed(1)}cqh ${r(9,16).toFixed(1)}cqh rgba(0,0,0,.6);`;
+  }
+
+  // 縁の光（リムライト）
+  const rim = R()>.45 ? `<div class="lay" style="border-radius:50%;
+    box-shadow:inset 0 0 0 ${rimW}cqh ${lit}66, inset 0 0 ${r(2,6).toFixed(1)}cqh ${lit}44"></div>` : '';
+  // 内側の発光
+  const inner = R()>.5 ? `<div class="lay" style="border-radius:50%;
+    background:radial-gradient(circle at ${ri(30,60)}% ${ri(26,54)}%, ${lit}${ri(30,70).toString(16)}, transparent 58%);mix-blend-mode:screen"></div>` : '';
+  // にじみ（bloom）
+  const glow = bloom>.14 ? `<div class="lay" style="left:50%;top:50%;width:${(D*1.5).toFixed(0)}cqh;height:${(D*1.5).toFixed(0)}cqh;
+    transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle, ${lit}, transparent 62%);
+    filter:blur(${(bloom*14).toFixed(1)}cqh);opacity:${bloom}"></div>` : '';
+  // 色収差
+  const ca = chroma>.7 ? `
+    <div class="lay" style="border-radius:50%;box-shadow:inset ${chroma}cqh 0 0 rgba(255,60,60,.30), inset -${chroma}cqh 0 0 rgba(60,120,255,.30);mix-blend-mode:screen"></div>` : '';
+
+  // 抜き（にこちゃんの目と口）
+  const cut = shape==='face' ? `
+    <i class="cut tri" style="left:26.5%;top:31%;width:14.4%;height:15.5%"></i>
+    <i class="cut tri" style="right:26.5%;top:31%;width:14.4%;height:15.5%"></i>
+    <i class="cut arc" style="left:22%;bottom:19%;width:56%;height:21%"></i>` : '';
+
+  const objStyle = shape==='arc'
+    ? `width:${(D*1.7).toFixed(0)}cqh;height:${(D*.62).toFixed(0)}cqh;border-radius:0 0 50% 50% / 0 0 100% 100%;`
+    : `width:${D.toFixed(0)}cqh;height:${D.toFixed(0)}cqh;`;
+
+  return {
+    mat, noiseFreq, noiseOct, noiseOp, blend,
+    html: `${glow}
+      <div class="obj" style="${objStyle}${body}">${over}${rim}${inner}${ca}${cut}</div>`
+  };
+}
+
+function render(seed, n, shape){
+  const grid = document.getElementById('grid'); const out=[];
+  for(let i=0;i<n;i++){
+    const s = seed*100000+i;
+    const m = make(s, shape);
+    const noise = `<div class="lay" style="opacity:${m.noiseOp};mix-blend-mode:${m.blend};
+      background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='${m.noiseFreq}' numOctaves='${m.noiseOct}'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='.7'/></svg>&quot;)"></div>`;
+    out.push(`<div class="cell" data-no="${i+1}" data-mat="${m.mat}">
+      <span class="no">${String(i+1).padStart(3,'0')}</span>
+      ${m.html}${noise}
+      <span class="tag">${m.mat} · noise ${m.noiseFreq}</span></div>`);
+  }
+  grid.innerHTML = out.join('');
+  document.getElementById('foot').textContent =
+    `seed ${seed} · ${n}枚 · 形は固定 · 素材/ノイズ/にじみ/縁の光/内側の発光/色収差を乱数`;
+}
+
+const picked = new Set();
+document.getElementById('grid').addEventListener('click', e=>{
+  const c = e.target.closest('.cell'); if(!c) return;
+  c.classList.toggle('pick');
+  const k = c.dataset.no + '(' + c.dataset.mat + ')';
+  picked.has(k)?picked.delete(k):picked.add(k);
+  const box=document.getElementById('picked');
+  if(picked.size){box.style.display='block';
+    box.innerHTML='選んだもの： <b>'+[...picked].join(', ')+'</b> — この番号を伝えてください';}
+  else box.style.display='none';
+});
+
+let seed=1;
+function go(){ render(seed,30,document.getElementById('shape').value); picked.clear();
+  document.getElementById('picked').style.display='none'; scrollTo(0,0); }
+document.getElementById('next').addEventListener('click',()=>{seed++;go();});
+document.getElementById('shape').addEventListener('change',go);
+go();
+</script>
+</body>
+</html>
