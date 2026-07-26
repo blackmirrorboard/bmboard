@@ -4,9 +4,9 @@ name: チェック / Checks
 # ⚠️狙いは「静かに壊れる」種類のバグを機械で止めること。
 on:
   push:
-    paths: ['app.html', 'store/catalog.json', '.github/scripts/**', '.github/workflows/checks.yml']
+    paths: ['app.html', 'usage.html', 'store/catalog.json', '.github/scripts/**', '.github/workflows/checks.yml']
   pull_request:
-    paths: ['app.html', 'store/catalog.json', '.github/scripts/**']
+    paths: ['app.html', 'usage.html', 'store/catalog.json', '.github/scripts/**']
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,12 @@ jobs:
       #   2026-07-24 の1日で3件（align / board / dark）発生したので機械で止める。
       - name: コマンド名の重複を見る
         run: node .github/scripts/check-command-dups.mjs
+
+      # ⭐公開ページ usage.html は app.html の USAGE_DOC から生成している。
+      #   手書きだった頃、片方だけ育って公開ページが2ヶ月止まった（⌘K も鉛筆も載っていなかった）。
+      #   生成物が古いまま push されたらここで落とす。
+      - name: usage.html が USAGE_DOC とズレていないか見る
+        run: node .github/scripts/build-usage.mjs --check
 
       - name: JS の構文を見る
         run: |

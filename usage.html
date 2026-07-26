@@ -1,1392 +1,643 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BLACK MIRROR — USAGE</title>
-<meta name="description" content="Black Mirror Board — how to use the canvas terminal.">
-<!-- OGP / Twitter -->
-<meta property="og:title" content="BMBOARD — Usage">
-<meta property="og:description" content="Black Mirror Board — how to use the canvas terminal.">
-<meta property="og:type" content="website">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BM BOARD — 使い方 / Usage</title>
+<!-- ⚠️このファイルは自動生成です。直接編集しても次の生成で消えます。
+     元データ＝app.html の USAGE_DOC。項目を足すならそちらを1行足す。
+     生成: node .github/scripts/build-usage.mjs -->
+<meta name="description" content="BM BOARD の使い方。覚えるのは ⌘K ひとつ。鉛筆で書く、紙を裏返す、消しカスを払う、魔法を作って配る——全73項目を12のまとまりで。日本語 / English。">
+<link rel="canonical" href="https://bmboard.studio/usage.html">
+<meta property="og:title" content="BM BOARD — 使い方 / Usage">
+<meta property="og:description" content="覚えるのは ⌘K ひとつ。BM BOARD でできること全73項目。">
+<meta property="og:type" content="article">
 <meta property="og:url" content="https://bmboard.studio/usage.html">
 <meta property="og:image" content="https://bmboard.studio/og-image.png">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:site_name" content="BMBOARD">
+<meta property="og:site_name" content="BM BOARD">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BM BOARD — How to use">
+<meta name="twitter:description" content="One shortcut to remember: ⌘K. Everything BM BOARD can do, in 73 entries.">
 <meta name="twitter:image" content="https://bmboard.studio/og-image.png">
-<!-- Favicons (logo-based) -->
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0c0c0c">
-<!-- Apply stored theme before paint. Shares `bmboard.theme` across BM pages. -->
-<script>
-(function () {
-    try {
-        var t = localStorage.getItem('bmboard.theme');
-        if (t !== 'light' && t !== 'dark') {
-            t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
-        }
-        document.documentElement.setAttribute('data-theme', t);
-    } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    }
-})();
+<meta name="theme-color" content="#08080a">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "BM BOARD の使い方",
+  "inLanguage": ["ja", "en"],
+  "url": "https://bmboard.studio/usage.html",
+  "about": { "@type": "SoftwareApplication", "name": "BM BOARD", "alternateName": ["Black Mirror Board", "BMBOARD"], "url": "https://bmboard.studio/" },
+  "author": { "@type": "Person", "name": "木下 貴博", "url": "https://kinoshita.studio/" }
+}
 </script>
-<!-- Apply stored language before paint. Shares `bmboard.lang` across BM pages. -->
-<script>
-(function () {
-    try {
-        var l = localStorage.getItem('bmboard.lang');
-        if (l !== 'en' && l !== 'ja') l = 'ja';
-        document.documentElement.lang = l;
-    } catch (e) {
-        document.documentElement.lang = 'ja';
-    }
-})();
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ⭐トップページと同じ顔（システムフォント・暗い地・SF Monoのチップ）。
+   ⚠️Webフォントは読まない＝外部依存ゼロ。BMBoard本体の思想と揃える。 */
+:root{
+  --ink:#08080a; --ink2:#0e0e12; --fg:#f2f0ec;
+  --dim:rgba(242,240,236,.56); --dim2:rgba(242,240,236,.34);
+  --line:rgba(255,255,255,.09);
+  --blue:#0a12e0;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans','Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scroll-padding-top:96px}
+body{background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.8;
+  letter-spacing:.01em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.shell{max-width:1160px;margin:0 auto;padding:0 26px}
 
-    :root {
-        /* DARK MODE (default) */
-        --bg:       #0b0b0b;
-        --bg-2:     #141414;
-        --bg-3:     #191919;
-        --fg:       #F0EDE6;
-        --fg-dim:   rgba(240,237,230,0.58);
-        --fg-faint: rgba(240,237,230,0.28);
-        --rule:     rgba(240,237,230,0.18);
-        --tag-bg:   rgba(240,237,230,0.08);
-        --ok:       #8fe3c5;
-        --jp:       #F0EDE6;
-        --en:       rgba(240,237,230,0.72);
-    }
-    html[data-theme="light"] {
-        --bg:       #FAFAF8;
-        --bg-2:     #F1EFE9;
-        --bg-3:     #E8E6DE;
-        --fg:       #0c0c0c;
-        --fg-dim:   rgba(12,12,12,0.62);
-        --fg-faint: rgba(12,12,12,0.34);
-        --rule:     rgba(12,12,12,0.16);
-        --tag-bg:   rgba(12,12,12,0.06);
-        --ok:       #227a5a;
-        --jp:       #0c0c0c;
-        --en:       rgba(12,12,12,0.72);
-    }
+/* 背景の光（トップと同じ・動かさない＝読む頁なので静かに） */
+.glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.glow i{position:absolute;display:block;border-radius:50%;filter:blur(80px);opacity:.20}
+.glow i:nth-child(1){width:52vw;height:52vw;left:-16vw;top:-14vh;background:#4a3aff}
+.glow i:nth-child(2){width:48vw;height:48vw;right:-14vw;top:52vh;background:#2a6cff}
+main,nav,footer{position:relative;z-index:1}
 
-    /* Language toggle visibility — shared across BM sub-pages */
-    html[lang="en"] .lang-ja { display: none !important; }
-    html[lang="ja"] .lang-en { display: none !important; }
+nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;
+  padding:14px 26px;background:rgba(8,8,10,.72);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:15px;
+  letter-spacing:.16em;font-weight:700}
+.brand img{width:27px;height:27px;filter:invert(1)}
+.navsp{flex:1}
+.lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  font-family:var(--mono);font-size:11px}
+.lang button{background:transparent;border:0;color:var(--dim2);padding:6px 11px;cursor:pointer;font:inherit}
+.lang button.on{background:var(--fg);color:var(--ink)}
+.navcta{font-size:13px;font-weight:500;padding:9px 20px;border-radius:9px;background:var(--fg);color:var(--ink)}
 
-    /* Language toggle UI — sits next to theme toggle */
-    .lang-toggle {
-        position: fixed;
-        top: 12px;
-        right: 88px;
-        z-index: 300;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border: 1px solid var(--rule);
-        background: var(--bg);
-        font-family: 'Space Mono','Courier New',Courier,monospace;
-        font-size: 12px;
-        cursor: pointer;
-        transition: border-color .15s;
-        user-select: none;
-    }
-    .lang-toggle:hover { border-color: var(--fg); }
-    .lang-toggle .lang-tok {
-        color: var(--fg-faint);
-        padding: 0 3px;
-        cursor: pointer;
-        transition: color .15s;
-    }
-    .lang-toggle .lang-tok:hover { color: var(--fg-dim); }
-    .lang-toggle .lang-sep { color: var(--fg-faint); }
-    html[lang="en"] .lang-toggle [data-set-lang="en"],
-    html[lang="ja"] .lang-toggle [data-set-lang="ja"] {
-        color: var(--fg);
-    }
+header.head{padding:86px 0 34px}
+h1{font-size:clamp(30px,5vw,54px);font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.sub{margin-top:16px;font-size:15px;color:var(--dim);max-width:640px}
+.sub b{color:var(--fg);font-weight:600}
+.count{margin-top:22px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--dim2)}
 
-    /* Theme toggle — fixed top-right, shared across BM sub-pages */
-    .theme-toggle {
-        position: fixed;
-        top: 12px;
-        right: 14px;
-        z-index: 300;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border: 1px solid var(--rule);
-        background: var(--bg);
-        font-family: 'Space Mono','Courier New',Courier,monospace;
-        font-size: 12px;
-        cursor: pointer;
-        transition: border-color .15s;
-        user-select: none;
-    }
-    .theme-toggle:hover { border-color: var(--fg); }
-    .theme-toggle .theme-tok {
-        color: var(--fg-faint);
-        padding: 0 3px;
-        cursor: pointer;
-        transition: color .15s;
-    }
-    .theme-toggle .theme-tok:hover { color: var(--fg-dim); }
-    .theme-toggle .theme-sep { color: var(--fg-faint); }
-    html[data-theme="dark"]  .theme-toggle [data-set-theme="dark"],
-    html:not([data-theme="light"]) .theme-toggle [data-set-theme="dark"],
-    html[data-theme="light"] .theme-toggle [data-set-theme="light"] {
-        color: var(--fg);
-    }
+.tools{position:sticky;top:64px;z-index:20;padding:14px 0 12px;margin-top:26px;
+  background:linear-gradient(180deg,rgba(8,8,10,.95),rgba(8,8,10,.78));
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+#q{width:100%;max-width:420px;font:inherit;font-size:14px;color:var(--fg);
+  background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:11px;padding:12px 16px}
+#q::placeholder{color:var(--dim2)}
+#q:focus{outline:none;border-color:rgba(255,255,255,.28)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--dim);
+  border:1px solid var(--line);border-radius:999px;padding:7px 14px;background:rgba(255,255,255,.03)}
+.chip:hover{color:var(--fg);border-color:rgba(255,255,255,.24)}
+.chip .i{font-size:13px}
 
-    html, body { background: var(--bg); color: var(--fg); }
-    body {
-        font-family: 'Space Mono', 'Courier New', Courier, monospace;
-        font-size: 13.5px;
-        line-height: 1.8;
-        padding: 48px 28px 120px;
-        -webkit-font-smoothing: antialiased;
-    }
+.cat{padding:46px 0 8px;border-top:1px solid var(--line);margin-top:34px}
+.cat h2{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:700;letter-spacing:-.01em}
+.cat h2 .i{font-size:20px}
+.note{margin-top:10px;color:var(--dim);font-size:14px}
+.rows{margin-top:24px;display:grid;gap:2px}
+.row{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:baseline;
+  padding:14px 16px;border-radius:11px}
+.row:hover{background:rgba(255,255,255,.035)}
+.key{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+kbd{font-family:var(--mono);font-size:12px;color:var(--fg);white-space:nowrap;
+  background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:7px;padding:4px 9px}
+.key i{font-style:normal;color:var(--dim2);font-size:11px}
+.desc{font-size:14.5px}
+.desc small{display:block;margin-top:5px;font-size:12.5px;color:var(--dim);line-height:1.75}
+.desc b{font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:rgba(255,255,255,.07);
+  border:1px solid var(--line);border-radius:6px;padding:2px 6px}
 
-    .wrap { max-width: 920px; margin: 0 auto; }
+.card{margin-top:44px;border:1px solid var(--line);border-radius:16px;padding:28px 26px;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015))}
+.card h3{font-size:17px;font-weight:700}
+.card p{margin-top:10px;font-size:14px;color:var(--dim)}
+.card .warn{color:#ffd9a8}
+.more{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.more a{font-size:13.5px;border:1px solid var(--line);border-radius:10px;padding:10px 18px;
+  background:rgba(255,255,255,.04)}
+.more a:hover{background:rgba(255,255,255,.09)}
 
-    /* ── Header ─────────────────────────────────────── */
-    header {
-        border-bottom: 1px solid var(--rule);
-        padding-bottom: 28px;
-        margin-bottom: 48px;
-    }
-    .eyebrow {
-        font-size: 10px; letter-spacing: 0.28em;
-        color: var(--fg-dim); text-transform: uppercase;
-        margin-bottom: 14px;
-    }
-    h1 {
-        font-size: 26px; font-weight: 700; letter-spacing: 0.04em;
-        line-height: 1.25; margin-bottom: 10px;
-    }
-    h1 .mark { display: inline-block; margin-right: 10px; }
-    .meta {
-        font-size: 12px; color: var(--fg-dim); letter-spacing: 0.06em;
-        display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px;
-    }
-    .meta b { color: var(--fg); font-weight: 700; }
+.empty{display:none;padding:40px 16px;color:var(--dim);font-size:14px}
+body.searching .cat{border-top:0;padding-top:0;margin-top:18px}
+body.searching .note,body.searching .tools .chips{display:none}
 
-    .ascii {
-        font-size: 10.5px; line-height: 1.15; white-space: pre;
-        color: var(--fg-dim); margin: 22px 0 0;
-        overflow-x: auto;
-    }
+footer{margin-top:90px;padding:34px 0 60px;border-top:1px solid var(--line)}
+.frow{display:flex;flex-wrap:wrap;align-items:center;gap:18px;font-size:12.5px;color:var(--dim)}
+.frow a:hover{color:var(--fg)}
 
-    /* ── Timeline nav ───────────────────────────────── */
-    .tl-nav {
-        display: flex; flex-wrap: wrap; gap: 10px;
-        margin: 22px 0 0;
-        padding: 16px 0;
-        border-top: 1px dashed var(--rule);
-    }
-    .tl-nav a {
-        font-size: 10.5px; letter-spacing: 0.18em;
-        padding: 6px 12px;
-        color: var(--fg-dim);
-        border: 1px solid var(--rule);
-        text-decoration: none;
-        transition: color 0.15s, border-color 0.15s;
-    }
-    .tl-nav a:hover { color: var(--fg); border-color: var(--fg); }
-    .tl-nav a b { color: var(--fg); font-weight: 700; }
+.en{display:none}
+body.lang-en .ja{display:none}
+body.lang-en .en{display:inline}
+body.lang-en .desc .en{display:inline}
 
-    /* ── Section ────────────────────────────────────── */
-    section { margin-bottom: 64px; }
-    h2 {
-        font-size: 11px; letter-spacing: 0.28em;
-        color: var(--fg); text-transform: uppercase;
-        font-weight: 700;
-        padding-bottom: 8px; margin-bottom: 20px;
-        border-bottom: 1px solid var(--rule);
-    }
-    h2::before { content: "// "; color: var(--fg-faint); }
-    h2 .sec-num {
-        font-size: 9px; color: var(--fg-dim);
-        margin-right: 10px; letter-spacing: 0.2em;
-    }
-
-    h3 {
-        font-size: 14px; letter-spacing: 0.06em;
-        margin: 26px 0 10px; font-weight: 700;
-    }
-    h3::before {
-        content: "▸ "; color: var(--fg-dim); margin-right: 2px;
-    }
-
-    h4 {
-        font-size: 12px; letter-spacing: 0.16em;
-        color: var(--fg-dim); text-transform: uppercase;
-        margin: 18px 0 8px;
-    }
-
-    p  { margin: 8px 0; color: var(--fg); }
-    p.dim { color: var(--fg-dim); }
-
-    /* Bilingual block — JP sits above EN, separated by a thin line */
-    .bil {
-        margin: 14px 0;
-        border-left: 2px solid var(--rule);
-        padding-left: 16px;
-    }
-    .bil .jp { color: var(--jp); }
-    .bil .en { color: var(--en); margin-top: 4px; }
-    .bil .flag {
-        font-size: 9.5px; letter-spacing: 0.22em;
-        color: var(--fg-faint);
-        text-transform: uppercase;
-        margin-right: 8px;
-    }
-
-    ul, ol { margin: 10px 0 10px 20px; }
-    li { margin: 5px 0; }
-    li::marker { color: var(--fg-dim); }
-
-    code {
-        font-family: 'Space Mono', monospace;
-        background: var(--tag-bg);
-        padding: 1px 6px;
-        border: 1px solid var(--rule);
-        font-size: 0.92em;
-    }
-
-    pre.code {
-        font-size: 11.5px;
-        line-height: 1.75;
-        background: var(--bg-3);
-        border: 1px solid var(--rule);
-        padding: 14px 16px;
-        margin: 10px 0;
-        overflow-x: auto;
-        white-space: pre;
-        color: var(--fg);
-    }
-    pre.code .c { color: var(--fg-dim); }    /* comment */
-    pre.code .k { color: var(--fg); font-weight: 700; } /* keyword */
-    pre.code .s { color: var(--ok); }        /* string */
-
-    blockquote {
-        border-left: 2px solid var(--fg);
-        padding: 10px 18px;
-        margin: 14px 0;
-        background: var(--bg-2);
-        color: var(--fg);
-    }
-
-    /* ── Tables ─────────────────────────────────────── */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 14px 0;
-        font-size: 12.5px;
-    }
-    th, td {
-        text-align: left;
-        padding: 9px 12px;
-        border-bottom: 1px solid var(--rule);
-        vertical-align: top;
-    }
-    th {
-        font-size: 10px; letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: var(--fg-dim);
-        font-weight: 700;
-        background: var(--bg-2);
-    }
-    td code { font-size: 11px; }
-    tbody tr:hover { background: rgba(240,237,230,0.03); }
-
-    /* ── Step card ──────────────────────────────────── */
-    .step {
-        border: 1px solid var(--rule);
-        padding: 18px 22px;
-        margin: 14px 0;
-        position: relative;
-        background: var(--bg-2);
-    }
-    .step .num {
-        position: absolute; top: -10px; left: 14px;
-        background: var(--bg); padding: 0 10px;
-        font-size: 10px; letter-spacing: 0.22em;
-        color: var(--fg);
-    }
-
-    /* ── Chips ──────────────────────────────────────── */
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
-    .chip {
-        font-size: 10px; letter-spacing: 0.18em;
-        padding: 4px 10px;
-        border: 1px solid var(--rule);
-        color: var(--fg-dim);
-        text-transform: uppercase;
-    }
-    .chip.on { color: var(--fg); border-color: var(--fg); }
-    .chip.ok { color: var(--ok); border-color: var(--ok); }
-
-    /* ── Rule + footer ──────────────────────────────── */
-    hr {
-        border: none;
-        border-top: 1px dashed var(--rule);
-        margin: 28px 0;
-    }
-
-    footer {
-        margin-top: 80px;
-        padding-top: 22px;
-        border-top: 1px solid var(--rule);
-        display: flex; justify-content: space-between; flex-wrap: wrap;
-        gap: 10px;
-        font-size: 11px; letter-spacing: 0.18em;
-        color: var(--fg-dim); text-transform: uppercase;
-    }
-    footer a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--fg-dim); }
-    footer a:hover { border-bottom-color: var(--fg); }
-
-    ::selection { background: var(--fg); color: var(--bg); }
-
-    @media (max-width: 820px) {
-        body { padding: 36px 20px 90px; font-size: 13px; }
-        h1 { font-size: 22px; }
-        h2 { font-size: 15px; }
-        pre.ascii { font-size: 8px; line-height: 1.1; overflow-x: auto; }
-        .meta { font-size: 11px; gap: 10px; flex-wrap: wrap; }
-        th, td { padding: 7px 8px; font-size: 11.5px; }
-        table { display: block; overflow-x: auto; }
-        /* Theme toggle stays visible but doesn't block nav */
-        .theme-toggle { padding: 3px 8px; font-size: 11px; }
-        .lang-toggle  { padding: 3px 8px; font-size: 11px; right: 76px; }
-    }
-    @media (max-width: 520px) {
-        body { padding: 28px 14px 80px; }
-        h1 { font-size: 20px; }
-        h2 { font-size: 14px; }
-        pre { font-size: 10.5px; padding: 12px; }
-        pre.ascii { font-size: 7px; }
-        th, td { padding: 6px 6px; font-size: 11px; }
-    }
-
-    /* ════════════════════════════════════════════════════════════
-       MOBILE OVERFLOW HARD-FIX
-       — 横スクロールの根本対策。pre/table/code を必ず折り返す。
-       ════════════════════════════════════════════════════════════ */
-    @media (max-width: 820px) {
-        html, body {
-            overflow-x: hidden !important;
-            max-width: 100% !important;
-        }
-        pre, code, kbd, samp {
-            white-space: pre-wrap !important;
-            word-break: break-word !important;
-            overflow-wrap: anywhere !important;
-            max-width: 100% !important;
-            box-sizing: border-box;
-            overflow-x: visible !important;
-        }
-        pre { line-height: 1.5 !important; }
-        /* ASCII アートだけは横スクロール許可（折り返すと崩れるため） */
-        pre.ascii {
-            white-space: pre !important;
-            overflow-x: auto !important;
-            font-size: 6px !important;
-        }
-        table {
-            display: block;
-            overflow-x: auto !important;
-            max-width: 100% !important;
-            -webkit-overflow-scrolling: touch;
-        }
-        img, video, iframe, svg {
-            max-width: 100% !important;
-            height: auto;
-        }
-        .wrap { max-width: 100% !important; padding-left: 14px !important; padding-right: 14px !important; }
-    }
+@media(max-width:820px){
+  .shell{padding:0 20px}
+  nav{padding:12px 20px}
+  header.head{padding:60px 0 26px}
+  .tools{top:60px}
+  .row{grid-template-columns:1fr;gap:8px;padding:14px 12px}
+  .cat{padding-top:36px}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="glow"><i></i><i></i></div>
 
-<header>
-    <div class="eyebrow">99LETTERS STUDIO · USER MANUAL</div>
-    <h1><span class="mark">◼</span>BLACK MIRROR BOARD — USAGE</h1>
-    <div class="meta">
-        <span><b>VERSION</b> v1.2</span>
-        <span><b>LANGUAGES</b> 日本語 × English</span>
-        <span><b>UPDATED</b> 2026-04-19</span>
-        <span><b>STATUS</b> ● LIVE</span>
-    </div>
-<pre class="ascii">
- ██╗   ██╗███████╗ █████╗  ██████╗ ███████╗
- ██║   ██║██╔════╝██╔══██╗██╔════╝ ██╔════╝
- ██║   ██║███████╗███████║██║  ███╗█████╗
- ██║   ██║╚════██║██╔══██║██║   ██║██╔══╝
- ╚██████╔╝███████║██║  ██║╚██████╔╝███████╗
-  ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-</pre>
-
-<nav class="tl-nav">
-    <a href="#s1"><b>§1</b> Welcome</a>
-    <a href="#s2"><b>§2</b> Basic Controls</a>
-    <a href="#s3"><b>§3</b> Terminal</a>
-    <a href="#s4"><b>§4</b> Custom Commands</a>
-    <a href="#s4b"><b>§4.5</b> Images</a>
-    <a href="#s5"><b>§5</b> AI-Assisted Spells</a>
-    <a href="#s6"><b>§6</b> Tutorial</a>
-    <a href="#s7"><b>§7</b> Keyboard</a>
-    <a href="#s8"><b>§8</b> Export / Import</a>
-    <a href="#s9"><b>§9</b> Capabilities</a>
-    <a href="#s10"><b>§10</b> FAQ</a>
+<nav>
+  <a class="brand" href="index.html"><img src="logo.png" alt=""><span>BM BOARD</span></a>
+  <span class="navsp"></span>
+  <div class="lang">
+    <button type="button" data-lang="ja" class="on">JP</button>
+    <button type="button" data-lang="en">EN</button>
+  </div>
+  <a class="navcta" href="app.html"><span class="ja">開く</span><span class="en">Open</span></a>
 </nav>
-</header>
 
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s1">
-    <h2><span class="sec-num">§1</span>Welcome to Black Mirror Board</h2>
+<main class="shell">
+  <header class="head">
+    <h1><span class="ja">使い方</span><span class="en">How to use</span></h1>
+    <p class="sub">
+      <span class="ja">覚えることはひとつだけ。<b>⌘K</b> を押して、やりたいことを打つ。<br>あとは全部、ここに書いてある通りに出てくる。</span>
+      <span class="en">Only one thing to remember: hit <b>⌘K</b> and type what you want.<br>Everything below shows up from there.</span>
+    </p>
+    <p class="count">12 groups &nbsp;·&nbsp; 73 entries &nbsp;·&nbsp; JP / EN</p>
+  </header>
 
-    <div class="bil">
-        <div class="jp lang-ja">Black Mirror Board は、<b>デザイナーの「直感」を、エンジニアの「コマンド」で増幅する</b>ための無限キャンバスです。</div>
-        <div class="en lang-en">Black Mirror Board is an infinite canvas that <b>amplifies a designer's intuition with an engineer's command layer.</b></div>
-    </div>
-
-    <ul>
-        <li><span class="lang-ja">図形を描けば、ターミナルがそれに応えて言葉を返す。</span><span class="lang-en">Draw a shape — the terminal answers in words.</span></li>
-        <li><span class="lang-ja">打鍵ではなく描画で、世界を構築していく。</span><span class="lang-en">Build the world by gesture, not just by keystroke.</span></li>
-        <li><span class="lang-ja">個人の小さな呪文（コマンド）を SNS で共有し合い、<b>他人の魔法を自分の道具にできる</b>。</span><span class="lang-en">Share tiny spells on SNS — <b>someone else's magic becomes your tool.</b></span></li>
-    </ul>
-
-    <p class="dim lang-ja">コードを書かない美学と、コマンドを打つ快感が交わる場所。それが Black Mirror です。</p>
-    <p class="dim lang-en">It's where the aesthetic of <em>"I don't write code"</em> meets the thrill of <em>"I speak to the machine."</em></p>
-
+  <div class="tools">
+    <input id="q" type="search" autocomplete="off" placeholder="絞り込む — flip / 魔法 / export …">
     <div class="chips">
-        <span class="chip on">Infinite canvas</span>
-        <span class="chip on">Interactive terminal</span>
-        <span class="chip on">Custom spells (localStorage)</span>
-        <span class="chip on">SNS-portable JSON</span>
-        <span class="chip">3 themes</span>
-        <span class="chip">Zero deps</span>
+      <a class="chip" href="#start"><span class="i">✨</span><span class="ja">はじめに</span><span class="en">Getting started</span></a>
+      <a class="chip" href="#draw"><span class="i">✎</span><span class="ja">描く</span><span class="en">Draw</span></a>
+      <a class="chip" href="#paper"><span class="i">✏️</span><span class="ja">紙と鉛筆</span><span class="en">Paper &amp; pencil</span></a>
+      <a class="chip" href="#arrange"><span class="i">⌗</span><span class="ja">選ぶ・整える</span><span class="en">Select &amp; arrange</span></a>
+      <a class="chip" href="#view"><span class="i">⊕</span><span class="ja">見る・動かす</span><span class="en">View</span></a>
+      <a class="chip" href="#spell"><span class="i">🪄</span><span class="ja">魔法</span><span class="en">Spells</span></a>
+      <a class="chip" href="#store"><span class="i">🏪</span><span class="ja">STORE / 配る</span><span class="en">STORE / share</span></a>
+      <a class="chip" href="#snip"><span class="i">⛓</span><span class="ja">スニペット・連鎖</span><span class="en">Snippets &amp; chains</span></a>
+      <a class="chip" href="#export"><span class="i">⬇️</span><span class="ja">書き出す</span><span class="en">Export</span></a>
+      <a class="chip" href="#save"><span class="i">💾</span><span class="ja">保存する</span><span class="en">Save &amp; load</span></a>
+      <a class="chip" href="#keys"><span class="i">⌨️</span><span class="ja">キーボード</span><span class="en">Keyboard</span></a>
+      <a class="chip" href="#misc"><span class="i">⚙️</span><span class="ja">その他</span><span class="en">Misc</span></a>
     </div>
-</section>
+  </div>
 
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s2">
-    <h2><span class="sec-num">§2</span>Basic Controls / 基本操作</h2>
+  <div id="list">
 
-    <h3>Drawing / 描画</h3>
-    <table>
-        <thead><tr><th>Action / 動作</th><th>How / やり方</th></tr></thead>
-        <tbody>
-            <tr><td>図形を描く / Draw a shape</td><td>ツールバーから形を選び、キャンバスをドラッグ / Pick a tool, drag on canvas.</td></tr>
-            <tr><td>フリーハンド / Freehand</td><td><code>P</code> で Pen。始点近くでリリース → 自動クローズ / <code>P</code> for Pen; release near start to auto-close.</td></tr>
-            <tr><td>テキスト / Text</td><td><code>T</code> → click → type → <code>Enter</code></td></tr>
-        </tbody>
-    </table>
-
-    <h3>Zoom / ズーム &nbsp; · &nbsp; Pan / パン</h3>
-    <table>
-        <thead><tr><th>Action</th><th>Desktop</th><th>Mobile / Trackpad</th></tr></thead>
-        <tbody>
-            <tr><td>Zoom in / out</td><td>Scroll wheel</td><td>Pinch</td></tr>
-            <tr><td>Reset view</td><td>Double-click</td><td>Double-tap</td></tr>
-            <tr><td>Pan canvas</td><td>Hold <code>Space</code> + drag</td><td>2-finger drag</td></tr>
-        </tbody>
-    </table>
-
-    <h3>Move · Rotate · Resize / 移動・回転・リサイズ</h3>
-    <pre class="code">S  →  Select tool
-   · Click an object (or within 8px of its outline) to grab it.
-   · Drag to move.
-   · Drag the ○ handle above the bbox to rotate.
-   · Drag any of the 8 □ anchors to resize.
-
-<span class="c">Modifier keys while resizing:</span>
-   <span class="k">Shift</span>         Lock aspect ratio (corner handles).
-   <span class="k">Alt / Option</span>  Anchor to the center (symmetric scale).
-   <span class="k">Shift + Alt</span>   Both at once.
-
-<span class="c">Images are aspect-locked on corners by DEFAULT —</span>
-<span class="c">Shift releases the lock, so photos never warp accidentally.</span></pre>
-
-    <h3>Marquee Selection / 範囲選択</h3>
-    <pre class="code">Drag on empty canvas  →  dashed selection rectangle.
-Any object that the marquee grazes (AABB intersection) → selected.
-Then drag any selected object to move the whole group.
-The group rotates + resizes like a single object.
-<span class="k">Del / Backspace</span>  → delete all selected.
-<span class="k">Esc</span>              → deselect all.</pre>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s3">
-    <h2><span class="sec-num">§3</span>The Terminal Interface / ターミナル</h2>
-
-    <div class="bil">
-        <div class="jp lang-ja">Black Mirror のターミナルは「環境音としてのログ」と「入力受付の対話型プロンプト」の二重構造です。入力欄は常に右下にあり、キーボードに触れればいつでもコマンドが打てます。</div>
-        <div class="en lang-en">The terminal is two things at once: an ambient log that hums with system activity, <b>and</b> an interactive prompt that accepts commands. The input is always pinned bottom-right.</div>
-    </div>
-
-    <h3>History &amp; Recall / 履歴の呼び出し</h3>
-    <table>
-        <thead><tr><th>Key</th><th>Action</th></tr></thead>
-        <tbody>
-            <tr><td><code>Enter</code></td><td>Execute current input. / 現在の入力を実行。</td></tr>
-            <tr><td><code>↑</code></td><td>Recall the previous command. / 直前のコマンドを呼び戻す。</td></tr>
-            <tr><td><code>↓</code></td><td>Move forward through history back toward the draft. / 履歴を前進し、元の下書きに戻る。</td></tr>
-            <tr><td><code>Esc</code></td><td>If USAGE overlay is open, close it first. / オーバーレイを優先して閉じる。</td></tr>
-        </tbody>
-    </table>
-    <p class="dim"><span class="lang-ja">履歴は最大 80 件まで <code>localStorage</code> に保存 — リロードしても残る。</span><span class="lang-en">History persists (up to 80 entries) in <code>localStorage</code> — survives reload.</span></p>
-
-    <h3>Built-in Commands / 組込みコマンド</h3>
-    <pre class="code"><span class="c">── navigation ──</span>
-help / ?                <span class="c">→  in-terminal cheat sheet</span>
-usage / man / docs      <span class="c">→  summon the USAGE overlay</span>
-clear / flush           <span class="c">→  wipe terminal output</span>
-objects                 <span class="c">→  dump every object on the board (debug)</span>
-
-<span class="c">── theme ──</span>
-light / dark / gray     <span class="c">→  switch canvas theme</span>
-
-<span class="c">── project (IndexedDB) ──</span>
-save &lt;name&gt;             <span class="c">→  snapshot canvas to local DB</span>
-ls                      <span class="c">→  list saved snapshots</span>
-load &lt;name&gt;             <span class="c">→  restore snapshot</span>
-
-<span class="c">── spell management ──</span>
-list                    <span class="c">→  list every registered command (preset / user flagged)</span>
-register &lt;n&gt; &lt;js&gt;       <span class="c">→  create a new spell</span>
-alias &lt;new&gt;=&lt;old&gt;       <span class="c">→  duplicate a spell under a new name</span>
-share &lt;name&gt;            <span class="c">→  copy spell JSON to clipboard</span>
-forget &lt;name&gt;           <span class="c">→  remove a user spell (presets protected)</span>
-
-<span class="c">── preset spells ──</span>
-$ scatter               <span class="c">→  scatter selected objects randomly</span>
-$ grid-3x3              <span class="c">→  place a 3×3 grid at view center</span>
-$ biwako-blue           <span class="c">→  retint all strokes to #0044CC</span>
-$ fetch-img &lt;kw&gt; &lt;n&gt;    <span class="c">→  summon n images (Lorem Flickr, no key)</span>
-$ monoclo               <span class="c">→  grayscale the selected image(s)</span>
-$ svg                   <span class="c">→  selection → editable vector SVG</span>
-
-<span class="c">── camera & sharing (v1.2) ──</span>
-Black Mirror            <span class="c">→  selfie camera wipe, top-right PIP</span>
-Black Mirror off        <span class="c">→  dismiss the camera wipe</span>
-share                   <span class="c">→  canvas → shareable URL (modal, no args)</span>
-
-<span class="c">── export ──</span>
-export                  <span class="c">→  selection as transparent PNG</span>
-export magic            <span class="c">→  spell picker modal</span>
-export data             <span class="c">→  bundle export modal (canvas / spells)</span>
-export-all              <span class="c">→  one-shot: project + all spells</span>
-export-spells [names]   <span class="c">→  one-shot: spells as a package</span>
-
-<span class="c">── easter egg ──</span>
-youtube                 <span class="c">→  (try it)</span></pre>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s4">
-    <h2><span class="sec-num">§4</span>Custom Commands / カスタムコマンドの魔法</h2>
-
-    <div class="bil">
-        <div class="jp lang-ja">Black Mirror の最大の遊びは、<b>「誰かが作ったコマンドを、SNS 経由で手に入れて、自分のボードで使える」</b>ことです。</div>
-        <div class="en lang-en">The single most interesting thing about Black Mirror is that <b>commands travel.</b> Someone writes a spell, posts it on SNS, and with a single paste your board inherits it.</div>
-    </div>
-
-    <h3>4.1 Importing a spell / 魔法を拾う</h3>
-
-    <div class="step">
-        <span class="num">STEP · 01</span>
-        <span class="lang-ja">X / Discord / Slack などで以下のような JSON を見つける。</span><span class="lang-en">Spot a JSON payload like this on social media.</span>
-<pre class="code">{
-  <span class="s">"command"</span>: <span class="s">"scatter"</span>,
-  <span class="s">"action"</span>: <span class="s">"const sel = BM.getSelected(); for (const o of sel) BM.translate(o, BM.rand(-400,400), BM.rand(-300,300)); BM.log('scattered ' + sel.length);"</span>
-}</pre>
-    </div>
-
-    <div class="step">
-        <span class="num">STEP · 02</span>
-        <span class="lang-ja">ターミナル入力欄にペーストする。</span><span class="lang-en">Paste it directly into the terminal input.</span>
-    </div>
-
-    <div class="step">
-        <span class="num">STEP · 03</span>
-        <span class="lang-ja">自動で <code>$&lt;name&gt;</code> として登録される。リロードしても残る。</span><span class="lang-en">Auto-registered as <code>$&lt;name&gt;</code>. Persists across reload.</span>
-<pre class="code">paste &gt; [JSON payload intercepted]
-→ schema check... { command, action } ✓
-→ binding $scatter → sandboxed function...
-→ persisting to local storage...
-[OK] spell acquired — run: $scatter</pre>
-    </div>
-
-    <h3>4.2 Exporting a spell / 魔法を放つ</h3>
-    <pre class="code">share &lt;name&gt;</pre>
-    <div class="bil">
-        <div class="jp lang-ja">コマンドの JSON 定義をクリップボードにコピー。そのまま SNS に貼れば、誰でも拾える呪文として世界に放流できます。</div>
-        <div class="en lang-en">Copies the spell's JSON to your clipboard. Paste it on SNS and you've just released a spell into the wild.</div>
-    </div>
-<pre class="code">[CLIPBOARD] Copied to clipboard. Paste this on SNS!
-───────────────────────────────────────────
-{
-  <span class="s">"command"</span>: <span class="s">"scatter"</span>,
-  <span class="s">"action"</span>: <span class="s">"..."</span>
-}
-───────────────────────────────────────────</pre>
-
-    <h3>4.3 Writing your own / 自作する</h3>
-    <pre class="code">register &lt;name&gt; &lt;javascript action&gt;</pre>
-    <p class="dim">Inside the <code>action</code>, the <b>BM global</b> is your interface:</p>
-
-    <table>
-        <thead><tr><th>Method</th><th>What it does</th></tr></thead>
-        <tbody>
-            <tr><td><code>BM.getSelected()</code></td><td>selected object(s) as an array / 選択中のオブジェクト配列</td></tr>
-            <tr><td><code>BM.all()</code></td><td>every object on the board / 全オブジェクト</td></tr>
-            <tr><td><code>BM.getById(id)</code></td><td>lookup a single object by id / ID検索</td></tr>
-            <tr><td><code>BM.find(fn)</code></td><td>filter objects by predicate / 条件検索</td></tr>
-            <tr><td><code>BM.create(type, props?)</code></td><td>spawn <code>circle</code>/<code>square</code>/<code>triangle</code>/<code>arrow</code>/<code>text</code></td></tr>
-            <tr><td><code>BM.update(obj|id, patch)</code></td><td>bulk-update data attributes / 属性一括更新</td></tr>
-            <tr><td><code>BM.translate(obj, dx, dy)</code></td><td>nudge an object / 移動</td></tr>
-            <tr><td><code>BM.setStroke(obj, color)</code></td><td>per-object line color / 個別線色</td></tr>
-            <tr><td><code>BM.setFill(obj, color)</code></td><td>per-object fill / 個別塗り</td></tr>
-            <tr><td><code>BM.remove(obj)</code></td><td>delete an object / 削除</td></tr>
-            <tr><td><code>BM.clear()</code></td><td>wipe the canvas / 全削除</td></tr>
-            <tr><td><code>BM.viewCenter()</code></td><td><code>{ x, y }</code> current view center (world coords)</td></tr>
-            <tr><td><code>BM.rand(min, max)</code></td><td>uniform random number / 一様乱数</td></tr>
-            <tr><td><code>BM.getMode()</code></td><td>current theme name / 現テーマ</td></tr>
-            <tr><td><code>BM.setMode('dark')</code></td><td>switch theme programmatically</td></tr>
-            <tr><td><code>BM.redraw()</code></td><td>repaint after mutations / 変更後の再描画（必須）</td></tr>
-            <tr><td><code>BM.save()</code></td><td>commit state to undo history / Undo履歴に保存</td></tr>
-            <tr><td><code>BM.log(msg, cls?)</code></td><td>print to terminal (<code>'t-ok'</code> / <code>'t-err'</code> / <code>'t-dim'</code>)</td></tr>
-        </tbody>
-    </table>
-
-    <blockquote>
-        <span class="lang-ja"><b>重要：</b> <code>BM.create('rect', ...)</code> は<b>使えません</b>。四角は <code>'square'</code> を使ってください。対応タイプは <code>circle / square / triangle / arrow / text</code> の5種のみです。</span><span class="lang-en"><b>Important:</b> <code>BM.create('rect', ...)</code> is <b>not supported</b>. Use <code>'square'</code> instead. The five valid types are <code>circle / square / triangle / arrow / text</code>.</span>
-    </blockquote>
-
-    <h3>4.4 Aliasing / 別名</h3>
-    <pre class="code">alias ripple = scatter</pre>
-    <div class="bil">
-        <div class="jp lang-ja">既存コマンドを別の名前で複製します。呪文に自分の名前をつけたい時に。</div>
-        <div class="en lang-en">Duplicates an existing spell under a new name. Brand the magic with your own naming.</div>
-    </div>
-
-    <h3>4.5 Import collision behavior / 取り込み時の衝突回避</h3>
-    <div class="bil">
-        <div class="jp lang-ja">ペーストや D&D で同名の魔法が送られてきた場合、<b>既存の魔法は上書きされず</b>、取り込んだ方が <code>&lt;name&gt;_2026-04-19</code> のように日付サフィックス付きにリネームされます。action が完全一致の場合はスキップ。preset（組み込み魔法）は絶対に上書き不可。</div>
-        <div class="en lang-en">When a spell with the same name arrives via paste or drop, <b>existing spells are never overwritten</b>. The incoming spell is renamed to <code>&lt;name&gt;_2026-04-19</code>. Identical payloads are skipped. Presets are always protected.</div>
-    </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s4b">
-    <h2><span class="sec-num">§4.5</span>Images / 画像の召喚とモノクロ化</h2>
-
-    <h3>Screenshot → paste / drop — クリップボードから直接</h3>
-    <div class="bil">
-        <div class="jp lang-ja">スクリーンショットをそのままキャンバスに貼れます。クリップボード経由なら <code>⌘ + V</code>（Mac）/ <code>Ctrl + V</code>（Windows）。デスクトップに保存したスクショなら、ファイルをキャンバスにドラッグ&ドロップ。</div>
-        <div class="en lang-en">Screenshot any region of your screen, then paste or drop it onto the board. Both routes flow through the same image placement pipeline (centered, scaled to fit, undo-safe).</div>
-    </div>
-
-    <table>
-        <thead><tr><th>OS</th><th>クリップボードに撮る (paste with <kbd>⌘/Ctrl</kbd>+<kbd>V</kbd>)</th><th>ファイルに撮る (drag onto canvas)</th></tr></thead>
-        <tbody>
-            <tr>
-                <td>macOS</td>
-                <td><kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>4</kbd></td>
-                <td><kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>4</kbd> → デスクトップから D&D</td>
-            </tr>
-            <tr>
-                <td>Windows</td>
-                <td><kbd>PrtScn</kbd>（通常キー） / <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td>
-                <td><kbd>Win</kbd>+<kbd>PrtScn</kbd> → ピクチャ ＞ スクリーンショット から D&D</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <pre class="code"><span class="c">// Pipeline</span>
-clipboard image  →  paste handler  →  placeImageOnCanvas('paste')
-file drop        →  drop handler   →  placeImageOnCanvas('drop')
-file picker (I)  →  change handler →  placeImageOnCanvas('upload')
-
-<span class="c">// All three routes share the same scaling, centering, undo, and terminal log.</span></pre>
-
-    <h3>$ fetch-img — keyword-based image summoning</h3>
-    <div class="bil">
-        <div class="jp lang-ja">キーワードで画像を取得してキャンバスに配置します。API キー不要（Lorem Flickr 使用）。枚数指定で自動グリッド配置。</div>
-        <div class="en lang-en">Summons photos from Lorem Flickr by keyword. No API key required. Multiple images auto-arrange into a grid.</div>
-    </div>
-
-    <table>
-        <thead><tr><th>Command</th><th>Behavior</th></tr></thead>
-        <tbody>
-            <tr><td><code>fetch-img</code></td><td>default keyword "biwako", 1 image</td></tr>
-            <tr><td><code>fetch-img mountain</code></td><td>"mountain" keyword, 1 image</td></tr>
-            <tr><td><code>fetch-img mountain 6</code></td><td>6 images · auto 3×2 grid</td></tr>
-            <tr><td><code>fetch-img tokyo night 9</code></td><td>"tokyo night" · 9 images · 3×3 grid</td></tr>
-        </tbody>
-    </table>
-
-    <pre class="code"><span class="c">// Technical spec</span>
-endpoint : https://loremflickr.com/&lt;w&gt;/&lt;h&gt;/&lt;keyword&gt;?lock=&lt;seed&gt;
-size     : 240 × 180 per tile
-gap      : 20px
-max      : 25 images per invocation
-output   : color (use $ monoclo to grayscale after)
-grid     : cols = ceil(√n)  ·  rows = ceil(n / cols)
-cors     : falls back to URL ref if dataURL conversion fails</pre>
-
-    <h3>$ monoclo — grayscale selected images</h3>
-    <div class="bil">
-        <div class="jp lang-ja">選択中の画像をグレースケール化します。カラーで <code>fetch-img</code> した画像を後からモノクロ統一したい時に。シェイプやペン線には効きません（エラー表示）。</div>
-        <div class="en lang-en">Grayscales selected image objects. Pair with <code>fetch-img</code> to retroactively monochrome a mood board. Shapes and pen strokes are ignored (explicit error).</div>
-    </div>
-
-    <pre class="code"><span class="c">// Filter applied</span>
-grayscale(100%) contrast(110%) brightness(95%)
-
-<span class="c">// Behavior</span>
-· selection required · multi-select supported
-· updates obj.data.src to a new dataURL → persisted
-· Cmd+Z reverts to the original color image</pre>
-
-    <h3>⚠ Image Persistence — 画像の保存について</h3>
-    <div class="bil">
-        <div class="jp lang-ja">
-            <b>画像はオートセーブ（localStorage）に含まれません。</b><br>
-            テキスト・図形・線などは自動保存されますが、画像ファイルは容量の関係でローカルストレージには保存されません。<br><br>
-            <b>画像を含むボードを保存するには：</b><br>
-            SAVE ボタンまたは <code>export data</code> コマンドで <b>.json ファイルに書き出し</b>てください。<br>
-            .json には画像データが完全に含まれており、OPEN で読み込めば画像も復元されます。<br><br>
-            <b>iCloud / Dropbox などのクラウドストレージとの連携：</b><br>
-            保存した .json を iCloud Drive などに置くことで、Mac・iPhone・iPad など複数デバイス間で同じボードを共有できます。
-            ただし複数デバイスで同時に編集・保存した場合は競合が発生することがあります。編集は1台ずつ行うことを推奨します。
+    <section class="cat" id="start">
+      <h2><span class="i">✨</span><span class="ja">はじめに</span><span class="en">Getting started</span></h2>
+      <p class="note"><span class="ja">覚えることはひとつ。<b>⌘K</b> を押して、やりたいことを打つ。</span><span class="en">Only one thing to remember: hit <b>⌘K</b> and type what you want.</span></p>
+      <div class="rows">
+        <div class="row" data-s="⌘k コマンドパレット。全機能がここから出る ★お気に入り／最近使った／自分でショートカットを割り当てられる  command palette — everything lives here favorites ★ / recently used / assign your own shortcuts ">
+          <div class="key"><kbd>⌘K</kbd></div>
+          <div class="desc"><span class="ja">コマンドパレット。全機能がここから出る<small>★お気に入り／最近使った／自分でショートカットを割り当てられる</small></span><span class="en">Command palette — everything lives here<small>Favorites ★ / Recently used / assign your own shortcuts</small></span></div>
         </div>
-        <div class="en lang-en">
-            <b>Images are NOT included in autosave (localStorage).</b><br>
-            Shapes, text, and strokes save automatically, but image pixel data is too large for the localStorage quota.<br><br>
-            <b>To save a board that contains images:</b><br>
-            Use the <b>SAVE</b> button or <code>export data</code> command to write a <b>.json file</b>.<br>
-            The .json fully embeds all image data — <b>OPEN</b> restores everything exactly.<br><br>
-            <b>Cloud storage (iCloud, Dropbox, etc.):</b><br>
-            Saving your .json to iCloud Drive lets you share boards across Mac, iPhone, and iPad.
-            Avoid editing the same file on two devices simultaneously — the last save wins and conflicts may occur.
+        <div class="row" data-s="⌘, 設定（一般 / コマンド / 魔法） settings (general / commands / spells)">
+          <div class="key"><kbd>⌘,</kbd></div>
+          <div class="desc"><span class="ja">設定（一般 / コマンド / 魔法）</span><span class="en">Settings (General / Commands / Spells)</span></div>
         </div>
+        <div class="row" data-s="⌘b ターミナル窓を ドック ⇔ フロート dock / float the terminal window">
+          <div class="key"><kbd>⌘B</kbd></div>
+          <div class="desc"><span class="ja">ターミナル窓を ドック ⇔ フロート</span><span class="en">Dock / float the terminal window</span></div>
+        </div>
+        <div class="row" data-s="右クリック|long-press ボードのメニュー 付箋・テキストを置く／複製／魔法に保存／前面・背面／削除  board context menu sticky · text · duplicate · save as spell · front/back · delete ">
+          <div class="key"><kbd>右クリック</kbd><i>/</i><kbd>long-press</kbd></div>
+          <div class="desc"><span class="ja">ボードのメニュー<small>付箋・テキストを置く／複製／魔法に保存／前面・背面／削除</small></span><span class="en">Board context menu<small>sticky · text · duplicate · save as spell · front/back · delete</small></span></div>
+        </div>
+        <div class="row" data-s="help|? ターミナル内に短い早見表を出す quick reference inside the terminal">
+          <div class="key"><kbd>help</kbd><i>/</i><kbd>?</kbd></div>
+          <div class="desc"><span class="ja">ターミナル内に短い早見表を出す</span><span class="en">Quick reference inside the terminal</span></div>
+        </div>
+        <div class="row" data-s="usage|man|docs この画面 this screen">
+          <div class="key"><kbd>usage</kbd><i>/</i><kbd>man</kbd><i>/</i><kbd>docs</kbd></div>
+          <div class="desc"><span class="ja">この画面</span><span class="en">This screen</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="draw">
+      <h2><span class="i">✎</span><span class="ja">描く</span><span class="en">Draw</span></h2>
+      <!-- このまとまりに前書きは無い -->
+      <div class="rows">
+        <div class="row" data-s="↑ select 選ぶ／ドラッグで移動／del で削除 上の ○ で回転・青い □ で変形・空白をドラッグで範囲選択  select · drag to move · del to delete ○ handle rotates · blue □ anchors deform · drag empty canvas to marquee ">
+          <div class="key"><kbd>↑ Select</kbd></div>
+          <div class="desc"><span class="ja">選ぶ／ドラッグで移動／Del で削除<small>上の ○ で回転・青い □ で変形・空白をドラッグで範囲選択</small></span><span class="en">Select · drag to move · Del to delete<small>○ handle rotates · blue □ anchors deform · drag empty canvas to marquee</small></span></div>
+        </div>
+        <div class="row" data-s="✎ pen 自由に描く。離した瞬間に図形として認識される draw freely — shape is detected on lift">
+          <div class="key"><kbd>✎ Pen</kbd></div>
+          <div class="desc"><span class="ja">自由に描く。離した瞬間に図形として認識される</span><span class="en">Draw freely — shape is detected on lift</span></div>
+        </div>
+        <div class="row" data-s="⌫ eraser 触れたものを消す（選択中なら一括削除） tap an object to remove (batch-deletes a selection)">
+          <div class="key"><kbd>⌫ Eraser</kbd></div>
+          <div class="desc"><span class="ja">触れたものを消す（選択中なら一括削除）</span><span class="en">Tap an object to remove (batch-deletes a selection)</span></div>
+        </div>
+        <div class="row" data-s="○ △ □ → ドラッグで図形を置く → ターミナルが反応する drag to place a shape → the terminal fires">
+          <div class="key"><kbd>○ △ □ →</kbd></div>
+          <div class="desc"><span class="ja">ドラッグで図形を置く → ターミナルが反応する</span><span class="en">Drag to place a shape → the terminal fires</span></div>
+        </div>
+        <div class="row" data-s="t テキスト。書いて enter で確定 text — type, enter to confirm">
+          <div class="key"><kbd>T</kbd></div>
+          <div class="desc"><span class="ja">テキスト。書いて Enter で確定</span><span class="en">Text — type, Enter to confirm</span></div>
+        </div>
+        <div class="row" data-s="🪣 fill 塗り: ○ なし ／ ● 黒 ／ ◑ グレー ／ □ 白 fill: ○ none · ● black · ◑ grey · □ white">
+          <div class="key"><kbd>🪣 Fill</kbd></div>
+          <div class="desc"><span class="ja">塗り: ○ なし ／ ● 黒 ／ ◑ グレー ／ □ 白</span><span class="en">Fill: ○ none · ● black · ◑ grey · □ white</span></div>
+        </div>
+        <div class="row" data-s="1 2 3 線の太さ line width">
+          <div class="key"><kbd>1 2 3</kbd></div>
+          <div class="desc"><span class="ja">線の太さ</span><span class="en">Line width</span></div>
+        </div>
+        <div class="row" data-s="i 画像を読み込む upload an image">
+          <div class="key"><kbd>I</kbd></div>
+          <div class="desc"><span class="ja">画像を読み込む</span><span class="en">Upload an image</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="paper">
+      <h2><span class="i">✏️</span><span class="ja">紙と鉛筆</span><span class="en">Paper &amp; pencil</span></h2>
+      <p class="note"><span class="ja">既定は<b>鉛筆＋紙</b>。デジタルをアナログの手ざわりで使うためのモード。</span><span class="en">Default is <b>pencil on paper</b> — digital that feels analog.</span></p>
+      <div class="rows">
+        <div class="row" data-s="drawmode classic ペン＋通常ボードに切り替える（紙をやめる） ペンのアイコンからも切替。鉛筆に戻すと紙も戻る  switch to pen + plain board also via the pen icon. back to pencil brings the paper back. ">
+          <div class="key"><kbd>drawmode classic</kbd></div>
+          <div class="desc"><span class="ja">ペン＋通常ボードに切り替える（紙をやめる）<small>ペンのアイコンからも切替。鉛筆に戻すと紙も戻る</small></span><span class="en">Switch to pen + plain board<small>Also via the pen icon. Back to pencil brings the paper back.</small></span></div>
+        </div>
+        <div class="row" data-s="flip 紙を裏返す。表がうっすら透ける 裏面では表の線は選べない（裏だから）  flip the sheet — the front bleeds through faintly front strokes cannot be selected from the back ">
+          <div class="key"><kbd>flip</kbd></div>
+          <div class="desc"><span class="ja">紙を裏返す。表がうっすら透ける<small>裏面では表の線は選べない（裏だから）</small></span><span class="en">Flip the sheet — the front bleeds through faintly<small>Front strokes cannot be selected from the back</small></span></div>
+        </div>
+        <div class="row" data-s="sweep 消しカスを払う sweep away the eraser crumbs">
+          <div class="key"><kbd>sweep</kbd></div>
+          <div class="desc"><span class="ja">消しカスを払う</span><span class="en">Sweep away the eraser crumbs</span></div>
+        </div>
+        <div class="row" data-s="board a4 ボードサイズ a4 / a3 / b5 / letter / square / free  board size a4 / a3 / b5 / letter / square / free ">
+          <div class="key"><kbd>board a4</kbd></div>
+          <div class="desc"><span class="ja">ボードサイズ<small>a4 / a3 / b5 / letter / square / free</small></span><span class="en">Board size<small>a4 / a3 / b5 / letter / square / free</small></span></div>
+        </div>
+        <div class="row" data-s="grade 2b 鉛筆の濃さ h / hb / b / 2b / 4b  pencil grade h / hb / b / 2b / 4b ">
+          <div class="key"><kbd>grade 2B</kbd></div>
+          <div class="desc"><span class="ja">鉛筆の濃さ<small>H / HB / B / 2B / 4B</small></span><span class="en">Pencil grade<small>H / HB / B / 2B / 4B</small></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="arrange">
+      <h2><span class="i">⌗</span><span class="ja">選ぶ・整える</span><span class="en">Select &amp; arrange</span></h2>
+      <p class="note"><span class="ja">絵が苦手でも、<b>キーボードだけで図解が作れる</b>。</span><span class="en">Cannot draw? You can build a diagram <b>with the keyboard alone</b>.</span></p>
+      <div class="rows">
+        <div class="row" data-s="tab|⇧tab 次／前のオブジェクトを選ぶ（画面外なら中央へ寄せる） select next / previous object (scrolls it into view)">
+          <div class="key"><kbd>Tab</kbd><i>/</i><kbd>⇧Tab</kbd></div>
+          <div class="desc"><span class="ja">次／前のオブジェクトを選ぶ（画面外なら中央へ寄せる）</span><span class="en">Select next / previous object (scrolls it into view)</span></div>
+        </div>
+        <div class="row" data-s="↑↓←→ 1px 動かす nudge 1px">
+          <div class="key"><kbd>↑↓←→</kbd></div>
+          <div class="desc"><span class="ja">1px 動かす</span><span class="en">Nudge 1px</span></div>
+        </div>
+        <div class="row" data-s="⇧ + ↑↓←→ 10px 動かす nudge 10px">
+          <div class="key"><kbd>⇧ + ↑↓←→</kbd></div>
+          <div class="desc"><span class="ja">10px 動かす</span><span class="en">Nudge 10px</span></div>
+        </div>
+        <div class="row" data-s="⌥ + ↑↓←→ サイズを変える resize">
+          <div class="key"><kbd>⌥ + ↑↓←→</kbd></div>
+          <div class="desc"><span class="ja">サイズを変える</span><span class="en">Resize</span></div>
+        </div>
+        <div class="row" data-s="connect 選んだ2つ以上を矢印でつなぐ connect 2+ selected objects with arrows">
+          <div class="key"><kbd>connect</kbd></div>
+          <div class="desc"><span class="ja">選んだ2つ以上を矢印でつなぐ</span><span class="en">Connect 2+ selected objects with arrows</span></div>
+        </div>
+        <div class="row" data-s="align left 整列 left / center / right / top / middle / bottom  align left / center / right / top / middle / bottom ">
+          <div class="key"><kbd>align left</kbd></div>
+          <div class="desc"><span class="ja">整列<small>left / center / right / top / middle / bottom</small></span><span class="en">Align<small>left / center / right / top / middle / bottom</small></span></div>
+        </div>
+        <div class="row" data-s="distribute h|distribute v 3つ以上を等間隔に並べる evenly space 3+ objects">
+          <div class="key"><kbd>distribute h</kbd><i>/</i><kbd>distribute v</kbd></div>
+          <div class="desc"><span class="ja">3つ以上を等間隔に並べる</span><span class="en">Evenly space 3+ objects</span></div>
+        </div>
+        <div class="row" data-s="範囲選択 空白をドラッグ → 完全に囲んだものが全部選ばれる まとめて移動・○で回転・del で全削除・esc で解除  drag empty canvas → everything fully enclosed is selected move together · ○ rotates · del deletes all · esc clears ">
+          <div class="key"><kbd>範囲選択</kbd></div>
+          <div class="desc"><span class="ja">空白をドラッグ → 完全に囲んだものが全部選ばれる<small>まとめて移動・○で回転・Del で全削除・Esc で解除</small></span><span class="en">Drag empty canvas → everything fully enclosed is selected<small>move together · ○ rotates · Del deletes all · Esc clears</small></span></div>
+        </div>
+        <div class="row" data-s="アンカー 選ぶと青い □ が出る。ドラッグで変形 ○=半径4点 △=頂点3点 □=四隅+辺の中点 →=両端 ✎=全頂点  select → blue □ anchors. drag to deform ○ 4 radii · △ 3 vertices · □ corners+midpoints · → endpoints · ✎ every vertex ">
+          <div class="key"><kbd>アンカー</kbd></div>
+          <div class="desc"><span class="ja">選ぶと青い □ が出る。ドラッグで変形<small>○=半径4点 △=頂点3点 □=四隅+辺の中点 →=両端 ✎=全頂点</small></span><span class="en">Select → blue □ anchors. Drag to deform<small>○ 4 radii · △ 3 vertices · □ corners+midpoints · → endpoints · ✎ every vertex</small></span></div>
+        </div>
+        <div class="row" data-s="⇧ (変形中)|⌥ (変形中) 縦横比を固定／中心から拡大 lock aspect ratio / scale from center">
+          <div class="key"><kbd>⇧ (変形中)</kbd><i>/</i><kbd>⌥ (変形中)</kbd></div>
+          <div class="desc"><span class="ja">縦横比を固定／中心から拡大</span><span class="en">Lock aspect ratio / scale from center</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="view">
+      <h2><span class="i">⊕</span><span class="ja">見る・動かす</span><span class="en">View</span></h2>
+      <!-- このまとまりに前書きは無い -->
+      <div class="rows">
+        <div class="row" data-s="space + drag ボードを掴んで動かす pan the canvas">
+          <div class="key"><kbd>Space + drag</kbd></div>
+          <div class="desc"><span class="ja">ボードを掴んで動かす</span><span class="en">Pan the canvas</span></div>
+        </div>
+        <div class="row" data-s="2本指ドラッグ ボードを動かす（トラックパッド／モバイル） pan (trackpad / mobile)">
+          <div class="key"><kbd>2本指ドラッグ</kbd></div>
+          <div class="desc"><span class="ja">ボードを動かす（トラックパッド／モバイル）</span><span class="en">Pan (trackpad / mobile)</span></div>
+        </div>
+        <div class="row" data-s="ピンチ|ホイール 拡大・縮小 zoom">
+          <div class="key"><kbd>ピンチ</kbd><i>/</i><kbd>ホイール</kbd></div>
+          <div class="desc"><span class="ja">拡大・縮小</span><span class="en">Zoom</span></div>
+        </div>
+        <div class="row" data-s="ダブルクリック 表示を100%に戻す reset view to 100%">
+          <div class="key"><kbd>ダブルクリック</kbd></div>
+          <div class="desc"><span class="ja">表示を100%に戻す</span><span class="en">Reset view to 100%</span></div>
+        </div>
+        <div class="row" data-s="swap right|swap left ボードを右／左に置く（利き手に合わせる） put the board on the right / left (handedness)">
+          <div class="key"><kbd>swap right</kbd><i>/</i><kbd>swap left</kbd></div>
+          <div class="desc"><span class="ja">ボードを右／左に置く（利き手に合わせる）</span><span class="en">Put the board on the right / left (handedness)</span></div>
+        </div>
+        <div class="row" data-s="dark|light|gray テーマ 色が変わるのはボード自身。周りのuiは変えない  theme the board changes color — the chrome stays put ">
+          <div class="key"><kbd>dark</kbd><i>/</i><kbd>light</kbd><i>/</i><kbd>gray</kbd></div>
+          <div class="desc"><span class="ja">テーマ<small>色が変わるのはボード自身。周りのUIは変えない</small></span><span class="en">Theme<small>the board changes color — the chrome stays put</small></span></div>
+        </div>
+        <div class="row" data-s="bg-pattern dots 背景の柄 dots / grid / cross / dotted-grid / stripes ・ bg-opacity 0-100 ・ bg none  background pattern dots / grid / cross / dotted-grid / stripes · bg-opacity 0-100 · bg none ">
+          <div class="key"><kbd>bg-pattern dots</kbd></div>
+          <div class="desc"><span class="ja">背景の柄<small>dots / grid / cross / dotted-grid / stripes ・ bg-opacity 0-100 ・ bg none</small></span><span class="en">Background pattern<small>dots / grid / cross / dotted-grid / stripes · bg-opacity 0-100 · bg none</small></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="spell">
+      <h2><span class="i">🪄</span><span class="ja">魔法</span><span class="en">Spells</span></h2>
+      <p class="note"><span class="ja">魔法＝ボードの上でできること。自分で作って、配れる。</span><span class="en">A spell is something that happens on the board. Make one, hand it out.</span></p>
+      <div class="rows">
+        <div class="row" data-s="spell &amp;lt;名前&amp;gt; 選んでいるものを魔法として保存 → ⌘k から何度でも置ける save the selection as a spell → place it again from ⌘k">
+          <div class="key"><kbd>spell &amp;lt;名前&amp;gt;</kbd></div>
+          <div class="desc"><span class="ja">選んでいるものを魔法として保存 → ⌘K から何度でも置ける</span><span class="en">Save the selection as a spell → place it again from ⌘K</span></div>
+        </div>
+        <div class="row" data-s="spell export|spell import 魔法を書き出す／読み込む export / import spells">
+          <div class="key"><kbd>spell export</kbd><i>/</i><kbd>spell import</kbd></div>
+          <div class="desc"><span class="ja">魔法を書き出す／読み込む</span><span class="en">Export / import spells</span></div>
+        </div>
+        <div class="row" data-s="tpl &amp;lt;名前&amp;gt; 下書きを一発で置く wireframe / kanban / mindmap / moodboard ・ tpl だけで選択画面  instant scaffold wireframe / kanban / mindmap / moodboard · bare tpl opens a picker ">
+          <div class="key"><kbd>tpl &amp;lt;名前&amp;gt;</kbd></div>
+          <div class="desc"><span class="ja">下書きを一発で置く<small>wireframe / kanban / mindmap / moodboard ・ tpl だけで選択画面</small></span><span class="en">Instant scaffold<small>wireframe / kanban / mindmap / moodboard · bare tpl opens a picker</small></span></div>
+        </div>
+        <div class="row" data-s="$sakura|$rain|$snow|$leaf 降らせる（もう一度打つと止まる） make it fall (run again to stop)">
+          <div class="key"><kbd>$sakura</kbd><i>/</i><kbd>$rain</kbd><i>/</i><kbd>$snow</kbd><i>/</i><kbd>$leaf</kbd></div>
+          <div class="desc"><span class="ja">降らせる（もう一度打つと止まる）</span><span class="en">Make it fall (run again to stop)</span></div>
+        </div>
+        <div class="row" data-s="$scatter|$grid-3x3|$sticky-3x3 散らす／3×3に並べる／付箋を3×3 scatter / 3×3 grid / 3×3 stickies">
+          <div class="key"><kbd>$scatter</kbd><i>/</i><kbd>$grid-3x3</kbd><i>/</i><kbd>$sticky-3x3</kbd></div>
+          <div class="desc"><span class="ja">散らす／3×3に並べる／付箋を3×3</span><span class="en">Scatter / 3×3 grid / 3×3 stickies</span></div>
+        </div>
+        <div class="row" data-s="$powerpoint 16:9のスライド枠＋タイトル・本文の置き場所 16:9 slide frame with title/body placeholders">
+          <div class="key"><kbd>$powerpoint</kbd></div>
+          <div class="desc"><span class="ja">16:9のスライド枠＋タイトル・本文の置き場所</span><span class="en">16:9 slide frame with title/body placeholders</span></div>
+        </div>
+        <div class="row" data-s="$biwako-blue|$monoclo 全部の線を #0044cc に／選んだ画像を白黒に retint every stroke to #0044cc / grayscale selected images">
+          <div class="key"><kbd>$biwako-blue</kbd><i>/</i><kbd>$monoclo</kbd></div>
+          <div class="desc"><span class="ja">全部の線を #0044CC に／選んだ画像を白黒に</span><span class="en">Retint every stroke to #0044CC / grayscale selected images</span></div>
+        </div>
+        <div class="row" data-s="$make-img &amp;lt;語&amp;gt; &amp;lt;数&amp;gt; 画像を呼ぶ（キー不要・自動でグリッド・最大25枚） summon images (no api key · auto grid · max 25)">
+          <div class="key"><kbd>$make-img &amp;lt;語&amp;gt; &amp;lt;数&amp;gt;</kbd></div>
+          <div class="desc"><span class="ja">画像を呼ぶ（キー不要・自動でグリッド・最大25枚）</span><span class="en">Summon images (no API key · auto grid · max 25)</span></div>
+        </div>
+        <div class="row" data-s="register &amp;lt;名&amp;gt; &amp;lt;js&amp;gt; jsの魔法を登録 alias 新=旧 ／ list 一覧 ／ forget &amp;lt;名&amp;gt; 削除（内蔵は守られる）  register a js spell alias new=old · list · forget &amp;lt;name&amp;gt; (presets protected) ">
+          <div class="key"><kbd>register &amp;lt;名&amp;gt; &amp;lt;js&amp;gt;</kbd></div>
+          <div class="desc"><span class="ja">JSの魔法を登録<small>alias 新=旧 ／ list 一覧 ／ forget &lt;名&gt; 削除（内蔵は守られる）</small></span><span class="en">Register a JS spell<small>alias new=old · list · forget &lt;name&gt; (presets protected)</small></span></div>
+        </div>
+        <div class="row" data-s="aiに作らせる ターミナルに json を貼るだけで登録される {"command":"名前","action":"js"} ／ bm api: create/translate/setfill/setstroke/viewcenter/rand/redraw  paste json into the terminal to auto-register {"command":"name","action":"js"} · bm api: create/translate/setfill/setstroke/viewcenter/rand/redraw ">
+          <div class="key"><kbd>AIに作らせる</kbd></div>
+          <div class="desc"><span class="ja">ターミナルに JSON を貼るだけで登録される<small>{"command":"名前","action":"JS"} ／ BM API: create/translate/setFill/setStroke/viewCenter/rand/redraw</small></span><span class="en">Paste JSON into the terminal to auto-register<small>{"command":"name","action":"JS"} · BM API: create/translate/setFill/setStroke/viewCenter/rand/redraw</small></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="store">
+      <h2><span class="i">🏪</span><span class="ja">STORE / 配る</span><span class="en">STORE / share</span></h2>
+      <p class="note"><span class="ja">作った魔法を出す → 審査 → 全員の STORE に並ぶ。サーバーは要らない。</span><span class="en">Submit a spell → review → it lands in the STORE for everyone. No server needed.</span></p>
+      <div class="rows">
+        <div class="row" data-s="store store を開く → 詳細を見て ↵ でインストール open the store → view details → ↵ to install">
+          <div class="key"><kbd>store</kbd></div>
+          <div class="desc"><span class="ja">STORE を開く → 詳細を見て ↵ でインストール</span><span class="en">Open the STORE → view details → ↵ to install</span></div>
+        </div>
+        <div class="row" data-s="⌘, → 魔法タブ 自分の魔法の管理 名前・アイコン・説明を編集／📤で提出用jsonを出す／⬇単体dl／✕削除  manage your spells edit name·icon·description · 📤 export submission json · ⬇ download · ✕ delete ">
+          <div class="key"><kbd>⌘, → 魔法タブ</kbd></div>
+          <div class="desc"><span class="ja">自分の魔法の管理<small>名前・アイコン・説明を編集／📤で提出用JSONを出す／⬇単体DL／✕削除</small></span><span class="en">Manage your spells<small>edit name·icon·description · 📤 export submission JSON · ⬇ download · ✕ delete</small></span></div>
+        </div>
+        <div class="row" data-s="提出 📤 → 🐙 githubで公開申請（issue が中身入りで開く） 📤 → 🐙 submit on github (the issue opens pre-filled)">
+          <div class="key"><kbd>提出</kbd></div>
+          <div class="desc"><span class="ja">📤 → 🐙 GitHubで公開申請（Issue が中身入りで開く）</span><span class="en">📤 → 🐙 submit on GitHub (the issue opens pre-filled)</span></div>
+        </div>
+        <div class="row" data-s="share &amp;lt;名&amp;gt;|share 魔法のjsonをコピー／今のボードを再現するurlを作る copy a spell as json / make a url that reopens this exact board">
+          <div class="key"><kbd>share &amp;lt;名&amp;gt;</kbd><i>/</i><kbd>share</kbd></div>
+          <div class="desc"><span class="ja">魔法のJSONをコピー／今のボードを再現するURLを作る</span><span class="en">Copy a spell as JSON / make a URL that reopens this exact board</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="snip">
+      <h2><span class="i">⛓</span><span class="ja">スニペット・連鎖</span><span class="en">Snippets &amp; chains</span></h2>
+      <!-- このまとまりに前書きは無い -->
+      <div class="rows">
+        <div class="row" data-s="snip add &amp;lt;名&amp;gt; &amp;lt;本文&amp;gt; よく書く文を登録 → snip &amp;lt;名&amp;gt; で付箋になる register text → snip &amp;lt;name&amp;gt; drops it as a sticky">
+          <div class="key"><kbd>snip add &amp;lt;名&amp;gt; &amp;lt;本文&amp;gt;</kbd></div>
+          <div class="desc"><span class="ja">よく書く文を登録 → snip &lt;名&gt; で付箋になる</span><span class="en">Register text → snip &lt;name&gt; drops it as a sticky</span></div>
+        </div>
+        <div class="row" data-s="chain add &amp;lt;名&amp;gt; a ; b コマンドを順に実行する自分用マクロ a macro that runs commands in order">
+          <div class="key"><kbd>chain add &amp;lt;名&amp;gt; a ; b</kbd></div>
+          <div class="desc"><span class="ja">コマンドを順に実行する自分用マクロ</span><span class="en">A macro that runs commands in order</span></div>
+        </div>
+        <div class="row" data-s="link|open urlをボードの窓で開く／新しいタブで開く open a url in a board window / new tab">
+          <div class="key"><kbd>link</kbd><i>/</i><kbd>open</kbd></div>
+          <div class="desc"><span class="ja">URLをボードの窓で開く／新しいタブで開く</span><span class="en">Open a URL in a board window / new tab</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="export">
+      <h2><span class="i">⬇️</span><span class="ja">書き出す</span><span class="en">Export</span></h2>
+      <!-- このまとまりに前書きは無い -->
+      <div class="rows">
+        <div class="row" data-s="export|x 選択 → 透過png selection → transparent png">
+          <div class="key"><kbd>export</kbd><i>/</i><kbd>X</kbd></div>
+          <div class="desc"><span class="ja">選択 → 透過PNG</span><span class="en">Selection → transparent PNG</span></div>
+        </div>
+        <div class="row" data-s="$svg 選択 → 編集できるsvg（illustrator / figma） selection → editable svg (illustrator / figma)">
+          <div class="key"><kbd>$svg</kbd></div>
+          <div class="desc"><span class="ja">選択 → 編集できるSVG（Illustrator / Figma）</span><span class="en">Selection → editable SVG (Illustrator / Figma)</span></div>
+        </div>
+        <div class="row" data-s="export pptx 選択 → 編集できる .pptx（powerpoint / keynote） selection → editable .pptx (powerpoint / keynote)">
+          <div class="key"><kbd>export pptx</kbd></div>
+          <div class="desc"><span class="ja">選択 → 編集できる .pptx（PowerPoint / Keynote）</span><span class="en">Selection → editable .pptx (PowerPoint / Keynote)</span></div>
+        </div>
+        <div class="row" data-s="gif [秒] ボードを gif にする record the board as a gif">
+          <div class="key"><kbd>gif [秒]</kbd></div>
+          <div class="desc"><span class="ja">ボードを GIF にする</span><span class="en">Record the board as a GIF</span></div>
+        </div>
+        <div class="row" data-s="rec [秒] ボードを 動画(webm) にする record the board as video (webm)">
+          <div class="key"><kbd>rec [秒]</kbd></div>
+          <div class="desc"><span class="ja">ボードを 動画(WebM) にする</span><span class="en">Record the board as video (WebM)</span></div>
+        </div>
+        <div class="row" data-s="export data|export-all 丸ごと束ねて書き出す（ボード＋魔法） bundle everything (board + spells)">
+          <div class="key"><kbd>export data</kbd><i>/</i><kbd>export-all</kbd></div>
+          <div class="desc"><span class="ja">丸ごと束ねて書き出す（ボード＋魔法）</span><span class="en">Bundle everything (board + spells)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="save">
+      <h2><span class="i">💾</span><span class="ja">保存する</span><span class="en">Save &amp; load</span></h2>
+      <p class="note"><span class="ja">⚠ 自動保存は<b>画像だけ保存しません</b>。画像があるボードは閉じる前に必ず SAVE を。</span><span class="en">⚠ Autosave does <b>not</b> keep image pixels. If your board has images, SAVE before closing.</span></p>
+      <div class="rows">
+        <div class="row" data-s="save|open .json に書き出す／読み込む ローカルだけ。アップロードもアカウントも要らない。画像も .json には入る  download / import .json local only. no upload, no account. images do live inside the .json ">
+          <div class="key"><kbd>SAVE</kbd><i>/</i><kbd>OPEN</kbd></div>
+          <div class="desc"><span class="ja">.json に書き出す／読み込む<small>ローカルだけ。アップロードもアカウントも要らない。画像も .json には入る</small></span><span class="en">Download / import .json<small>Local only. No upload, no account. Images do live inside the .json</small></span></div>
+        </div>
+        <div class="row" data-s="save &amp;lt;名&amp;gt;|ls|load &amp;lt;名&amp;gt; ブラウザの中に置いておく（indexeddb・再読込しても残る） snapshots inside the browser (indexeddb · survive reloads)">
+          <div class="key"><kbd>save &amp;lt;名&amp;gt;</kbd><i>/</i><kbd>ls</kbd><i>/</i><kbd>load &amp;lt;名&amp;gt;</kbd></div>
+          <div class="desc"><span class="ja">ブラウザの中に置いておく（IndexedDB・再読込しても残る）</span><span class="en">Snapshots inside the browser (IndexedDB · survive reloads)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="keys">
+      <h2><span class="i">⌨️</span><span class="ja">キーボード</span><span class="en">Keyboard</span></h2>
+      <!-- このまとまりに前書きは無い -->
+      <div class="rows">
+        <div class="row" data-s="s p n e c g q a t 道具を切り替える（n = パス／アンカー） switch tool (n = path/anchor)">
+          <div class="key"><kbd>S P N E C G Q A T</kbd></div>
+          <div class="desc"><span class="ja">道具を切り替える（N = パス／アンカー）</span><span class="en">Switch tool (N = path/anchor)</span></div>
+        </div>
+        <div class="row" data-s="⌘z|⌘⇧z 取り消す／やり直す undo / redo">
+          <div class="key"><kbd>⌘Z</kbd><i>/</i><kbd>⌘⇧Z</kbd></div>
+          <div class="desc"><span class="ja">取り消す／やり直す</span><span class="en">Undo / redo</span></div>
+        </div>
+        <div class="row" data-s="del|backspace 選んでいるものを削除 delete selected">
+          <div class="key"><kbd>Del</kbd><i>/</i><kbd>Backspace</kbd></div>
+          <div class="desc"><span class="ja">選んでいるものを削除</span><span class="en">Delete selected</span></div>
+        </div>
+        <div class="row" data-s="esc やめる／選択を解除 cancel / deselect">
+          <div class="key"><kbd>Esc</kbd></div>
+          <div class="desc"><span class="ja">やめる／選択を解除</span><span class="en">Cancel / deselect</span></div>
+        </div>
+        <div class="row" data-s="⌘k|⌘,|⌘b パレット／設定／ターミナル palette / settings / terminal">
+          <div class="key"><kbd>⌘K</kbd><i>/</i><kbd>⌘,</kbd><i>/</i><kbd>⌘B</kbd></div>
+          <div class="desc"><span class="ja">パレット／設定／ターミナル</span><span class="en">Palette / settings / terminal</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat" id="misc">
+      <h2><span class="i">⚙️</span><span class="ja">その他</span><span class="en">Misc</span></h2>
+      <!-- このまとまりに前書きは無い -->
+      <div class="rows">
+        <div class="row" data-s="bgm on|bgm off bgm（この場で作っている音・上に波形が出る） ambient bgm (synthesized live · waveform up top)">
+          <div class="key"><kbd>bgm on</kbd><i>/</i><kbd>bgm off</kbd></div>
+          <div class="desc"><span class="ja">BGM（この場で作っている音・上に波形が出る）</span><span class="en">Ambient BGM (synthesized live · waveform up top)</span></div>
+        </div>
+        <div class="row" data-s="volume off|mute クリック音・チャイムを黙らせる silence clicks and chimes">
+          <div class="key"><kbd>volume off</kbd><i>/</i><kbd>mute</kbd></div>
+          <div class="desc"><span class="ja">クリック音・チャイムを黙らせる</span><span class="en">Silence clicks and chimes</span></div>
+        </div>
+        <div class="row" data-s="english|日本語 表示言語を変える switch language">
+          <div class="key"><kbd>english</kbd><i>/</i><kbd>日本語</kbd></div>
+          <div class="desc"><span class="ja">表示言語を変える</span><span class="en">Switch language</span></div>
+        </div>
+        <div class="row" data-s="black mirror 自撮りが画面を拭く（ドラッグで移動・off で消える） a live selfie wipes the screen (drag to move · off to dismiss)">
+          <div class="key"><kbd>Black Mirror</kbd></div>
+          <div class="desc"><span class="ja">自撮りが画面を拭く（ドラッグで移動・off で消える）</span><span class="en">A live selfie wipes the screen (drag to move · off to dismiss)</span></div>
+        </div>
+        <div class="row" data-s="clear|flush ターミナルの表示を消す wipe terminal output">
+          <div class="key"><kbd>clear</kbd><i>/</i><kbd>flush</kbd></div>
+          <div class="desc"><span class="ja">ターミナルの表示を消す</span><span class="en">Wipe terminal output</span></div>
+        </div>
+        <div class="row" data-s="objects 中身を全部吐き出す（デバッグ用） dump every object (debug)">
+          <div class="key"><kbd>objects</kbd></div>
+          <div class="desc"><span class="ja">中身を全部吐き出す（デバッグ用）</span><span class="en">Dump every object (debug)</span></div>
+        </div>
+        <div class="row" data-s="youtube おたのしみ a surprise awaits">
+          <div class="key"><kbd>youtube</kbd></div>
+          <div class="desc"><span class="ja">おたのしみ</span><span class="en">A surprise awaits</span></div>
+        </div>
+      </div>
+    </section>
+    <p class="empty" id="empty"><span class="ja">見つからない。別の言葉で打ってみて。</span><span class="en">Nothing found — try another word.</span></p>
+  </div>
+
+  <div class="card">
+    <h3 class="warn">⚠ <span class="ja">画像の保存について</span><span class="en">About saving images</span></h3>
+    <p>
+      <span class="ja"><b>画像は自動保存（ブラウザのローカル保存）に含まれません。</b>文字・図形・線は自動で残りますが、画像は容量の都合で入りません。画像を含む板を残すには <code>save</code> で <b>.json に書き出して</b>ください。</span>
+      <span class="en"><b>Images are not included in autosave.</b> Text, shapes and strokes persist automatically, but images are too large for local storage. To keep a board with images, export it to <b>.json</b> with <code>save</code>.</span>
+    </p>
+  </div>
+
+  <div class="card">
+    <h3><span class="ja">もっと深く</span><span class="en">Going deeper</span></h3>
+    <p><span class="ja">魔法を自分で書く／AIに書かせる時の書式は、専用の頁にまとめてあります。</span>
+       <span class="en">The spell format — for writing your own or having an AI write them — has its own page.</span></p>
+    <div class="more">
+      <a href="spell-spec.html"><span class="ja">魔法の書式</span><span class="en">Spell format</span></a>
+      <a href="commands.html"><span class="ja">コマンド一覧</span><span class="en">Command reference</span></a>
+      <a href="story.html"><span class="ja">つくった理由</span><span class="en">Story</span></a>
+      <a href="app.html"><span class="ja">とにかく触る →</span><span class="en">Just open it →</span></a>
     </div>
-
-    <table>
-        <thead><tr><th>データ</th><th>オートセーブ</th><th>.json 保存</th></tr></thead>
-        <tbody>
-            <tr><td>テキスト・付箋・図形・線</td><td>✅ 自動保存</td><td>✅ 含まれる</td></tr>
-            <tr><td>画像（写真・スクショ等）</td><td>❌ 保存されない</td><td>✅ 含まれる</td></tr>
-            <tr><td>カスタムコマンド（Spells）</td><td>✅ 自動保存</td><td>✅ 含まれる</td></tr>
-        </tbody>
-    </table>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s5">
-    <h2><span class="sec-num">§5</span>AI-Assisted Spells / AI に魔法を作らせる</h2>
-
-    <div class="bil">
-        <div class="jp lang-ja">JavaScript が書けなくても、Claude / ChatGPT に BM API を教え込めば、動く魔法 JSON を生成してくれます。このセクションは<b>そのまま AI に渡せる</b>テンプレートとして設計されています。</div>
-        <div class="en lang-en">Non-coders can still author spells — hand Claude or ChatGPT the BM API spec and it returns working JSON. This section is designed to be <b>copy-pasted directly into an AI chat.</b></div>
-    </div>
-
-    <p class="dim"><span class="lang-ja">完全な機械可読仕様: <a href="./spell-spec.md"><code>spell-spec.md</code></a> · LLM index: <a href="./llms.txt"><code>llms.txt</code></a></span><span class="lang-en">Full machine-readable spec: <a href="./spell-spec.md"><code>spell-spec.md</code></a> · LLM index: <a href="./llms.txt"><code>llms.txt</code></a></span></p>
-
-    <h3>5.1 Prompt template / プロンプト雛形</h3>
-    <p class="dim"><span class="lang-ja">以下のブロックを AI に貼って、最後の「リクエスト」部分だけ書き換えてください。</span><span class="lang-en">Paste the block below into your AI chat and fill in the request at the bottom.</span></p>
-<pre class="code"><span class="k">You are a Black Mirror Board spell author.</span>
-<span class="k">Return exactly one JSON object in this shape — nothing else:</span>
-
-{
-  <span class="s">"command"</span>: <span class="s">"name-of-spell (a-z 0-9 _ -, max 30 chars)"</span>,
-  <span class="s">"action"</span>: <span class="s">"javascript source as a string"</span>
-}
-
-<span class="c">── BM API (the only functions available inside action) ──</span>
-BM.getSelected() / BM.all() / BM.clear()
-BM.create(type, props)   <span class="c">// type ∈ {circle, square, triangle, arrow, text, sticky}</span>
-BM.update(idOrObj, patch) / BM.translate(obj, dx, dy)
-BM.setStroke(obj, color) / BM.setFill(obj, color)
-BM.remove(obj)
-BM.viewCenter()  <span class="c">// {x, y}</span>
-BM.rand(min, max)
-BM.redraw()      <span class="c">// call after any mutation</span>
-BM.save()        <span class="c">// commits to undo history</span>
-BM.log(msg, cls?) <span class="c">// cls ∈ {t-ok, t-err, t-dim}</span>
-args             <span class="c">// string passed at invocation: "$name foo bar" → args === "foo bar"</span>
-
-<span class="c">── Object types and props ──</span>
-circle:   {cx, cy, rx, ry, rotation, fill, strokeOff}
-square:   {x, y, w, h, rotation, fill, strokeOff}
-triangle: {x, y, w, h, rotation, fill, strokeOff}
-arrow:    {x1, y1, x2, y2, rotation}
-text:     {x, y, text, fontSize, rotation}
-sticky:   {x, y, w, h, text, color, rotation}  <span class="c">// default color '#FFE873'</span>
-
-<span class="c">── Hard rules ──</span>
-1. <span class="k">Rect does not exist.</span> Use 'square', not 'rect'.
-2. No async/await at the top level — action runs synchronously.
-   Use .then() chains if you need Promises.
-3. No import / require / external libraries.
-4. Always call BM.redraw() after mutations.
-5. For meaningful changes, call BM.save() so Cmd+Z works.
-6. If the spell requires a selection, guard it:
-     if (!sel.length) { BM.log('select first', 't-err'); return; }
-
-<span class="c">── FORBIDDEN — these are NOT BMBoard ──</span>
-internalName, displayName, description, icon, category, cost, mp, cooldown,
-PROJECTILE, particle, onHit, effect, magic create, /bmboard, /reload,
-plugins/, skills/, give, server-side, mod, plugin, manifest.
-If you reach for any of these, you are off-spec — start over.
-
-<span class="c">── Request ──</span>
-(write what you want in one or two sentences)</pre>
-
-    <h3>5.2 Short form / 超短縮版</h3>
-    <p class="dim"><span class="lang-ja">上のテンプレが長すぎる場合に。</span><span class="lang-en">When the full template is overkill:</span></p>
-<pre class="code">Make a Black Mirror Board spell. Output 1 line of JSON, no Markdown:
-{"command":"NAME","action":"JS"}
-
-BM API (only): getSelected(), all(), clear(), create(type, props),
-update(o,patch), translate(o,dx,dy), setStroke/setFill(o,c), remove(o),
-viewCenter(), rand(min,max), log(msg,cls), redraw(), save(). args = string.
-
-Types: circle | square | triangle | arrow | text | sticky  (NO rect).
-NEVER: internalName, displayName, cooldown, magic create, /bmboard,
-plugins/, skills/. Those are not BMBoard.
-No async/await. End with BM.redraw().
-
-Request: (what you want)</pre>
-
-    <h3>5.3 Example round-trip / 応答例</h3>
-    <div class="step">
-        <span class="num">YOU ↘</span>
-        <pre class="code">Request: 選択中の図形を画面中央に集めて、選択が無ければエラーにする</pre>
-    </div>
-    <div class="step">
-        <span class="num">AI ↘</span>
-<pre class="code">{
-  <span class="s">"command"</span>: <span class="s">"center-all"</span>,
-  <span class="s">"action"</span>: <span class="s">"const sel=BM.getSelected();if(!sel.length){BM.log('select first','t-err');return}const vc=BM.viewCenter();for(const o of sel){if(o.data.cx!==undefined){o.data.cx=vc.x;o.data.cy=vc.y}else if(o.data.x!==undefined){o.data.x=vc.x-(o.data.w||0)/2;o.data.y=vc.y-(o.data.h||0)/2}}BM.redraw();BM.save();BM.log('centered '+sel.length+' object(s)')"</span>
-}</pre>
-    </div>
-    <div class="step">
-        <span class="num">YOU ↘</span>
-        <span class="lang-ja">JSON をコピー → ターミナルにペースト → 自動登録 → <code>$ center-all</code> で実行。</span><span class="lang-en">Copy the JSON, paste into the terminal, auto-registers, run with <code>$ center-all</code>.</span>
-    </div>
-
-    <h3>5.4 Common AI pitfalls / よくある失敗と対処</h3>
-    <table>
-        <thead><tr><th>Pitfall / 失敗</th><th>Fix / 対処</th></tr></thead>
-        <tbody>
-            <tr><td>AI が <code>BM.create('rect', ...)</code> を書く</td><td>"rect doesn't exist — use 'square'" と指摘して再生成</td></tr>
-            <tr><td><code>BM.redraw()</code> 呼び忘れで画面が更新されない</td><td>「変更後は必ず <code>BM.redraw()</code>」と強調</td></tr>
-            <tr><td>action の先頭で <code>async</code> を使う</td><td>「action is synchronous — use <code>.then()</code>」と伝える</td></tr>
-            <tr><td>外部ライブラリ (<code>lodash</code> 等) を使おうとする</td><td>「BM API only, no external libs」と制約を明示</td></tr>
-            <tr><td>エラーが出るが原因不明</td><td>エラー文をそのまま AI にコピペで返す</td></tr>
-        </tbody>
-    </table>
-
-    <h3>5.5 Growing a spell incrementally / 段階的に育てる</h3>
-    <ol>
-        <li><span class="lang-ja">最初は最小の魔法を頼む（動作1つ）</span><span class="lang-en">Start with the smallest version that works.</span></li>
-        <li><span class="lang-ja">取り込んで実行確認</span><span class="lang-en">Register it and verify it runs.</span></li>
-        <li><span class="lang-ja">「次は選択が無いときの分岐を追加して」</span><span class="lang-en">Then ask: "add a guard for empty selection."</span></li>
-        <li><span class="lang-ja">「次はランダム色を追加して」</span><span class="lang-en">Then: "add random color."</span></li>
-        <li><span class="lang-ja">動く状態を保ちながら機能追加。一気に複雑化しないのがコツ。</span><span class="lang-en">Keep it working at every step — avoid big-bang complexity.</span></li>
-    </ol>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s6">
-    <h2><span class="sec-num">§6</span>Tutorial — Your First Command / 最初の一手</h2>
-
-    <div class="bil">
-        <div class="jp lang-ja">まずは呪文を撃ってみよう。</div>
-        <div class="en lang-en">Let's cast your first spell.</div>
-    </div>
-
-    <div class="step">
-        <span class="num">STEP · 01</span>
-        <span class="lang-ja">画面上に適当な図形を 3〜5 個描いてください（鉛筆でも矩形でも OK）。</span><span class="lang-en">Draw 3–5 objects anywhere on the canvas (pen strokes or squares, both work).</span>
-    </div>
-
-    <div class="step">
-        <span class="num">STEP · 02</span>
-        <span class="lang-ja">ターミナルに打ち込んで <code>Enter</code>：</span><span class="lang-en">Type into the terminal and hit <code>Enter</code>:</span>
-<pre class="code">biwako-blue</pre>
-        <span class="lang-ja">→ 全ての線が <code>#0044CC</code>（琵琶湖の静寂を思わせる青）に変わる。</span><span class="lang-en">→ Every stroke turns to <code>#0044CC</code> — the blue of Lake Biwa's silence.</span>
-    </div>
-
-    <div class="step">
-        <span class="num">STEP · 03</span>
-        <span class="lang-ja">Select ツールで全部まとめて範囲選択。</span><span class="lang-en">With Select, marquee-drag to grab all objects.</span>
-    </div>
-
-    <div class="step">
-        <span class="num">STEP · 04</span>
-<pre class="code">scatter</pre>
-        <span class="lang-ja">→ 選択したオブジェクトがランダムに散らばります。</span><span class="lang-en">→ The selected objects fling themselves into random positions.</span>
-    </div>
-
-    <div class="step">
-        <span class="num">STEP · 05</span>
-<pre class="code">grid-3x3</pre>
-        <span class="lang-ja">→ ビュー中心に 3×3 のマスが整列配置されます。</span><span class="lang-en">→ A crisp 3×3 grid snaps into existence at the view center.</span>
-    </div>
-
-    <div class="step">
-        <span class="num">STEP · 06</span>
-<pre class="code">fetch-img ocean 4</pre>
-        <span class="lang-ja">→ 「ocean」で検索した4枚の画像が 2×2 グリッドで配置されます。</span><span class="lang-en">→ 4 "ocean" images appear in a 2×2 grid · Lorem Flickr · no API key.</span>
-    </div>
-
-    <div class="step">
-        <span class="num">STEP · 07</span>
-        <span class="lang-ja">画像をマーキーで全選択してから：</span><span class="lang-en">Marquee-select all the images, then:</span>
-<pre class="code">monoclo</pre>
-        <span class="lang-ja">→ 画像が一括でモノクロ化されます。<code>Cmd+Z</code> で戻せます。</span><span class="lang-en">→ All selected images grayscale in one pass. <code>Cmd+Z</code> reverts.</span>
-    </div>
-
-    <blockquote>
-        <span class="lang-ja"><b>これで、あなたは5つの呪文を既に使ったことになります。</b></span><span class="lang-en"><b>You've just cast five spells. Now make your own.</b></span>
-    </blockquote>
-
-    <h3>Next Steps / 次の一歩</h3>
-    <ul>
-        <li>Type <code>$ usage</code> to summon the overlay manual from within the app.</li>
-        <li>Type <code>$ help</code> for a terminal-native cheat sheet.</li>
-        <li>Write your own: <code>register &lt;name&gt; &lt;js&gt;</code> → <code>share &lt;name&gt;</code> → paste to SNS.</li>
-        <li>Try <code>export magic</code> to bundle several spells as a shareable <code>.json</code>.</li>
-    </ul>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s7">
-    <h2><span class="sec-num">§7</span>Keyboard Reference / キーボード完全版</h2>
-<pre class="code">TOOLS                               THEMES
-────────────────────────────────    ────────────────────────────────
-S   Select                          dark   Void theme
-P   Pen                             light  Surface theme
-N   Path (anchor-by-click)          gray   Studio theme (cobalt)
-E   Eraser
-C   Circle                          COMMANDS
-G   Triangle                        ────────────────────────────────
-Q   Square                          help      terminal cheat sheet
-A   Arrow                           usage     overlay manual
-T   Text                            list      list registered spells
-I   Upload image                    register  create a new spell
-X   Export transparent PNG          share     copy spell JSON
-                                    alias     duplicate as new name
-WIDTH                               forget    remove a user spell
-────────────────────────────────    clear     flush terminal
-1   Thin                            ↑ / ↓     command history
-2   Medium
-3   Thick                           RESIZE MODIFIERS
-                                    ────────────────────────────────
-GLOBAL                              Shift     lock aspect ratio
-────────────────────────────────    Alt/Opt   scale from center
-Space     Hold to pan               Shift+Alt both at once
-Ctrl+Z    Undo
-Ctrl+Y    Redo
-Del       Delete selected
-Esc       Dismiss / deselect</pre>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s8">
-    <h2><span class="sec-num">§8</span>Export &amp; Import / 書き出しと取り込み</h2>
-
-    <div class="bil">
-        <div class="jp lang-ja">v1.2 で書き出し・取り込みが刷新されました。対話モーダル・D&D・衝突自動回避まで揃っています。</div>
-        <div class="en lang-en">v1.2 overhauls the export and import story — modal pickers, drag-and-drop, and collision-safe auto-rename.</div>
-    </div>
-
-    <h3>8.1 Export — 書き出し</h3>
-    <table>
-        <thead><tr><th>Command</th><th>Output</th><th>Flow</th></tr></thead>
-        <tbody>
-            <tr><td><code>export</code></td><td>transparent PNG</td><td>Selection (or all) · Save-As dialog</td></tr>
-            <tr><td><code>$ svg</code></td><td><code>BM_CANVAS_*.svg</code></td><td>Selection (or all) · editable vector · Illustrator / Figma / Inkscape</td></tr>
-            <tr><td><code>share</code></td><td>URL in modal</td><td>Canvas state → gzip-encoded URL · paste to SNS · recipient opens, board restores</td></tr>
-            <tr><td><code>export magic</code></td><td><code>*_SPELLS.json</code></td><td>Modal · checkbox picker · pick any combination</td></tr>
-            <tr><td><code>export data</code></td><td><code>*_BUNDLE.json</code> or <code>*_SPELLS.json</code></td><td>Modal · toggle canvas / user / preset</td></tr>
-            <tr><td><code>share &lt;name&gt;</code></td><td>clipboard JSON</td><td>One spell · post to SNS directly</td></tr>
-            <tr><td><code>export-all</code></td><td><code>*_BUNDLE.json</code></td><td>Non-interactive · full bundle</td></tr>
-            <tr><td><code>export-spells [names]</code></td><td><code>*_SPELLS.json</code></td><td>Non-interactive · named or all user</td></tr>
-        </tbody>
-    </table>
-
-    <h3>8.1c URL share — <code>share</code> でキャンバス丸ごと送る</h3>
-    <div class="bil">
-        <div class="jp lang-ja"><code>share</code> を引数なしで打つと、現在のキャンバス状態が**gzip 圧縮 + base64url** でエンコードされ、URL hash に埋め込まれます。モーダルが開いて URL を表示、<code>COPY URL</code> でクリップボードへ。受信側が URL を開くと、自動で同じキャンバスが復元されます。</div>
-        <div class="en lang-en">Type <code>share</code> with no arguments and the current canvas gets gzip-compressed, base64url-encoded, and attached to the URL as a <code>#s=...</code> hash. A modal opens with the URL and a copy button. Whoever opens that URL reconstructs your board automatically.</div>
-    </div>
-    <pre class="code"><span class="c">// Typical size</span>
-  10 shapes   → ~1 KB
-  50 shapes   → ~3 KB
- 200 shapes   → ~8 KB   <span class="c">(warning threshold)</span>
- 500+ shapes  → 10 KB+  <span class="c">(may break SNS link previews)</span>
-
-<span class="c">// Stripped to keep URL short</span>
-· image objects (dataURLs too heavy) → use <code>export data</code> for full fidelity
-
-<span class="c">// Browser requirement</span>
-CompressionStream API — Chrome 80+ · Safari 16.4+ · Firefox 113+
-
-<span class="c">// Receiver behavior</span>
-open URL → board loads with #s=... → decodes → replaces canvas
-         terminal logs "[SYSTEM] shared-state detected"
-         URL hash is cleared after load (reload is idempotent)</pre>
-
-    <h3>8.1b SVG export — ベクター書き出しの詳細</h3>
-    <div class="bil">
-        <div class="jp lang-ja">鉛筆ストローク・テキスト・シェイプ・画像を選択して <code>svg</code> と打つと、選択範囲だけを標準 SVG として保存します。選択が空ならキャンバス全体を出力。書き出した .svg は Illustrator / Figma / Inkscape で直接開いて、各オブジェクトをレイヤーとして編集できます。</div>
-        <div class="en lang-en">Select pen strokes, text, shapes, or images, type <code>svg</code>. The selection (or all objects, if selection is empty) is serialized as standard SVG. The resulting file opens in Illustrator / Figma / Inkscape as editable layered vectors.</div>
-    </div>
-    <pre class="code"><span class="c">// Mapping</span>
-circle    → &lt;ellipse&gt;                rotation → &lt;g transform="rotate(...)"&gt;
-square    → &lt;rect&gt;                   color    → obj.data.stroke / resolveFill(theme)
-triangle  → &lt;polygon&gt;                fill     → fill attribute (or none)
-arrow     → &lt;line&gt; + &lt;polygon head&gt;  stroke   → stroke attribute + stroke-width
-text      → &lt;text dominant-baseline="hanging"&gt;
-pen       → &lt;path d="M ... Q ..."&gt;   (closed strokes carry a final Z + fill)
-image     → &lt;image href="dataURL"&gt;   (URL-only images: linked, may not load offline)
-
-<span class="c">// Filename</span>
-BM_CANVAS_YYYYMMDD_HHMM.svg
-
-<span class="c">// Background note</span>
-· Colors come from the current theme. Exporting from DARK mode
-  produces light strokes — view on a dark background, or switch
-  to LIGHT / GRAY mode first for print-friendly output.</pre>
-
-    <h3>8.2 Import — 取り込み</h3>
-    <div class="bil">
-        <div class="jp lang-ja">ターミナルへのペースト、または画面への <code>.json</code> ファイル D&D で自動取り込みされます。形式は4種類を自動判別：</div>
-        <div class="en lang-en">Paste into the terminal, or drop a <code>.json</code> file anywhere on the board. Four payload shapes are auto-detected:</div>
-    </div>
-
-    <pre class="code"><span class="c">1. single spell</span>
-{"command":"grain", "action":"..."}
-
-<span class="c">2. array of spells</span>
-[{"command":"a", "action":"..."}, {"command":"b", "action":"..."}]
-
-<span class="c">3. spells package</span>
-{"format":"blackmirror.spells", "version":"1.2", "commands":[...]}
-
-<span class="c">4. full bundle (canvas + spells)</span>
-{"format":"blackmirror.bundle", "version":"1.2", "project":{...}, "commands":[...]}</pre>
-
-    <h3>8.3 Drop zone</h3>
-    <div class="bil">
-        <div class="jp lang-ja"><code>.json</code> ファイルをデスクトップからボードにドラッグすると、「◼ DROP JSON HERE」と点線枠が画面全体に現れます。ドロップすれば自動判別されて登録。</div>
-        <div class="en lang-en">Drag a <code>.json</code> file onto the board and the whole screen shows a dashed overlay: "◼ DROP JSON HERE". Drop to auto-detect and register.</div>
-    </div>
-
-    <h3>8.4 Bundle confirmation dialog</h3>
-    <pre class="code">◼ BUNDLE DETECTED
-incoming: 12 object(s), 3 spell(s)
-current canvas: 5 object(s)
-
-[O] OVERWRITE — replace current canvas with the bundle
-[A] ADD       — merge bundle into current canvas (re-IDs incoming)
-[C] CANCEL    — do nothing</pre>
-    <p class="dim lang-ja">完全バンドル（キャンバス込み）を取り込む時だけ、3択の確認ダイアログが出ます。</p>
-    <p class="dim lang-en">The confirmation dialog appears only for full bundles that include canvas objects.</p>
-
-    <h3>8.5 Collision-safe rename / 衝突時の自動リネーム</h3>
-    <table>
-        <thead><tr><th>Situation</th><th>Result</th></tr></thead>
-        <tbody>
-            <tr><td>Name not taken</td><td>Register as-is</td></tr>
-            <tr><td>User spell exists · identical action</td><td><b>SKIP</b> — already there</td></tr>
-            <tr><td>User spell exists · different action</td><td>Rename to <code>&lt;name&gt;_2026-04-19</code></td></tr>
-            <tr><td>Rename target also exists</td><td>Append <code>_2</code>, <code>_3</code>, …</td></tr>
-            <tr><td>Collides with preset</td><td><b>Always renamed</b> — preset never overwritten</td></tr>
-        </tbody>
-    </table>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s9">
-    <h2><span class="sec-num">§9</span>Capabilities &amp; Limits / できること・できないこと</h2>
-
-    <div class="bil">
-        <div class="jp lang-ja">自作やAI生成で魔法を書く際、「できる・できない」の境界を先に知るとストレスが減ります。</div>
-        <div class="en lang-en">Knowing the edges of what's possible up-front — especially when asking an AI to write spells for you — saves a lot of friction.</div>
-    </div>
-
-    <h3>9.1 BM.create types (the only 5 valid)</h3>
-    <table>
-        <thead><tr><th>Type</th><th>Required props</th></tr></thead>
-        <tbody>
-            <tr><td><code>circle</code></td><td><code>{ cx, cy, rx, ry }</code></td></tr>
-            <tr><td><code>square</code></td><td><code>{ x, y, w, h }</code> &nbsp; ⚠ not <code>rect</code></td></tr>
-            <tr><td><code>triangle</code></td><td><code>{ x, y, w, h }</code></td></tr>
-            <tr><td><code>arrow</code></td><td><code>{ x1, y1, x2, y2 }</code></td></tr>
-            <tr><td><code>text</code></td><td><code>{ x, y, text, fontSize }</code></td></tr>
-        </tbody>
-    </table>
-    <p class="dim lang-ja"><code>rect</code> / <code>ellipse</code> / <code>polygon</code> / <code>path</code> / <code>line</code> は未対応。<code>square</code>・<code>circle</code>（rx≠ry で楕円）・<code>arrow</code> 等で代用してください。</p>
-    <p class="dim lang-en"><code>rect</code> / <code>ellipse</code> / <code>polygon</code> / <code>path</code> / <code>line</code> are not valid. Use <code>square</code> / <code>circle</code> (with different rx/ry) / <code>arrow</code> etc.</p>
-
-    <h3>9.2 JS features available in actions</h3>
-    <table>
-        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
-        <tbody>
-            <tr><td><code>async / await</code> at top-level</td><td>❌ action runs synchronously — use <code>.then()</code> chains</td></tr>
-            <tr><td><code>import / require</code></td><td>❌ no module system</td></tr>
-            <tr><td>External libraries (jQuery, Lodash, …)</td><td>❌ not loaded</td></tr>
-            <tr><td><code>setTimeout / setInterval</code></td><td>✅ works (build your own stop condition)</td></tr>
-            <tr><td><code>fetch()</code> / <code>new Image()</code></td><td>✅ subject to CORS</td></tr>
-            <tr><td><code>document.*</code> / <code>window.*</code></td><td>⚠ accessible, but not recommended</td></tr>
-        </tbody>
-    </table>
-
-    <h3>9.3 Canvas limits</h3>
-    <pre class="code">~500 objects    comfortable
-~1000           still smooth
-~10000+         likely to stall the browser
-
-Tip: call BM.redraw() <b>once</b> after a bulk loop, not on every iteration.</pre>
-
-    <h3>9.4 External APIs via CORS</h3>
-    <div class="bil">
-        <div class="jp lang-ja">画像やAPIを外部から取得する魔法を書くなら、<code>Access-Control-Allow-Origin: *</code> を返すサーバーでないとブラウザがブロックします。Lorem Flickr・Picsum Photos・JSONPlaceholder 等は OK。</div>
-        <div class="en lang-en">If your spell fetches external data, the server must return <code>Access-Control-Allow-Origin: *</code>. Lorem Flickr, Picsum Photos, JSONPlaceholder all work; many others won't.</div>
-    </div>
-
-    <h3>9.5 Persistence layout</h3>
-    <ul>
-        <li>Spells (preset + user) → <b>IndexedDB</b> <code>blackmirror/commands</code> + <code>localStorage</code> shadow</li>
-        <li>Named projects (<code>save</code> / <code>load</code>) → <b>IndexedDB</b> <code>blackmirror/projects</code></li>
-        <li>Terminal history → <code>localStorage</code> key <code>bm.termHistory.v1</code></li>
-        <li>Everything is local-only. Nothing is uploaded.</li>
-    </ul>
-    <p class="dim"><span class="lang-ja">リロードしてもタブを閉じても残ります。ブラウザのデータを消すと消えるので、重要なワークは <code>export data</code> でファイル書き出し推奨。</span><span class="lang-en">Survives reloads and tab-close. Lost if you clear browser data — use <code>export data</code> for hard backups.</span></p>
-
-    <h3>9.6 Object <code>data</code> properties / オブジェクト型ごとのプロパティ</h3>
-    <p class="dim"><span class="lang-ja"><code>BM.all()</code> で返ってくる各オブジェクトの <code>obj.data</code> で読み書きできる属性。</span><span class="lang-en">Attributes available on each object's <code>obj.data</code>, returned by <code>BM.all()</code>.</span></p>
-<pre class="code">circle    { cx, cy, rx, ry, rotation, fill, stroke, strokeOff }
-square    { x, y, w, h, rotation, fill, stroke, strokeOff }
-triangle  { x, y, w, h, rotation, fill, stroke, strokeOff }
-arrow     { x1, y1, x2, y2, rotation }
-text      { x, y, text, fontSize, rotation, fill, stroke }
-stroke    { pts: [{x,y}, ...], lw, closed, fill, stroke, strokeOff }  <span class="c">// pen drawing — read-only to BM.create</span>
-image     { x, y, w, h, src (dataURL or URL) }                        <span class="c">// via fetch-img or I key</span></pre>
-    <table>
-        <thead><tr><th>Type</th><th>BM.create</th><th>Read</th><th>Move</th><th>Color</th><th>Remove</th></tr></thead>
-        <tbody>
-            <tr><td><code>circle</code> / <code>square</code> / <code>triangle</code></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
-            <tr><td><code>arrow</code> / <code>text</code></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
-            <tr><td><code>stroke</code> (pen)</td><td>❌ user-only</td><td>✅</td><td>✅</td><td>✅ (v1.2)</td><td>✅</td></tr>
-            <tr><td><code>image</code></td><td>❌ via fetch-img / I</td><td>✅</td><td>✅</td><td>—</td><td>✅</td></tr>
-        </tbody>
-    </table>
-
-    <h3>9.7 Use-case feasibility / ユースケース別の可否</h3>
-    <table>
-        <thead><tr><th>Want to do</th><th>Possible</th><th>Note</th></tr></thead>
-        <tbody>
-            <tr><td>Clone selected objects / 選択を複製</td><td>✅</td><td>Re-create with same props</td></tr>
-            <tr><td>Grid / lattice layouts / グリッド配置</td><td>✅</td><td>Loop <code>BM.create</code></td></tr>
-            <tr><td>Randomize colors / 色ランダム化</td><td>✅</td><td><code>BM.setStroke</code> + random hex</td></tr>
-            <tr><td>Rotate an object / 回転</td><td>✅</td><td>Set <code>obj.data.rotation</code> in radians</td></tr>
-            <tr><td>Keyword image search / 画像検索</td><td>✅</td><td>Lorem Flickr (CORS OK)</td></tr>
-            <tr><td>Film-grain texture / フィルムグレイン</td><td>✅</td><td>Scatter tiny squares</td></tr>
-            <tr><td>Play a sound / 音を鳴らす</td><td>⚠</td><td><code>new Audio().play()</code> — user-gesture required</td></tr>
-            <tr><td>Animate objects / アニメーション</td><td>⚠</td><td><code>setInterval</code> OK, set a stop condition yourself</td></tr>
-            <tr><td>PDF / SVG / GIF export</td><td>❌</td><td>PNG only</td></tr>
-            <tr><td>Embed video / 動画埋込</td><td>❌</td><td>No <code>video</code> support in image type</td></tr>
-            <tr><td>Realtime multi-user edit / 共同編集</td><td>❌</td><td>No server — local-only design</td></tr>
-            <tr><td>Cloud sync / クラウド同期</td><td>❌</td><td>Manual bundle export/import only</td></tr>
-        </tbody>
-    </table>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="s10">
-    <h2><span class="sec-num">§10</span>FAQ / トラブルシューティング</h2>
-
-    <div class="bil">
-        <div class="jp lang-ja">よくある問題と対処。ここを先に見るのが一番早い。</div>
-        <div class="en lang-en">Common problems and their fixes — check here first.</div>
-    </div>
-
-    <h3>10.1 Drawing / 描画</h3>
-    <table>
-        <thead><tr><th>Symptom / 症状</th><th>Fix / 対処</th></tr></thead>
-        <tbody>
-            <tr><td><span class="lang-ja">絵が描けない</span><span class="lang-en">Can't draw</span></td><td><span class="lang-ja">セレクトツール (<code>S</code>) になっている → <code>P</code> でペンに切替</span><span class="lang-en">You're in Select — press <code>P</code> for Pen.</span></td></tr>
-            <tr><td><span class="lang-ja">選択しているのに色が変わらない</span><span class="lang-en">Color change won't apply</span></td><td><span class="lang-ja">v1.2 以前のペン線色バグ。最新 app.html を使う</span><span class="lang-en">Pre-v1.2 pen-stroke color bug. Reload with the latest <code>app.html</code>.</span></td></tr>
-            <tr><td><span class="lang-ja">描いた絵が全部消えた</span><span class="lang-en">All my work disappeared</span></td><td><span class="lang-ja">シークレットモードでは保存されない。重要なら <code>save &lt;name&gt;</code> と <code>export data</code> を併用</span><span class="lang-en">Private/incognito tabs don't persist. Combine <code>save &lt;name&gt;</code> with <code>export data</code> for safety.</span></td></tr>
-        </tbody>
-    </table>
-
-    <h3>10.2 Terminal / ターミナル</h3>
-    <table>
-        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
-        <tbody>
-            <tr><td><code>command not found</code></td><td><span class="lang-ja">スペルミス・<code>$</code> の重複・<code>list</code> で登録名を確認</span><span class="lang-en">Typo, duplicated <code>$</code>, or run <code>list</code> to verify the name.</span></td></tr>
-            <tr><td><span class="lang-ja">実行ログは出るが何も起きない</span><span class="lang-en">Log prints but nothing visible</span></td><td><span class="lang-ja">対象オブジェクトが 0 個、または画面外にいる。<code>objects</code> で確認</span><span class="lang-en">Zero targets, or off-screen. Check with <code>objects</code>.</span></td></tr>
-            <tr><td><span class="lang-ja">引数が表示から消える</span><span class="lang-en">Arguments look truncated</span></td><td><span class="lang-ja">v1.2 以前の表示バグ。最新版で解消済み</span><span class="lang-en">Pre-v1.2 cosmetic bug — fixed in the current release.</span></td></tr>
-        </tbody>
-    </table>
-
-    <h3>10.3 Spells / 魔法</h3>
-    <table>
-        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
-        <tbody>
-            <tr><td><code>unknown type "rect"</code></td><td><span class="lang-ja"><code>BM.create('square', ...)</code> に書き換え</span><span class="lang-en">Replace with <code>'square'</code>.</span></td></tr>
-            <tr><td><code>Cannot read property 'x' of undefined</code></td><td><span class="lang-ja"><code>BM.getById</code> の戻り値 null チェックを入れる</span><span class="lang-en">Null-check the result of <code>BM.getById</code>.</span></td></tr>
-            <tr><td><span class="lang-ja">取り込んだら <code>$grain_2026-04-19</code> になった</span><span class="lang-en">Imported spell got a date suffix</span></td><td><span class="lang-ja">既存名を保護する仕様。元を削るなら <code>forget grain</code>、別名にするなら <code>alias grain=grain_2026-04-19</code></span><span class="lang-en">Collision-safe rename. Remove original with <code>forget</code>, or re-point via <code>alias</code>.</span></td></tr>
-            <tr><td><span class="lang-ja">preset を削除したい</span><span class="lang-en">Want to delete a preset</span></td><td><span class="lang-ja">不可。preset は上書き・削除禁止</span><span class="lang-en">Not possible — presets are immutable by design.</span></td></tr>
-            <tr><td><span class="lang-ja"><code>$ fetch-img</code> で画像が出ない</span><span class="lang-en">No images from fetch-img</span></td><td><span class="lang-ja">user 版が preset を上書きしている可能性 → <code>forget fetch-img</code> → リロード。あるいはオフライン</span><span class="lang-en">A user spell may be shadowing the preset — <code>forget fetch-img</code> and reload. Or you're offline.</span></td></tr>
-        </tbody>
-    </table>
-
-    <h3>10.4 Export / Import</h3>
-    <table>
-        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
-        <tbody>
-            <tr><td><span class="lang-ja"><code>export</code> しても PNG が落ちない</span><span class="lang-en">PNG doesn't download</span></td><td><span class="lang-ja">キャンバスが空・モバイル Safari は共有シート</span><span class="lang-en">Canvas might be empty; on iOS the share sheet opens instead of a download.</span></td></tr>
-            <tr><td><span class="lang-ja">D&D しても無反応</span><span class="lang-en">Drop does nothing</span></td><td><span class="lang-ja">拡張子が <code>.json</code> でない、JSON が壊れている、または複数ファイル（先頭のみ処理）</span><span class="lang-en">Wrong extension, invalid JSON, or multiple files dropped (only the first is processed).</span></td></tr>
-            <tr><td><span class="lang-ja">バンドル取り込みで絵が消えた</span><span class="lang-en">Canvas wiped after bundle import</span></td><td><span class="lang-ja"><b>OVERWRITE</b> を選んだため。<code>Cmd+Z</code> で戻せる場合あり。または最後の <code>save</code> を <code>load</code> で復元</span><span class="lang-en">You picked <b>OVERWRITE</b>. Try <code>Cmd+Z</code>, or <code>load</code> your last <code>save</code>.</span></td></tr>
-        </tbody>
-    </table>
-
-    <h3>10.5 Performance / パフォーマンス</h3>
-    <table>
-        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
-        <tbody>
-            <tr><td><span class="lang-ja">動作が重い</span><span class="lang-en">Sluggish</span></td><td><span class="lang-ja"><code>objects</code> で数を確認、1000 超なら分割推奨。画像が多いとメモリを食う</span><span class="lang-en">Run <code>objects</code>. Split if &gt;1000. Many inline images eat memory.</span></td></tr>
-            <tr><td><code>fetch-img</code> 20枚以上で固まる</td><td><span class="lang-ja">Lorem Flickr のレート制限。10枚ずつ取得を推奨</span><span class="lang-en">Rate limit — fetch 10 at a time.</span></td></tr>
-        </tbody>
-    </table>
-
-    <h3>10.5b Camera wipe / カメラワイプ</h3>
-    <table>
-        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
-        <tbody>
-            <tr><td><span class="lang-ja"><code>Black Mirror</code> と打ってもカメラが出ない</span><span class="lang-en">Camera doesn't open</span></td><td><span class="lang-ja"><code>file://</code> だと secure-context 制約で動かない。HTTPS または <code>localhost</code> に</span><span class="lang-en"><code>file://</code> blocks getUserMedia. Serve via <code>python -m http.server</code> or HTTPS.</span></td></tr>
-            <tr><td><span class="lang-ja">許可したのに画面が真っ黒</span><span class="lang-en">Allowed but video is black</span></td><td><span class="lang-ja">他のアプリがカメラ占有中（Zoom 等）。<code>Black Mirror off</code> → <code>Black Mirror</code> で再試行</span><span class="lang-en">Another app (Zoom etc.) holds the device. Cycle off/on.</span></td></tr>
-        </tbody>
-    </table>
-
-    <h3>10.5c Share URL</h3>
-    <table>
-        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
-        <tbody>
-            <tr><td><span class="lang-ja"><code>share</code> でモーダルが出ない</span><span class="lang-en"><code>share</code> does nothing</span></td><td><span class="lang-ja">キャンバスが空 or Safari 16.3 以下（CompressionStream 未対応）</span><span class="lang-en">Empty canvas or Safari ≤16.3 (no CompressionStream).</span></td></tr>
-            <tr><td><span class="lang-ja">URL が長すぎて SNS で壊れる</span><span class="lang-en">URL is too long for SNS</span></td><td><span class="lang-ja">オブジェクト数を減らすか <code>export data</code> でファイル共有</span><span class="lang-en">Reduce object count or use <code>export data</code> for a file bundle.</span></td></tr>
-            <tr><td><span class="lang-ja">共有 URL を開いたらキャンバスが消えた</span><span class="lang-en">Receiving a share URL wiped my canvas</span></td><td><span class="lang-ja"><code>Cmd+Z</code> で戻せる場合あり。事前に <code>save &lt;名前&gt;</code> 推奨</span><span class="lang-en"><code>Cmd+Z</code> may help; pre-save with <code>save &lt;name&gt;</code>.</span></td></tr>
-        </tbody>
-    </table>
-
-    <h3>10.6 Mobile / モバイル</h3>
-    <table>
-        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
-        <tbody>
-            <tr><td><span class="lang-ja">iPhone で入力するとズームされる</span><span class="lang-en">iPhone auto-zooms on input</span></td><td><span class="lang-ja">2026-04-18 修正済み（font-size 16px 以上に調整）</span><span class="lang-en">Fixed on 2026-04-18 — use the latest build.</span></td></tr>
-            <tr><td><span class="lang-ja">長押しペーストで魔法が登録されない</span><span class="lang-en">Long-press paste doesn't register</span></td><td><span class="lang-ja">2026-04-18 修正済み</span><span class="lang-en">Fixed on 2026-04-18.</span></td></tr>
-            <tr><td><span class="lang-ja">タッチで描画できない</span><span class="lang-en">Touch drawing doesn't work</span></td><td><span class="lang-ja">Safari の JS が無効の可能性。Chrome for iOS でも試す</span><span class="lang-en">Check that JavaScript is enabled; try Chrome for iOS as fallback.</span></td></tr>
-        </tbody>
-    </table>
-
-    <h3>10.7 Still stuck? / それでも解決しない</h3>
-    <ol>
-        <li><span class="lang-ja">DevTools (F12) の Console でエラーログを取得</span><span class="lang-en">Open DevTools (F12) → Console to capture the real error.</span></li>
-        <li><span class="lang-ja">再現手順を添えて SNS (#blackmirror) または GitHub Issues に報告</span><span class="lang-en">Report to SNS (<code>#blackmirror</code>) or GitHub Issues with the steps.</span></li>
-        <li><span class="lang-ja">「こういう魔法が作れない」系は §9 をまず確認</span><span class="lang-en">For "spell X won't work" questions, check §9 first.</span></li>
-    </ol>
-</section>
-
-<hr>
-
-<footer>
-    <span>◼ BLACK MIRROR BOARD v1.2</span>
-    <span>USER MANUAL · 2026-04-19</span>
-    <span>
-        <a href="./app">→ open app</a> &nbsp;
-        <a href="./README.md">→ readme</a> &nbsp;
-        <a href="./dev-log.html">→ dev log</a>
-    </span>
+  </div>
+</main>
+
+<footer class="shell">
+  <div class="frow">
+    <span class="brand" style="font-size:12px"><img src="logo.png" alt="" style="width:18px;height:18px"><span>BM BOARD</span></span>
+    <span class="navsp"></span>
+    <a href="index.html"><span class="ja">トップ</span><span class="en">Home</span></a>
+    <a href="commands.html"><span class="ja">コマンド</span><span class="en">Commands</span></a>
+    <a href="story.html"><span class="ja">つくった理由</span><span class="en">Story</span></a>
+    <a href="dev-log.html"><span class="ja">開発ログ</span><span class="en">Dev log</span></a>
+    <a href="browser/">BM Browser</a>
+  </div>
 </footer>
 
-</div>
-
-<div class="lang-toggle" id="langToggle" role="group" aria-label="switch language" title="日本語 / English">
-    <span class="lang-tok" data-set-lang="ja">JP</span>
-    <span class="lang-sep">·</span>
-    <span class="lang-tok" data-set-lang="en">EN</span>
-</div>
-
-<div class="theme-toggle" id="themeToggle" role="group" aria-label="switch theme" title="dark / light">
-    <span class="theme-tok" data-set-theme="dark">●</span>
-    <span class="theme-sep">·</span>
-    <span class="theme-tok" data-set-theme="light">○</span>
-</div>
-
 <script>
-(function () {
-    const KEY = 'bmboard.theme';
-    const root = document.documentElement;
-    const current = () => root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-    const apply = (t) => {
-        const next = (t === 'light') ? 'light' : 'dark';
-        root.setAttribute('data-theme', next);
-        try { localStorage.setItem(KEY, next); } catch {}
-    };
-    document.querySelectorAll('.theme-toggle .theme-tok').forEach(tok => {
-        tok.addEventListener('click', (e) => { e.stopPropagation(); apply(tok.dataset.setTheme); });
-    });
-    document.getElementById('themeToggle')?.addEventListener('click', (e) => {
-        if (e.target.matches('.theme-tok')) return;
-        apply(current() === 'dark' ? 'light' : 'dark');
-    });
-})();
-</script>
+/* 言語＝トップページと同じ鍵を使う（頁をまたいでも選択が残る） */
+const KEY = 'bm_site_lang';
+function setLang(l){
+  document.body.classList.toggle('lang-en', l === 'en');
+  document.documentElement.lang = l;
+  document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
+  try { localStorage.setItem(KEY, l); } catch (_) {}
+}
+document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+try { setLang(localStorage.getItem(KEY) || ((navigator.language || '').startsWith('ja') ? 'ja' : 'en')); } catch (_) { setLang('ja'); }
 
-<script>
-(function () {
-    const KEY = 'bmboard.lang';
-    const root = document.documentElement;
-    const current = () => root.lang === 'en' ? 'en' : 'ja';
-    const apply = (l) => {
-        const next = (l === 'en') ? 'en' : 'ja';
-        root.lang = next;
-        try { localStorage.setItem(KEY, next); } catch {}
-    };
-    document.querySelectorAll('.lang-toggle .lang-tok').forEach(tok => {
-        tok.addEventListener('click', (e) => { e.stopPropagation(); apply(tok.dataset.setLang); });
+/* 絞り込み＝打った言葉で行を残すだけ。⚠️検索用の文字列は生成時に data-s へ入れてある */
+const q = document.getElementById('q'), empty = document.getElementById('empty');
+q.addEventListener('input', () => {
+  const v = q.value.trim().toLowerCase();
+  document.body.classList.toggle('searching', !!v);
+  let hit = 0;
+  document.querySelectorAll('.cat').forEach(cat => {
+    let n = 0;
+    cat.querySelectorAll('.row').forEach(r => {
+      const on = !v || r.dataset.s.includes(v);
+      r.style.display = on ? '' : 'none';
+      if (on) n++;
     });
-    document.getElementById('langToggle')?.addEventListener('click', (e) => {
-        if (e.target.matches('.lang-tok')) return;
-        apply(current() === 'ja' ? 'en' : 'ja');
-    });
-})();
+    cat.style.display = n ? '' : 'none';
+    hit += n;
+  });
+  empty.style.display = hit ? 'none' : 'block';
+});
+/* ⌘K / / で検索欄へ（このページでは板は開かない） */
+addEventListener('keydown', e => {
+  if ((e.key === '/' && e.target !== q) || ((e.metaKey || e.ctrlKey) && e.key === 'k')) { e.preventDefault(); q.focus(); }
+});
 </script>
 </body>
 </html>
