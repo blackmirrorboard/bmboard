@@ -3149,8 +3149,11 @@
             <div class="set-row">
                 <div class="set-label" data-i18n="set.wall">壁紙</div>
                 <div class="set-seg" data-set="wall">
-                    <button type="button" data-v="white" data-i18n="set.white">白リング</button>
-                    <button type="button" data-v="red" data-i18n="set.red">赤リング</button>
+                    <!-- ⚠️一旦非表示（2026-07-27 木下）。既定＝オーロラ。
+                         消さずに隠すだけにしてある＝この2行の style を外せば戻る。
+                         ⭐切替のロジックには一切触っていない（保存済みの white / red も従来どおり描画される）。 -->
+                    <button type="button" data-v="white" data-i18n="set.white" style="display:none">白リング</button>
+                    <button type="button" data-v="red" data-i18n="set.red" style="display:none">赤リング</button>
                     <button type="button" data-v="aurora" data-i18n="set.aurora">オーロラ</button>
                 </div>
             </div>
