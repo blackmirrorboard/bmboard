@@ -251,8 +251,15 @@ h1 .l2{display:block}
 .ctas{display:flex;gap:12px;justify-content:center;margin-top:38px;flex-wrap:wrap}
 .btn1,.btn2{font-size:15px;font-weight:500;padding:15px 34px;border-radius:11px;transition:transform .18s,opacity .18s,background .18s}
 /* ⭐主ボタンはKVの青。色はKV画像から実測(rgb 0,0,224)して合わせている＝別の青を持ち込まない */
-.btn1{background:#0a12e0;color:#fff}
+.btn1{background:#0a12e0;color:#fff;position:relative;overflow:hidden;isolation:isolate}
 .btn1:hover{transform:translateY(-2px);background:#1a24f0}
+/* ⭐CTA案01＝面の呼吸。4.6秒に一度だけ光が横切る。
+   止まっている時間の方が長いので視界の端で気づくだけ＝うるさくならない。
+   ⚠️z-index:-1 は isolation:isolate とセット。ボタンの地の上・文字の下に入る */
+.btn1::after{content:'';position:absolute;top:0;bottom:0;left:-45%;width:38%;z-index:-1;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);
+  filter:blur(6px);animation:sheen 4.6s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes sheen{0%,62%{left:-45%}92%,100%{left:115%}}
 .btn2{border:1px solid var(--line);color:var(--fg);background:rgba(255,255,255,.04);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .btn2:hover{background:rgba(255,255,255,.09);transform:translateY(-2px)}
@@ -348,6 +355,7 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
 }
 @media(prefers-reduced-motion:reduce){
   .glow i{animation:none}
+  .btn1::after{animation:none;opacity:0}
   .rv{opacity:1;transform:none;transition:none}
   .win{transform:none;transition:none}
   html{scroll-behavior:auto}
