@@ -1458,6 +1458,8 @@
         .set-cmdstar:hover { color: #fff; }
         .set-cmdname { font-size: 13px; color: #ebe9e3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .set-cmdhint { font-size: 11.5px; color: rgba(255,255,255,0.42); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* ⭐引数が要る親コマンドへの注意書き。行が伸びないよう同じ1行に収める */
+        .set-cmdargnote { color: #ff9d7a; margin-left: 8px; }
         .set-cmdtype { font-size: 10px; color: rgba(255,255,255,0.34); white-space: nowrap; }
         .set-cmdhot { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
         .set-cmdhot .k { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px;
@@ -11166,7 +11168,12 @@ tiEl.addEventListener('paste', e => {
                 }
                 const _al = getAliasMap()[it.cmd] || '';
                 const aliasHtml = `<input class="set-cmdalias${_al ? ' has' : ''}" data-alias="${esc(it.cmd)}" value="${esc(_al)}" placeholder="${esc(T('setcmd.aliasPh'))}" spellcheck="false" autocomplete="off">`;
-                html += `<div class="set-cmdrow${isConf ? ' conflict' : ''}${isRec ? ' recording' : ''}">${star}<span class="set-cmdname">${esc(it.cmd)}</span><span class="set-cmdhint">${esc(hint)}</span>${aliasHtml}<span class="set-cmdhot">${hotHtml}</span></div>`;
+                // ⭐引数が必須のコマンドにキーを割り当てても「パレットが開いて入力待ち」になるだけ＝
+                //   押しても何も起きないように見える。実際に2件やられた（panel / board）。
+                //   ⚠️直下にサブコマンドの行（board a4 / panel float …）が並んでいるので、そちらへ誘導する。
+                const _needArg = !!(it.args && !it.argsOpt);
+                const _argNote = _needArg ? `<span class="set-cmdargnote">${esc(T('setcmd.argNote'))}</span>` : '';
+                html += `<div class="set-cmdrow${isConf ? ' conflict' : ''}${isRec ? ' recording' : ''}">${star}<span class="set-cmdname">${esc(it.cmd)}</span><span class="set-cmdhint">${esc(hint)}${_argNote}</span>${aliasHtml}<span class="set-cmdhot">${hotHtml}</span></div>`;
             });
         });
         // ⭐変更できないキーを最後にまとめて見せる（木下「何がどのショートカットかを全部確認できるように」）
@@ -11791,6 +11798,7 @@ const I18N = {
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
         'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
         'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
+        'setcmd.argNote': '⚠ 引数が要る：キーを押すとパレットが開いて入力待ちになるだけ。すぐ動かすなら下のサブ行へ',
         'setcmd.cName': '名前', 'setcmd.cDesc': '説明', 'setcmd.cHot': 'ショートカット',
         'fb.body': 'このプロトタイプへの<strong>要望・アイデア・バグ報告</strong>を歓迎します。<br>あなたの声が次のバージョンを形づくります。<br><br><strong>Draw to Build.</strong> — 一緒に育てましょう。',
         'fb.note': 'メーラーが起動します · no tracking · local only',
@@ -11852,6 +11860,7 @@ const I18N = {
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
         'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
         'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
+        'setcmd.argNote': '⚠ Needs an argument — the key just opens the palette and waits. Assign to a sub-row below to run it right away',
         'setcmd.cName': 'Name', 'setcmd.cDesc': 'Description', 'setcmd.cHot': 'Hotkey',
         'fb.body': 'We welcome your <strong>requests, ideas, and bug reports</strong> for this prototype.<br>Your voice shapes the next version.<br><br><strong>Draw to Build.</strong> — let’s grow it together.',
         'fb.note': 'Opens your mail app · no tracking · local only',
