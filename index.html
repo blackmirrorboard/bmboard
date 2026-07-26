@@ -210,23 +210,34 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
 .hero{position:relative;min-height:min(94vh,940px);display:grid;place-items:center;
   padding:132px 26px 92px;text-align:center;overflow:hidden;isolation:isolate}
 /* 背景＝そのまま敷く。下端だけ溶かして次のセクションへ繋ぐ */
-.hero::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+/* ⭐KVを1.5倍に。CSSには「coverの1.5倍」が無いので、面そのものを1.5倍
+   （inset:-25% ＝上下左右に25%ずつはみ出す＝150%角の箱）にして cover させる。
+   中心は動かないので構図はそのまま。hero は overflow:hidden なのではみ出しは切れる。
+   ⚠️マスクの止め位置も箱基準に読み替える必要がある（hero下端＝箱の83.33%）。
+   でないと下端が溶けきる前に切られて硬い線が出る。 */
+.hero::before{content:'';position:absolute;inset:-32.5%;z-index:0;pointer-events:none;
   background:url('kv/kv-hero.webp') center center / cover no-repeat;
-  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 68%,transparent 100%);
-  mask-image:linear-gradient(180deg,#000 0%,#000 68%,transparent 100%)}
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 61%,transparent 80.3%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 61%,transparent 80.3%)}
 /* コピー＝いちばん上。背後にごく薄い暗がりを敷いて読めるようにする */
-.herocopy{position:relative;z-index:2}
+/* ⭐コピー群は塊のまま少し下げる。transform なので hero の高さ・KVの位置には影響しない */
+.herocopy{position:relative;z-index:2;transform:translateY(clamp(30px,5vh,58px))}
 /* ⭐KVを素材のまま見せるため背後の暗がりをやめた。可読性は文字側で作る。
    ⚠️h1 は background-clip:text の透明文字なので text-shadow ではなく filter: drop-shadow を使う */
 .herocopy h1{filter:drop-shadow(0 3px 16px rgba(0,0,0,.9)) drop-shadow(0 1px 4px rgba(0,0,0,.75))}
+/* ⭐見出し＋英字サブだけを少し下へ。transform なのでリード以下の位置は動かない */
+.herocopy h1,.herocopy .h1en{transform:translateY(clamp(24px,3vh,34px))}
 .herocopy .h1en,.herocopy .lead,.herocopy .meta{
   text-shadow:0 2px 12px rgba(0,0,0,.9), 0 1px 4px rgba(0,0,0,.8)}
+/* ⭐リード以下（説明文・ボタン・meta）だけをもう一段下げる。
+   見出しと英字サブは動かさない＝KVの頂点との関係を保つ */
+.herocopy .lead{margin-top:clamp(74px,8.2vh,98px)}
 .herocopy .k{box-shadow:0 2px 10px rgba(0,0,0,.6)}
 .herocopy .btn1,.herocopy .btn2{box-shadow:0 6px 20px rgba(0,0,0,.45)}
 
 /* ⭐コピーは大きく。短く言い切るから大きくできる */
 h1{
-  font-size:clamp(34px,6.4vw,72px);line-height:1.16;font-weight:700;letter-spacing:-.022em;
+  font-size:clamp(44px,7vw,78px);line-height:1.16;font-weight:700;letter-spacing:-.022em;
   background:linear-gradient(180deg,#fff 22%,rgba(255,255,255,.62) 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
@@ -238,8 +249,9 @@ h1 .l2{display:block}
   padding:2px 7px;background:rgba(255,255,255,.05);color:var(--fg)}
 .ctas{display:flex;gap:12px;justify-content:center;margin-top:38px;flex-wrap:wrap}
 .btn1,.btn2{font-size:15px;font-weight:500;padding:15px 34px;border-radius:11px;transition:transform .18s,opacity .18s,background .18s}
-.btn1{background:var(--fg);color:var(--ink)}
-.btn1:hover{transform:translateY(-2px);opacity:.92}
+/* ⭐主ボタンはKVの青。色はKV画像から実測(rgb 0,0,224)して合わせている＝別の青を持ち込まない */
+.btn1{background:#0a12e0;color:#fff}
+.btn1:hover{transform:translateY(-2px);background:#1a24f0}
 .btn2{border:1px solid var(--line);color:var(--fg);background:rgba(255,255,255,.04);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .btn2:hover{background:rgba(255,255,255,.09);transform:translateY(-2px)}
@@ -311,7 +323,11 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
   /* ⭐KVはモバイルで縦に伸びる。背景の見せ所を寄せ、立体は大きめに上寄せる。
      ⚠️本来はモバイル用の絵を別に用意するのが正しい（<picture> の source を差し替えるだけ）。 */
   .hero{min-height:min(88vh,780px);padding:118px 22px 76px}
-  .hero::before{background-position:56% center}
+  /* ⭐% は「画像のその点を枠のその点に合わせる」＝数字を下げるほど絵は右へ寄る。
+     ⚠️倍率はPCだけ上げたので、モバイルは1.5倍(inset:-25%)に据え置く＝マスクも箱基準で戻す */
+  .hero::before{background-position:51% center;inset:-25%;
+    -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 62%,transparent 83.33%);
+    mask-image:linear-gradient(180deg,#000 0%,#000 62%,transparent 83.33%)}
   nav.stuck{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
   .btn2{backdrop-filter:none;-webkit-backdrop-filter:none}
   .win{box-shadow:0 18px 44px rgba(0,0,0,.5);transform:rotateX(7deg) scale(.99)}
