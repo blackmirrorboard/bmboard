@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BM BOARD — 手で書く。キーで動かす。</title>
+<!-- ⚠️これは preview。本番 index.html の meta/OG/JSON-LD は移植していない。
+     差し替える時は必ず旧 index.html から meta・OG・twitter・JSON-LD(FAQPage含む)を持ってくること。 -->
 <!-- ⭐旧サイトから移植した meta / OG / twitter / JSON-LD。作り直す時も必ず引き継ぐこと -->
 <script type="application/ld+json">
 {
@@ -202,23 +204,24 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
 .navcta:hover{transform:translateY(-1px);opacity:.9}
 
 /* ── hero ───────────────────────────────────────── */
-.hero{padding:164px 26px 0;text-align:center;position:relative}
-.badge{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;
-  letter-spacing:.08em;color:var(--dim);border:1px solid var(--line);border-radius:999px;
-  padding:7px 16px;margin-bottom:34px;background:rgba(255,255,255,.03)}
-.badge b{color:var(--fg);font-weight:400}
-.dot{width:5px;height:5px;border-radius:50%;background:var(--g2);box-shadow:0 0 10px var(--g2)}
+/* ⭐KV＝木下作。背景(kv-bg)と立体(kv-solid)を分けて受け取っている */
+.hero{padding:150px 26px 0;text-align:center;position:relative}
+.hero::before{content:'';position:absolute;left:50%;top:0;transform:translateX(-50%);
+  width:min(1600px,132vw);height:120%;z-index:-1;pointer-events:none;
+  background:url('kv/kv-bg.webp') center top / cover no-repeat;
+  -webkit-mask-image:radial-gradient(72% 62% at 50% 34%, #000 42%, transparent 78%);
+  mask-image:radial-gradient(72% 62% at 50% 34%, #000 42%, transparent 78%);opacity:.9}
 
 /* ⭐コピーは大きく。短く言い切るから大きくできる */
 h1{
-  font-size:clamp(40px,8.4vw,96px);line-height:1.14;font-weight:700;letter-spacing:-.022em;
+  font-size:clamp(34px,6.4vw,72px);line-height:1.16;font-weight:700;letter-spacing:-.022em;
   background:linear-gradient(180deg,#fff 22%,rgba(255,255,255,.62) 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
 h1 .l2{display:block}
 .h1en{margin-top:20px;font-family:var(--mono);font-size:clamp(12px,2.1vw,16px);
   letter-spacing:.08em;color:var(--dim2)}
-.lead{margin:30px auto 0;max-width:730px;font-size:clamp(15px,2.4vw,19px);color:var(--dim);line-height:1.95}
+.lead{margin:26px auto 0;max-width:660px;font-size:clamp(14px,2.1vw,17px);color:var(--dim);line-height:1.95}
 .k{font-family:var(--mono);font-size:.86em;border:1px solid var(--line);border-radius:6px;
   padding:2px 7px;background:rgba(255,255,255,.05);color:var(--fg)}
 .ctas{display:flex;gap:12px;justify-content:center;margin-top:38px;flex-wrap:wrap}
@@ -231,7 +234,11 @@ h1 .l2{display:block}
 .meta{margin-top:30px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--dim2)}
 
 /* 実機ビジュアル */
-.stage{margin:62px auto 0;max-width:1080px;perspective:1600px}
+.stage{margin:44px auto 0;max-width:880px}
+.kvsolid{width:100%;height:auto;display:block;
+  filter:drop-shadow(0 34px 80px rgba(0,0,0,.6));
+  transform:scale(.97);transition:transform 1.2s cubic-bezier(.2,.7,.2,1)}
+.kvsolid.up{transform:scale(1)}
 .win{border-radius:15px;overflow:hidden;border:1px solid var(--line);
   box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05) inset;
   transform:rotateX(9deg) scale(.985);transform-origin:50% 0;
@@ -333,8 +340,6 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
 
   <!-- ══ HERO ══ -->
   <header class="hero shell" id="top">
-    <span class="badge rv"><span class="dot"></span><b>v1.4</b>
-      <span class="ja">鉛筆と紙が既定に</span><span class="en">pencil on paper by default</span></span>
 
     <h1 class="rv" data-d="1">
       <span class="ja">手で書く。<span class="l2">キーで動かす。</span></span>
@@ -353,8 +358,9 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
     </div>
     <div class="meta rv" data-d="4">one file &nbsp;·&nbsp; zero deps &nbsp;·&nbsp; works offline &nbsp;·&nbsp; free</div>
 
+    <!-- ⭐KVの立体＝木下作。枠も影も付けない（グラフィックそのものを見せる） -->
     <div class="stage rv" data-d="4">
-      <div class="win" id="win"><img src="shots/app_full.webp" alt="BM BOARD" loading="eager"></div>
+      <img class="kvsolid" id="win" src="kv/kv-solid.webp" alt="" loading="eager">
     </div>
   </header>
 
