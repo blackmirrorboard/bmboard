@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>SOLID LAB — 木下の色合いに寄せる</title>
+<style>
+:root{
+  --fg:#f2f0ec; --dim:rgba(242,240,236,.52); --dim2:rgba(242,240,236,.28);
+  --line:rgba(255,255,255,.10);
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#08080c;color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.top{position:sticky;top:0;z-index:20;padding:16px 22px;background:rgba(8,8,12,.9);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line);
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.top h1{font-size:15px;font-weight:600}
+.top .sp{flex:1}
+.top button,.top select{font-family:var(--mono);font-size:11px;color:var(--fg);
+  background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:8px;padding:8px 13px;cursor:pointer}
+.top button:hover{background:rgba(255,255,255,.14)}
+.lead{padding:24px 22px 0;color:var(--dim);font-size:13px;line-height:1.95;max-width:860px}
+.lead b{color:var(--fg);font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;padding:22px}
+.cell{position:relative;border:1px solid var(--line);border-radius:11px;overflow:hidden;
+  aspect-ratio:2160/1352;container-type:size;cursor:pointer;transition:.18s}
+.cell:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.3)}
+.cell.pick{border-color:#fff;box-shadow:0 0 0 2px #fff}
+.no{position:absolute;left:9px;top:8px;z-index:9;font-family:var(--mono);font-size:10px;
+  color:rgba(255,255,255,.4);pointer-events:none}
+.tag{position:absolute;right:9px;bottom:8px;z-index:9;font-family:var(--mono);font-size:9px;
+  color:rgba(255,255,255,.3);pointer-events:none}
+.foot{padding:8px 22px 96px;color:var(--dim2);font-family:var(--mono);font-size:10.5px}
+#picked{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:12px 22px;
+  background:rgba(8,8,12,.95);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--dim);display:none}
+#picked b{color:var(--fg)}
+.lay{position:absolute;inset:0;pointer-events:none}
+.f{position:absolute;inset:0}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>SOLID LAB</h1>
+  <span style="font-family:var(--mono);font-size:11px;color:var(--dim2)">木下の色合いに寄せる / 面・彩度・境界のノイズ</span>
+  <span class="sp"></span>
+  <select id="pal">
+    <option value="rb">朱赤 × 純青（木下の作品）</option>
+    <option value="pb">紫 × 青（BMBoard）</option>
+    <option value="rp">朱赤 × 紫</option>
+    <option value="mono">単色（青だけ）</option>
+  </select>
+  <button id="next">次の30枚</button>
+</div>
+
+<p class="lead">
+  <b>にこちゃんは使っていない。</b> 面で塗り分けた立体だけ。
+  ⭐<b>ノイズはグラデーションの暗い側に集中させている</b>（均一に乗せると木下の質感にならない）。
+  彩度は落とさない。エッジは完全にシャープ。背景はほぼ黒で、四隅にだけ色がにじむ。<br>
+  気になったものを<b>クリック</b>して番号を伝えてください。
+</p>
+
+<div class="grid" id="grid"></div>
+<div class="foot" id="foot"></div>
+<div id="picked"></div>
+
+<script>
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+// ⭐木下の作品から採った色。彩度を落とさないのが肝。
+const PAL = {
+  rb:   { a:['#E8281C','#F03A22','#D91E14'], b:['#1B1BF5','#2424FF','#1010D8'], amb:['#3a0a12','#0a0a3a'] },
+  pb:   { a:['#7C3AED','#8B5CF6','#6D28D9'], b:['#1B3BF5','#2A6CFF','#1428C8'], amb:['#1a0a3a','#08183a'] },
+  rp:   { a:['#E8281C','#F0402A'],           b:['#7C3AED','#8B5CF6'],           amb:['#3a0a12','#1a0a3a'] },
+  mono: { a:['#2A6CFF','#1B3BF5'],           b:['#1010D8','#0A0A9E'],           amb:['#08183a','#050530'] },
+};
+
+function make(seed, palKey){
+  const R=mulberry32(seed), r=(a,b)=>a+R()*(b-a), ri=(a,b)=>Math.floor(r(a,b+1)), pick=a=>a[Math.floor(R()*a.length)];
+  const P = PAL[palKey];
+  const cA = pick(P.a), cB = pick(P.b);
+
+  // ── 立体の形（面が2〜3枚見える）。角度と歪みを振る
+  const cx = r(38,62), cy = r(42,60), s = r(30,52);      // 中心と大きさ
+  const tilt = r(-16,16), lean = r(-10,10);
+  const kind = pick(['prism','fold','slab','wedge','stack']);
+
+  // 面ごとの clip-path（見た目が破綻しない範囲で振る）
+  let faces = [];
+  if (kind==='prism'){          // 直方体を斜めから
+    faces = [
+      { clip:`polygon(${ri(46,54)}% 0%, 100% ${ri(18,28)}%, 100% ${ri(74,86)}%, ${ri(46,54)}% 100%)`, c:cB, dir:ri(150,210), lum:1 },
+      { clip:`polygon(0% ${ri(24,34)}%, ${ri(46,54)}% 0%, ${ri(46,54)}% 100%, 0% ${ri(66,78)}%)`,     c:cA, dir:ri(120,180), lum:.92 },
+    ];
+  } else if (kind==='fold'){    // 折れた面
+    faces = [
+      { clip:`polygon(0% ${ri(28,42)}%, ${ri(48,58)}% 0%, ${ri(48,58)}% ${ri(56,70)}%, 0% 100%)`, c:cA, dir:ri(130,190), lum:1 },
+      { clip:`polygon(${ri(48,58)}% 0%, 100% ${ri(20,34)}%, 100% 100%, ${ri(48,58)}% ${ri(56,70)}%)`, c:cB, dir:ri(160,220), lum:.86 },
+    ];
+  } else if (kind==='slab'){    // 板を寝かせた
+    faces = [
+      { clip:`polygon(${ri(6,16)}% ${ri(30,42)}%, ${ri(84,94)}% ${ri(14,26)}%, ${ri(84,94)}% ${ri(64,76)}%, ${ri(6,16)}% ${ri(74,88)}%)`, c:cB, dir:ri(150,210), lum:1 },
+    ];
+  } else if (kind==='wedge'){   // くさび
+    faces = [
+      { clip:`polygon(${ri(44,56)}% ${ri(4,14)}%, 100% ${ri(58,72)}%, ${ri(10,24)}% ${ri(78,92)}%)`, c:cA, dir:ri(120,180), lum:1 },
+      { clip:`polygon(${ri(44,56)}% ${ri(4,14)}%, ${ri(10,24)}% ${ri(78,92)}%, 0% ${ri(44,58)}%)`,   c:cB, dir:ri(160,220), lum:.8 },
+    ];
+  } else {                      // stack：面を段違いに重ねる
+    faces = [
+      { clip:`polygon(${ri(10,20)}% ${ri(22,34)}%, ${ri(64,76)}% ${ri(12,24)}%, ${ri(64,76)}% ${ri(56,68)}%, ${ri(10,20)}% ${ri(66,78)}%)`, c:cA, dir:ri(140,200), lum:1 },
+      { clip:`polygon(${ri(30,42)}% ${ri(40,52)}%, ${ri(86,96)}% ${ri(30,42)}%, ${ri(86,96)}% ${ri(74,86)}%, ${ri(30,42)}% ${ri(84,96)}%)`, c:cB, dir:ri(150,210), lum:.9 },
+    ];
+  }
+
+  // ⭐ノイズの掛かり方＝グラデーションの暗い側に集中させる
+  const nFreq = r(.55,1.05).toFixed(2), nOct = ri(3,5);
+  const nAmt  = r(.35,.9).toFixed(2);
+  const nDir  = ri(90,270);
+
+  const faceHtml = faces.map(f=>{
+    const dark = `color-mix(in srgb, ${f.c} ${Math.round(f.lum*18)}%, #05050a)`;
+    return `<div class="f" style="clip-path:${f.clip};
+      background:linear-gradient(${f.dir}deg, ${f.c} ${ri(4,18)}%, ${dark} ${ri(82,100)}%)">
+      <div class="lay" style="mix-blend-mode:overlay;opacity:${nAmt};
+        -webkit-mask-image:linear-gradient(${f.dir}deg, transparent ${ri(6,24)}%, #000 ${ri(66,96)}%);
+        mask-image:linear-gradient(${f.dir}deg, transparent ${ri(6,24)}%, #000 ${ri(66,96)}%);
+        background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='${nFreq}' numOctaves='${nOct}'/></filter><rect width='170' height='170' filter='url(%23n)' opacity='.85'/></svg>&quot;)"></div>
+    </div>`;
+  }).join('');
+
+  // 背景＝ほぼ黒。四隅にだけ色をにじませる
+  const amb1 = P.amb[0], amb2 = P.amb[1];
+  const bg = `background:
+      radial-gradient(${ri(50,80)}% ${ri(60,100)}% at ${ri(-10,24)}% ${ri(-6,30)}%, ${amb1}, transparent 68%),
+      radial-gradient(${ri(50,80)}% ${ri(60,100)}% at ${ri(76,110)}% ${ri(70,106)}%, ${amb2}, transparent 70%),
+      #06060a;`;
+
+  return { kind, nFreq,
+    html:`<div class="lay" style="${bg}"></div>
+      <div class="lay" style="left:${cx-s}%;top:${cy-s*0.8}%;width:${s*2}%;height:${s*1.6}%;
+        transform:rotate(${tilt}deg) skewY(${lean}deg);
+        filter:drop-shadow(0 ${r(5,12).toFixed(1)}cqh ${r(8,16).toFixed(1)}cqh rgba(0,0,0,.8))">
+        ${faceHtml}</div>`
+  };
+}
+
+function render(seed,n,pal){
+  const out=[];
+  for(let i=0;i<n;i++){
+    const m = make(seed*100000+i, pal);
+    out.push(`<div class="cell" data-no="${i+1}" data-kind="${m.kind}">
+      <span class="no">${String(i+1).padStart(3,'0')}</span>
+      ${m.html}<span class="tag">${m.kind} · noise ${m.nFreq}</span></div>`);
+  }
+  document.getElementById('grid').innerHTML = out.join('');
+  document.getElementById('foot').textContent =
+    `seed ${seed} · ${n}枚 · 彩度は落とさない / ノイズは暗部に集中 / エッジはシャープ`;
+}
+
+const picked=new Set();
+document.getElementById('grid').addEventListener('click',e=>{
+  const c=e.target.closest('.cell'); if(!c)return;
+  c.classList.toggle('pick');
+  const k=c.dataset.no+'('+c.dataset.kind+')';
+  picked.has(k)?picked.delete(k):picked.add(k);
+  const box=document.getElementById('picked');
+  if(picked.size){box.style.display='block';box.innerHTML='選んだもの： <b>'+[...picked].join(', ')+'</b>';}
+  else box.style.display='none';
+});
+let seed=1;
+function go(){ render(seed,30,document.getElementById('pal').value); picked.clear();
+  document.getElementById('picked').style.display='none'; scrollTo(0,0); }
+document.getElementById('next').addEventListener('click',()=>{seed++;go();});
+document.getElementById('pal').addEventListener('change',go);
+go();
+</script>
+</body>
+</html>
