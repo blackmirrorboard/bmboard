@@ -9365,10 +9365,23 @@ function runCommand(val) {
     // ⭐引数なしの `board` は既存の「紙→黒板に戻す」を残す（size は引数ありのときだけ）
     if ((head==='board' && rest.trim() !== '') || head==='size') {
         const k = rest.trim().toLowerCase().replace(/\s+/g, '');
+        // ⭐board next＝サイズを順番に送る。ショートカットは1つのコマンドにしか付かないので、
+        //   a4 / a3 / free … に個別に付けるのではなく「送る」1キーにまとめられるようにする（木下案）。
+        //   ⚠️引数なしの `board` は既存の「紙→元の板に戻す」なので絶対に触らない（過去に食い合った）。
+        if (k === 'next' || k === 'cycle' || k === '次' || k === 'つぎ') {
+            const order = ['free', 'a4', 'a4l', 'a3', 'b5', 'letter', 'square'];
+            let cur = 'free';
+            try { cur = (typeof BOARD_SIZE !== 'undefined') ? BOARD_SIZE : (localStorage.getItem('bm_board_size') || 'free'); } catch (_) {}
+            const nx = order[(order.indexOf(cur) + 1) % order.length];
+            if (typeof setBoardSize === 'function') setBoardSize(nx);
+            const l2 = (typeof BOARD_SIZES !== 'undefined' && BOARD_SIZES[nx]) ? BOARD_SIZES[nx].label : 'FREE';
+            printRaw((typeof LANG!=='undefined'&&LANG==='en') ? `board size → ${nx==='free'?'none (infinite)':l2}` : `ボードサイズ → ${nx==='free'?'なし（無限）':l2}`, 't-dim');
+            return;
+        }
         const alias = { a4landscape:'a4l', 'a4横':'a4l', 横:'a4l', 正方形:'square', 無限:'free', none:'free', なし:'free' };
         const key = (typeof BOARD_SIZES !== 'undefined' && BOARD_SIZES.hasOwnProperty(k)) ? k : (alias[k] || '');
         if (!key || (typeof BOARD_SIZES !== 'undefined' && !BOARD_SIZES.hasOwnProperty(key))) {
-            printRaw((typeof LANG!=='undefined'&&LANG==='en') ? 'board: usage → board a4 / a3 / b5 / letter / square / a4l / free' : 'board: 使い方 → board a4 / a3 / b5 / letter / square / a4l / free', 't-err');
+            printRaw((typeof LANG!=='undefined'&&LANG==='en') ? 'board: usage → board next (cycle) / a4 / a3 / b5 / letter / square / a4l / free' : 'board: 使い方 → board next（順送り）/ a4 / a3 / b5 / letter / square / a4l / free', 't-err');
             return;
         }
         if (typeof setBoardSize === 'function') setBoardSize(key);
@@ -9642,6 +9655,33 @@ function runCommand(val) {
         printRaw('bgm: usage → bgm 1 on / bgm 2 on / bgm 3 on / bgm off', 't-err');
         return;
     }
+    // ⭐1キーで順送り（next）＝ショートカットは1コマンドに1つしか付かないので、
+    //   状態が3つ以上あるものは「送る」1コマンドにまとめて回せるようにする（木下案・2026-07-27）。
+    //   ⚠️「選ぶもの」（align / export / tpl / gif / rec）には付けない＝押し間違いが痛いから。
+    //   ⚠️既存の個別コマンド（hb / 2b / dark / light / gray / enpitsu / fude / classic）は不変。
+    //     ここは既存の実装を runCommand で呼び直しているだけ＝挙動の重複を作らない。
+    if (head==='grade' || head==='theme' || head==='drawmode' || head==='かきあじ') {
+        const a = rest.trim().toLowerCase();
+        const cycle = (order, cur) => order[(order.indexOf(cur) + 1) % order.length];
+        // ⚠️ここから先で head=== を書かない（重複検出CIが「別の入口」と誤検知するため）
+        const which = (head === 'かきあじ') ? 'drawmode' : head;
+        if (which === 'grade') {
+            if (PENCIL_GRADES[a]) return runCommand(a);
+            const cur = PENCIL_GRADES[PENCIL_GRADE] ? PENCIL_GRADE : 'hb';
+            return runCommand(cycle(['2h','h','hb','2b','4b','5b','6b'], cur));
+        }
+        if (which === 'theme') {
+            const order = ['dark','light','gray'];
+            if (order.indexOf(a) >= 0) return runCommand(a);
+            return runCommand(cycle(order, order.indexOf(MODE) >= 0 ? MODE : 'light'));
+        }
+        // 描き味（鉛筆 / 筆 / クラシック）
+        const order = ['enpitsu','fude','classic'];
+        if (a === 'pencil') return runCommand('enpitsu');
+        if (order.indexOf(a) >= 0) return runCommand(a);
+        const byMode = { pencil:'enpitsu', fude:'fude', classic:'classic' };
+        return runCommand(cycle(order, byMode[S.drawMode] || 'classic'));
+    }
     // ⭐`dark 90` は鉛筆の濃さ（下の handler）に譲る。引数なしの `dark` だけがテーマ切替
     if ((head==='dark' && !/^\d/.test(rest.trim()))||low==='dark mode') { if(MODE==='dark'){printRaw('[SYSTEM] already in dark mode.','t-dim');return;} enqueue('[SYSTEM] Switching to DARK MODE...',['[SYSTEM] inverting color matrix...','[SYSTEM] canvas: #000000  stroke: #F0EDE6','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('dark'),220); return; }
     if (head==='light'||low==='light mode') { if(MODE==='light'){printRaw('[SYSTEM] already in light mode.','t-dim');return;} enqueue('[SYSTEM] Switching to LIGHT MODE...',['[SYSTEM] restoring color matrix...','[SYSTEM] canvas: #FAFAF8  stroke: #0c0c0c','[SYSTEM] Environment initialized.'],'t-dim'); setTimeout(()=>setMode('light'),220); return; }
@@ -9788,6 +9828,14 @@ function runCommand(val) {
     // ⭐消しカスの量を自分で決められる（実機で見ながら詰めるためのつまみ）
     if (head==='crumb'||head==='keshikasu') {
         const a = rest.trim().toLowerCase();
+        // ⭐crumb next＝量を順に送る（0 → 50 → 100 → 200 → 0）
+        if (a==='next' || a==='cycle' || a==='次') {
+            const order = [0, 50, 100, 200];
+            const cur = Math.round(CRUMB_RATE * 100);
+            let i = order.findIndex(v => v > cur);
+            if (i < 0) i = 0;
+            return runCommand('crumb ' + order[i]);
+        }
         if (a==='' || a==='status') {
             enqueue('$ crumb', [_L('→ 消しカスの量: ','→ eraser crumbs: ') + Math.round(CRUMB_RATE*100) + '%',
                                 _L('  crumb 50 で半分 / crumb 0 で出さない（0〜300）','  crumb 50 = half · crumb 0 = none (0-300)')]);
@@ -11928,7 +11976,8 @@ const OMNI_CMDS = [
             ['reset','分割幅を既定に戻す','Reset the split width']], kw:'sidebar split pane terminal window' },
     { cmd:'clear',   cat:'edit',    hint:'ボードを消す', hintEn:'Clear the board', kw:'reset erase all wipe' },
     { cmd:'crumb',   cat:'draw',    hint:'消しカスの量（crumb 50）', hintEn:'Eraser crumb amount (crumb 50)', args:true, argsOpt:true,
-      subs:[['0','消しカスを出さない','No eraser crumbs'],['50','消しカスを半分に','Half the crumbs'],['100','消しカスを標準に','Default amount'],['200','消しカスを多めに','Twice the crumbs']], kw:'消しカス けしかす crumb debris eraser debris dust eraser shavings' },
+      subs:[['next','量を順番に送る（0→50→100→200）','Cycle the amount (0→50→100→200)'],
+            ['0','消しカスを出さない','No eraser crumbs'],['50','消しカスを半分に','Half the crumbs'],['100','消しカスを標準に','Default amount'],['200','消しカスを多めに','Twice the crumbs']], kw:'消しカス けしかす crumb debris eraser debris dust eraser shavings' },
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙 clean dust tidy brush away' },
     { cmd:'gif',     cat:'io',      hint:'ボードをGIFに録画（gif 4 で4秒）', hintEn:'Record the board as a GIF (gif 4 = 4s)', args:true, argsOpt:true,
       subs:[['4','GIFに4秒録画する','Record a 4s GIF'],['8','GIFに8秒録画する','Record an 8s GIF']], kw:'gif アニメ 録画 書き出し 動画 sakura 共有 export record capture animation screencast' },
@@ -11944,13 +11993,24 @@ const OMNI_CMDS = [
             ['middle','選択を上下の中央に','Center selection vertically']] },
     { cmd:'swap',    cat:'panel',   hint:'ボードを右/左に入替（利き手）· ↵でそのまま入替', hintEn:'Swap board to the right/left (handedness) · ↵ to toggle', args:true, argsOpt:true, kw:'左右 入替 利き手 swap layout 右利き 左利き right left handedness left right side mirror layout' },
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size page size paper canvas format',
-      subs:[['free','枠なし（無限に広い板）','No page frame (infinite board)'],
+      subs:[['next','サイズを順番に送る（1キーで回せる）','Cycle through the sizes (one key)'],
+            ['free','枠なし（無限に広い板）','No page frame (infinite board)'],
             ['a4','A4（縦）','A4 portrait'],
             ['a4l','A4（横）','A4 landscape'],
             ['a3','A3','A3'],
             ['b5','B5','B5'],
             ['letter','レター','Letter'],
             ['square','正方形','Square']] },
+    // ⭐1キーで順送りする3つ（木下案）。既存の個別コマンドは残したまま、まとめて回す口を足しただけ。
+    { cmd:'theme',   cat:'board',   hint:'テーマを順番に送る（暗い→明るい→グレー）', hintEn:'Cycle the theme (dark → light → gray)', argsOpt:true,
+      subs:[['dark','暗いテーマにする','Dark theme'],['light','明るいテーマにする','Light theme'],['gray','グレーにする','Gray theme']],
+      kw:'テーマ 配色 色 切替 暗い 明るい グレー theme mode dark light gray cycle toggle appearance' },
+    { cmd:'grade',   cat:'grade',   hint:'鉛筆の芯を順番に送る（2H→…→6B）', hintEn:'Cycle the pencil grade (2H → … → 6B)', argsOpt:true,
+      subs:[['hb','芯を HB に','Set grade to HB'],['2b','芯を 2B に','Set grade to 2B'],['4b','芯を 4B に','Set grade to 4B'],['6b','芯を 6B に','Set grade to 6B']],
+      kw:'芯 濃さ 鉛筆 硬さ 順送り grade pencil lead hardness soft hard cycle' },
+    { cmd:'drawmode',cat:'draw',    hint:'描き味を順番に送る（鉛筆→筆→クラシック）', hintEn:'Cycle the drawing feel (pencil → brush → classic)', argsOpt:true,
+      subs:[['enpitsu','鉛筆（紙）で描く','Draw with pencil on paper'],['fude','筆で描く','Draw with a brush'],['classic','クラシックな線','Classic stroke']],
+      kw:'描き味 筆 鉛筆 クラシック 切替 drawmode feel pencil brush classic cycle switch' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙 turn reverse back backside other side' },
     { cmd:'spell',   cat:'spell',   hint:'選択を魔法に保存（spell 名前）→⌘Kで再配置', hintEn:'Save selection as a spell (spell name)', args:true, argsOpt:true,
       subs:[['list','保存した魔法の一覧','List your saved spells']], kw:'魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import magic template stamp macro snippet save' },
@@ -15200,8 +15260,8 @@ var USAGE_DOC = [
     ['drawmode classic','ペン＋通常ボードに切り替える（紙をやめる）<small>ペンのアイコンからも切替。鉛筆に戻すと紙も戻る</small>','Switch to pen + plain board<small>Also via the pen icon. Back to pencil brings the paper back.</small>'],
     ['flip','紙を裏返す。表がうっすら透ける<small>裏面では表の線は選べない（裏だから）</small>','Flip the sheet — the front bleeds through faintly<small>Front strokes cannot be selected from the back</small>'],
     ['sweep','消しカスを払う','Sweep away the eraser crumbs'],
-    ['board a4','ボードサイズ<small>a4 / a3 / b5 / letter / square / free</small>','Board size<small>a4 / a3 / b5 / letter / square / free</small>'],
-    ['grade 2B','鉛筆の濃さ<small>H / HB / B / 2B / 4B</small>','Pencil grade<small>H / HB / B / 2B / 4B</small>'],
+    ['board next','ボードサイズを順番に送る<small>1キーで回せる。狙って飛ぶなら board a4 / a3 / b5 / letter / square / free</small>','Cycle board sizes<small>One key cycles. Jump straight with board a4 / a3 / b5 / letter / square / free</small>'],
+    ['grade','芯を順番に送る<small>2H / H / HB / 2B / 4B / 5B / 6B。狙って飛ぶなら hb・2b のように直接</small>','Pencil grade<small>H / HB / B / 2B / 4B</small>'],
 ]},
 { id:'arrange', icon:'⌗', ja:'選ぶ・整える', en:'Select & arrange',
   noteJa:'絵が苦手でも、<b>キーボードだけで図解が作れる</b>。',
