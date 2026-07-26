@@ -1,0 +1,224 @@
+[
+ {
+  "tag": "v0.1 · PROTOTYPE",
+  "title": "Terminal + canvas skeleton",
+  "date": "2026-04-08 — initial commit",
+  "items": [
+   "Split pane layout: canvas (left) + terminal (right).",
+   "Basic shapes — circle / square / triangle / arrow / text.",
+   "Pen tool with freehand stroke capture.",
+   "ASCII-only UI chrome, no colors beyond greyscale."
+  ]
+ },
+ {
+  "tag": "v0.3 · INTERACTION",
+  "title": "Selection, drag, rotation, zoom",
+  "date": "2026-04-10",
+  "items": [
+   "Unified Pointer Event handling for mouse / touch / pen.",
+   "Space-key pan + pinch-zoom for tablet parity.",
+   "Rotation handle above the bounding box.",
+   "Multi-select via marquee drag; group move / resize / rotate."
+  ]
+ },
+ {
+  "tag": "v0.5 · VECTOR EDIT",
+  "title": "Illustrator-style anchor system",
+  "date": "2026-04-12",
+  "items": [
+   "Per-vertex anchor handles on pen strokes & triangles.",
+   "8-handle bbox resize on squares / images / text.",
+   "Cardinal handles on circles (single-radius edits).",
+   "RDP simplification on freehand strokes → editable anchor count."
+  ]
+ },
+ {
+  "tag": "v0.7 · EXPORT",
+  "title": "JSON persistence + transparent PNG",
+  "date": "2026-04-13",
+  "items": [
+   "Export entire project (canvas + terminal log) as a single JSON blob.",
+   "PNG export on offscreen canvas — tight bbox + transparent background.",
+   "Selection-aware export: exports only selected objects when present.",
+   "3× DPR cap to prevent memory spikes on high-resolution exports."
+  ]
+ },
+ {
+  "tag": "v0.9 · VOID THEME",
+  "title": "Dark mode + fill-swatch theming",
+  "date": "2026-04-14",
+  "items": [
+   "Terminal command <code>dark mode</code> / <code>light mode</code> engages a glitch-flash mode transition.",
+   "All object fills invert on mode switch (<code>resolveFill()</code> channel inversion).",
+   "Swatch SVGs refactored to class-based CSS variables so the toolbar flips in lockstep.",
+   "Toolbar elevated off pure-black canvas with a subtle shadow for contrast."
+  ]
+ },
+ {
+  "tag": "v1.0 · STUDIO RELEASE",
+  "title": "Gray mode · Hit-test 2.0 · Shift-lock resize",
+  "date": "2026-04-16 — ship date",
+  "items": [
+   "<b>Gray mode</b> — pebble ground <code>#DCDBD5</code> / cobalt ink <code>#1600A2</code>. Dedicated CSS-variable theme alongside light/dark, triggered by <code>gray</code> command.",
+   "<b>Hit-test 2.0</b> — segment-distance hit testing on strokes; 8px invisible padding; hover glow + directional cursors.",
+   "<b>Shift-lock resize</b> — aspect-ratio preserved on corner handles; Alt anchors to center; images lock by default.",
+   "<b>Snap scale</b> — ×0.5 / ×1 / ×1.5 / ×2 magnet windows during Shift-resize.",
+   "<b>Theme-aware selection</b> — selection box and marquee auto-invert for max contrast in each mode."
+  ]
+ },
+ {
+  "tag": "v1.1 · INTERIM POLISH",
+  "title": "Modifier reliability · Cursor language · Escape routes",
+  "date": "2026-04-17 → 2026-04-18",
+  "items": [
+   "<b>Modifier pipeline</b> — Shift / Alt read from a window-level <code>S.modifiers</code> ledger so holding a key mid-drag updates geometry instantly; <code>window blur</code> resets the ledger to defeat the classic \"stuck Shift after tab-swap\" bug.",
+   "<b>Directional cursors</b> — corner / edge / rotate handles expose OS cursors matching their drag axis; dashed directional glyphs on hover.",
+   "<b>Escape routes</b> — <code>Esc</code> abandons any in-flight gesture (drag, marquee, rotate, resize, text edit) back to neutral; double-click exits text mode cleanly.",
+   "<b>Text editing rigour</b> — commit on blur or <code>Enter</code>, cancel on <code>Esc</code>; click outside drops focus without losing the object."
+  ]
+ },
+ {
+  "tag": "v1.2 · SPELLBOOK RELEASE",
+  "title": "SVG export · camera wipe · share URL · custom spells",
+  "date": "2026-04-19 — ship date",
+  "items": [
+   "<b>SVG export</b> — typing <code>svg</code> in the terminal writes a native SVG of the current selection (or the whole canvas). Every primitive translates: circle→<code>&lt;ellipse&gt;</code>, square→<code>&lt;rect&gt;</code>, triangle→<code>&lt;polygon&gt;</code>, arrow→<code>&lt;line&gt;+&lt;polygon&gt;</code>, text→<code>&lt;text dominant-baseline=\"hanging\"&gt;</code>, pen stroke→<code>&lt;path M…Q…&gt;</code>, image→<code>&lt;image&gt;</code>. Rotation wraps as <code>&lt;g transform=\"rotate()\"&gt;</code>. Colors resolved via <code>resolveFill()</code>. Opens in Figma / Illustrator / Inkscape editable.",
+   "<b>Black Mirror camera wipe</b> — the phrase <code>Black Mirror</code> flips on <code>getUserMedia</code> and docks a 220×165 PIP in the top-right (128×170 on mobile). Red REC dot, <code>◼ BLACK MIRROR</code> label in <code>mix-blend-mode: difference</code>, selfie-mirrored with a faint grayscale + contrast filter for the CRT look. Hover exposes an <code>×</code> close; <code>Black Mirror off</code> also releases all tracks. The wipe is <b>draggable</b> — place it anywhere on screen.",
+   "<b>Share URL</b> — <code>share</code> with no args gzips the canvas + terminal state via native <code>CompressionStream</code>, base64-urls it, and copies a self-contained link. Opening the URL on any device restores the full board. <code>share</code> vs <code>share url</code> selects between file download and clipboard.",
+   "<b>Custom spells</b> — pasting a JSON payload into the terminal runs a schema check, binds it to IndexedDB, and exposes it as a named command. Features travel as text, one line at a time. <code>BM API</code> + natural language prompts to Claude / ChatGPT produce runnable spells.",
+   "<b>Preset library</b> — <code>scatter</code>, <code>grid-3x3</code>, <code>biwako-blue</code>, <code>fetch-img</code>, <code>monoclo</code>, <code>svg</code> ship with the app, each as JSON-portable spells that can be dumped, remixed, and re-shared.",
+   "<b>Image brainstorm</b> — <code>fetch-img &lt;keyword&gt;</code> pulls public images for the word, scatters them on the canvas with rotation + margin, turning the board into a self-writing mood-board.",
+   "<b>Del / Backspace fix</b> — the delete key was swallowed by inputs outside text-edit mode; now correctly removes the selection, with the text-edit exception restored.",
+   "<b>FEEDBACK modal</b> — tap the logo → prefilled feedback form with subject auto-stamped per version; studio email + Instagram + X links consolidated.",
+   "<b>Manual split</b> — v1.2 manual authored in Obsidian (JP + EN), exported as markdown files under <code>v1.2_manual_ja/</code> and <code>v1.2_manual_en/</code>."
+  ]
+ },
+ {
+  "tag": "v1.2+ · POST-RELEASE EVOLUTION",
+  "title": "Brand routing · capabilities grid · responsive chrome · OGP",
+  "date": "2026-04-20 → 2026-04-22 (ongoing)",
+  "items": [
+   "<b>URL migration</b> — moved from <code>99letters.github.io/projects/black_mirror/</code> to the canonical <code>bmboard.studio/</code>. All <code>../../md.html</code> / <code>../../history.html</code> references absolutized to <code>https://99letters.github.io/…</code> so the new origin still reaches the dev log.",
+   "<b>Rebrand</b> — studio name corrected everywhere: \"99letters studio\" → \"kinoshita studio\" across 22 manual files, <code>README.md</code>, usage docs, app.html footer, terminal ghost lines (<code>Playing: kinoshita studio / Black Mirror Board</code>), and INDEX frontmatter tags. The <code>99letters</code> domain remains as the GitHub identity only.",
+   "<b>ASCII-art render fix</b> — the BM pixel logo in README/overview collapsed because Courier New / SF Mono render <code>█</code> (U+2588) shorter than the cell, leaving vertical gaps. Loaded <b>JetBrains Mono</b> via Google Fonts and force-applied <code>font-size: 14px; line-height: 1; letter-spacing: 0; word-spacing: 0</code> to the logo <code>&lt;pre&gt;</code> with <code>!important</code>.",
+   "<b>index.html — CAPABILITIES section</b> — six new feature cards ship below the Dual Perspective section, each with a 16:9 demo-frame SVG illustration: SVG Export / Transparent PNG / Image Brainstorm / Custom Spells / SNS Share / Camera + YouTube Live. Monochrome 1-bit aesthetic preserved.",
+   "<b>index.html — light / dark theme</b> — a 1-bit inversion toggle (<code>● · ○</code>) next to the EN/JA switch. All colors run through CSS variables (<code>--ink</code> / <code>--void</code> / <code>--scan-color</code> / <code>--glow-halo</code> / <code>--checker-fill</code> / <code>--header-bg</code>); hard-coded whites and blacks were removed. <code>prefers-color-scheme</code> is honored on first visit; choice persists via <code>bmboard.theme</code> in <code>localStorage</code>. An inline head script applies the saved theme before paint to defeat flash-of-wrong-theme. Dark-ink <code>logo.png</code> is inverted via CSS <code>filter: invert(1)</code> in dark mode only, left as-is in light mode.",
+   "<b>app.html — theme extension</b> — <code>dark</code> and <code>gray</code> commands now also theme the header (background, border, <code>.hbtn</code>, <code>.hlink</code>, <code>.zoom-label</code>, <code>.logo*</code>). All colors read from the existing <code>--bm-tb-*</code> / <code>--bm-fg</code> / <code>--bm-fg-dim</code> tokens. Logo PNG inverted only in dark mode.",
+   "<b>app.html — mobile header</b> — logo pinned to the left, right-side chrome optimized for narrow viewports: <code>FLUSH</code> + <code>CLEAR</code> hidden (still reachable via terminal), icon+label stacked vertically inside each <code>.hbtn</code> (36px square), <code>OVERVIEW</code> split across two lines as <code>OVER</code> / <code>VIEW</code> with the arrow removed. All buttons' icons centered in their box via <code>inline-flex; justify-content: center</code>.",
+   "<b>app.html — header grid</b> — replaced the old <code>margin-left: auto</code> trick with an explicit 2-column grid (<code>grid-template-columns: auto 1fr</code>), logo in column 1, right buttons in column 2 with <code>justify-self: end</code>. Predictable on every viewport.",
+   "<b>OGP image</b> — <code>og-image.svg</code> (1200×630) authored for both <code>index.html</code> and <code>app.html</code>: black ground with scanline texture, corner brackets, top-right <code>● REC ON AIR</code>, 400-px logo (base64-embedded, SVG <code>feColorMatrix</code> inverted to white), title stack <code>BLACK MIRROR / BOARD</code>, subtitle <code>DRAW · SPEAK · CAST</code>, version strip.",
+   "<b>Overview <code>README</code> tab</b> — BM pixel ASCII now renders crisply in Courier-deprived browsers via the JetBrains Mono fix + <code>font-feature-settings: \"liga\" 0, \"calt\" 0</code>."
+  ]
+ },
+ {
+  "tag": "v1.3 · VOICE INPUT",
+  "title": "音声入力 — マイクボタンでターミナルにコマンドを発話",
+  "date": "2026-06-15",
+  "items": [
+   "<b>マイクボタン</b> — ターミナル入力行右端に SVG マイクアイコンを追加。Web Speech API (<code>SpeechRecognition</code> / <code>webkitSpeechRecognition</code>) 非対応ブラウザでは <code>display:none</code> のまま自動非表示。",
+   "<b>音声→コマンド実行</b> — クリックで認識開始、発話終了後にトランスクリプトを <code>#ti</code> に挿入し自動 <code>runCommand()</code>。再クリックでキャンセル（<code>cancelled</code> フラグ）。",
+   "<b>listening アニメ</b> — 認識中は <code>.listening</code> クラスを付与、0.7s のパルス (opacity 1 → 0.25) でフィードバック。",
+   "<b>エラー処理</b> — <code>no-speech</code> / <code>aborted</code> はサイレント。それ以外は <code>mic: &lt;error&gt;</code> をターミナルに赤ログ。",
+   "<b>動作確認</b> — Playwright headless Chromium でボタン表示・listening クラス付け外し・キャンセルフロー検証済み。Mac 実機での動作確認は pending。"
+  ]
+ },
+ {
+  "tag": "v1.2+ · DOMAIN + ICONS + DOCS",
+  "title": "Custom domain · favicon set · OGP png · onboarding rewrite",
+  "date": "2026-05-01",
+  "items": [
+   "<b>Custom domain</b> — <code>bmboard.studio</code> acquired via お名前.com, registry NS pointed at <code>01-04.dnsv.jp</code> after a detour where records were saved on dnsv.jp but the registry was still <code>dns1/dns2.onamae.com</code>. Live at <code>https://bmboard.studio/</code> with <code>Enforce HTTPS</code> on. Old <code>blackmirrorboard.github.io/bmboard/</code> still resolves but all OGP / canonical URLs migrated.",
+   "<b>Favicon set from <code>logo.png</code></b> — the round black smiley logo became the brand mark in the tab. Generated <code>favicon.ico</code> (16/32/48), <code>favicon-16x16.png</code>, <code>favicon-32x32.png</code>, <code>apple-touch-icon.png</code> (180), <code>icon-192.png</code>, <code>icon-512.png</code> from a 1024² source. Added <code>manifest.json</code> for PWA / iOS home-screen.",
+   "<b>OGP <code>og-image.png</code> (1200×630)</b> — black ground, white inverted smiley left, <code>BMBOARD</code> title + tagline + version strip on the right. Replaces the old <code>og-image.svg</code> across all 6 HTML files. Twitter Card validator now picks up the new card.",
+   "<b>Title de-duplication</b> — every <code>&lt;title&gt;</code> dropped its leading <code>⬛</code> / <code>◼</code> emoji glyph; the favicon (smiley) is the brand now and two glyphs side-by-side in the tab read as a duplicate logo. The <code>applyTabBrand()</code> dynamic favicon SVG-swap logic was retired with the static smiley taking over.",
+   "<b>URL cleanup — <code>/app</code> over <code>/app.html</code></b> — internal hrefs and OGP <code>og:url</code> migrated to the cleaner extensionless form. <code>/app.html</code> still serves the same content (GitHub Pages auto-resolution), so all existing bookmarks survive. <code>index.html</code>'s splash-transition <code>endsWith</code> intercept widened to recognize both forms.",
+   "<b>Security / reliability hardening</b> — terminal log <code>innerHTML</code> on import is now sanitized to allow only <code>&lt;span class=\"t-*\"&gt;</code> elements (was XSS-able via crafted JSON). Camera <code>MediaStream</code> tracks are now released on <code>beforeunload</code> + <code>pagehide</code>. Share-URL decode failures surface in the terminal with a hash strip so reload doesn't loop. <code>saveCmds()</code> IndexedDB / localStorage write errors no longer get swallowed.",
+   "<b>Repo wiring</b> — local <code>projects/black_mirror/</code> connected to <code>github.com/blackmirrorboard/bmboard</code> via <code>git init</code> + <code>git remote add</code> + <code>git fetch</code> + <code>git reset origin/main</code> (working tree preserved). GitHub Desktop now manages BMBoard alongside Atelier, replacing the previous web-UI-upload workflow. <code>kinoshitastudio</code> added as collaborator on <code>blackmirrorboard/bmboard</code> for push access.",
+   "<b>Onboarding rewrite — <code>commands.html</code></b> — added a <b>Quick Start</b> categorized \"I want to → type X\" lookup grid at the top (Draw / Edit / Terminal / Save-Share / Spell / Easter eggs), plus a <b>Write Your First Spell</b> section with a 5-step walkthrough (try preset → register your own → BM API cheat sheet → share → ask AI to write one). The studio's own author had reopened BMBoard after a break and needed a \"what can I do here?\" reorientation; this is the cure.",
+   "<b>Cross-linking</b> — <code>index.html</code> nav now points to <code>commands.html</code> directly; the footer adds deep links to <code>#quickstart</code> and <code>#first-spell</code> so the spell-authoring path is reachable in two clicks from the landing.",
+   "<b>Manual rebrand</b> — every \"99letters studio\" reference in the EN + JA v1.2 manuals (22 files) corrected to \"kinoshita studio\"."
+  ]
+ },
+ {
+  "tag": "v1.4 · 紙と鉛筆",
+  "title": "書きなぐれる黒板 — 黒鉛の粒・消しカス・紙の目",
+  "date": "2026-07-22 → 2026-07-23",
+  "items": [
+   "描き味を <b>黒鉛の粒を arc-length で連打する</b>方式に転換。1本の太い帯＋ノイズは炭やマーカーであって鉛筆ではない、という判断。",
+   "紙の目（tooth）＝キャンバス座標に固定した決定論ノイズ。粒ごとに乱数を振るとスプレーになる。",
+   "grain は<b>線を描いてから destination-out で紙の目を削り取る</b>（線側をざらつかせるのは間違い）。",
+   "消しゴムが消しカスを出す。払わないと残る（sweep）。芯の濃さ 2H〜6B で出る量が変わる。",
+   "紙をひっくり返す（flip）＝canvas 側で X 反転し、入力・pan・zoom も同じ反転に統一。裏面から表の線は選べない。裏写りは2パスの紙色ウォッシュ。"
+  ]
+ },
+ {
+  "tag": "v1.4 · ⌘K",
+  "title": "ターミナルからコマンドパレットへ",
+  "date": "2026-07-23 → 2026-07-24",
+  "items": [
+   "覚えるのは <b>⌘K ひとつ</b>に。打つと候補が出るランチャー型に作り替え、お気に入り／最近使った／自分でショートカットを割り当てを追加。",
+   "設定パネルをタブ化（一般 / コマンド / 魔法）。全コマンドに好きなキーを割り当てられる一覧と、衝突の赤警告。",
+   "⌥キーは macOS で e.key が化ける（⌥B → ∫）ため、<b>e.code（物理キー）基準</b>に変更。",
+   "EN / JP 切替をパレット・設定・盤面ツールチップまで通した。",
+   "サブコマンド（panel dock / board a4 …）を一覧に展開＝⌘K からしか触れなかったものに割り当て可能に。"
+  ]
+ },
+ {
+  "tag": "v1.4 · 魔法と STORE",
+  "title": "自分の道具を作って、配れるようにする",
+  "date": "2026-07-24",
+  "items": [
+   "選択を <code>spell 名前</code> で保存＝宣言的なボードデータ（任意JS無し）。⌘K に🔮として並ぶ。",
+   "コードで書く魔法（JS）も登録できる。<b>安全は2階層</b>＝ops型は白リストで完全安全／JS型は「コード実行」を明示して審査でキュレート。",
+   "STORE＝<code>store/catalog.json</code> を読むだけの静的な一覧。サーバー無し・費用0。",
+   "提出 → GitHub Actions で<b>自動一次審査</b>（禁止API・BM API の実在チェック・ops白リスト・名前重複・構文）→ アプリ内の申請ボックスに届く。",
+   "スニペット・連鎖（既存コマンドを順に実行する自作マクロ）も追加。"
+  ]
+ },
+ {
+  "tag": "v1.4 · 公開",
+  "title": "本番マージ — 98 commit",
+  "date": "2026-07-24 — ship date",
+  "items": [
+   "<code>main</code> に早送りマージして bmboard.studio を更新。app.html は 11,426行/528KB → 15,924行/848KB。",
+   "戻り先タグを先に切ってから公開（<code>prod-before-merge</code> / <code>v1.4-paper</code>）＝いつでも1コマンドで戻せる状態にした。",
+   "ヘッドレスで全コマンド・プリセット・STORE・API を通し、エラーゼロを確認してから出した。"
+  ]
+ },
+ {
+  "tag": "v1.4+ · 入口の掃除",
+  "title": "「完成しているのに入口が死んでいる」を一掃",
+  "date": "2026-07-25",
+  "items": [
+   "この日の不具合の<b>大半が同じ型</b>だった＝機能は完成しているのに、誰も押せない場所にあった。",
+   "Aa（フォント/太字/縦書き）が UI から到達不能（display:none を戻す処理が git 履歴上一度も無かった）。",
+   "ポップオーバーが紙／ライトで白地に白文字。3モード×6ポップでコントラストを実測して固定。",
+   "引数を取るコマンド21件の大半が ⌘K から実行できなかった（↵で引数待ちに戻るだけ）。サブコマンドを1行ずつ展開して解決。",
+   "設定をキーボードだけで操作できるように（↑↓で行移動・←→で即適用）。"
+  ]
+ },
+ {
+  "tag": "v1.4+ · サイト",
+  "title": "サイトを作り直す — コンセプトとキービジュアル",
+  "date": "2026-07-26",
+  "items": [
+   "コンセプトを1行に：<b>手で書く。キーで動かす。</b>／Write by hand. Move at speed.",
+   "見出しを8〜12字に圧縮し、絵文字をゼロに。モバイルは 8.1画面 → 5.8画面に。",
+   "重かった原因を特定して<b>それだけ</b>消した（blur(90px)の巨大な円3つ＋全面 grain の mix-blend-mode）。42fps → 61fps。",
+   "キービジュアルは木下作。⚠️透過PNGの縁に元の背景が焼き込まれる問題は、背景と立体を合成した1枚で根治した。",
+   "外部フォントをやめてシステムフォントに戻した（前の方が Apple っぽい、という判断）。"
+  ]
+ },
+ {
+  "tag": "v1.4+ · 順送り",
+  "title": "1キーで順送り・モバイルの ⌘K・ドキュメントの自動生成",
+  "date": "2026-07-27",
+  "items": [
+   "<b>順送り</b>を追加＝<code>board next</code> / <code>grade</code> / <code>theme</code> / <code>drawmode</code> / <code>crumb next</code>。ショートカットは1コマンドにしか付かないため。⚠️「選ぶもの」（align / export / gif / rec）には付けていない。",
+   "モバイルの上部バーに <b>⌘K ボタン</b>を追加。スマホにはキーボードが無いので、全機能の入口が押せない状態だった。",
+   "引数が必須のコマンドにキーを割り当てると「押しても入力待ちになるだけ」なので、設定の一覧で赤く伝えるようにした。",
+   "<b>usage / commands / story を app.html から自動生成</b>する方式に変更。手書きの一覧は必ず本体から遅れる（usage は2ヶ月、commands は2ヶ月半止まっていた）。CI でズレを検出する。",
+   "サイトの上部に全ページのナビを追加。孤立していた頁への導線を作った。"
+  ]
+ }
+]
