@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>KV MOTION LAB — キービジュアルを動かす6案</title>
+<style>
+/* ⭐本番 index.html は一切触っていない。ここは比べるためだけの実験場。
+   ⚠️判断は質感でしかできないので、必ず実物を並べて、止めた状態とも見比べる。
+   ⚠️モバイルの重さは前回やられているので、右上にfpsを出してある（体感でなく数字で見る）。 */
+:root{
+  --ink:#08080a; --fg:#f2f0ec; --dim:rgba(242,240,236,.56); --dim2:rgba(242,240,236,.34);
+  --line:rgba(255,255,255,.10);
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.8;
+  -webkit-font-smoothing:antialiased;padding-bottom:120px}
+a{color:inherit}
+.shell{max-width:1180px;margin:0 auto;padding:0 24px}
+
+.bar{position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  padding:12px 24px;background:rgba(10,10,13,.86);border-bottom:1px solid var(--line);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);font-family:var(--mono);font-size:12px}
+.bar b{font-weight:700;letter-spacing:.1em}
+.bar button{font:inherit;color:var(--fg);cursor:pointer;background:rgba(255,255,255,.06);
+  border:1px solid var(--line);border-radius:8px;padding:7px 13px}
+.bar button.on{background:var(--fg);color:var(--ink);border-color:transparent}
+.sp{flex:1}
+#fps{color:var(--dim2)}
+#fps b{color:var(--fg)}
+
+header.head{padding:56px 0 8px}
+h1{font-size:clamp(24px,3.4vw,38px);font-weight:700;letter-spacing:-.02em}
+.lead{margin-top:14px;color:var(--dim);font-size:14.5px;max-width:720px}
+
+.case{margin-top:52px}
+.case h2{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--dim2);font-weight:400}
+.case .why{margin-top:10px;font-size:13.5px;color:var(--dim);max-width:760px}
+.case .why b{color:var(--fg);font-weight:600}
+
+/* 各案の枠＝ヒーローの縮小版。中身だけ差し替える */
+.stage{position:relative;margin-top:16px;height:min(52vh,420px);border-radius:16px;overflow:hidden;
+  border:1px solid var(--line);isolation:isolate;background:#050507}
+.stage .copy{position:absolute;inset:0;z-index:5;display:grid;place-items:center;text-align:center;
+  pointer-events:none}
+.stage .copy span{font-size:clamp(20px,3vw,34px);font-weight:700;letter-spacing:-.02em;
+  filter:drop-shadow(0 3px 16px rgba(0,0,0,.9))}
+.layer{position:absolute;inset:0;background:url('../kv/kv-hero.webp') center/cover no-repeat}
+
+/* ── 01 呼吸：ゆっくり寄って引く。絵はそのまま ───────────── */
+.m1 .layer{animation:breathe 26s ease-in-out infinite alternate;transform-origin:52% 46%}
+@keyframes breathe{from{transform:scale(1.02)}to{transform:scale(1.12) translate3d(-1.2%,-.8%,0)}}
+
+/* ── 02 光が走る：面の上を光が横切る ─────────────────── */
+.m2 .sheen{position:absolute;top:-40%;bottom:-40%;left:-40%;width:42%;z-index:2;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.30),transparent);
+  filter:blur(28px);transform:rotate(8deg);animation:sweep 7.5s cubic-bezier(.45,0,.2,1) infinite}
+@keyframes sweep{0%,52%{left:-45%}88%,100%{left:110%}}
+
+/* ── 03 粒が生きる：フィルムグレインを動かす ──────────── */
+.m3 .grain{position:absolute;inset:-120%;z-index:3;opacity:.22;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+  animation:grainmove .9s steps(6) infinite}
+@keyframes grainmove{
+  0%{transform:translate3d(0,0,0)}     20%{transform:translate3d(-4%,3%,0)}
+  40%{transform:translate3d(3%,-4%,0)} 60%{transform:translate3d(-3%,-3%,0)}
+  80%{transform:translate3d(4%,2%,0)}  100%{transform:translate3d(0,0,0)}}
+
+/* ── 04 立体だけ動く：背景は静止、立体だけ漂う ────────── */
+.m4 .bg{position:absolute;inset:0;background:url('../kv/kv-bg.webp') center/cover no-repeat}
+.m4 .solid{position:absolute;inset:0;z-index:2;
+  background:url('../kv/kv-solid.webp') center/contain no-repeat;
+  animation:float 18s ease-in-out infinite alternate}
+@keyframes float{
+  from{transform:translate3d(0,0,0) rotate(-.6deg) scale(1)}
+  to{transform:translate3d(1.6%,-2.2%,0) rotate(.7deg) scale(1.05)}}
+
+/* ── 05 視差：カーソル（スマホは傾き無し＝静止）で層がずれる ── */
+.m5 .bg{position:absolute;inset:-6%;background:url('../kv/kv-bg.webp') center/cover no-repeat;
+  transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.m5 .solid{position:absolute;inset:-6%;z-index:2;
+  background:url('../kv/kv-solid.webp') center/contain no-repeat;
+  transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+
+/* ── 06 歪み：WebGLで面をゆっくり波打たせる ─────────── */
+.m6 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+body.still .m1 .layer,body.still .m2 .sheen,body.still .m3 .grain,body.still .m4 .solid{animation:none}
+body.still .m2 .sheen{opacity:0}
+
+.note{margin-top:60px;padding:26px;border:1px solid var(--line);border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));font-size:13.5px;color:var(--dim)}
+.note b{color:var(--fg)}
+code{font-family:var(--mono);font-size:.9em;background:rgba(255,255,255,.07);
+  border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+
+@media(prefers-reduced-motion:reduce){
+  .m1 .layer,.m2 .sheen,.m3 .grain,.m4 .solid{animation:none!important}
+  .m2 .sheen{opacity:0}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <b>KV MOTION LAB</b>
+  <button id="tgl" type="button">動きを止める</button>
+  <span class="sp"></span>
+  <span id="fps">fps <b>—</b></span>
+  <span style="color:var(--dim2)">本番は無傷</span>
+</div>
+
+<div class="shell">
+  <header class="head">
+    <h1>キービジュアルを動かす — 6案</h1>
+    <p class="lead">
+      同じ絵で、動かし方だけを変えてある。⭐<b>止めた状態と見比べて</b>選んでほしい——
+      止まっている時に成立していない案は、動きで誤魔化しているだけ。
+      右上の fps は実測値（60前後なら軽い・40を切るなら本番には出さない）。
+    </p>
+  </header>
+
+  <section class="case m1">
+    <h2>01 — 呼吸（ゆっくり寄って、引く）</h2>
+    <div class="stage">
+      <div class="layer"></div>
+      <div class="copy"><span>手で書く。キーで動かす。</span></div>
+    </div>
+    <p class="why">26秒かけて 1.02→1.12 倍に寄る。<b>絵は木下作のまま一切加工しない</b>。動いていると気づかせずに「生きている」だけを足す最小案。⭐<code>transform</code> だけなのでGPU合成で最も軽い。</p>
+  </section>
+
+  <section class="case m2">
+    <h2>02 — 光が走る（面を光が横切る）</h2>
+    <div class="stage">
+      <div class="layer"></div>
+      <div class="sheen"></div>
+      <div class="copy"><span>手で書く。キーで動かす。</span></div>
+    </div>
+    <p class="why">7.5秒に一度、ぼかした光の帯が斜めに通る。<b>面がある＝立体だという情報</b>が動きで伝わる。⚠️頻度を上げると安いバナーになる。</p>
+  </section>
+
+  <section class="case m3">
+    <h2>03 — 粒が生きる（フィルムグレイン）</h2>
+    <div class="stage">
+      <div class="layer"></div>
+      <div class="grain"></div>
+      <div class="copy"><span>手で書く。キーで動かす。</span></div>
+    </div>
+    <p class="why">⭐<b>Raycastの「なまなましさ」の正体はこれに近い</b>——形ではなく<b>ざらつきが毎フレーム変わる</b>こと。BM BOARD の紙の目・鉛筆の粒とも意味がつながる。⚠️<code>mix-blend-mode</code> は前回モバイルを重くした犯人でもある（fpsを見て判断）。</p>
+  </section>
+
+  <section class="case m4">
+    <h2>04 — 立体だけ漂う（背景は静止）</h2>
+    <div class="stage">
+      <div class="bg"></div>
+      <div class="solid"></div>
+      <div class="copy"><span>手で書く。キーで動かす。</span></div>
+    </div>
+    <p class="why">背景と立体を別レイヤーにして、立体だけを18秒かけて漂わせる。⚠️<b>透過素材の縁に元の背景が焼き込まれていると、ここで紫の線が出る</b>（合成1枚にした理由がこれ）。出ているかどうかをこの案で確かめられる。</p>
+  </section>
+
+  <section class="case m5">
+    <h2>05 — 視差（カーソルで層がずれる）</h2>
+    <div class="stage" id="par">
+      <div class="bg"></div>
+      <div class="solid"></div>
+      <div class="copy"><span>手で書く。キーで動かす。</span></div>
+    </div>
+    <p class="why">自分から動かない。近づいた時だけ奥行きが出る。<b>品を落とさない</b>代わりに、⚠️<b>タッチ端末では何も起きない</b>（スマホ用には別案が要る）。</p>
+  </section>
+
+  <section class="case m6">
+    <h2>06 — 歪み（WebGLで面が波打つ）</h2>
+    <div class="stage"><canvas id="gl"></canvas>
+      <div class="copy"><span>手で書く。キーで動かす。</span></div>
+    </div>
+    <p class="why">絵をテクスチャとして貼り、<b>ゆっくり波打たせる</b>。一番「なまなましい」が、⚠️GPUを使う・コードが増える・端末によっては落ちる。ここまでやる価値があるかは fps と質感を見て決める。</p>
+  </section>
+
+  <p class="note">
+    <b>選び方の目安。</b>「動かす」こと自体が目的になると、2回目の訪問で邪魔になる。<br>
+    ⭐<b>01（呼吸）＋03（粒）</b>は方向が違うので<b>重ねられる</b>——静かに生きている絵になる。<br>
+    ⚠️02 と 06 は主張が強いので、どちらか片方まで。<br>
+    ⚠️どの案も <code>prefers-reduced-motion</code> で止まる実装にしてある。<br>
+    ⚠️モバイルの本番判断は、この頁を<b>実機で開いて fps を見てから</b>（PCのfpsは当てにならない）。
+  </p>
+</div>
+
+<script>
+/* fps＝実測。体感で議論しないための数字 */
+(() => {
+  const el = document.querySelector('#fps b');
+  let n = 0, last = performance.now();
+  const tick = t => { n++; if (t - last >= 500) { el.textContent = Math.round(n * 1000 / (t - last)); n = 0; last = t; } requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+})();
+
+/* 05 視差＝カーソル位置で層をずらすだけ */
+(() => {
+  const st = document.getElementById('par');
+  const bg = st.querySelector('.bg'), so = st.querySelector('.solid');
+  st.addEventListener('pointermove', e => {
+    const r = st.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    bg.style.transform = `translate3d(${x * -14}px,${y * -10}px,0)`;
+    so.style.transform = `translate3d(${x * 34}px,${y * 24}px,0) rotate(${x * 1.2}deg)`;
+  });
+  st.addEventListener('pointerleave', () => { bg.style.transform = ''; so.style.transform = ''; });
+})();
+
+/* 06 歪み＝画像をテクスチャに貼って、ゆっくり波打たせる。
+   ⚠️画面に入っている間だけ回す（見えていないものを描き続けない） */
+(() => {
+  const cv = document.getElementById('gl');
+  const gl = cv.getContext('webgl');
+  // ⚠️WebGLが無い端末では静止画に落とす（赤い箱を出したりしない＝壊れて見えない）
+  if (!gl) {
+    cv.style.display = 'none';
+    cv.parentElement.insertAdjacentHTML('afterbegin', '<div class="layer"></div>');
+    return;
+  }
+  const VS = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0.,1.);}`;
+  const FS = `precision mediump float;varying vec2 uv;uniform sampler2D tex;uniform float t;uniform vec2 res;
+    float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+      return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+    void main(){
+      vec2 u=uv; u.y=1.-u.y;
+      float n=noise(u*3.0+vec2(t*.05,t*.03));
+      float n2=noise(u*6.0-vec2(t*.04,t*.06));
+      u+=vec2(n-.5,n2-.5)*0.012;                     // ← 歪みの強さ
+      vec3 c=texture2D(tex,u).rgb;
+      c+=(hash(uv*res+t)-.5)*0.045;                  // ← 動くざらつき
+      gl_FragColor=vec4(c,1.);
+    }`;
+  const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o;};
+  const pr=gl.createProgram();
+  gl.attachShader(pr,sh(gl.VERTEX_SHADER,VS));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));
+  gl.linkProgram(pr);gl.useProgram(pr);
+  const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  const uT=gl.getUniformLocation(pr,'t'), uR=gl.getUniformLocation(pr,'res');
+  const tx=gl.createTexture();
+  const img=new Image(); img.src='../kv/kv-hero.webp';
+  let ready=false, visible=false;
+  img.onload=()=>{
+    gl.bindTexture(gl.TEXTURE_2D,tx);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+    ready=true;
+  };
+  new IntersectionObserver(e=>{visible=e[0].isIntersecting},{threshold:.05}).observe(cv);
+  const size=()=>{const r=cv.getBoundingClientRect();const d=Math.min(devicePixelRatio||1,2);
+    cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);gl.viewport(0,0,cv.width,cv.height);};
+  addEventListener('resize',size); size();
+  const stop=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const draw=t=>{
+    requestAnimationFrame(draw);
+    if(!ready||!visible||document.body.classList.contains('still')) return;
+    gl.uniform1f(uT, stop?0:t/1000); gl.uniform2f(uR,cv.width,cv.height);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+  };
+  requestAnimationFrame(draw);
+})();
+
+const tgl=document.getElementById('tgl');
+tgl.addEventListener('click',()=>{
+  document.body.classList.toggle('still');
+  const s=document.body.classList.contains('still');
+  tgl.textContent=s?'動きを戻す':'動きを止める';
+  tgl.classList.toggle('on',s);
+});
+</script>
+</body>
+</html>
