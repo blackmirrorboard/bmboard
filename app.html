@@ -260,6 +260,8 @@
                `flush` / `clear` terminal command and the in-terminal flush. */
             .hbtn-flush     { display: none !important; }
             .hbtn-usage     { display: none !important; }
+            /* ⭐モバイルだけ ⌘K ボタンを出す */
+            .hbtn-cmdk { display: inline-flex !important; }
             /* ⭐モバイルは上部を最小限に：編集系(undo/redo/複製/保存/開く/消す/overview)を隠し
                ズーム＋設定(歯車)だけ残す。機能は ⌘K / ツールバー / ジェスチャから使える。 */
             .hbtn-save, .hbtn-open, #undoBtn, #redoBtn, #dupBtn,
@@ -557,6 +559,10 @@
         .toolbar .tool-btn svg  { width: 19px; height: 19px; }
         /* 上バー端の3つ(FLUSH/USAGE/OVERVIEW)は非表示 → 設定(歯車)に集約 */
         .hbtn-flush, .hbtn-usage, .hlink-overview { display: none !important; }
+        /* ⭐⌘Kボタンは既定で出さない（デスクトップはキーで開ける）。モバイルの指定で出す */
+        .hbtn-cmdk { display: none; }
+        .cmdk-label { font-family: var(--ui-mono, ui-monospace, 'SF Mono', Menlo, monospace);
+                      font-size: 12px; letter-spacing: .02em; line-height: 1; }
         .tool-btn:hover  { border-color: rgba(255,255,255,0.12); color: #fff; background: rgba(255,255,255,0.06); }
         .tool-btn.active { border-color: rgba(255,255,255,0.16); color: #fff; background: rgba(255,255,255,0.10); }
         /* Suppress click-induced focus ring; keep keyboard-only focus for a11y */
@@ -2774,6 +2780,12 @@
         <!-- ⭐設定（歯車）— 端3つの代わりにここに集約（⌘, でも開く） -->
         <button class="hbtn bgm-ind" id="bgmIndicator" style="display:none" onclick="runCommand('bgm off'); this.blur();" title="BGM再生中 — クリックで停止" data-i18n-title="tt.bgmOn" aria-label="BGM playing">
             <span class="bgm-bars"><i></i><i></i><i></i><i></i><i></i></span>
+        </button>
+        <!-- ⭐モバイル用の⌘K入口。⚠️スマホにはキーボードが無いので、パレット＝全機能が
+             「知っていても押せない」状態だった（機能はあるのに入口が死んでいる型）。
+             デスクトップではキーがあるので出さない＝役割の被るボタンを増やさない。 -->
+        <button class="hbtn hbtn-cmdk" onclick="window._cmdkToggle && window._cmdkToggle(); this.blur();" title="コマンドパレット (⌘K)" data-i18n-title="tt.cmdk" aria-label="Command palette">
+            <span class="cmdk-label">⌘K</span>
         </button>
         <button class="hbtn" onclick="window._toggleSettings && window._toggleSettings(); this.blur();" title="設定 (⌘,)" data-i18n-title="tt.settings" aria-label="Settings">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
@@ -11827,7 +11839,7 @@ const I18N = {
         'set.layout': 'レイアウト', 'set.boardLeft': 'ボード左', 'set.boardRight': 'ボード右', 'set.pencil': '鉛筆', 'set.brush': '筆', 'set.classic': 'クラシック', 'set.aurora': 'オーロラ', 'set.white': '白リング', 'set.red': '赤リング',
         'set.foot': '⌘,  で開閉 · Esc で閉じる',
         'lang.name': '言語 / LANGUAGE',
-        'tt.zoom100': 'ダブルクリックで100%', 'tt.settings': '設定 (⌘,)', 'tt.confirm': '確定', 'tt.resize': 'ドラッグでサイズ変更',
+        'tt.zoom100': 'ダブルクリックで100%', 'tt.cmdk': 'コマンドパレット（⌘K）', 'tt.settings': '設定 (⌘,)', 'tt.confirm': '確定', 'tt.resize': 'ドラッグでサイズ変更',
         'tt.newtab': '新規タブで開く（埋め込み不可サイト用）', 'tt.close': '閉じる',
         'tt.fontStd': '標準（等幅）', 'tt.mincho': '明朝', 'tt.bold': '太字 ON / OFF', 'tt.horiz': '横書き', 'tt.vert': '縦書き',
         'tab.general': '一般', 'tab.commands': 'コマンド', 'tab.spells': '魔法',
@@ -11889,7 +11901,7 @@ const I18N = {
         'set.layout': 'Layout', 'set.boardLeft': 'Board left', 'set.boardRight': 'Board right', 'set.pencil': 'Pencil', 'set.brush': 'Brush', 'set.classic': 'Classic', 'set.aurora': 'Aurora', 'set.white': 'White ring', 'set.red': 'Red ring',
         'set.foot': '⌘,  toggle · Esc to close',
         'lang.name': 'Language',
-        'tt.zoom100': 'Double-click for 100%', 'tt.settings': 'Settings (⌘,)', 'tt.confirm': 'Confirm', 'tt.resize': 'Drag to resize',
+        'tt.zoom100': 'Double-click for 100%', 'tt.cmdk': 'Command palette (⌘K)', 'tt.settings': 'Settings (⌘,)', 'tt.confirm': 'Confirm', 'tt.resize': 'Drag to resize',
         'tt.newtab': 'Open in a new tab (for non-embeddable sites)', 'tt.close': 'Close',
         'tt.fontStd': 'Default (monospace)', 'tt.mincho': 'Mincho (serif)', 'tt.bold': 'Bold ON / OFF', 'tt.horiz': 'Horizontal', 'tt.vert': 'Vertical',
         'tab.general': 'General', 'tab.commands': 'Commands', 'tab.spells': 'Spells',
@@ -12586,6 +12598,7 @@ function centerTermPanel() {
         setTimeout(() => input.focus(), 0);
     };
     window._cmdkRefreshIfOpen = () => { if (isOpen()) refresh(); };   // ⭐言語切替時に開いてれば再描画
+    window._cmdkToggle = () => toggle();   // ⭐モバイルの⌘Kボタンから呼ぶ（キーボードが無い端末の入口）
     // ⭐キーボードで選び始めたら hover を止める／マウスを動かしたら戻す
     const _cardEl = overlay.querySelector('.cmdk-card');
     function _kbNav(on) { if (_cardEl) _cardEl.classList.toggle('kb-nav', !!on); }
