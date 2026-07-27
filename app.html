@@ -12913,6 +12913,14 @@ function centerTermPanel() {
         if (!hit) return;
         e.preventDefault(); e.stopPropagation();
         const def = (typeof OMNI_CMDS !== 'undefined') ? OMNI_CMDS.find(c => c.cmd === hit) : null;
+        // ⭐順送りできるコマンドは "next" を付けて送る＝⌘Kで↵を押した時と同じ動きにする。
+        //   ⚠️これが無いと、↵では切り替わるのに割り当てたキーでは何も起きない
+        //     （panel は引数なしだと状態表示だけ・board は別の意味になる）。木下報告。
+        if (def && def.cycle) {
+            try { pushHistory(hit + ' next'); } catch (_) {}
+            if (typeof runCommand === 'function') runCommand(hit + ' next');
+            return;
+        }
         // ⭐引数が「必須」のものだけパレットを開いて「cmd 」まで入れ引数待ちにする。
         //   argsOpt（引数は任意＝swap 等）は、割り当てたキーを押した瞬間に実行する
         //   （⌘Sを押したのにパレットが開いて一手増える、を避ける）
