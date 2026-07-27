@@ -6,10 +6,10 @@
 <title>BM BOARD — コマンド / Commands</title>
 <!-- ⚠️このファイルは自動生成です。直接編集しても次の生成で消えます。
      生成元は app.html の中のデータ。項目を足すならそちらに1行足す。 -->
-<meta name="description" content="BM BOARD の全コマンド 48個（サブコマンド 52個）。⌘K を押して名前を打つだけ。日本語 / English。">
+<meta name="description" content="BM BOARD の全コマンド 58個（サブコマンド 66個）。⌘K を押して名前を打つだけ。日本語 / English。">
 <link rel="canonical" href="https://bmboard.studio/commands.html">
 <meta property="og:title" content="BM BOARD — コマンド一覧">
-<meta property="og:description" content="⌘K で呼べる 48 のコマンド。">
+<meta property="og:description" content="⌘K で呼べる 58 のコマンド。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://bmboard.studio/commands.html">
 <meta property="og:image" content="https://bmboard.studio/og-image.png">
@@ -165,11 +165,20 @@ body.lang-en .en{display:inline}
   nav{padding:11px 16px;gap:10px;flex-wrap:wrap}
   .pages{order:3;width:100%;flex-basis:100%;margin:0 -16px;padding:0 16px 2px}
   .pages a{font-size:12.5px;padding:7px 11px}
-  html{scroll-padding-top:190px}
-  .tools{top:104px}
+  html{scroll-padding-top:120px}
   header.head{padding:52px 0 24px}
   .row{grid-template-columns:1fr;gap:8px;padding:14px 12px}
   .cat{padding-top:36px}
+
+  /* ⭐スマホでは貼り付くものを減らす（木下指摘・2026-07-27）。
+     ⚠️ナビ2段＋検索＋カテゴリが全部 sticky だと画面の半分近くが常時ふさがり、
+       中身が数行しか見えていなかった。
+     ・絞り込み欄は一緒に流れる（上に戻れば出てくる）
+     ・下に進むとナビのページ列を畳んで1段だけ残す（ロゴ・言語・開く） */
+  .tools{position:static;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;
+    padding:12px 0 4px;margin-top:14px}
+  body.scrolled .pages{display:none}
+  body.scrolled nav{padding-top:9px;padding-bottom:9px}
 }
 
 /* この頁だけ：サブコマンドと「打ち込みが要る」バッジ */
@@ -210,7 +219,7 @@ body.lang-en .en{display:inline}
       <span class="ja"><b>⌘K</b> を押して、名前を打つ。<br>覚える必要はない——思いついた言葉で引くと候補が出る。</span>
       <span class="en">Hit <b>⌘K</b> and type the name.<br>No need to memorize — type what comes to mind and it shows up.</span>
     </p>
-    <p class="count">15 groups &nbsp;·&nbsp; 48 commands &nbsp;·&nbsp; 52 subcommands</p>
+    <p class="count">15 groups &nbsp;·&nbsp; 58 commands &nbsp;·&nbsp; 66 subcommands</p>
   </header>
 
   <div class="legend">
@@ -240,10 +249,10 @@ body.lang-en .en{display:inline}
       <a class="chip" href="#c-edit"><span class="i">🧹</span><span class="ja">編集</span><span class="en">Edit</span></a>
       <a class="chip" href="#c-io"><span class="i">💾</span><span class="ja">I/O</span><span class="en">I/O</span></a>
       <a class="chip" href="#c-insert"><span class="i">➕</span><span class="ja">挿入</span><span class="en">Insert</span></a>
+      <a class="chip" href="#c-media"><span class="i">🎵</span><span class="ja">音</span><span class="en">Sound</span></a>
       <a class="chip" href="#c-spell"><span class="i">🪄</span><span class="ja">魔法</span><span class="en">Spell</span></a>
       <a class="chip" href="#c-chain"><span class="i">⛓</span><span class="ja">連鎖</span><span class="en">Chain</span></a>
       <a class="chip" href="#c-snippet"><span class="i">📋</span><span class="ja">スニペット</span><span class="en">Snippet</span></a>
-      <a class="chip" href="#c-media"><span class="i">🎵</span><span class="ja">音</span><span class="en">Sound</span></a>
       <a class="chip" href="#c-help"><span class="i">❓</span><span class="ja">ヘルプ</span><span class="en">Help</span></a>
       <a class="chip" href="#c-link"><span class="i">🔗</span><span class="ja">リンク</span><span class="en">Link</span></a>
     </div>
@@ -323,6 +332,10 @@ body.lang-en .en{display:inline}
         <div class="row" data-s="drawmode 描き味を順番に送る（鉛筆→筆→クラシック） cycle the drawing feel (pencil → brush → classic) 描き味 筆 鉛筆 クラシック 切替 drawmode feel pencil brush classic cycle switch enpitsu 鉛筆（紙）で描く draw with pencil on paper fude 筆で描く draw with a brush classic クラシックな線 classic stroke">
           <div class="key"><kbd>drawmode</kbd></div>
           <div class="desc"><span class="ja">描き味を順番に送る（鉛筆→筆→クラシック）</span><span class="en">Cycle the drawing feel (pencil → brush → classic)</span><small class="subs"><span class="ja">drawmode enpitsu — 鉛筆（紙）で描く</span><span class="en">drawmode enpitsu — Draw with pencil on paper</span><br><span class="ja">drawmode fude — 筆で描く</span><span class="en">drawmode fude — Draw with a brush</span><br><span class="ja">drawmode classic — クラシックな線</span><span class="en">drawmode classic — Classic stroke</span></small></div>
+        </div>
+        <div class="row" data-s="settle 定着（時間が経つと消せなくなる） settle — strokes stop being erasable after a while 定着 ていちゃく 消せない 不可逆 settle fix permanent irreversible harden on 定着を入れる turn settling on on 20s 20秒で定着させる settle after 20 seconds off 定着をやめる turn settling off">
+          <div class="key"><kbd>settle</kbd></div>
+          <div class="desc"><span class="ja">定着（時間が経つと消せなくなる）</span><span class="en">Settle — strokes stop being erasable after a while</span><small class="subs"><span class="ja">settle on — 定着を入れる</span><span class="en">settle on — Turn settling on</span><br><span class="ja">settle on 20s — 20秒で定着させる</span><span class="en">settle on 20s — Settle after 20 seconds</span><br><span class="ja">settle off — 定着をやめる</span><span class="en">settle off — Turn settling off</span></small></div>
         </div>
       </div>
     </section>
@@ -406,6 +419,18 @@ body.lang-en .en{display:inline}
           <div class="key"><kbd>board</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">ボードサイズ（board a4 / a3 / free）</span><span class="en">Board size (board a4 / a3 / free)</span><small class="subs"><span class="ja">board next — サイズを順番に送る（1キーで回せる）</span><span class="en">board next — Cycle through the sizes (one key)</span><br><span class="ja">board free — 枠なし（無限に広い板）</span><span class="en">board free — No page frame (infinite board)</span><br><span class="ja">board a4 — A4（縦）</span><span class="en">board a4 — A4 portrait</span><br><span class="ja">board a4l — A4（横）</span><span class="en">board a4l — A4 landscape</span><br><span class="ja">board a3 — A3</span><span class="en">board a3 — A3</span><br><span class="ja">board b5 — B5</span><span class="en">board b5 — B5</span><br><span class="ja">board letter — レター</span><span class="en">board letter — Letter</span><br><span class="ja">board square — 正方形</span><span class="en">board square — Square</span></small></div>
         </div>
+        <div class="row" data-s="distribute 等間隔に配る（3つ以上を選ぶ） distribute evenly (select 3 or more) 等間隔 均等 配置 整列 ならべる distribute space evenly spread arrange h 横に等間隔 space out horizontally v 縦に等間隔 space out vertically">
+          <div class="key"><kbd>distribute</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
+          <div class="desc"><span class="ja">等間隔に配る（3つ以上を選ぶ）</span><span class="en">Distribute evenly (select 3 or more)</span><small class="subs"><span class="ja">distribute h — 横に等間隔</span><span class="en">distribute h — Space out horizontally</span><br><span class="ja">distribute v — 縦に等間隔</span><span class="en">distribute v — Space out vertically</span></small></div>
+        </div>
+        <div class="row" data-s="font 選んだ文字の書体を変える change the typeface of selected text フォント 書体 明朝 ゴシック 手書き font typeface serif sans handwriting mincho 明朝 mincho (serif) gothic ゴシック gothic (sans) hand 手書き風 handwriting mono 等幅 monospace">
+          <div class="key"><kbd>font</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
+          <div class="desc"><span class="ja">選んだ文字の書体を変える</span><span class="en">Change the typeface of selected text</span><small class="subs"><span class="ja">font mincho — 明朝</span><span class="en">font mincho — Mincho (serif)</span><br><span class="ja">font gothic — ゴシック</span><span class="en">font gothic — Gothic (sans)</span><br><span class="ja">font hand — 手書き風</span><span class="en">font hand — Handwriting</span><br><span class="ja">font mono — 等幅</span><span class="en">font mono — Monospace</span></small></div>
+        </div>
+        <div class="row" data-s="vertical 縦書きにする（選んだ文字） set selected text vertical (japanese) 縦書き たてがき 縦 vertical tategaki japanese writing mode ">
+          <div class="key"><kbd>vertical</kbd></div>
+          <div class="desc"><span class="ja">縦書きにする（選んだ文字）</span><span class="en">Set selected text vertical (Japanese)</span></div>
+        </div>
         <div class="row" data-s="flush ターミナルのログを消す clear the terminal log reset clear storage ">
           <div class="key"><kbd>flush</kbd></div>
           <div class="desc"><span class="ja">ターミナルのログを消す</span><span class="en">Clear the terminal log</span></div>
@@ -423,6 +448,10 @@ body.lang-en .en{display:inline}
         <div class="row" data-s="rec ボードを動画(webm)に録画（rec 6 で6秒） record the board as video/webm (rec 6 = 6s) rec 録画 動画 video webm 書き出し キャプチャ capture record capture video screencast movie 6 動画に6秒録画する record a 6s video 15 動画に15秒録画する record a 15s video 30 動画に30秒録画する record a 30s video">
           <div class="key"><kbd>rec</kbd></div>
           <div class="desc"><span class="ja">ボードを動画(WebM)に録画（rec 6 で6秒）</span><span class="en">Record the board as video/WebM (rec 6 = 6s)</span><small class="subs"><span class="ja">rec 6 — 動画に6秒録画する</span><span class="en">rec 6 — Record a 6s video</span><br><span class="ja">rec 15 — 動画に15秒録画する</span><span class="en">rec 15 — Record a 15s video</span><br><span class="ja">rec 30 — 動画に30秒録画する</span><span class="en">rec 30 — Record a 30s video</span></small></div>
+        </div>
+        <div class="row" data-s="copy-image 選択を画像としてコピー（貼り付けられる） copy the selection as an image to the clipboard コピー 画像 クリップボード 貼り付け copy image clipboard png paste ">
+          <div class="key"><kbd>copy-image</kbd></div>
+          <div class="desc"><span class="ja">選択を画像としてコピー（貼り付けられる）</span><span class="en">Copy the selection as an image to the clipboard</span></div>
         </div>
         <div class="row" data-s="export 書き出し（png / pptx / data） export (png / pptx / data) download save png image file png png画像で書き出す export as a png image pptx powerpointで書き出す export as powerpoint data プロジェクトを丸ごと書き出す export the whole project data magic 魔法をまとめて書き出す export all your spells">
           <div class="key"><kbd>export</kbd></div>
@@ -450,6 +479,10 @@ body.lang-en .en{display:inline}
           <div class="key"><kbd>connect</kbd></div>
           <div class="desc"><span class="ja">選択した2つ以上を矢印でつなぐ</span><span class="en">Connect 2+ selected objects with arrows</span></div>
         </div>
+        <div class="row" data-s="timer タイマーを出す（timer 5 で5分） show a timer (timer 5 = five minutes) タイマー 時間 計測 ポモドーロ timer countdown pomodoro clock 5 5分 5 minutes 25 25分（ポモドーロ） 25 minutes (pomodoro) off 消す dismiss">
+          <div class="key"><kbd>timer</kbd></div>
+          <div class="desc"><span class="ja">タイマーを出す（timer 5 で5分）</span><span class="en">Show a timer (timer 5 = five minutes)</span><small class="subs"><span class="ja">timer 5 — 5分</span><span class="en">timer 5 — 5 minutes</span><br><span class="ja">timer 25 — 25分（ポモドーロ）</span><span class="en">timer 25 — 25 minutes (pomodoro)</span><br><span class="ja">timer off — 消す</span><span class="en">timer off — Dismiss</span></small></div>
+        </div>
         <div class="row" data-s="tpl テンプレを置く insert a template テンプレ template 雛形 tpl template layout preset scaffold wireframe ワイヤーフレームを置く insert a wireframe kanban カンバンを置く insert a kanban board mindmap マインドマップを置く insert a mind map moodboard ムードボードを置く insert a moodboard">
           <div class="key"><kbd>tpl</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">テンプレを置く</span><span class="en">Insert a template</span><small class="subs"><span class="ja">tpl wireframe — ワイヤーフレームを置く</span><span class="en">tpl wireframe — Insert a wireframe</span><br><span class="ja">tpl kanban — カンバンを置く</span><span class="en">tpl kanban — Insert a kanban board</span><br><span class="ja">tpl mindmap — マインドマップを置く</span><span class="en">tpl mindmap — Insert a mind map</span><br><span class="ja">tpl moodboard — ムードボードを置く</span><span class="en">tpl moodboard — Insert a moodboard</span></small></div>
@@ -461,9 +494,35 @@ body.lang-en .en{display:inline}
       </div>
     </section>
 
+    <section class="cat" id="c-media">
+      <h2><span class="i">🎵</span><span class="ja">音</span><span class="en">Sound</span></h2>
+      <div class="rows">
+        <div class="row" data-s="volume 音を止める / 戻す mute or unmute sound 音量 ミュート 消音 音 volume mute unmute sound audio off 音を止める mute on 音を戻す unmute">
+          <div class="key"><kbd>volume</kbd></div>
+          <div class="desc"><span class="ja">音を止める / 戻す</span><span class="en">Mute or unmute sound</span><small class="subs"><span class="ja">volume off — 音を止める</span><span class="en">volume off — Mute</span><br><span class="ja">volume on — 音を戻す</span><span class="en">volume on — Unmute</span></small></div>
+        </div>
+        <div class="row" data-s="bgm bgm（bgm on / off） background music (bgm on / off) music sound audio ambient background on bgmを鳴らす start the music off bgmを止める stop the music">
+          <div class="key"><kbd>bgm</kbd></div>
+          <div class="desc"><span class="ja">BGM（bgm on / off）</span><span class="en">Background music (bgm on / off)</span><small class="subs"><span class="ja">bgm on — BGMを鳴らす</span><span class="en">bgm on — Start the music</span><br><span class="ja">bgm off — BGMを止める</span><span class="en">bgm off — Stop the music</span></small></div>
+        </div>
+      </div>
+    </section>
+
     <section class="cat" id="c-spell">
       <h2><span class="i">🪄</span><span class="ja">魔法</span><span class="en">Spell</span></h2>
       <div class="rows">
+        <div class="row" data-s="register コードの魔法を登録（register 名前 js） register a code spell (register name js) 登録 魔法 コード js register add custom spell code ">
+          <div class="key"><kbd>register</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
+          <div class="desc"><span class="ja">コードの魔法を登録（register 名前 JS）</span><span class="en">Register a code spell (register name JS)</span></div>
+        </div>
+        <div class="row" data-s="forget 登録した魔法を消す（forget 名前） delete a registered spell (forget name) 削除 消す 魔法 forget delete remove unregister spell ">
+          <div class="key"><kbd>forget</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
+          <div class="desc"><span class="ja">登録した魔法を消す（forget 名前）</span><span class="en">Delete a registered spell (forget name)</span></div>
+        </div>
+        <div class="row" data-s="export-spells 作った魔法をまとめて書き出す export all your spells as one file 書き出し バックアップ 魔法 配る export spells backup share ">
+          <div class="key"><kbd>export-spells</kbd></div>
+          <div class="desc"><span class="ja">作った魔法をまとめて書き出す</span><span class="en">Export all your spells as one file</span></div>
+        </div>
         <div class="row" data-s="spell 選択を魔法に保存（spell 名前）→⌘kで再配置 save selection as a spell (spell name) 魔法 spell 保存 作る 登録 スタンプ テンプレ create magic export import magic template stamp macro snippet save list 保存した魔法の一覧 list your saved spells">
           <div class="key"><kbd>spell</kbd></div>
           <div class="desc"><span class="ja">選択を魔法に保存（spell 名前）→⌘Kで再配置</span><span class="en">Save selection as a spell (spell name)</span><small class="subs"><span class="ja">spell list — 保存した魔法の一覧</span><span class="en">spell list — List your saved spells</span></small></div>
@@ -491,16 +550,6 @@ body.lang-en .en{display:inline}
         <div class="row" data-s="snip スニペット（snip add 名前 本文 / snip 名前） snippets (snip add name text / snip name) スニペット snippet 定型 テンプレ 付箋 add 登録 snippet text template phrase list 登録したスニペットの一覧 list your snippets">
           <div class="key"><kbd>snip</kbd></div>
           <div class="desc"><span class="ja">スニペット（snip add 名前 本文 / snip 名前）</span><span class="en">Snippets (snip add name text / snip name)</span><small class="subs"><span class="ja">snip list — 登録したスニペットの一覧</span><span class="en">snip list — List your snippets</span></small></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="cat" id="c-media">
-      <h2><span class="i">🎵</span><span class="ja">音</span><span class="en">Sound</span></h2>
-      <div class="rows">
-        <div class="row" data-s="bgm bgm（bgm on / off） background music (bgm on / off) music sound audio ambient background on bgmを鳴らす start the music off bgmを止める stop the music">
-          <div class="key"><kbd>bgm</kbd></div>
-          <div class="desc"><span class="ja">BGM（bgm on / off）</span><span class="en">Background music (bgm on / off)</span><small class="subs"><span class="ja">bgm on — BGMを鳴らす</span><span class="en">bgm on — Start the music</span><br><span class="ja">bgm off — BGMを止める</span><span class="en">bgm off — Stop the music</span></small></div>
         </div>
       </div>
     </section>
@@ -585,6 +634,13 @@ body.lang-en .en{display:inline}
 </footer>
 
 <script>
+/* ⭐スマホでナビのページ列を畳む。⚠️閾値が小さいと畳む→背が縮む→戻る のガタつきが出るので 120px */
+(() => {
+  const on = () => document.body.classList.toggle('scrolled', scrollY > 120);
+  addEventListener('scroll', on, { passive: true });
+  on();
+})();
+
 const KEY = 'bm_site_lang';
 function setLang(l){
   document.body.classList.toggle('lang-en', l === 'en');

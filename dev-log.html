@@ -165,11 +165,20 @@ body.lang-en .en{display:inline}
   nav{padding:11px 16px;gap:10px;flex-wrap:wrap}
   .pages{order:3;width:100%;flex-basis:100%;margin:0 -16px;padding:0 16px 2px}
   .pages a{font-size:12.5px;padding:7px 11px}
-  html{scroll-padding-top:190px}
-  .tools{top:104px}
+  html{scroll-padding-top:120px}
   header.head{padding:52px 0 24px}
   .row{grid-template-columns:1fr;gap:8px;padding:14px 12px}
   .cat{padding-top:36px}
+
+  /* ⭐スマホでは貼り付くものを減らす（木下指摘・2026-07-27）。
+     ⚠️ナビ2段＋検索＋カテゴリが全部 sticky だと画面の半分近くが常時ふさがり、
+       中身が数行しか見えていなかった。
+     ・絞り込み欄は一緒に流れる（上に戻れば出てくる）
+     ・下に進むとナビのページ列を畳んで1段だけ残す（ロゴ・言語・開く） */
+  .tools{position:static;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;
+    padding:12px 0 4px;margin-top:14px}
+  body.scrolled .pages{display:none}
+  body.scrolled nav{padding-top:9px;padding-bottom:9px}
 }
 
 /* この頁だけ：時系列の記録 */
@@ -527,6 +536,13 @@ body.lang-en .en{display:inline}
 </footer>
 
 <script>
+/* ⭐スマホでナビのページ列を畳む。⚠️閾値が小さいと畳む→背が縮む→戻る のガタつきが出るので 120px */
+(() => {
+  const on = () => document.body.classList.toggle('scrolled', scrollY > 120);
+  addEventListener('scroll', on, { passive: true });
+  on();
+})();
+
 const KEY = 'bm_site_lang';
 function setLang(l){
   document.body.classList.toggle('lang-en', l === 'en');
