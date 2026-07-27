@@ -11840,9 +11840,12 @@ tiEl.addEventListener('paste', e => {
     window.addEventListener('keydown', e => {
         // ⭐ショートカット記録中：次の修飾キー入力をこのコマンドへ（他のハンドラより先に横取り）
         if (recCmd && isOpen()) {
+            // ⚠️録音中は IME 変換中フラグを見ない（⌥ が IME 扱いになって録れなくなるため）
             e.preventDefault(); e.stopImmediatePropagation();
             if (e.key === 'Escape') { recCmd = null; recMsg = ''; renderCmds(); return; }
             if (e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift') return;
+            // ⭐受け取ったキーをその場に出す＝「押しても何も起きない」のか「来ているが断られた」のかが分かる
+            try { const _seen = comboOf(e); if (_seen) capMsg = (LANG === 'en' ? 'got ' : '受け取り: ') + _seen.disp; } catch (_) {}
             const U = window._bmUsc;
             if (U && U.reservedCombo(e)) { recMsg = (window.t ? window.t('pal.warnUsed') : '使用中'); renderCmds(); return; }
             const c = U && U.comboOf(e);
@@ -11851,6 +11854,11 @@ tiEl.addEventListener('paste', e => {
             //   ⚠️録音の口が⌘K側と設定側の2箇所にあり、片方だけ塞いでも素通りする（実測で S が保存された）。
             if (U && U.isBoardToolKey && U.isBoardToolKey(c)) {
                 recMsg = U.boardToolMsg(c);
+                renderCmds();
+                return;
+            }
+            if (U && U.isBoardEditKey && U.isBoardEditKey(c)) {   // ⚠️矢印/Backspace等＝盤面の操作
+                recMsg = U.boardEditMsg(c);
                 renderCmds();
                 return;
             }
@@ -12364,7 +12372,10 @@ function centerTermPanel() {
             disp = mm.concat(label).join('+');
         }
         const mods = []; if (e.metaKey) mods.push('m'); if (e.ctrlKey) mods.push('c'); if (e.altKey) mods.push('a'); if (e.shiftKey) mods.push('s');
-        return { disp, match: mods.sort().join('') + ':' + base, bare: !(e.metaKey || e.ctrlKey || e.altKey), base };
+        // ⚠️Shift を修飾キーに数えていなかったため、⇧G が「単キーのG（三角ツール）」と判定されて
+        //   登録できなかった（実測：⌃G/⌥G/⌘J は通るのに ⇧G だけ保存されない）。
+        //   ⭐bare＝修飾キーが1つも押されていない状態、に直す。
+        return { disp, match: mods.sort().join('') + ':' + base, bare: !(e.metaKey || e.ctrlKey || e.altKey || e.shiftKey), base };
     }
     // 既存の⌘系ショートカットは予約（Undo/コピー/⌘K 等）＝ユーザーは割り当て不可
     function reservedCombo(e) {
@@ -12414,11 +12425,13 @@ function centerTermPanel() {
         }
         const hint = (LANG === 'en' && it.hintEn) ? it.hintEn : (it.hint || '');
         if (it._settings) {   // ⭐設定パネルを開く
-            return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: hint, sc: it.sc || '', favKey, fav,
+            return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: hint, sc: (getUsc()[it.cmd] || {}).disp || it.sc || '', favKey, fav,
+                cmdStr: it.cmd, assignable: true,
                 run() { close(); if (window._toggleSettings) window._toggleSettings(); } };
         }
         if (it._storeView) {   // ⭐STOREを開く（⌘K内の画面）
             return { kind:'storeview', ico:'🛍', name: it.cmd, type: cat, desc: hint, favKey, fav,
+                sc: (getUsc()[it.cmd] || {}).disp || '', cmdStr: it.cmd, assignable: true,
                 run() {
                     storeMode = true; storeMsg = ''; input.value = ''; refresh();
                     // ⭐リモートカタログ（静的JSON）を取りに行き、来たら再描画
@@ -12456,6 +12469,7 @@ function centerTermPanel() {
         }
         if (it._spell) {   // ⭐魔法 → 選ぶと保存した選択をビュー中心にスタンプ
             return { kind:'spell', ico: CAT_ICON.spell || '✦', name: it.cmd, type: cat, desc: hint, favKey, fav,
+                sc: (getUsc()[it.cmd] || {}).disp || '', cmdStr: it.cmd, assignable: true,
                 run() { recordRecent('spell:' + it.cmd); close(); if (window._runSpell) window._runSpell(it._spell); } };
         }
         const usc = getUsc()[it.cmd];
@@ -12795,7 +12809,11 @@ function centerTermPanel() {
     input.addEventListener('beforeinput', e => { if (capSc) { e.preventDefault(); e.stopPropagation(); } });
     input.addEventListener('input', refresh);
     input.addEventListener('keydown', e => {
-        if (e.isComposing || e.keyCode === 229) return;   // ⭐IME変換中のEnterでは実行しない（漢字変換確定で誤発火を防ぐ）
+        // ⚠️ここで IME を先に弾くと、ショートカットの録音まで巻き込む。
+        //   macOSは日本語入力がONだと ⌥ の組み合わせを IME 扱い(keyCode 229)にするので、
+        //   ⌃ は録音できるのに ⌥ だけ録音できない、という状態になっていた（木下報告）。
+        //   ⭐録音中は IME を無視してキーをそのまま受け取る（どのみち preventDefault している）。
+        if (!capSc && (e.isComposing || e.keyCode === 229)) return;   // 変換中のEnterで誤実行しないため
         // ⭐ショートカット捕捉モード：次の修飾キー入力をこのコマンドに割り当て
         if (capSc) {
             e.preventDefault(); e.stopPropagation();
@@ -12809,6 +12827,7 @@ function centerTermPanel() {
             {
                 const _c = comboOf(e);
                 if (isBoardToolKey(_c)) { capMsg = boardToolMsg(_c); updateFoot(); return; }
+                if (isBoardEditKey(_c)) { capMsg = boardEditMsg(_c); updateFoot(); return; }
                 if (isOsPrimaryKey(_c)) { capMsg = (LANG === 'en')
                     ? 'The Windows key is taken by the OS — pick Ctrl, Alt or Shift instead.'
                     : 'Windowsキーの組み合わせはOSが持っていくので使えません。Ctrl / Alt / Shift で登録してください';
@@ -12930,12 +12949,28 @@ function centerTermPanel() {
         return out.split('').sort().join('') + ':' + base;
     };
     const isBoardToolKey = c => !!(c && c.bare && BOARD_ONEKEY.indexOf(c.base) >= 0);
+    // ⭐盤面の操作そのものに使うキーは、修飾なしでは登録させない（木下のスクショで board に ArrowDown が
+    //   割り当たっていた＝矢印で図形を動かせなくなる）。⌘/⌥ を足せば使ってよい。
+    const BOARD_EDIT_KEYS = ['arrowup','arrowdown','arrowleft','arrowright','backspace','delete',' ','space','tab','escape','enter'];
+    const BOARD_EDIT_JA = { arrowup:'選択を上へ動かす', arrowdown:'選択を下へ動かす', arrowleft:'選択を左へ動かす', arrowright:'選択を右へ動かす',
+        backspace:'選択を消す', delete:'選択を消す', ' ':'押しながらドラッグで画面を動かす', space:'押しながらドラッグで画面を動かす',
+        tab:'次のものを選ぶ', escape:'取り消す', enter:'確定する' };
+    const BOARD_EDIT_EN = { arrowup:'move selection up', arrowdown:'move selection down', arrowleft:'move selection left', arrowright:'move selection right',
+        backspace:'delete selection', delete:'delete selection', ' ':'hold + drag to pan', space:'hold + drag to pan',
+        tab:'select next', escape:'cancel', enter:'confirm' };
+    const isBoardEditKey = c => !!(c && c.bare && BOARD_EDIT_KEYS.indexOf(String(c.base).toLowerCase()) >= 0);
+    const boardEditMsg = c => {
+        const k = String(c.base).toLowerCase();
+        return (LANG === 'en')
+            ? `${c.disp} is used on the board (${BOARD_EDIT_EN[k] || 'board control'}) — not assignable. Try ⌘${c.disp} or ⌥${c.disp}.`
+            : `${c.disp} は盤面の操作（${BOARD_EDIT_JA[k] || '盤面の操作'}）に使うので割り当てできません。⌘や⌥ を足せば使えます`;
+    };
     // ⚠️WindowsではWindowsキーの組み合わせをOSが持っていく（押しても届かない）
     const isOsPrimaryKey = c => !IS_MAC && !!(c && c.match && c.match.split(':')[0].indexOf('m') >= 0);
     const boardToolMsg = c => (LANG === 'en')
         ? `${c.disp} is the board shortcut for "${TOOL_EN[c.base] || 'a tool'}" — not assignable. Try ⌘${c.disp} or ⌥${c.disp}.`
         : `${c.disp} は盤面の「${TOOL_JA[c.base] || '道具'}」の近道なので割り当てできません。⌘${c.disp} や ⌥${c.disp} なら使えます`;
-    window._bmUsc    = { get: getUsc, set: setUsc, comboOf, reservedCombo, isBoardToolKey, boardToolMsg, normMatch, isOsPrimaryKey,
+    window._bmUsc    = { get: getUsc, set: setUsc, comboOf, reservedCombo, isBoardToolKey, boardToolMsg, isBoardEditKey, boardEditMsg, normMatch, isOsPrimaryKey,
                          osPrimaryMsg: () => (LANG === 'en')
                            ? 'The Windows key is taken by the OS — pick Ctrl, Alt or Shift instead.'
                            : 'Windowsキーの組み合わせはOSが持っていくので使えません。Ctrl / Alt / Shift で登録してください' };
