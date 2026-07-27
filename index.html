@@ -225,6 +225,19 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
   background:url('kv/kv-hero.webp') center center / cover no-repeat;
   -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 61%,transparent 80.3%);
   mask-image:linear-gradient(180deg,#000 0%,#000 61%,transparent 80.3%)}
+/* ⭐光の帯。面があること＝立体だという情報を動きで伝える */
+.kvsheen{position:absolute;top:-30%;bottom:-30%;left:-40%;width:30%;z-index:1;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.20),transparent);
+  filter:blur(60px);transform:rotate(8deg);pointer-events:none;
+  animation:kvsweep 6.5s cubic-bezier(.45,0,.2,1) infinite}
+/* ⚠️ラボの値（帯44%・不透明度.55・4秒）をそのまま持ってくると、ヒーロー幅では帯が600px超になり
+   画面全体が白く曇った。面が広いほど薄く・広くぼかす。通る間隔も伸ばして「たまに光る」に。 */
+@keyframes kvsweep{0%,34%{left:-40%}84%,100%{left:112%}}
+@media(prefers-reduced-motion:reduce){.kvsheen{display:none}}
+/* ⭐グレインはKVの上・コピーの下。soft-light で絵の階調を壊さずざらつきだけ足す */
+.kvgrain{position:absolute;inset:0;z-index:1;width:100%;height:100%;display:block;
+  pointer-events:none;mix-blend-mode:soft-light;opacity:.42;image-rendering:pixelated}
+@media(prefers-reduced-motion:reduce){.kvgrain{display:none}}
 /* コピー＝いちばん上。背後にごく薄い暗がりを敷いて読めるようにする */
 /* ⭐コピー群は塊のまま少し下げる。transform なので hero の高さ・KVの位置には影響しない */
 .herocopy{position:relative;z-index:2;transform:translateY(clamp(30px,5vh,58px))}
@@ -407,6 +420,14 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
   <!-- ══ HERO ══ -->
   <header class="hero" id="top">
 
+    <!-- ⭐フィルムグレイン＝毎フレーム粒を描き直す（KVラボ 03 を採用・木下確定 2026-07-27）。
+         ⚠️1枚のノイズ画像をズラす方式は柄が変わらず「動いて見えない」。canvasで描き変える。
+         ⚠️前回モバイルを重くした犯人が全面 grain だったので、ヒーローの中だけ・低fps・粗めにしてある。 -->
+    <canvas class="kvgrain" id="kvgrain" aria-hidden="true"></canvas>
+    <!-- ⭐KVラボ 02＝数秒に一度、光の帯が面を横切る（木下OK）。
+         ⚠️01（呼吸）は「分かりづらい」ので入れない -->
+    <i class="kvsheen" aria-hidden="true"></i>
+
     <div class="herocopy shell">
     <h1 class="rv" data-d="1">
       <span class="ja">手で書く。<span class="l2">キーで動かす。</span></span>
@@ -562,6 +583,39 @@ const win = document.getElementById('win');
 if (win) requestAnimationFrame(() => setTimeout(() => win.classList.add('up'), 260));
 
 // 言語
+/* ⭐ヒーローのフィルムグレイン。⚠️見えている間だけ・低いfpsだけ描く（常時60fpsで回さない）。
+   ⚠️スマホはさらに粗く・遅く（前回、全面grainでモバイルが42fpsまで落ちた） */
+(() => {
+  const cv = document.getElementById('kvgrain');
+  if (!cv || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const ctx = cv.getContext('2d', { alpha: true });
+  const sp = matchMedia('(max-width:900px)').matches;
+  const FPS = sp ? 15 : 24, SCALE = sp ? 3 : 2;
+  let visible = true, last = 0;
+  new IntersectionObserver(e => { visible = e[0].isIntersecting; }, { threshold: 0 }).observe(cv);
+  const size = () => {
+    const r = cv.getBoundingClientRect();
+    cv.width  = Math.max(2, Math.round(r.width  / SCALE));
+    cv.height = Math.max(2, Math.round(r.height / SCALE));
+  };
+  const paint = () => {
+    const img = ctx.createImageData(cv.width, cv.height), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = 90 + Math.random() * 76;
+      d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  };
+  const loop = t => {
+    requestAnimationFrame(loop);
+    if (!visible) return;
+    if (t - last < 1000 / FPS) return;
+    last = t; paint();
+  };
+  addEventListener('resize', () => { size(); paint(); });
+  size(); paint(); requestAnimationFrame(loop);
+})();
+
 const KEY = 'bm_site_lang';
 function setLang(l) {
   document.body.classList.toggle('lang-en', l === 'en');
