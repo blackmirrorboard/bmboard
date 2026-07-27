@@ -52,6 +52,7 @@ main,nav,footer{position:relative;z-index:1}
 nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:16px;
   padding:13px 26px;background:rgba(8,8,10,.74);
   -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+/* ⚠️ドロップダウンの位置の基準。sticky でも absolute の親になる */
 .brand{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:15px;
   letter-spacing:.16em;font-weight:700;flex:none}
 .brand img{width:27px;height:27px;filter:invert(1)}
@@ -67,6 +68,13 @@ nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:16px;
 .lang button.on{background:var(--fg);color:var(--ink)}
 .navcta{font-size:13px;font-weight:500;padding:9px 20px;border-radius:9px;
   background:var(--fg);color:var(--ink);flex:none}
+.burger{display:none;flex:none;width:38px;height:38px;border-radius:10px;cursor:pointer;
+  align-items:center;justify-content:center;flex-direction:column;gap:5px;
+  background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.burger span{display:block;width:16px;height:1.5px;background:var(--fg);border-radius:2px;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .18s}
+body.menu-open .burger span:nth-child(1){transform:translateY(3.25px) rotate(45deg)}
+body.menu-open .burger span:nth-child(2){transform:translateY(-3.25px) rotate(-45deg)}
 
 header.head{padding:78px 0 30px}
 h1{font-size:clamp(30px,5vw,54px);font-weight:700;letter-spacing:-.02em;line-height:1.2}
@@ -143,11 +151,22 @@ body.lang-en .en{display:inline}
      ⚠️ナビ2段＋検索＋カテゴリが全部 sticky だと画面の半分近くが常時ふさがり、
        中身が数行しか見えていなかった。
      ・絞り込み欄は一緒に流れる（上に戻れば出てくる）
-     ・下に進むとナビのページ列を畳んで1段だけ残す（ロゴ・言語・開く） */
+     ・ページ列はハンバーガーの中へ（開いた時だけ出る） */
   .tools{position:static;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;
     padding:12px 0 4px;margin-top:14px}
-  body.scrolled .pages{display:none}
-  body.scrolled nav{padding-top:9px;padding-bottom:9px}
+  nav{flex-wrap:nowrap;gap:8px}
+  .burger{display:flex}
+  .navcta{padding:8px 14px;font-size:12.5px}
+  .brand{font-size:13px;gap:9px}
+  .brand img{width:23px;height:23px}
+  .pages{position:absolute;left:0;right:0;top:100%;display:none;flex-direction:column;
+    align-items:stretch;gap:0;padding:6px;margin:0;overflow:visible;
+    background:rgba(10,10,13,.96);border-bottom:1px solid var(--line);
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    box-shadow:0 24px 48px rgba(0,0,0,.5)}
+  body.menu-open .pages{display:flex}
+  .pages a{font-size:15px;padding:13px 14px;border-radius:10px}
+  .pages a.on{background:rgba(255,255,255,.09)}
 }
 `;
 
@@ -199,6 +218,11 @@ ${links}
     <button type="button" data-lang="en">EN</button>
   </div>
   <a class="navcta" href="app.html"><span class="ja">開く</span><span class="en">Open</span></a>
+  <!-- ⭐スマホはページ列を畳んでハンバーガーに（木下・2026-07-27）。
+       ⚠️2段に並べると常時2行ぶん場所を取り、中身が数行しか見えなかった -->
+  <button class="burger" type="button" id="burger" aria-label="メニュー" aria-expanded="false">
+    <span></span><span></span>
+  </button>
 </nav>`;
 }
 
@@ -223,11 +247,17 @@ ${links}
 
 /* 言語＝トップページと同じ鍵。頁をまたいでも選択が残る */
 export const LANG_JS = `
-/* ⭐スマホでナビのページ列を畳む。⚠️閾値が小さいと畳む→背が縮む→戻る のガタつきが出るので 120px */
+/* ⭐スマホのメニュー開閉。⚠️開いたまま迷子にならないよう、リンクを押す・外を触る・Esc・
+   画面を広げる のどれでも閉じる */
 (() => {
-  const on = () => document.body.classList.toggle('scrolled', scrollY > 120);
-  addEventListener('scroll', on, { passive: true });
-  on();
+  const b = document.getElementById('burger');
+  if (!b) return;
+  const set = v => { document.body.classList.toggle('menu-open', v); b.setAttribute('aria-expanded', v ? 'true' : 'false'); };
+  b.addEventListener('click', e => { e.stopPropagation(); set(!document.body.classList.contains('menu-open')); });
+  document.querySelectorAll('.pages a').forEach(a => a.addEventListener('click', () => set(false)));
+  addEventListener('click', e => { if (!e.target.closest('nav')) set(false); });
+  addEventListener('keydown', e => { if (e.key === 'Escape') set(false); });
+  matchMedia('(min-width:901px)').addEventListener('change', () => set(false));
 })();
 
 const KEY = 'bm_site_lang';
