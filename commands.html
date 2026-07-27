@@ -212,6 +212,13 @@ body.lang-en .en{display:inline}
 .legend b{color:var(--fg);font-weight:600}
 .subs{color:var(--dim2);line-height:1.9}
 .arg{font-size:11px;color:#ff9d7a;white-space:nowrap;cursor:help}
+/* キーの読み方の表 */
+.keys{margin-top:16px;overflow-x:auto}
+.keys table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+.keys th,.keys td{border:1px solid var(--line);padding:9px 12px;text-align:left;color:var(--dim)}
+.keys th{background:rgba(255,255,255,.05);color:var(--fg);font-weight:600;font-size:12px}
+.keys td:first-child{text-align:center;width:74px}
+.keys kbd{font-size:15px}
 </style>
 </head>
 <body>
@@ -621,6 +628,40 @@ body.lang-en .en{display:inline}
       </div>
     </section>
     <p class="empty" id="empty"><span class="ja">見つからない。別の言葉で打ってみて。</span><span class="en">Nothing found — try another word.</span></p>
+  </div>
+
+  <div class="card">
+    <h3><span class="ja">キーの読み方</span><span class="en">Reading the key symbols</span></h3>
+    <p><span class="ja">Macの記号は見慣れないと読めない。Windowsでは同じ役目のキーが別の名前になる。</span>
+       <span class="en">The Mac glyphs are hard to read if you are not used to them; Windows uses different names for the same job.</span></p>
+    <div class="keys">
+      <table>
+        <thead><tr>
+          <th><span class="ja">記号</span><span class="en">Symbol</span></th>
+          <th>Mac</th><th>Windows</th>
+          <th><span class="ja">どこにあるか</span><span class="en">Where it is</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td><kbd>⌘</kbd></td><td>command</td><td>Ctrl</td>
+              <td><span class="ja">スペースキーの左右</span><span class="en">next to the space bar</span></td></tr>
+          <tr><td><kbd>⌥</kbd></td><td>option（alt）</td><td>Alt</td>
+              <td><span class="ja">⌘ の外側</span><span class="en">outside ⌘</span></td></tr>
+          <tr><td><kbd>⌃</kbd></td><td>control</td><td>Ctrl</td>
+              <td><span class="ja">いちばん外側の下段</span><span class="en">bottom row, outermost</span></td></tr>
+          <tr><td><kbd>⇧</kbd></td><td>shift</td><td>Shift</td>
+              <td><span class="ja">左右の中段</span><span class="en">both sides, middle row</span></td></tr>
+          <tr><td><kbd>✦</kbd></td><td colspan="2">hyper（⌘⌃⌥⇧ 同時）</td>
+              <td><span class="ja">⚠️OS側で Caps Lock 等に割り当てている人だけ</span><span class="en">only if you mapped it at the OS level</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      <span class="ja">⚠️Mac の <kbd>⌘</kbd> と Windows の <kbd>Ctrl</kbd> は<b>同じ役目のキーとして扱っています</b>。
+        Macで <kbd>⌘J</kbd> に割り当てたものは、Windows では <kbd>Ctrl+J</kbd> で動きます。<br>
+        ⚠️<kbd>⊞</kbd>（Windowsキー）の組み合わせはOSが持っていくので登録できません。</span>
+      <span class="en">⚠️Mac's <kbd>⌘</kbd> and Windows' <kbd>Ctrl</kbd> are treated as <b>the same key</b> — something bound to <kbd>⌘J</kbd> on a Mac fires with <kbd>Ctrl+J</kbd> on Windows.<br>
+        ⚠️Combos with the <kbd>⊞</kbd> Windows key cannot be bound; the OS takes them first.</span>
+    </p>
   </div>
 
   <div class="card">

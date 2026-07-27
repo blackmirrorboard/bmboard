@@ -1,0 +1,9 @@
+# ⚠️自動生成（.github/scripts/build-sitemap.mjs）
+User-agent: *
+Allow: /
+
+# 実験用の頁は拾わせない（中身が本番と違うため）
+Disallow: /preview/
+Disallow: /app_backup_broken.html
+
+Sitemap: https://bmboard.studio/sitemap.xml
