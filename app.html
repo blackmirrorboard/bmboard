@@ -1466,6 +1466,8 @@
         .set-cmdhint { font-size: 11.5px; color: rgba(255,255,255,0.42); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         /* ⭐引数が要る親コマンドへの注意書き。行が伸びないよう同じ1行に収める */
         .set-cmdargnote { color: #ff9d7a; margin-left: 8px; cursor: help; }
+        /* ⭐順送りの案内。⚠️1つずつキーを割り当てる前に気づけるように、行の中に置く */
+        .set-cmdcyc { color: #8fd0ff; margin-left: 8px; cursor: help; }
         .set-cmdtype { font-size: 10px; color: rgba(255,255,255,0.34); white-space: nowrap; }
         .set-cmdhot { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
         .set-cmdhot .k { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px;
@@ -3179,6 +3181,9 @@
                     <button class="set-chip active" type="button" data-filter="all" data-i18n="setcmd.all">すべて</button>
                     <button class="set-chip" type="button" data-filter="fav" data-i18n="setcmd.fav">★ お気に入り</button>
                     <button class="set-chip" type="button" data-filter="sc" data-i18n="setcmd.sc">⌨ 割当済み</button>
+                    <!-- ⭐グループでも絞れるように（木下・2026-07-27）。1キーで回せるものを探しやすくする -->
+                    <button class="set-chip" type="button" data-filter="cycle" data-i18n="setcmd.cycle">⟳ 順送り</button>
+                    <button class="set-chip" type="button" data-filter="arg" data-i18n="setcmd.arg">⚠ 引数が要る</button>
                 </div>
             </div>
             <div id="setCmdConflict" class="set-cmds-conflict" hidden></div>
@@ -11183,6 +11188,10 @@ tiEl.addEventListener('paste', e => {
             CMDS.push(c);
             (c.subs || []).forEach(([a, ja, en2]) => CMDS.push({
                 cmd: c.cmd + ' ' + a, cat: c.cat, hint: ja, hintEn: en2, kw: (c.kw || '') + ' ' + a,
+                // ⭐親が順送りできるなら、サブ行にもそれを伝える。
+                //   ⚠️そうしないと「next という手があると知らないまま a4/a3/free に1つずつキーを割り当てて、
+                //     自分のショートカットが分からなくなる」（木下の懸念・2026-07-27）
+                _parent: c.cmd, _parentCycle: !!c.cycle,
             }));
         });
         const en = (window.getLang && window.getLang() === 'en');
@@ -11191,6 +11200,9 @@ tiEl.addEventListener('paste', e => {
             const hot = effHot(it, u);
             if (cmdFilter === 'fav' && !favOn(it.cmd)) return false;
             if (cmdFilter === 'sc' && !hot) return false;
+            // ⭐順送り＝1キーで状態を回せるもの（親のみ。サブ行は親に付いてくる）
+            if (cmdFilter === 'cycle' && !it.cycle) return false;
+            if (cmdFilter === 'arg' && !(it.args && !it.argsOpt)) return false;
             if (q) {
                 const hay = (it.cmd + ' ' + (it.hint || '') + ' ' + (it.hintEn || '') + ' ' + (it.kw || '')).toLowerCase();
                 if (hay.indexOf(q) < 0) return false;
@@ -11207,10 +11219,23 @@ tiEl.addEventListener('paste', e => {
         items.forEach(it => { if (!groups[it.cat]) { groups[it.cat] = []; order.push(it.cat); } groups[it.cat].push(it); });
         // ⭐Raycast風の列ヘッダ（名前 / 説明 / ショートカット）
         let html = `<div class="set-cmdhdr"><span></span><span>${esc(T('setcmd.cName'))}</span><span>${esc(T('setcmd.cDesc'))}</span><span>${esc(T('setcmd.cAlias'))}</span><span class="r">${esc(T('setcmd.cHot'))}</span></div>`;
+        // ⭐順送り（next）を持つものは、そのグループの先頭に出す（木下・2026-07-27）。
+        //   ⚠️サブ行は親の直下に並んでいるので、親だけ動かすと離れてしまう。
+        //     親＋その子を1つの塊として並べ替える。
+        const hoist = arr => {
+            const blocks = [];
+            arr.forEach(it => {
+                if (!it._parent || !blocks.length) blocks.push([it]);
+                else blocks[blocks.length - 1].push(it);
+            });
+            const cyc = blocks.filter(b => b[0].cycle);
+            const rest = blocks.filter(b => !b[0].cycle);
+            return [].concat(...cyc, ...rest);
+        };
         order.forEach(cat => {
             const label = (typeof catLabel === 'function') ? catLabel(cat) : cat;
             html += `<div class="set-cmdfolder">${esc(label)}</div>`;
-            groups[cat].forEach(it => {
+            hoist(groups[cat]).forEach(it => {
                 const hot = effHot(it, u);
                 const isRec = recCmd === it.cmd;
                 const isConf = conflict.has(it.cmd);
@@ -11235,14 +11260,20 @@ tiEl.addEventListener('paste', e => {
                 // ⭐長い注意書きを行に並べると幅が足りず途中で切れて読めない（木下指摘）。
                 //   ⚠マークだけ出して、説明はホバー（title）に逃がす。
                 const _argNote = _needArg ? `<span class="set-cmdargnote" title="${esc(T('setcmd.argNote'))}">⚠</span>` : '';
-                html += `<div class="set-cmdrow${isConf ? ' conflict' : ''}${isRec ? ' recording' : ''}">${star}<span class="set-cmdname">${esc(it.cmd)}</span><span class="set-cmdhint">${esc(hint)}${_argNote}</span>${aliasHtml}<span class="set-cmdhot">${hotHtml}</span></div>`;
+                // ⭐順送りの案内。親には「1キーで回せる」、サブ行には「親に付ければ全部回せる」を出す
+                const _cycTip = it.cycle
+                    ? T('setcmd.cycleTip')
+                    : (it._parentCycle ? T('setcmd.cycleSubTip').replace('{cmd}', it._parent + (it.cmd.indexOf(' next') > 0 ? '' : ' next')) : '');
+                const _cycNote = _cycTip ? `<span class="set-cmdcyc" title="${esc(_cycTip)}">⟳</span>` : '';
+                html += `<div class="set-cmdrow${isConf ? ' conflict' : ''}${isRec ? ' recording' : ''}">${star}<span class="set-cmdname">${esc(it.cmd)}</span><span class="set-cmdhint">${esc(hint)}${_cycNote}${_argNote}</span>${aliasHtml}<span class="set-cmdhot">${hotHtml}</span></div>`;
             });
         });
         // ⭐変更できないキーを最後にまとめて見せる（木下「何がどのショートカットかを全部確認できるように」）
         //   ⚠️これが無いと「⌘Vを割り当てたつもりが実は予約で弾かれていた」に気づけない。
         //   実際に起きた：⌘Vはペースト→出力が出る→パネルがログに切り替わる、を
         //   「⌘VでLOGに切り替わる」と誤解した。
-        if (!q) {
+        // ⚠️「変更できないキー」の早見表は絞り込み中に出すと邪魔（順送りで絞ったのに⌘Kや道具キーが並んだ）
+        if (!q && cmdFilter === 'all') {
             const _jp = !en;
             const G = (title, rows, badge) =>
                 `<div class="set-cmdcat">${esc(title)}</div>` +
@@ -11867,6 +11898,9 @@ const I18N = {
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
         'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
         'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
+        'setcmd.cycle': '⟳ 順送り', 'setcmd.arg': '⚠ 引数が要る',
+        'setcmd.cycleTip': 'これは1キーで順番に送れます（押すたびに次の状態へ）。1つずつ割り当てなくて済みます',
+        'setcmd.cycleSubTip': '1つずつ割り当てなくても、{cmd} にキーを1つ付ければ押すたびに順に切り替わります',
         'setcmd.argNote': '⚠ 引数が要る：キーを押すとパレットが開いて入力待ちになるだけ。すぐ動かすなら下のサブ行へ',
         'setcmd.cName': '名前', 'setcmd.cDesc': '説明', 'setcmd.cHot': 'ショートカット',
         'fb.body': 'このプロトタイプへの<strong>要望・アイデア・バグ報告</strong>を歓迎します。<br>あなたの声が次のバージョンを形づくります。<br><br><strong>Draw to Build.</strong> — 一緒に育てましょう。',
@@ -11929,6 +11963,9 @@ const I18N = {
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
         'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
         'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
+        'setcmd.cycle': '⟳ Cycling', 'setcmd.arg': '⚠ Needs an argument',
+        'setcmd.cycleTip': 'This one cycles — each press moves to the next state, so you do not need a key per option',
+        'setcmd.cycleSubTip': 'Instead of binding each option, bind one key to {cmd} and each press steps through them',
         'setcmd.argNote': '⚠ Needs an argument — the key just opens the palette and waits. Assign to a sub-row below to run it right away',
         'setcmd.cName': 'Name', 'setcmd.cDesc': 'Description', 'setcmd.cHot': 'Hotkey',
         'fb.body': 'We welcome your <strong>requests, ideas, and bug reports</strong> for this prototype.<br>Your voice shapes the next version.<br><br><strong>Draw to Build.</strong> — let’s grow it together.',
@@ -11997,6 +12034,7 @@ const OMNI_CMDS = [
             ['reset','分割幅を既定に戻す','Reset the split width']], kw:'sidebar split pane terminal window' },
     { cmd:'clear',   cat:'edit',    hint:'ボードを消す', hintEn:'Clear the board', kw:'reset erase all wipe' },
     { cmd:'crumb',   cat:'draw',    hint:'消しカスの量（crumb 50）', hintEn:'Eraser crumb amount (crumb 50)', args:true, argsOpt:true,
+      cycle:true,
       subs:[['next','量を順番に送る（0→50→100→200）','Cycle the amount (0→50→100→200)'],
             ['0','消しカスを出さない','No eraser crumbs'],['50','消しカスを半分に','Half the crumbs'],['100','消しカスを標準に','Default amount'],['200','消しカスを多めに','Twice the crumbs']], kw:'消しカス けしかす crumb debris eraser debris dust eraser shavings' },
     { cmd:'sweep',   cat:'edit',    hint:'消しカスを払う', hintEn:'Sweep eraser crumbs off the paper', kw:'消しカス カス 払う 掃除 sweep dust crumb clean 紙 clean dust tidy brush away' },
@@ -12014,6 +12052,7 @@ const OMNI_CMDS = [
             ['middle','選択を上下の中央に','Center selection vertically']] },
     { cmd:'swap',    cat:'panel',   hint:'ボードを右/左に入替（利き手）· ↵でそのまま入替', hintEn:'Swap board to the right/left (handedness) · ↵ to toggle', args:true, argsOpt:true, kw:'左右 入替 利き手 swap layout 右利き 左利き right left handedness left right side mirror layout' },
     { cmd:'board',   cat:'edit',    hint:'ボードサイズ（board a4 / a3 / free）', hintEn:'Board size (board a4 / a3 / free)', args:true, kw:'ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size page size paper canvas format',
+      cycle:true,
       subs:[['next','サイズを順番に送る（1キーで回せる）','Cycle through the sizes (one key)'],
             ['free','枠なし（無限に広い板）','No page frame (infinite board)'],
             ['a4','A4（縦）','A4 portrait'],
@@ -12023,13 +12062,13 @@ const OMNI_CMDS = [
             ['letter','レター','Letter'],
             ['square','正方形','Square']] },
     // ⭐1キーで順送りする3つ（木下案）。既存の個別コマンドは残したまま、まとめて回す口を足しただけ。
-    { cmd:'theme',   cat:'board',   hint:'テーマを順番に送る（暗い→明るい→グレー）', hintEn:'Cycle the theme (dark → light → gray)', argsOpt:true,
+    { cmd:'theme',   cat:'board', cycle:true,   hint:'テーマを順番に送る（暗い→明るい→グレー）', hintEn:'Cycle the theme (dark → light → gray)', argsOpt:true,
       subs:[['dark','暗いテーマにする','Dark theme'],['light','明るいテーマにする','Light theme'],['gray','グレーにする','Gray theme']],
       kw:'テーマ 配色 色 切替 暗い 明るい グレー theme mode dark light gray cycle toggle appearance' },
-    { cmd:'grade',   cat:'grade',   hint:'鉛筆の芯を順番に送る（2H→…→6B）', hintEn:'Cycle the pencil grade (2H → … → 6B)', argsOpt:true,
+    { cmd:'grade',   cat:'grade', cycle:true,   hint:'鉛筆の芯を順番に送る（2H→…→6B）', hintEn:'Cycle the pencil grade (2H → … → 6B)', argsOpt:true,
       subs:[['hb','芯を HB に','Set grade to HB'],['2b','芯を 2B に','Set grade to 2B'],['4b','芯を 4B に','Set grade to 4B'],['6b','芯を 6B に','Set grade to 6B']],
       kw:'芯 濃さ 鉛筆 硬さ 順送り grade pencil lead hardness soft hard cycle' },
-    { cmd:'drawmode',cat:'draw',    hint:'描き味を順番に送る（鉛筆→筆→クラシック）', hintEn:'Cycle the drawing feel (pencil → brush → classic)', argsOpt:true,
+    { cmd:'drawmode',cat:'draw', cycle:true,    hint:'描き味を順番に送る（鉛筆→筆→クラシック）', hintEn:'Cycle the drawing feel (pencil → brush → classic)', argsOpt:true,
       subs:[['enpitsu','鉛筆（紙）で描く','Draw with pencil on paper'],['fude','筆で描く','Draw with a brush'],['classic','クラシックな線','Classic stroke']],
       kw:'描き味 筆 鉛筆 クラシック 切替 drawmode feel pencil brush classic cycle switch' },
     { cmd:'flip',    cat:'board',   hint:'紙を裏返す（表が薄く透ける）', hintEn:'Flip the paper (front bleeds through)', kw:'裏返す ひっくり返す 裏 めくる flip reverse back 紙 turn reverse back backside other side' },
@@ -12094,7 +12133,9 @@ function centerTermPanel() {
     function score(q, it) {
         const c = it.cmd.toLowerCase();
         if (c === q) return 100;
-        if (c.startsWith(q)) return 80 - (c.length - q.length) * 0.4;
+        // ⭐順送りできる親は、同じ言葉で当たるサブ行より少し上に出す
+        //   （「board」と打った時に board a4 より board next が先に見える）
+        if (c.startsWith(q)) return 80 - (c.length - q.length) * 0.4 + (it.cycle ? 3 : 0);
         if (c.includes(q)) return 55;
         if (isSub(q, c)) return 32;
         if (it.hint && it.hint.toLowerCase().includes(q)) return 18;
