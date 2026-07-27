@@ -1,0 +1,96 @@
+{
+ "code": [
+  "{\"command\":\"fire\",\"action\":\"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i&lt;N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=&gt;{if(f++&gt;40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i&gt;=0)BM.all().splice(i,1);}BM.redraw();BM.log('fire: extinguished.');return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);BM.log('fire: burst of 15 sparks.');\"}",
+  "{\"command\":\"NAME\",\"action\":\"JAVASCRIPT_CODE_AS_A_STRING\"}",
+  "{\"command\":\"hi\",\"action\":\"const c=BM.viewCenter();BM.create('sticky',{x:c.x-100,y:c.y-100,w:200,h:200,text:'hello'});BM.redraw();BM.log('placed.');\"}",
+  "{\"command\":\"snowy\",\"action\":\"if(window._snowyId){clearInterval(window._snowyId);window._snowyId=null;BM.log('stopped.');return;}let i=0;const c=BM.viewCenter();const items=[];for(let k=0;k&lt;40;k++){const o=BM.create('text',{x:c.x+Math.random()*1200-600,y:c.y-400-Math.random()*200,text:'❄',fontSize:14+Math.random()*10});items.push({o,vy:0.5+Math.random()*1.2});}window._snowyId=setInterval(()=&gt;{if(i++&gt;10000){clearInterval(window._snowyId);window._snowyId=null;return;}for(const it of items){it.o.data.y+=it.vy;if(it.o.data.y&gt;c.y+400){it.o.data.y=c.y-400;it.o.data.x=c.x+Math.random()*1200-600;}}BM.redraw();},30);BM.log('snowy: running. $snowy again to stop.');\"}",
+  "{\"command\":\"red\",\"action\":\"const sel=BM.getSelected();if(!sel.length){BM.log('select first','t-err');return;}for(const o of sel){BM.setStroke(o,'#FF0000');}BM.redraw();BM.log('recolored '+sel.length);\"}",
+  "You are creating a \"spell\" for BMBoard, a single-page canvas web app.\n\nOUTPUT FORMAT (mandatory, no exceptions):\n{\"command\":\"NAME\",\"action\":\"JAVASCRIPT_CODE_AS_STRING\"}\n\nOutput 1 line, no Markdown, no explanation, no code fences.\n\nReference example (study this shape — yours should look the same):\n{\"command\":\"fire\",\"action\":\"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i&lt;N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=&gt;{if(f++&gt;40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i&gt;=0)BM.all().splice(i,1);}BM.redraw();return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);\"}\n\nThe action is RAW JS executed via `new Function('BM','args',action)`.\nAvailable API:\n- BM.log(msg, cls?)\n- BM.viewCenter() → {x, y}\n- BM.create(type, props)   // type: 'circle'|'square'|'triangle'|'arrow'|'text'|'sticky'\n- BM.translate / update / remove\n- BM.setStroke(obj, color), BM.setFill(obj, color)\n- BM.all() / BM.getSelected() / BM.clear() / BM.redraw() / BM.save()\n- BM.rand(min, max)\n- args                     // string passed at call time\n\nObject props:\n- circle:   {cx, cy, rx, ry, rotation, fill}\n- square:   {x, y, w, h, rotation, fill}\n- triangle: {x, y, w, h, rotation, fill}\n- arrow:    {x1, y1, x2, y2, rotation}\n- text:     {x, y, text, fontSize, rotation}\n- sticky:   {x, y, w, h, text, color, rotation}\n\nNEVER use: internalName, displayName, description, icon, category, cost, cooldown,\nmp, projectile, particle, onHit, range, power, type-as-top-level-field,\nplugins, skills, magic create, /bmboard, /reload.\nThose are not BMBoard.\n\nNow create a spell: &lt;DESCRIBE WHAT YOU WANT&gt;"
+ ],
+ "rows": [
+  [
+   "BM.log(msg, cls?)",
+   "Print to terminal. <code>cls</code> is <code>'t-ok'</code> / <code>'t-err'</code> / <code>'t-dim'</code> / undefined."
+  ],
+  [
+   "BM.viewCenter()",
+   "Returns <code>{x, y}</code> — current canvas view center in world coordinates."
+  ],
+  [
+   "BM.create(type, props)",
+   "Adds a new canvas object. Returns the object."
+  ],
+  [
+   "BM.translate(obj, dx, dy)",
+   "Move obj by delta."
+  ],
+  [
+   "BM.update(idOrObj, patch)",
+   "Patch obj's <code>data</code> with given properties."
+  ],
+  [
+   "BM.remove(obj)",
+   "Remove obj from canvas."
+  ],
+  [
+   "BM.setStroke(obj, color)",
+   "Set stroke color."
+  ],
+  [
+   "BM.setFill(obj, color)",
+   "Set fill color."
+  ],
+  [
+   "BM.all()",
+   "Array of all canvas objects (mutable — use <code>.splice</code> to remove)."
+  ],
+  [
+   "BM.getSelected()",
+   "Array of currently-selected objects."
+  ],
+  [
+   "BM.clear()",
+   "Wipe all canvas objects."
+  ],
+  [
+   "BM.redraw()",
+   "Force a repaint. Call after every mutation."
+  ],
+  [
+   "BM.save()",
+   "Push a history snapshot for undo."
+  ],
+  [
+   "BM.rand(min, max)",
+   "Random number in <code>[min, max]</code>."
+  ],
+  [
+   "args",
+   "String passed at invocation. <code>$name foo bar</code> → <code>args === 'foo bar'</code>."
+  ],
+  [
+   "circle",
+   "<code>{cx, cy, rx, ry, rotation, fill, strokeOff}</code>"
+  ],
+  [
+   "square",
+   "<code>{x, y, w, h, rotation, fill, strokeOff}</code>"
+  ],
+  [
+   "triangle",
+   "<code>{x, y, w, h, rotation, fill, strokeOff}</code> or <code>{pts:[{x,y},{x,y},{x,y}], rotation, fill}</code>"
+  ],
+  [
+   "arrow",
+   "<code>{x1, y1, x2, y2, rotation}</code>"
+  ],
+  [
+   "text",
+   "<code>{x, y, text, fontSize, rotation}</code>"
+  ],
+  [
+   "sticky",
+   "<code>{x, y, w, h, text, color, rotation}</code> (default <code>color: '#FFE873'</code>)"
+  ]
+ ]
+}

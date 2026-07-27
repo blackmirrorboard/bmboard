@@ -1,147 +1,376 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BMBoard Spell Format Specification</title>
-<meta name="description" content="Canonical machine-readable specification for authoring Black Mirror Board (BMBoard) spells. Read this before generating any spell JSON.">
-<meta name="robots" content="index, follow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BM BOARD — 魔法の書式 / Spell format</title>
+<!-- ⚠️このファイルは自動生成です。直接編集しても次の生成で消えます。
+     生成元は app.html の中のデータ。項目を足すならそちらに1行足す。 -->
+<meta name="description" content="魔法（spell）を自分で書く・AIに書かせるための書式。1行のJSONで、ボードの上で動くものを作って配れます。日本語の説明つき。">
+<link rel="canonical" href="https://bmboard.studio/spell-spec.html">
+<meta property="og:title" content="BM BOARD — 魔法の書式">
+<meta property="og:description" content="1行のJSONで、ボードの上で動くものを作って配る。AIに書かせるためのプロンプトつき。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://bmboard.studio/spell-spec.html">
+<meta property="og:image" content="https://bmboard.studio/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="BM BOARD">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BM BOARD — 魔法の書式">
+<meta name="twitter:image" content="https://bmboard.studio/og-image.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#08080a">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "BM BOARD の魔法の書式",
+  "inLanguage": [
+    "ja",
+    "en"
+  ],
+  "url": "https://bmboard.studio/spell-spec.html",
+  "about": {
+    "@type": "SoftwareApplication",
+    "name": "BM BOARD",
+    "alternateName": [
+      "Black Mirror Board",
+      "BMBOARD"
+    ],
+    "url": "https://bmboard.studio/"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "木下 貴博",
+    "url": "https://kinoshita.studio/"
+  }
+}
+</script>
 <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 820px; margin: 40px auto; padding: 0 20px; color: #0c0c0c; background: #FAFAF8; line-height: 1.6; }
-    h1 { font-size: 22px; border-bottom: 2px solid #0c0c0c; padding-bottom: 8px; }
-    h2 { font-size: 16px; margin-top: 36px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-    h3 { font-size: 13px; letter-spacing: 0.05em; color: #555; margin-top: 24px; }
-    code { background: #f0ede6; padding: 1px 5px; border-radius: 3px; font-size: 90%; }
-    pre { background: #0c0c0c; color: #e8e6e0; padding: 14px 16px; border-radius: 4px; font-size: 12.5px; line-height: 1.55; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
-    pre code { background: transparent; padding: 0; }
-    table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 10px 0; }
-    th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; vertical-align: top; }
-    th { background: #f0ede6; }
-    .warn { background: #fff5e0; border: 1px solid #f0c000; padding: 12px 14px; margin: 16px 0; font-size: 13px; }
-    .lede { color: #555; font-size: 14px; }
-    .pivot { background: #1a3a1a; color: #d8e8d8; padding: 16px 18px; border-radius: 4px; margin: 16px 0; font-size: 13.5px; }
-    .pivot pre { background: #050a05; margin: 12px 0; }
-    a { color: #0c0c0c; }
+/* ⭐トップページと同じ顔（システムフォント・暗い地・SF Monoのチップ）。
+   ⚠️Webフォントは読まない＝外部依存ゼロ。BM BOARD本体の思想と揃える。 */
+:root{
+  --ink:#08080a; --ink2:#0e0e12; --fg:#f2f0ec;
+  --dim:rgba(242,240,236,.56); --dim2:rgba(242,240,236,.34);
+  --line:rgba(255,255,255,.09);
+  --blue:#0a12e0;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans','Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scroll-padding-top:150px}
+body{background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.8;
+  letter-spacing:.01em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.shell{max-width:1160px;margin:0 auto;padding:0 26px}
+
+/* 背景の光。⚠️読む頁なので動かさない（動く光は目が滑る） */
+.glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.glow i{position:absolute;display:block;border-radius:50%;filter:blur(80px);opacity:.20}
+.glow i:nth-child(1){width:52vw;height:52vw;left:-16vw;top:-14vh;background:#4a3aff}
+.glow i:nth-child(2){width:48vw;height:48vw;right:-14vw;top:52vh;background:#2a6cff}
+main,nav,footer{position:relative;z-index:1}
+
+nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:16px;
+  padding:13px 26px;background:rgba(8,8,10,.74);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+/* ⚠️ドロップダウンの位置の基準。sticky でも absolute の親になる */
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:15px;
+  letter-spacing:.16em;font-weight:700;flex:none}
+.brand img{width:27px;height:27px;filter:invert(1)}
+.pages{display:flex;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;
+  scrollbar-width:none}
+.pages::-webkit-scrollbar{display:none}
+.pages a{font-size:13.5px;color:var(--dim);padding:8px 13px;border-radius:9px;white-space:nowrap}
+.pages a:hover{color:var(--fg);background:rgba(255,255,255,.06)}
+.pages a.on{color:var(--fg);background:rgba(255,255,255,.09)}
+.lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  font-family:var(--mono);font-size:11px;flex:none}
+.lang button{background:transparent;border:0;color:var(--dim2);padding:6px 11px;cursor:pointer;font:inherit}
+.lang button.on{background:var(--fg);color:var(--ink)}
+.navcta{font-size:13px;font-weight:500;padding:9px 20px;border-radius:9px;
+  background:var(--fg);color:var(--ink);flex:none}
+
+header.head{padding:78px 0 30px}
+h1{font-size:clamp(30px,5vw,54px);font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.sub{margin-top:16px;font-size:15px;color:var(--dim);max-width:660px}
+.sub b{color:var(--fg);font-weight:600}
+.count{margin-top:22px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--dim2)}
+
+.tools{position:sticky;top:60px;z-index:20;padding:14px 0 12px;margin-top:22px;
+  background:linear-gradient(180deg,rgba(8,8,10,.96),rgba(8,8,10,.80));
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+#q{width:100%;max-width:420px;font:inherit;font-size:14px;color:var(--fg);
+  background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:11px;padding:12px 16px}
+#q::placeholder{color:var(--dim2)}
+#q:focus{outline:none;border-color:rgba(255,255,255,.28)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--dim);
+  border:1px solid var(--line);border-radius:999px;padding:7px 14px;background:rgba(255,255,255,.03)}
+.chip:hover{color:var(--fg);border-color:rgba(255,255,255,.24)}
+.chip .i{font-size:13px}
+
+.cat{padding:46px 0 8px;border-top:1px solid var(--line);margin-top:34px}
+.cat h2{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:700;letter-spacing:-.01em}
+.cat h2 .i{font-size:20px}
+.note{margin-top:10px;color:var(--dim);font-size:14px}
+.rows{margin-top:24px;display:grid;gap:2px}
+.row{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:baseline;
+  padding:14px 16px;border-radius:11px}
+.row:hover{background:rgba(255,255,255,.035)}
+.key{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+kbd{font-family:var(--mono);font-size:12px;color:var(--fg);white-space:nowrap;
+  background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:7px;padding:4px 9px}
+.key i{font-style:normal;color:var(--dim2);font-size:11px}
+.key .arg{font-family:var(--mono);font-size:11.5px;color:var(--dim2)}
+.desc{font-size:14.5px}
+.desc small{display:block;margin-top:5px;font-size:12.5px;color:var(--dim);line-height:1.75}
+.desc b{font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:rgba(255,255,255,.07);
+  border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+
+.card{margin-top:44px;border:1px solid var(--line);border-radius:16px;padding:28px 26px;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015))}
+.card h3{font-size:17px;font-weight:700}
+.card p{margin-top:10px;font-size:14px;color:var(--dim)}
+.card .warn{color:#ffd9a8}
+.more{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.more a{font-size:13.5px;border:1px solid var(--line);border-radius:10px;padding:10px 18px;
+  background:rgba(255,255,255,.04)}
+.more a:hover{background:rgba(255,255,255,.09)}
+
+.empty{display:none;padding:40px 16px;color:var(--dim);font-size:14px}
+body.searching .cat{border-top:0;padding-top:0;margin-top:18px}
+body.searching .note,body.searching .tools .chips{display:none}
+
+footer{margin-top:90px;padding:34px 0 60px;border-top:1px solid var(--line)}
+.frow{display:flex;flex-wrap:wrap;align-items:center;gap:18px;font-size:12.5px;color:var(--dim)}
+.frow a:hover{color:var(--fg)}
+.fnote{margin-top:16px;font-size:11.5px;color:var(--dim2)}
+
+.en{display:none}
+body.lang-en .ja{display:none}
+body.lang-en .en{display:inline}
+
+@media(max-width:900px){
+  .shell{padding:0 20px}
+  nav{padding:11px 16px;gap:10px;flex-wrap:wrap}
+  .pages{order:3;width:100%;flex-basis:100%;margin:0 -16px;padding:0 16px 2px}
+  .pages a{font-size:12.5px;padding:7px 11px}
+  html{scroll-padding-top:120px}
+  header.head{padding:52px 0 24px}
+  .row{grid-template-columns:1fr;gap:8px;padding:14px 12px}
+  .cat{padding-top:36px}
+
+  /* ⭐スマホでは貼り付くものを減らす（木下指摘・2026-07-27）。
+     ⚠️ナビ2段＋検索＋カテゴリが全部 sticky だと画面の半分近くが常時ふさがり、
+       中身が数行しか見えていなかった。→ 絞り込み欄は一緒に流れるようにした（上に戻れば出てくる）。
+     ⚠️2026-07-27：一度ハンバーガーにしたが「一旦なし」の判断（木下）。ページ列は2段目に横並びで置く。 */
+  .tools{position:static;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;
+    padding:12px 0 4px;margin-top:14px}
+  .navcta{padding:8px 14px;font-size:12.5px}
+  .brand{font-size:13px;gap:9px}
+  .brand img{width:23px;height:23px}
+}
+
+.hero{text-align:center;padding-top:44px}
+.hero h1{font-size:clamp(44px,7.4vw,96px);letter-spacing:-.035em;line-height:1.02}
+.hero .sub{margin-left:auto;margin-right:auto}
+.hero .count{text-align:center}
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(10px,1.6vw,20px);
+  max-width:640px;margin:0 auto 34px;pointer-events:none}
+.tile{aspect-ratio:1;display:grid;place-items:center;font-size:clamp(20px,3.2vw,30px);
+  border-radius:clamp(12px,2vw,20px);border:1px solid rgba(255,255,255,.09);
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+  box-shadow:0 18px 40px rgba(0,0,0,.45)}
+/* ⭐端に行くほど遠くにある＝ぼけて暗い。中央だけがくっきり見える */
+.tile.t0,.tile.t4,.tile.t5,.tile.t9{filter:blur(3px);opacity:.42}
+.tile.t1,.tile.t8{filter:blur(1px);opacity:.72}
+@media(max-width:560px){ .tiles{gap:8px;max-width:none} .tile{border-radius:12px} }
+@media(prefers-reduced-motion:no-preference){
+  .tile{animation:tileIn .7s cubic-bezier(.2,.8,.2,1) backwards}
+  .tile.t1{animation-delay:.04s} .tile.t2{animation-delay:.08s} .tile.t3{animation-delay:.12s}
+  .tile.t4{animation-delay:.16s} .tile.t5{animation-delay:.2s}  .tile.t6{animation-delay:.24s}
+  .tile.t7{animation-delay:.28s} .tile.t8{animation-delay:.32s} .tile.t9{animation-delay:.36s}
+  @keyframes tileIn{from{opacity:0;transform:translateY(10px) scale(.96)}}
+}
+
+/* この頁だけ：仕様の組み */
+.sec{padding:46px 0 8px;border-top:1px solid var(--line);margin-top:26px;max-width:860px}
+.sec:first-of-type{border-top:0}
+.sec h2{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.sec h3{margin-top:26px;font-size:15px;font-weight:700;color:var(--fg)}
+.sec p{margin-top:12px;font-size:14.5px;line-height:1.95;color:var(--dim)}
+.sec p b{color:var(--fg);font-weight:600}
+.sec ul{margin-top:12px;padding-left:0;list-style:none}
+.sec li{position:relative;padding-left:20px;margin-top:8px;font-size:14px;line-height:1.9;color:var(--dim)}
+.sec li::before{content:'';position:absolute;left:4px;top:.85em;width:5px;height:1px;background:var(--dim2)}
+.sec li b{color:var(--fg);font-weight:600}
+pre{margin-top:14px;padding:16px 18px;border-radius:12px;overflow-x:auto;
+  background:rgba(0,0,0,.45);border:1px solid var(--line);
+  font-family:var(--mono);font-size:12.5px;line-height:1.7;color:#e8e6e0;white-space:pre-wrap;word-break:break-word}
+pre code{background:none;border:0;padding:0;font-size:inherit;color:inherit}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top;color:var(--dim)}
+th{background:rgba(255,255,255,.05);color:var(--fg);font-weight:600}
+td code{white-space:nowrap}
+.warn{margin-top:16px;padding:16px 18px;border-radius:12px;font-size:13.5px;line-height:1.9;
+  color:#ffd9a8;background:rgba(255,170,60,.08);border:1px solid rgba(255,190,110,.28)}
+.warn code{background:rgba(0,0,0,.3);color:#ffe6c4}
 </style>
 </head>
 <body>
+<div class="glow"><i></i><i></i></div>
 
-<h1>BMBoard Spell Format Specification</h1>
+<nav>
+  <a class="brand" href="index.html"><img src="logo.png" alt=""><span>BM BOARD</span></a>
+  <div class="pages">
+    <a href="usage.html"><span class="ja">使い方</span><span class="en">Usage</span></a>
+    <a href="commands.html"><span class="ja">コマンド</span><span class="en">Commands</span></a>
+    <a href="store.html">STORE</a>
+    <a href="spell-spec.html" class="on"><span class="ja">魔法の書式</span><span class="en">Spell format</span></a>
+    <a href="story.html"><span class="ja">つくった理由</span><span class="en">Story</span></a>
+    <a href="dev-log.html"><span class="ja">開発ログ</span><span class="en">Dev log</span></a>
+    <a href="browser/">BM Browser</a>
+  </div>
+  <div class="lang">
+    <button type="button" data-lang="ja" class="on">JP</button>
+    <button type="button" data-lang="en">EN</button>
+  </div>
+  <a class="navcta" href="app.html"><span class="ja">開く</span><span class="en">Open</span></a>
+</nav>
 
-<p class="lede">
-    Canonical specification for authoring <b>Black Mirror Board (BMBoard)</b> spells.
-    Read this before generating any spell JSON. Last updated: 2026-05-08 (v1.2).
-</p>
-
-<p class="lede">
-    Mirror (Markdown): <a href="./spell-spec.md"><code>spell-spec.md</code></a> ·
-    LLM index: <a href="./llms.txt"><code>llms.txt</code></a>
-</p>
-
-<h2>0. ⚡ Lead with a working example — copy this, study it, then read the rest</h2>
-
-<p>A spell that scatters 15 🔥 emoji from view center, animates them outward with shrinking, then auto-clears:</p>
-
-<div class="pivot">
-<b>Reference example — your output should look structurally identical to this:</b>
-<pre><code>{"command":"fire","action":"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i&lt;N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=&gt;{if(f++&gt;40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i&gt;=0)BM.all().splice(i,1);}BM.redraw();BM.log('fire: extinguished.');return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);BM.log('fire: burst of 15 sparks.');"}</code></pre>
-</div>
-
-<p>What this teaches you:</p>
-
-<ul>
-    <li><b>A spell is one line of JSON with exactly two keys: <code>command</code> and <code>action</code>.</b> Nothing else.</li>
-    <li><b><code>action</code> is a string of raw JS</b> that gets executed via <code>new Function('BM','args',action)</code>.</li>
-    <li>Typical pattern: <code>BM.create()</code> to spawn objects → <code>setInterval</code> for animation → <code>BM.all().splice()</code> to clean up → <code>BM.redraw()</code> after each mutation → <code>BM.log()</code> for status.</li>
-</ul>
-
-<p>When you generate a new spell, your output should look <b>structurally identical to the line above</b> — different <code>command</code>, different JS body inside <code>action</code>, but the same shape.</p>
-
-<h2>1. The format</h2>
-
-<pre><code>{"command":"NAME","action":"JAVASCRIPT_CODE_AS_A_STRING"}</code></pre>
-
-<ul>
-    <li><code>"command"</code> — the invocation name. Lowercase letters, digits, hyphens, underscores. 1–31 chars. After registration the user runs <code>$NAME</code> (or <code>NAME</code>) in the BMBoard terminal.</li>
-    <li><code>"action"</code> — <b>raw JavaScript code as a string</b>. BMBoard executes it via <code>new Function('BM','args',action)</code>. The string IS the code body; it is NOT a structured object.</li>
-</ul>
-
-<p>There are <b>no other fields</b>. Output a single line, no Markdown fences, no leading prose.</p>
-
-<h2>2. Forbidden / hallucinated terms — DO NOT USE</h2>
-
-<div class="warn">
-    These belong to other systems (Minecraft plugins, RPG engines, etc.) and have <b>no meaning in BMBoard</b>:
-    <p style="margin: 8px 0 0;">
-        <code>internalName</code>, <code>displayName</code>, <code>description</code>, <code>icon</code>, <code>category</code>, <code>cost</code>, <code>mp</code>, <code>cooldown</code>, <code>actions</code> (as array of structured action objects), <code>PROJECTILE</code>, <code>particle</code>, <code>onHit</code>, <code>effect</code>, <code>range</code>, <code>power</code>, <code>type</code> (as a top-level field), <code>magic create</code>, <code>/bmboard</code>, <code>/reload</code>, <code>plugins/</code>, <code>skills/</code>, <code>give</code>, server-side, mod, plugin, manifest.
+<main class="shell">
+  <header class="head hero">
+    <div class="tiles" aria-hidden="true">
+      <span class="tile t0">🪄</span>
+      <span class="tile t1">📦</span>
+      <span class="tile t2">⚡</span>
+      <span class="tile t3">🧩</span>
+      <span class="tile t4">🔮</span>
+      <span class="tile t5">📤</span>
+      <span class="tile t6">🛡</span>
+      <span class="tile t7">🧪</span>
+      <span class="tile t8">📖</span>
+      <span class="tile t9">✨</span>
+    </div>
+    <h1><span class="ja">魔法の書式</span><span class="en">Spell format</span></h1>
+    <p class="sub">
+      <span class="ja"><b>1行のJSON</b>で、ボードの上で動くものを作れる。作ったものは書き出して人に配れる。<br>AIに書かせるためのプロンプトも用意してある。</span><span class="en">A spell is <b>one line of JSON</b> that makes something happen on the board — and it travels as text, so you can hand it to someone. A ready-made prompt for AI is included.</span>
     </p>
-    <p style="margin: 8px 0 0;">If you find yourself reaching for any of these, STOP — you are off-spec.</p>
-</div>
+    <p class="count">JSON · one line · no build step</p>
+  </header>
 
-<h2>3. The <code>BM.*</code> API available inside <code>action</code></h2>
+  <section class="sec">
+    <h2><span class="ja">まず動く例を1つ</span><span class="en">0. Lead with a working example</span></h2>
+    <p><span class="ja">中央から🔥を15個ばらまいて、外へ飛ばしながら小さくして、最後に自分で片づける魔法。<b>これをコピーして、形を真似るのが一番早い。</b></span><span class="en">A spell that scatters 15 🔥 from view center, animates them outward while shrinking, then cleans up after itself. <b>Copy this and match its shape.</b></span></p>
+    <pre><code>{"command":"fire","action":"const N=15,vc=BM.viewCenter();const sparks=[];for(let i=0;i&lt;N;i++){const s=BM.create('text',{x:vc.x,y:vc.y,text:'🔥',fontSize:20+Math.random()*20});sparks.push({o:s,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15});}let f=0;const id=setInterval(()=&gt;{if(f++&gt;40){clearInterval(id);for(const s of sparks){const i=BM.all().indexOf(s.o);if(i&gt;=0)BM.all().splice(i,1);}BM.redraw();BM.log('fire: extinguished.');return;}for(const s of sparks){s.o.data.x+=s.vx;s.o.data.y+=s.vy;s.o.data.fontSize*=0.92;}BM.redraw();},30);BM.log('fire: burst of 15 sparks.');"}</code></pre>
+    <p><span class="ja">ここから読み取れること：</span><span class="en">What this teaches you:</span></p>
+    <ul>
+      <li><span class="ja"><b>魔法は「command」と「action」の2つだけを持つ1行のJSON</b>。それ以外の項目は無い。</span><span class="en"><b>A spell is one line of JSON with exactly two keys: <code>command</code> and <code>action</code>.</b> Nothing else.</span></li>
+      <li><span class="ja"><b><code>action</code> は JavaScript を文字列にしたもの</b>。<code>new Function("BM","args",action)</code> で実行される。</span><span class="en"><b><code>action</code> is a string of raw JS</b>, executed via <code>new Function("BM","args",action)</code>.</span></li>
+      <li><span class="ja">よくある形＝<code>BM.create()</code> で置く → <code>setInterval</code> で動かす → 片づける → 毎回 <code>BM.redraw()</code> → <code>BM.log()</code> で結果を出す。</span><span class="en">Typical pattern: <code>BM.create()</code> → <code>setInterval</code> → clean up → <code>BM.redraw()</code> after each change → <code>BM.log()</code> for status.</span></li>
+    </ul>
+  </section>
 
-<table>
-    <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
-    <tbody>
-        <tr><td><code>BM.log(msg, cls?)</code></td><td>Print to terminal. <code>cls</code> is <code>'t-ok'</code> / <code>'t-err'</code> / <code>'t-dim'</code> / undefined.</td></tr>
-        <tr><td><code>BM.viewCenter()</code></td><td>Returns <code>{x, y}</code> — current canvas view center in world coordinates.</td></tr>
-        <tr><td><code>BM.create(type, props)</code></td><td>Adds a new canvas object. Returns the object.</td></tr>
-        <tr><td><code>BM.translate(obj, dx, dy)</code></td><td>Move obj by delta.</td></tr>
-        <tr><td><code>BM.update(idOrObj, patch)</code></td><td>Patch obj's <code>data</code> with given properties.</td></tr>
-        <tr><td><code>BM.remove(obj)</code></td><td>Remove obj from canvas.</td></tr>
-        <tr><td><code>BM.setStroke(obj, color)</code></td><td>Set stroke color.</td></tr>
-        <tr><td><code>BM.setFill(obj, color)</code></td><td>Set fill color.</td></tr>
-        <tr><td><code>BM.all()</code></td><td>Array of all canvas objects (mutable — use <code>.splice</code> to remove).</td></tr>
-        <tr><td><code>BM.getSelected()</code></td><td>Array of currently-selected objects.</td></tr>
-        <tr><td><code>BM.clear()</code></td><td>Wipe all canvas objects.</td></tr>
-        <tr><td><code>BM.redraw()</code></td><td>Force a repaint. Call after every mutation.</td></tr>
-        <tr><td><code>BM.save()</code></td><td>Push a history snapshot for undo.</td></tr>
-        <tr><td><code>BM.rand(min, max)</code></td><td>Random number in <code>[min, max]</code>.</td></tr>
-        <tr><td><code>args</code></td><td>String passed at invocation. <code>$name foo bar</code> → <code>args === 'foo bar'</code>.</td></tr>
-    </tbody>
+  <section class="sec">
+    <h2><span class="ja">魔法には2種類ある</span><span class="en">Two kinds of spell</span></h2>
+    <p><span class="ja">この頁が説明しているのは<b>コードで書く魔法（action型）</b>。もう1つ、<b>図形を置くだけの魔法（ops型）</b>がある。ops型は置ける形が決まっていて（square / sticky / text / circle / triangle / arrow）、コードは一切実行されない。STOREでは<b>「図形を置くだけ」と「コードで動く」を分けて表示</b>していて、コード型は掲載前に審査を通している。</span><span class="en">This page describes the <b>code kind (action)</b>. There is also a <b>shapes-only kind (ops)</b>, limited to a fixed set of shapes (square / sticky / text / circle / triangle / arrow) with no code execution at all. The STORE labels the two separately, and code spells are reviewed before they are listed.</span></p>
+    <p><span class="ja">選んだものを <code>spell 名前</code> で保存すると ops 型になる。動きを付けたいときだけ action 型を書く。</span><span class="en">Saving a selection with <code>spell name</code> produces an ops spell. Write an action spell only when you want motion.</span></p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="ja">書式</span><span class="en">1. The format</span></h2>
+    <pre><code>{"command":"NAME","action":"JAVASCRIPT_CODE_AS_A_STRING"}</code></pre>
+    <ul>
+      <li><span class="ja"><code>"command"</code> — 呼び出す名前。小文字・数字・ハイフン・アンダースコアで1〜31文字。登録すると、ターミナルや ⌘K からその名前で呼べる。</span><span class="en"><code>"command"</code> — the invocation name. Lowercase letters, digits, hyphens, underscores. 1–31 chars.</span></li>
+      <li><span class="ja"><code>"action"</code> — <b>JavaScript を文字列にしたもの</b>。中身がそのまま関数の本体になる（構造化されたオブジェクトではない）。</span><span class="en"><code>"action"</code> — <b>raw JavaScript as a string</b>. The string IS the function body; it is NOT a structured object.</span></li>
+    </ul>
+    <p><span class="ja"><b>他の項目は無い。</b>1行で出力する（Markdownの囲みや前置きの文章は付けない）。</span><span class="en"><b>There are no other fields.</b> Output a single line — no Markdown fences, no leading prose.</span></p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="ja">使ってはいけない言葉</span><span class="en">2. Forbidden / hallucinated terms</span></h2>
+    <p><span class="ja">⚠️次の語は<b>他のシステム（ゲームのプラグイン等）のもの</b>で、BM BOARD では意味を持たない。AIがよく混ぜてくるので、出てきたら書式から外れている合図。</span><span class="en">⚠️These belong to other systems (game plugins, RPG engines) and have <b>no meaning in BM BOARD</b>. If you find yourself reaching for any of them, you are off-spec.</span></p>
+    <div class="warn">
+      <code>internalName</code>, <code>displayName</code>, <code>description</code>, <code>icon</code>, <code>category</code>, <code>cost</code>, <code>mp</code>, <code>cooldown</code>, <code>actions</code> (as array), <code>PROJECTILE</code>, <code>particle</code>, <code>onHit</code>, <code>effect</code>, <code>range</code>, <code>power</code>, <code>type</code> (top-level), <code>magic create</code>, <code>/bmboard</code>, <code>/reload</code>, <code>plugins/</code>, <code>skills/</code>, <code>give</code>, server-side, mod, plugin, manifest
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2><span class="ja"><code>action</code> の中で使える <code>BM.*</code></span><span class="en">3. The <code>BM.*</code> API</span></h2>
+    <p><span class="ja">⚠️ここに無いものは使えない。AIに書かせるときは、この表をそのまま渡すのが確実。</span><span class="en">⚠️Nothing outside this table is available. When prompting an AI, hand it this table verbatim.</span></p>
+    <table>
+  <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>BM.log(msg, cls?)</code></td><td>Print to terminal. <code>cls</code> is <code>'t-ok'</code> / <code>'t-err'</code> / <code>'t-dim'</code> / undefined.</td></tr>
+    <tr><td><code>BM.viewCenter()</code></td><td>Returns <code>{x, y}</code> — current canvas view center in world coordinates.</td></tr>
+    <tr><td><code>BM.create(type, props)</code></td><td>Adds a new canvas object. Returns the object.</td></tr>
+    <tr><td><code>BM.translate(obj, dx, dy)</code></td><td>Move obj by delta.</td></tr>
+    <tr><td><code>BM.update(idOrObj, patch)</code></td><td>Patch obj's <code>data</code> with given properties.</td></tr>
+    <tr><td><code>BM.remove(obj)</code></td><td>Remove obj from canvas.</td></tr>
+    <tr><td><code>BM.setStroke(obj, color)</code></td><td>Set stroke color.</td></tr>
+    <tr><td><code>BM.setFill(obj, color)</code></td><td>Set fill color.</td></tr>
+    <tr><td><code>BM.all()</code></td><td>Array of all canvas objects (mutable — use <code>.splice</code> to remove).</td></tr>
+    <tr><td><code>BM.getSelected()</code></td><td>Array of currently-selected objects.</td></tr>
+    <tr><td><code>BM.clear()</code></td><td>Wipe all canvas objects.</td></tr>
+    <tr><td><code>BM.redraw()</code></td><td>Force a repaint. Call after every mutation.</td></tr>
+    <tr><td><code>BM.save()</code></td><td>Push a history snapshot for undo.</td></tr>
+    <tr><td><code>BM.rand(min, max)</code></td><td>Random number in <code>[min, max]</code>.</td></tr>
+    <tr><td><code>args</code></td><td>String passed at invocation. <code>$name foo bar</code> → <code>args === 'foo bar'</code>.</td></tr>
+  </tbody>
 </table>
+  </section>
 
-<h2>4. Object types and <code>props</code></h2>
-
-<table>
-    <thead><tr><th><code>type</code></th><th><code>props</code></th></tr></thead>
-    <tbody>
-        <tr><td><code>circle</code></td><td><code>{cx, cy, rx, ry, rotation, fill, strokeOff}</code></td></tr>
-        <tr><td><code>square</code></td><td><code>{x, y, w, h, rotation, fill, strokeOff}</code></td></tr>
-        <tr><td><code>triangle</code></td><td><code>{x, y, w, h, rotation, fill, strokeOff}</code> or <code>{pts:[{x,y},{x,y},{x,y}], rotation, fill}</code></td></tr>
-        <tr><td><code>arrow</code></td><td><code>{x1, y1, x2, y2, rotation}</code></td></tr>
-        <tr><td><code>text</code></td><td><code>{x, y, text, fontSize, rotation}</code></td></tr>
-        <tr><td><code>sticky</code></td><td><code>{x, y, w, h, text, color, rotation}</code> (default <code>color: '#FFE873'</code>)</td></tr>
-    </tbody>
+  <section class="sec">
+    <h2><span class="ja">置けるものと、その設定</span><span class="en">4. Object types and props</span></h2>
+    <table>
+  <thead><tr><th>type</th><th>props</th></tr></thead>
+  <tbody>
+    <tr><td><code>circle</code></td><td><code>{cx, cy, rx, ry, rotation, fill, strokeOff}</code></td></tr>
+    <tr><td><code>square</code></td><td><code>{x, y, w, h, rotation, fill, strokeOff}</code></td></tr>
+    <tr><td><code>triangle</code></td><td><code>{x, y, w, h, rotation, fill, strokeOff}</code> or <code>{pts:[{x,y},{x,y},{x,y}], rotation, fill}</code></td></tr>
+    <tr><td><code>arrow</code></td><td><code>{x1, y1, x2, y2, rotation}</code></td></tr>
+    <tr><td><code>text</code></td><td><code>{x, y, text, fontSize, rotation}</code></td></tr>
+    <tr><td><code>sticky</code></td><td><code>{x, y, w, h, text, color, rotation}</code> (default <code>color: '#FFE873'</code>)</td></tr>
+  </tbody>
 </table>
+  </section>
 
-<h2>5. More working examples</h2>
+  <section class="sec">
+    <h2><span class="ja">もう少し例</span><span class="en">5. More working examples</span></h2>
+    <h3><span class="ja">いちばん短いもの — 中央に黄色い付箋を置く</span><span class="en">5.1 Minimal — drop a yellow sticky at view center</span></h3>
+    <pre><code>{"command":"hi","action":"const c=BM.viewCenter();BM.create('sticky',{x:c.x-100,y:c.y-100,w:200,h:200,text:'hello'});BM.redraw();BM.log('placed.');"}</code></pre>
+    <h3><span class="ja">同じ名前で始めて止める（トグル）</span><span class="en">5.2 Toggle pattern (start / stop on the same command)</span></h3>
+    <pre><code>{"command":"snowy","action":"if(window._snowyId){clearInterval(window._snowyId);window._snowyId=null;BM.log('stopped.');return;}let i=0;const c=BM.viewCenter();const items=[];for(let k=0;k&lt;40;k++){const o=BM.create('text',{x:c.x+Math.random()*1200-600,y:c.y-400-Math.random()*200,text:'❄',fontSize:14+Math.random()*10});items.push({o,vy:0.5+Math.random()*1.2});}window._snowyId=setInterval(()=&gt;{if(i++&gt;10000){clearInterval(window._snowyId);window._snowyId=null;return;}for(const it of items){it.o.data.y+=it.vy;if(it.o.data.y&gt;c.y+400){it.o.data.y=c.y-400;it.o.data.x=c.x+Math.random()*1200-600;}}BM.redraw();},30);BM.log('snowy: running. $snowy again to stop.');"}</code></pre>
+    <h3><span class="ja">選択中のものを使う — 選んだ全部の色を変える</span><span class="en">5.3 Use selection — recolor every selected object</span></h3>
+    <pre><code>{"command":"red","action":"const sel=BM.getSelected();if(!sel.length){BM.log('select first','t-err');return;}for(const o of sel){BM.setStroke(o,'#FF0000');}BM.redraw();BM.log('recolored '+sel.length);"}</code></pre>
+  </section>
 
-<h3>5.1 Minimal — drop a yellow sticky note at view center</h3>
+  <section class="sec">
+    <h2><span class="ja">登録のしかた</span><span class="en">6. How a spell is registered</span></h2>
+    <ul>
+      <li><span class="ja"><b>JSONをターミナルに貼る</b> — 自動で検出して登録される（Enterも要らない）。</span><span class="en"><b>Paste the JSON into the terminal</b> — auto-detected and registered, no Enter needed.</span></li>
+      <li><span class="ja"><b><code>.json</code> ファイルをボードにドラッグ＆ドロップ</b> — 自動で取り込む。</span><span class="en"><b>Drop a <code>.json</code> file onto the canvas</b> — auto-imported.</span></li>
+      <li><span class="ja"><b><code>register 名前 JS</code></b> — 名前とコードを1行で書いて登録する。</span><span class="en"><b><code>register &lt;name&gt; &lt;js&gt;</code></b> — name and raw JS on one line.</span></li>
+      <li><span class="ja">設定 → 魔法の <b>✨「コードから作る」</b> — AI用のプロンプトをコピーして、返ってきたJSONを貼る。</span><span class="en">Settings → Spells → <b>✨ "create from code"</b> — copy the AI prompt, paste the JSON that comes back.</span></li>
+    </ul>
+    <p><span class="ja">登録すると、⌘K に名前で並ぶ。<code>forget 名前</code> で消せる。</span><span class="en">Once registered it appears in ⌘K by name. Remove it with <code>forget &lt;name&gt;</code>.</span></p>
+  </section>
 
-<pre><code>{"command":"hi","action":"const c=BM.viewCenter();BM.create('sticky',{x:c.x-100,y:c.y-100,w:200,h:200,text:'hello'});BM.redraw();BM.log('placed.');"}</code></pre>
-
-<h3>5.2 Toggle pattern (start / stop on the same command)</h3>
-
-<pre><code>{"command":"snowy","action":"if(window._snowyId){clearInterval(window._snowyId);window._snowyId=null;BM.log('stopped.');return;}let i=0;const c=BM.viewCenter();const items=[];for(let k=0;k&lt;40;k++){const o=BM.create('text',{x:c.x+Math.random()*1200-600,y:c.y-400-Math.random()*200,text:'❄',fontSize:14+Math.random()*10});items.push({o,vy:0.5+Math.random()*1.2});}window._snowyId=setInterval(()=&gt;{if(i++&gt;10000){clearInterval(window._snowyId);window._snowyId=null;return;}for(const it of items){it.o.data.y+=it.vy;if(it.o.data.y&gt;c.y+400){it.o.data.y=c.y-400;it.o.data.x=c.x+Math.random()*1200-600;}}BM.redraw();},30);BM.log('snowy: running. $snowy again to stop.');"}</code></pre>
-
-<h3>5.3 Use selection — recolor every selected object</h3>
-
-<pre><code>{"command":"red","action":"const sel=BM.getSelected();if(!sel.length){BM.log('select first','t-err');return;}for(const o of sel){BM.setStroke(o,'#FF0000');}BM.redraw();BM.log('recolored '+sel.length);"}</code></pre>
-
-<h2>6. How a spell is registered</h2>
-
-<ol>
-    <li><b>Paste the JSON into the terminal</b> — auto-detected, registered, no Enter needed.</li>
-    <li><b>Save as <code>.json</code> file and drag-drop onto the canvas</b> — auto-imported.</li>
-    <li><b>Run <code>register &lt;name&gt; &lt;js&gt;</code></b> in terminal — name and raw JS code on one line.</li>
-</ol>
-
-<p>After registration, the user invokes with <code>$name</code> or just <code>name</code>.</p>
-
-<h2>7. AI agent system prompt (copy-paste-ready)</h2>
-
-<pre><code>You are creating a "spell" for BMBoard, a single-page canvas web app.
+  <section class="sec">
+    <h2><span class="ja">AIに書かせるためのプロンプト（英語のまま使う）</span><span class="en">7. AI agent system prompt</span></h2>
+    <p><span class="ja">⚠️<b>これは訳さずそのまま貼る。</b>API名や禁止語は英語が正なので、日本語に直すと精度が落ちる。最後の行だけ、作りたいものを日本語で書いてよい。</span><span class="en">⚠️Paste this as-is. The API names and banned terms are canonical in English. Describe what you want on the last line.</span></p>
+    <pre><code>You are creating a "spell" for BMBoard, a single-page canvas web app.
 
 OUTPUT FORMAT (mandatory, no exceptions):
 {"command":"NAME","action":"JAVASCRIPT_CODE_AS_STRING"}
@@ -176,16 +405,58 @@ plugins, skills, magic create, /bmboard, /reload.
 Those are not BMBoard.
 
 Now create a spell: &lt;DESCRIBE WHAT YOU WANT&gt;</code></pre>
+  </section>
 
-<h2>8. Reference</h2>
+  <section class="sec">
+    <h2><span class="ja">配る</span><span class="en">Sharing</span></h2>
+    <p><span class="ja">作った魔法は<b>1つのJSONとして書き出して人に渡せる</b>。設定 → 魔法の <b>📤</b> から提出すると、自動の一次審査（禁止API・BM APIが実在するか・構文・名前の重複）を通って STORE の一覧に載る。サーバーは無く、費用もかからない。</span><span class="en">A spell exports as <b>a single JSON you can hand to someone</b>. Submitting it from Settings → Spells (<b>📤</b>) runs an automatic first review — banned APIs, whether each BM API actually exists, syntax, name collisions — and then it lands in the STORE list. No server, no cost.</span></p>
+    <div class="more">
+      <a href="store.html"><span class="ja">STOREを見る</span><span class="en">Browse the STORE</span></a>
+      <a href="commands.html"><span class="ja">コマンド一覧</span><span class="en">Command reference</span></a>
+      <a href="usage.html"><span class="ja">使い方</span><span class="en">How to use</span></a>
+      <a href="app.html"><span class="ja">板を開く →</span><span class="en">Open the board →</span></a>
+    </div>
+  </section>
 
-<ul>
-    <li>Full docs: <a href="https://bmboard.studio/usage.html">usage.html</a></li>
-    <li>Command reference: <a href="https://bmboard.studio/commands.html">commands.html</a></li>
-    <li>This spec (HTML): <a href="https://bmboard.studio/spell-spec.html">spell-spec.html</a></li>
-    <li>This spec (Markdown): <a href="https://bmboard.studio/spell-spec.md">spell-spec.md</a></li>
-    <li>LLM index: <a href="https://bmboard.studio/llms.txt">llms.txt</a></li>
-</ul>
+  <section class="sec">
+    <h2><span class="ja">この頁の機械可読な写し</span><span class="en">8. Reference</span></h2>
+    <ul>
+      <li><a href="spell-spec.md"><code>spell-spec.md</code></a> — <span class="ja">Markdown版</span><span class="en">Markdown mirror</span></li>
+      <li><a href="llms.txt"><code>llms.txt</code></a> — <span class="ja">AI向けの索引</span><span class="en">LLM index</span></li>
+    </ul>
+  </section>
+</main>
 
+<footer class="shell">
+  <div class="frow">
+    <span class="brand" style="font-size:12px"><img src="logo.png" alt="" style="width:18px;height:18px"><span>BM BOARD</span></span>
+    <span style="flex:1"></span>
+    <a href="index.html"><span class="ja">トップ</span><span class="en">Home</span></a>
+    <a href="usage.html"><span class="ja">使い方</span><span class="en">Usage</span></a>
+    <a href="commands.html"><span class="ja">コマンド</span><span class="en">Commands</span></a>
+    <a href="store.html">STORE</a>
+    <a href="spell-spec.html"><span class="ja">魔法の書式</span><span class="en">Spell format</span></a>
+    <a href="story.html"><span class="ja">つくった理由</span><span class="en">Story</span></a>
+    <a href="dev-log.html"><span class="ja">開発ログ</span><span class="en">Dev log</span></a>
+    <a href="browser/">BM Browser</a>
+  </div>
+  <p class="fnote">
+    <span class="ja">BM BOARD は Black Mirror Board の略。つくっているのは <a href="https://kinoshita.studio/">kinoshita studio</a>。</span>
+    <span class="en">BM BOARD is short for Black Mirror Board. Made by <a href="https://kinoshita.studio/">kinoshita studio</a>.</span>
+  </p>
+</footer>
+
+<script>
+
+const KEY = 'bm_site_lang';
+function setLang(l){
+  document.body.classList.toggle('lang-en', l === 'en');
+  document.documentElement.lang = l;
+  document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
+  try { localStorage.setItem(KEY, l); } catch (_) {}
+}
+document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+try { setLang(localStorage.getItem(KEY) || ((navigator.language || '').startsWith('ja') ? 'ja' : 'en')); } catch (_) { setLang('ja'); }
+</script>
 </body>
 </html>
