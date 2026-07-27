@@ -618,13 +618,28 @@ if (win) requestAnimationFrame(() => setTimeout(() => win.classList.add('up'), 2
     cv.width  = Math.max(2, Math.round(r.width  / SCALE));
     cv.height = Math.max(2, Math.round(r.height / SCALE));
   };
-  const paint = () => {
-    const img = ctx.createImageData(cv.width, cv.height), d = img.data;
-    // ⚠️soft-light＋中間グレー(90-166)では、彩度の高い面の上でほぼ見えなかった（木下）。
-    //   振れ幅を広げ、overlay で重ねる＝粒が面の上でも立つ。
-    for (let i = 0; i < d.length; i += 4) {
-      const v = 55 + Math.random() * 145;
-      d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255;
+  // ⭐上からなぞるように出す（木下）。粒を全面に出しっぱなしにせず、
+  //   上から下へ動く帯の中だけに描く。帯の縁はぼかして、境目が線に見えないようにする。
+  const SWEEP_MS = 2600;   // 上から下まで通る時間
+  const REST_MS  = 1400;   // 通り終わってから次に始まるまでの間
+  const BAND     = 0.30;   // 帯の高さ（画面の高さに対する割合）
+  const paint = t => {
+    const h = cv.height, w = cv.width;
+    const img = ctx.createImageData(w, h), d = img.data;
+    const cyc = (t % (SWEEP_MS + REST_MS)) / SWEEP_MS;
+    const head = cyc <= 1 ? (cyc * (1 + BAND * 2) - BAND) : -9;   // 帯の中心（0=上, 1=下）
+    for (let y = 0; y < h; y++) {
+      // 帯からの距離で濃さを決める（中心が濃く、縁に向かって消える）
+      const dist = Math.abs(y / h - head) / BAND;
+      const a = head < -1 ? 0 : Math.max(0, 1 - dist * dist);     // なめらかに減衰
+      const row = y * w * 4;
+      if (a <= 0.01) { for (let x = 0; x < w; x++) d[row + x * 4 + 3] = 0; continue; }
+      for (let x = 0; x < w; x++) {
+        const i = row + x * 4;
+        const v = 55 + Math.random() * 145;
+        d[i] = d[i+1] = d[i+2] = v;
+        d[i+3] = Math.round(255 * a);
+      }
     }
     ctx.putImageData(img, 0, 0);
   };
@@ -632,10 +647,10 @@ if (win) requestAnimationFrame(() => setTimeout(() => win.classList.add('up'), 2
     requestAnimationFrame(loop);
     if (!visible) return;
     if (t - last < 1000 / FPS) return;
-    last = t; paint();
+    last = t; paint(t);
   };
-  addEventListener('resize', () => { size(); paint(); });
-  size(); paint(); requestAnimationFrame(loop);
+  addEventListener('resize', () => { size(); paint(performance.now()); });
+  size(); paint(0); requestAnimationFrame(loop);
 })();
 
 const KEY = 'bm_site_lang';
