@@ -9698,10 +9698,13 @@ function runCommand(val) {
     //   ⚠️既存の個別コマンド（hb / 2b / dark / light / gray / enpitsu / fude / classic）は不変。
     //     ここは既存の実装を runCommand で呼び直しているだけ＝挙動の重複を作らない。
     if (head==='grade' || head==='theme' || head==='drawmode' || head==='かきあじ') {
-        const a = rest.trim().toLowerCase();
+        let a = rest.trim().toLowerCase();
+        if (a === 'next' || a === 'cycle' || a === '次') a = '';
         const cycle = (order, cur) => order[(order.indexOf(cur) + 1) % order.length];
         // ⚠️ここから先で head=== を書かない（重複検出CIが「別の入口」と誤検知するため）
         const which = (head === 'かきあじ') ? 'drawmode' : head;
+        // ⚠️⌘Kからは "theme next" のように送られてくる。next / cycle は「順送り」の合図として捨てる
+        //   （これらのコマンドは引数なしでも順送りするため）。
         if (which === 'grade') {
             if (PENCIL_GRADES[a]) return runCommand(a);
             const cur = PENCIL_GRADES[PENCIL_GRADE] ? PENCIL_GRADE : 'hb';
@@ -12441,6 +12444,16 @@ function centerTermPanel() {
                 const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
                 // ⚠️argsOpt＝引数が「任意」のコマンド（swap 等）は、引数なし↵でそのまま実行する。
                 //   これが無いと args:true が一律「必須」扱いになり、⌘Kから永久に実行できない。
+                // ⭐順送りできるコマンド（board / crumb など）は、引数なしの↵で「入力待ち」にせず
+                //   その場で次の状態へ送る（木下：いちいち入力しなくても↵で切り替えたい）。
+                //   ⚠️board は引数なしだと別の意味（紙→元の板に戻す）なので、必ず "board next" を送る。
+                if (it.cycle && !typedArgs) {
+                    const cyc = it.cmd + ' next';
+                    recordRecent(it.cmd);
+                    close(); try { pushHistory(cyc); } catch (_) {}
+                    if (typeof runCommand === 'function') runCommand(cyc);
+                    return;
+                }
                 if (it.args && !typedArgs && !it.argsOpt) { input.value = it.cmd + ' '; refresh(); return; }
                 const cmd = (it.args && typedArgs) ? (it.cmd + ' ' + typedArgs) : it.cmd;
                 recordRecent(it.cmd);   // ⭐使用履歴（最近使ったものを上部に）
