@@ -11298,10 +11298,15 @@ tiEl.addEventListener('paste', e => {
         // ⚠️「変更できないキー」の早見表は絞り込み中に出すと邪魔（順送りで絞ったのに⌘Kや道具キーが並んだ）
         if (!q && cmdFilter === 'all') {
             const _jp = !en;
+            // ⭐Windowsでは⌘/⌥/⌃/⇧ が読めないので、その場で読み替える（表の中身は1つのまま）
+            const _mac = (window._bmIsMac !== false);
+            const K = k => _mac ? k : k
+                .replace(/⌘⇧/g, 'Ctrl+Shift+').replace(/⌘/g, 'Ctrl+')
+                .replace(/⌃/g, 'Ctrl+').replace(/⌥/g, 'Alt+').replace(/⇧/g, 'Shift+');
             const G = (title, rows, badge) =>
                 `<div class="set-cmdcat">${esc(title)}</div>` +
                 rows.map(([k, d]) => `<div class="set-cmdrow"><span class="set-cmdstar" style="visibility:hidden">☆</span>`
-                    + `<span class="set-cmdname" style="font-family:var(--ui-mono)">${esc(k)}</span>`
+                    + `<span class="set-cmdname" style="font-family:var(--ui-mono)">${esc(K(k))}</span>`
                     + `<span class="set-cmdhint">${esc(d)}</span><span></span>`
                     + `<span class="set-cmdhot"><span class="k def">${esc(badge)}</span></span></div>`).join('');
             const B_FIX  = _jp ? '変更不可' : 'fixed';
@@ -12291,6 +12296,9 @@ function centerTermPanel() {
     // イベント→コンボ（修飾必須・修飾キー単体は無効）。表示用disp と 照合用match を返す
     // ⭐盤面が単キーで使っている道具（割り当てると道具側が使えなくなるので知らせる）
     const BOARD_ONEKEY = ['s','p','n','e','c','g','q','a','t','x','i','f','1','2','3'];
+    // ⭐MacとWindowsで修飾キーの呼び名が違う。⌘はWindowsに無い＝Ctrl と読み替えて表示する
+    const IS_MAC = /Mac|iPhone|iPad|iPod/.test((navigator.platform || '') + ' ' + (navigator.userAgent || ''));
+    window._bmIsMac = IS_MAC;
     function comboOf(e) {
         const k = e.key;
         if (!k || k === 'Meta' || k === 'Control' || k === 'Alt' || k === 'Shift') return null;
@@ -12302,12 +12310,24 @@ function centerTermPanel() {
         if (/^Key[A-Z]$/.test(code))        base = code.slice(3).toLowerCase();
         else if (/^Digit[0-9]$/.test(code)) base = code.slice(5);
         else                                base = k.toLowerCase();
-        let disp = '';
-        if (e.metaKey) disp += '⌘';
-        if (e.ctrlKey) disp += '⌃';
-        if (e.altKey)  disp += '⌥';
-        if (e.shiftKey) disp += '⇧';
-        disp += (base.length === 1 ? base.toUpperCase() : (k.length === 1 ? k.toUpperCase() : k));
+        // ⭐表記はOSで出し分ける。⚠️Windowsで「⌃J」と出しても何のキーか分からない（Macの記号）。
+        //   ⚠️照合キー(match)は触らない＝すでに登録済みのショートカットは壊れない。
+        const label = (base.length === 1 ? base.toUpperCase() : (k.length === 1 ? k.toUpperCase() : k));
+        // ⭐4つ全部が押されている＝ハイパーキー（OS側で Caps Lock 等に割り当てている人がいる）。
+        //   Raycast と同じ ✦ で表す。⚠️Web側では作れないので「受け取って正しく表示する」だけ。
+        let disp;
+        if (e.metaKey && e.ctrlKey && e.altKey && e.shiftKey) {
+            disp = '✦' + (IS_MAC ? '' : '+') + label;
+        } else if (IS_MAC) {
+            disp = (e.metaKey ? '⌘' : '') + (e.ctrlKey ? '⌃' : '') + (e.altKey ? '⌥' : '') + (e.shiftKey ? '⇧' : '') + label;
+        } else {
+            const mm = [];
+            if (e.ctrlKey)  mm.push('Ctrl');
+            if (e.altKey)   mm.push('Alt');
+            if (e.shiftKey) mm.push('Shift');
+            if (e.metaKey)  mm.push('Win');
+            disp = mm.concat(label).join('+');
+        }
         const mods = []; if (e.metaKey) mods.push('m'); if (e.ctrlKey) mods.push('c'); if (e.altKey) mods.push('a'); if (e.shiftKey) mods.push('s');
         return { disp, match: mods.sort().join('') + ':' + base, bare: !(e.metaKey || e.ctrlKey || e.altKey), base };
     }
