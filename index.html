@@ -244,7 +244,7 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
    ⚠️マスクは背景と同じ寸法・同じ位置で敷かないと1pxもズレる＝
      hero::before と同じ inset / cover / position を必ず揃えること。 */
 .kvgrain{position:absolute;inset:-32.5%;z-index:1;width:auto;height:auto;display:block;
-  pointer-events:none;mix-blend-mode:soft-light;opacity:.42;image-rendering:pixelated;
+  pointer-events:none;mix-blend-mode:overlay;opacity:.55;image-rendering:pixelated;
   -webkit-mask-image:url('kv/kv-mask.webp');mask-image:url('kv/kv-mask.webp');
   -webkit-mask-size:cover;mask-size:cover;
   -webkit-mask-position:center center;mask-position:center center;
@@ -614,8 +614,10 @@ if (win) requestAnimationFrame(() => setTimeout(() => win.classList.add('up'), 2
   };
   const paint = () => {
     const img = ctx.createImageData(cv.width, cv.height), d = img.data;
+    // ⚠️soft-light＋中間グレー(90-166)では、彩度の高い面の上でほぼ見えなかった（木下）。
+    //   振れ幅を広げ、overlay で重ねる＝粒が面の上でも立つ。
     for (let i = 0; i < d.length; i += 4) {
-      const v = 90 + Math.random() * 76;
+      const v = 55 + Math.random() * 145;
       d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255;
     }
     ctx.putImageData(img, 0, 0);

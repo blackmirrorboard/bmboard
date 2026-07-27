@@ -532,6 +532,17 @@
             touch-action: manipulation;
         }
 
+        /* ⭐左レールのアイコンの見た目の大きさを揃える（木下・2026-07-27）。
+           ⚠️SVGの箱は全部19pxで同じでも、絵の中身の余白が素材ごとに違うため
+             実際に見えている大きさが 13.0〜19.0px とバラついていた（実測）。
+             箱ではなく「中身の実寸」が揃うように、素材ごとに倍率を掛ける。 */
+        .toolbar #sweepBtn svg,
+        .toolbar #uploadImgBtn svg { transform: scale(0.82); }
+        .toolbar .tool-btn[data-tool="pen"] svg { transform: scale(0.95); }
+        .toolbar .tool-btn[data-tool="eraser"] svg { transform: scale(1.07); }
+        .toolbar .tool-btn[data-tool="select"] svg { transform: scale(1.04); }
+        .toolbar svg { transform-origin: center; }
+
         .tool-btn {
             width: 40px;
             height: 40px;
