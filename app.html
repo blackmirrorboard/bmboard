@@ -1610,6 +1610,15 @@
             font-family: var(--ui-sans);   /* ⭐Raycast方向：サンセリフでアプリらしく */
         }
         .cmdk-card.dragging { transition: none; cursor: grabbing; }
+        .cmdk-close {
+            flex: none; width: 34px; height: 34px; margin-left: 6px; border-radius: 9px;
+            display: grid; place-items: center; cursor: pointer;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+            color: rgba(255,255,255,0.72); font-size: 14px; line-height: 1;
+        }
+        .cmdk-close:hover { background: rgba(255,255,255,0.12); color: #fff; }
+        /* ⚠️スマホは指で押すので大きめに */
+        @media (max-width: 700px) { .cmdk-close { width: 40px; height: 40px; font-size: 16px; } }
         .cmdk-search { cursor: grab; }
         .cmdk-search #cmdkInput { cursor: text; }
         /* ⭐検索行：先頭に虫眼鏡（Raycast） */
@@ -3259,6 +3268,9 @@
             </button>
             <svg class="cmdk-search-ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg>
             <input id="cmdkInput" type="text" placeholder="コマンドを検索…（calc / dark / t …）" data-i18n-ph="pal.ph" autocomplete="off" spellcheck="false" autocapitalize="off">
+            <!-- ⭐閉じる。⚠️モバイルには Esc が無く、フッターの案内も「Esc で閉じる」なので、
+                 これが無いと実機で閉じる手段が「外側をタップ」しかなかった（木下報告） -->
+            <button class="cmdk-close" id="cmdkClose" type="button" aria-label="閉じる" data-i18n-title="pal.close" title="閉じる">✕</button>
         </div>
         <div id="cmdkList"></div>
         <!-- ⭐リンク追加フォーム（パレット内サブビュー） -->
@@ -12564,6 +12576,9 @@ function centerTermPanel() {
         const s = listEl.querySelector('.cmdk-item.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
         // ⭐戻るボタンは STORE の階層にいる時だけ出す（虫眼鏡と入替）
         if (storeMode && storeDetail) drawSpellPreview(document.getElementById('stPreview'), storeDetail);   // ⭐プレビュー図
+        const cl = document.getElementById('cmdkClose');
+        // ⚠️mousedown だとタッチで確実に来ない（過去に右クリックメニューで同じ事故）。pointerdown で拾う
+        if (cl) cl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); close(); });
         const bk = document.getElementById('cmdkBack');
         const mg = overlay.querySelector('.cmdk-search-ico');
         const inStore = !!(storeMode || storeDetail);
