@@ -11184,8 +11184,9 @@ tiEl.addEventListener('paste', e => {
         const owners = {};
         (typeof OMNI_CMDS !== 'undefined' ? OMNI_CMDS : []).forEach(it => {
             let m = null;
-            if (u[it.cmd]) m = u[it.cmd].match;
-            else if (it.sc && BUILTIN_MATCH[it.sc]) m = BUILTIN_MATCH[it.sc];
+            const _n = (window._bmUsc && window._bmUsc.normMatch) ? window._bmUsc.normMatch : (x => x);
+            if (u[it.cmd]) m = _n(u[it.cmd].match);
+            else if (it.sc && BUILTIN_MATCH[it.sc]) m = _n(BUILTIN_MATCH[it.sc]);
             if (m) (owners[m] = owners[m] || []).push(it.cmd);
         });
         const conflict = new Set();
@@ -11833,6 +11834,11 @@ tiEl.addEventListener('paste', e => {
                 renderCmds();
                 return;
             }
+            if (U && U.isOsPrimaryKey && U.isOsPrimaryKey(c)) {   // ⚠️WindowsキーはOSが持っていく
+                recMsg = U.osPrimaryMsg();
+                renderCmds();
+                return;
+            }
             if (U) U.set(recCmd, c);
             recCmd = null; recMsg = '';
             renderCmds();
@@ -12294,7 +12300,7 @@ function centerTermPanel() {
     window._bmAlias = { get: getAlias, set: setAlias };
     const USC_KEY = 'bm_user_sc';
     function getUsc() { try { return JSON.parse(localStorage.getItem(USC_KEY) || '{}'); } catch (_) { return {}; } }
-    function setUsc(cmd, combo) { const m = getUsc(); if (combo) { for (const k in m) { if (m[k] && m[k].match === combo.match) delete m[k]; } m[cmd] = combo; } else delete m[cmd]; try { localStorage.setItem(USC_KEY, JSON.stringify(m)); } catch (_) {} }
+    function setUsc(cmd, combo) { const m = getUsc(); if (combo) { const w = normMatch(combo.match); for (const k in m) { if (m[k] && normMatch(m[k].match) === w) delete m[k]; } m[cmd] = combo; } else delete m[cmd]; try { localStorage.setItem(USC_KEY, JSON.stringify(m)); } catch (_) {} }
     // イベント→コンボ（修飾必須・修飾キー単体は無効）。表示用disp と 照合用match を返す
     // ⭐盤面が単キーで使っている道具（割り当てると道具側が使えなくなるので知らせる）
     const BOARD_ONEKEY = ['s','p','n','e','c','g','q','a','t','x','i','f','1','2','3'];
@@ -12766,6 +12772,10 @@ function centerTermPanel() {
             {
                 const _c = comboOf(e);
                 if (isBoardToolKey(_c)) { capMsg = boardToolMsg(_c); updateFoot(); return; }
+                if (isOsPrimaryKey(_c)) { capMsg = (LANG === 'en')
+                    ? 'The Windows key is taken by the OS — pick Ctrl, Alt or Shift instead.'
+                    : 'Windowsキーの組み合わせはOSが持っていくので使えません。Ctrl / Alt / Shift で登録してください';
+                    updateFoot(); return; }
             }
             const c = comboOf(e);
             if (!c) { capMsg = t('pal.warnMod'); updateFoot(); return; }
@@ -12842,7 +12852,8 @@ function centerTermPanel() {
         const c = comboOf(e); if (!c) return;
         const m = getUsc();
         let hit = null;
-        for (const k in m) { if (m[k] && m[k].match === c.match) { hit = k; break; } }
+        const want = normMatch(c.match);
+        for (const k in m) { if (m[k] && normMatch(m[k].match) === want) { hit = k; break; } }
         if (!hit) return;
         e.preventDefault(); e.stopPropagation();
         const def = (typeof OMNI_CMDS !== 'undefined') ? OMNI_CMDS.find(c => c.cmd === hit) : null;
@@ -12864,11 +12875,33 @@ function centerTermPanel() {
                       x:'PNG書き出し', i:'画像を置く', f:'塗り', '1':'線の太さ（細）', '2':'線の太さ（中）', '3':'線の太さ（太）' };
     const TOOL_EN = { s:'Select', p:'Pen', n:'Path', e:'Eraser', t:'Text', c:'Circle', g:'Triangle', q:'Square', a:'Arrow',
                       x:'Export PNG', i:'Place image', f:'Fill', '1':'Line width (thin)', '2':'Line width (medium)', '3':'Line width (thick)' };
+    // ⭐MacとWindowsで「主の修飾キー」が違う（Mac=⌘ / Windows=Ctrl）。
+    //   ⚠️そのままだと、Macで ⌘J として保存した割当が Windows では発火しない（Ctrl が来るので照合が合わない）。
+    //   ⭐照合する時だけ、主の修飾キーを 'p' に置き換えてから比べる＝保存データは触らない（既存の設定が壊れない）。
+    //   ⚠️Macの ⌃（Control）は"主"ではないので 'c' のまま＝⌘J と ⌃J は別物のまま保てる。
+    //   ⚠️片側だけ置き換えても意味がない（Macで作った 'm:j' は Windows では 'c:j' として来る）。
+    //     Windowsでは m も c も「主キー」に寄せる（⊞Windowsキーの割当は別途断っているので、
+    //     保存されている 'm' は Mac で作られた ⌘ だと判断してよい）。
+    //     Macでは m だけを寄せる＝⌘J と ⌃J を別物として使い分けられる状態を守る。
+    const normMatch = m => {
+        if (typeof m !== 'string' || m.indexOf(':') < 0) return m;
+        const [mods, base] = m.split(':');
+        let out = mods;
+        if (IS_MAC) { out = out.replace('m', 'p'); }
+        else { out = out.replace('m', 'p').replace('c', 'p'); if (out.indexOf('p') !== out.lastIndexOf('p')) out = out.replace('p', ''); }
+        if (out === mods) return m;
+        return out.split('').sort().join('') + ':' + base;
+    };
     const isBoardToolKey = c => !!(c && c.bare && BOARD_ONEKEY.indexOf(c.base) >= 0);
+    // ⚠️WindowsではWindowsキーの組み合わせをOSが持っていく（押しても届かない）
+    const isOsPrimaryKey = c => !IS_MAC && !!(c && c.match && c.match.split(':')[0].indexOf('m') >= 0);
     const boardToolMsg = c => (LANG === 'en')
         ? `${c.disp} is the board shortcut for "${TOOL_EN[c.base] || 'a tool'}" — not assignable. Try ⌘${c.disp} or ⌥${c.disp}.`
         : `${c.disp} は盤面の「${TOOL_JA[c.base] || '道具'}」の近道なので割り当てできません。⌘${c.disp} や ⌥${c.disp} なら使えます`;
-    window._bmUsc    = { get: getUsc, set: setUsc, comboOf, reservedCombo, isBoardToolKey, boardToolMsg };
+    window._bmUsc    = { get: getUsc, set: setUsc, comboOf, reservedCombo, isBoardToolKey, boardToolMsg, normMatch, isOsPrimaryKey,
+                         osPrimaryMsg: () => (LANG === 'en')
+                           ? 'The Windows key is taken by the OS — pick Ctrl, Alt or Shift instead.'
+                           : 'Windowsキーの組み合わせはOSが持っていくので使えません。Ctrl / Alt / Shift で登録してください' };
     window._bmRecent = getRecent;
 })();
 
