@@ -236,13 +236,15 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
   -webkit-mask-size:cover;mask-size:cover;
   -webkit-mask-position:center center;mask-position:center center;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  animation:kvdrift 11s ease-in-out infinite alternate}
-.kvgrain{animation:kvdrift 11s ease-in-out infinite alternate}
-/* ⚠️±1%では「全然変わらない」（木下）。人の目が動きに気づくのは、
-   ゆっくりでも「輪郭の位置がはっきり変わる」時。振れ幅を数倍にした。 */
+  transform-style:preserve-3d;
+  animation:kvdrift 14s ease-in-out infinite alternate}
+.kvgrain{transform-style:preserve-3d;animation:kvdrift 14s ease-in-out infinite alternate}
+/* ⚠️平行移動だと「斜め上にスライドしているだけ」に見えた（木下）。
+   ⭐立体は"動く"のではなく"傾く"方が生きて見える＝面の向きが変わり、光の当たり方が変わる。
+     移動をやめ、奥行き（perspective）を入れた回転だけにした。 */
 @keyframes kvdrift{
-  from{transform:translate3d(-1.6%,1.2%,0) rotate(-1.4deg) scale(1)}
-  to{transform:translate3d(1.8%,-2.2%,0) rotate(1.6deg) scale(1.07)}}
+  from{transform:perspective(1400px) rotateX(1.4deg) rotateY(-2.6deg) rotate(-.5deg) scale(1.01)}
+  to{transform:perspective(1400px) rotateX(-1.2deg) rotateY(2.8deg) rotate(.5deg) scale(1.04)}}
 @media(prefers-reduced-motion:reduce){.kvsolid,.kvgrain{animation:none}}
 /* ⭐光の帯。面があること＝立体だという情報を動きで伝える */
 /* 🅿️一旦キープ（木下・2026-07-27）＝粒だけ残して光は止める。
