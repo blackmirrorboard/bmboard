@@ -4,9 +4,9 @@ name: チェック / Checks
 # ⚠️狙いは「静かに壊れる」種類のバグを機械で止めること。
 on:
   push:
-    paths: ['app.html', 'usage.html', 'commands.html', 'story.html', 'dev-log.html', '.github/data/**', 'store/catalog.json', '.github/scripts/**', '.github/workflows/checks.yml']
+    paths: ['app.html', 'usage.html', 'commands.html', 'story.html', 'dev-log.html', 'store.html', '.github/data/**', 'store/catalog.json', '.github/scripts/**', '.github/workflows/checks.yml']
   pull_request:
-    paths: ['app.html', 'usage.html', 'commands.html', 'story.html', 'dev-log.html', '.github/data/**', 'store/catalog.json', '.github/scripts/**']
+    paths: ['app.html', 'usage.html', 'commands.html', 'story.html', 'dev-log.html', 'store.html', '.github/data/**', 'store/catalog.json', '.github/scripts/**']
   workflow_dispatch:
 
 permissions:
@@ -43,6 +43,10 @@ jobs:
       # ⭐dev-log は .github/data/dev-log.json が正（エントリはそこに足す）
       - name: dev-log.html が生成物と一致しているか見る
         run: node .github/scripts/build-devlog.mjs --check
+
+      # ⭐STORE はアプリと同じ store/catalog.json を読む（二重管理にしない）
+      - name: store.html が catalog.json とズレていないか見る
+        run: node .github/scripts/build-store.mjs --check
 
       - name: JS の構文を見る
         run: |

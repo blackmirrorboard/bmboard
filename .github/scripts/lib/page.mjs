@@ -14,7 +14,8 @@
 export const NAV = [
   { href: 'usage.html',      ja: '使い方',       en: 'Usage' },
   { href: 'commands.html',   ja: 'コマンド',     en: 'Commands' },
-  { href: 'spell-spec.html', ja: '魔法',         en: 'Spells' },
+  { href: 'store.html',      ja: 'STORE',        en: 'STORE' },
+  { href: 'spell-spec.html', ja: '魔法の書式',   en: 'Spell format' },
   { href: 'story.html',      ja: 'つくった理由', en: 'Story' },
   { href: 'dev-log.html',    ja: '開発ログ',     en: 'Dev log' },
   { href: 'browser/',        ja: 'BM Browser',   en: 'BM Browser' },

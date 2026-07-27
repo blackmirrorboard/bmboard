@@ -1468,6 +1468,9 @@
         .set-cmdargnote { color: #ff9d7a; margin-left: 8px; cursor: help; }
         /* ⭐順送りの案内。⚠️1つずつキーを割り当てる前に気づけるように、行の中に置く */
         .set-cmdcyc { color: #8fd0ff; margin-left: 8px; cursor: help; }
+        /* ⭐絞り込みの意味を1行で。用語（順送り・引数）だけでは伝わらない */
+        .set-cmdfhint { font-size: 11.5px; line-height: 1.7; color: rgba(255,255,255,0.44); padding: 8px 2px 0; min-height: 0; }
+        .set-cmdfhint:empty { display: none; }
         .set-cmdtype { font-size: 10px; color: rgba(255,255,255,0.34); white-space: nowrap; }
         .set-cmdhot { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
         .set-cmdhot .k { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px;
@@ -3182,8 +3185,12 @@
                     <button class="set-chip" type="button" data-filter="fav" data-i18n="setcmd.fav">★ お気に入り</button>
                     <button class="set-chip" type="button" data-filter="sc" data-i18n="setcmd.sc">⌨ 割当済み</button>
                     <!-- ⭐グループでも絞れるように（木下・2026-07-27）。1キーで回せるものを探しやすくする -->
-                    <button class="set-chip" type="button" data-filter="cycle" data-i18n="setcmd.cycle">⟳ 順送り</button>
-                    <button class="set-chip" type="button" data-filter="arg" data-i18n="setcmd.arg">⚠ 引数が要る</button>
+                    <button class="set-chip" type="button" data-filter="cycle" data-i18n="setcmd.cycle">⟳ 1キーで回せる</button>
+                    <button class="set-chip" type="button" data-filter="arg" data-i18n="setcmd.arg">⚠ 打ち込みが要る</button>
+                </div>
+                <!-- ⭐選んだ絞り込みが何を意味するかを1行で出す（用語だけ見せても伝わらない） -->
+                <div class="set-cmdfhint" id="setCmdFHint"></div>
+                <div style="display:none">
                 </div>
             </div>
             <div id="setCmdConflict" class="set-cmds-conflict" hidden></div>
@@ -11209,6 +11216,11 @@ tiEl.addEventListener('paste', e => {
             }
             return true;
         });
+        const _fh = document.getElementById('setCmdFHint');
+        if (_fh) {
+            const _k = { cycle:'setcmd.fhCycle', arg:'setcmd.fhArg', fav:'setcmd.fhFav', sc:'setcmd.fhSc' }[cmdFilter];
+            _fh.textContent = _k ? T(_k) : '';
+        }
         cmdConflict.hidden = conflict.size === 0;
         cmdConflict.textContent = (window.t ? window.t('setcmd.conflict') : '');
         if (!items.length) { cmdList.innerHTML = `<div class="set-cmds-empty">${window.t ? window.t('setcmd.none') : 'なし'}</div>`; return; }
@@ -11898,9 +11910,13 @@ const I18N = {
         'setcmd.search': 'コマンドを検索…', 'setcmd.all': 'すべて', 'setcmd.fav': '★ お気に入り', 'setcmd.sc': '⌨ 割当済み',
         'setcmd.record': '上書き', 'setcmd.recordHot': 'ショートカットを記録', 'setcmd.recording': 'キーを押す… Escで取消', 'setcmd.clear': '解除', 'setcmd.builtin': '既定', 'setcmd.none': '該当なし',
         'setcmd.conflict': '⚠ ショートカットが重複しています（赤い行）',
-        'setcmd.cycle': '⟳ 順送り', 'setcmd.arg': '⚠ 引数が要る',
+        'setcmd.cycle': '⟳ 1キーで回せる', 'setcmd.arg': '⚠ 打ち込みが要る',
         'setcmd.cycleTip': 'これは1キーで順番に送れます（押すたびに次の状態へ）。1つずつ割り当てなくて済みます',
         'setcmd.cycleSubTip': '1つずつ割り当てなくても、{cmd} にキーを1つ付ければ押すたびに順に切り替わります',
+        'setcmd.fhCycle': '⟳ ＝ 押すたびに次の状態へ切り替わるもの。板のサイズや芯の濃さなど、選択肢が3つ以上あるものを1つのキーで回せる',
+        'setcmd.fhArg': '⚠ ＝ そのままでは動かず、続けて言葉や数字を打つ必要があるもの（例：calc 12*8 / t アイデア）。キーを割り当てても入力待ちになる',
+        'setcmd.fhFav': '★ ＝ ⌘K の一番上に出るように、自分で選んだもの',
+        'setcmd.fhSc': '⌨ ＝ 自分でキーを割り当て済みのもの',
         'setcmd.argNote': '⚠ 引数が要る：キーを押すとパレットが開いて入力待ちになるだけ。すぐ動かすなら下のサブ行へ',
         'setcmd.cName': '名前', 'setcmd.cDesc': '説明', 'setcmd.cHot': 'ショートカット',
         'fb.body': 'このプロトタイプへの<strong>要望・アイデア・バグ報告</strong>を歓迎します。<br>あなたの声が次のバージョンを形づくります。<br><br><strong>Draw to Build.</strong> — 一緒に育てましょう。',
@@ -11963,9 +11979,13 @@ const I18N = {
         'setcmd.search': 'Search commands…', 'setcmd.all': 'All', 'setcmd.fav': '★ Favorites', 'setcmd.sc': '⌨ Assigned',
         'setcmd.record': 'Override', 'setcmd.recordHot': 'Record Hotkey', 'setcmd.recording': 'Press keys… Esc to cancel', 'setcmd.clear': 'Clear', 'setcmd.builtin': 'Default', 'setcmd.none': 'No results',
         'setcmd.conflict': '⚠ Some shortcuts conflict (red rows)',
-        'setcmd.cycle': '⟳ Cycling', 'setcmd.arg': '⚠ Needs an argument',
+        'setcmd.cycle': '⟳ Cycles', 'setcmd.arg': '⚠ Needs typing',
         'setcmd.cycleTip': 'This one cycles — each press moves to the next state, so you do not need a key per option',
         'setcmd.cycleSubTip': 'Instead of binding each option, bind one key to {cmd} and each press steps through them',
+        'setcmd.fhCycle': '⟳ = each press moves to the next state. Board size, pencil grade and other 3+ option settings can run off one key',
+        'setcmd.fhArg': '⚠ = needs a word or number typed after it (calc 12*8, t idea). A key bound to it only opens the palette and waits',
+        'setcmd.fhFav': '★ = the ones you pinned to the top of ⌘K',
+        'setcmd.fhSc': '⌨ = the ones you already gave a key',
         'setcmd.argNote': '⚠ Needs an argument — the key just opens the palette and waits. Assign to a sub-row below to run it right away',
         'setcmd.cName': 'Name', 'setcmd.cDesc': 'Description', 'setcmd.cHot': 'Hotkey',
         'fb.body': 'We welcome your <strong>requests, ideas, and bug reports</strong> for this prototype.<br>Your voice shapes the next version.<br><br><strong>Draw to Build.</strong> — let’s grow it together.',
