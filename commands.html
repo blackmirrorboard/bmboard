@@ -6,10 +6,10 @@
 <title>BM BOARD — コマンド / Commands</title>
 <!-- ⚠️このファイルは自動生成です。直接編集しても次の生成で消えます。
      生成元は app.html の中のデータ。項目を足すならそちらに1行足す。 -->
-<meta name="description" content="BM BOARD の全コマンド 58個（サブコマンド 66個）。⌘K を押して名前を打つだけ。日本語 / English。">
+<meta name="description" content="BM BOARD の全コマンド 59個（サブコマンド 73個）。⌘K を押して名前を打つだけ。日本語 / English。">
 <link rel="canonical" href="https://bmboard.studio/commands.html">
 <meta property="og:title" content="BM BOARD — コマンド一覧">
-<meta property="og:description" content="⌘K で呼べる 58 のコマンド。">
+<meta property="og:description" content="⌘K で呼べる 59 のコマンド。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://bmboard.studio/commands.html">
 <meta property="og:image" content="https://bmboard.studio/og-image.png">
@@ -254,7 +254,7 @@ body.lang-en .en{display:inline}
       <span class="ja"><b>⌘K</b> を押して、名前を打つ。<br>覚える必要はない——思いついた言葉で引くと候補が出る。</span>
       <span class="en">Hit <b>⌘K</b> and type the name.<br>No need to memorize — type what comes to mind and it shows up.</span>
     </p>
-    <p class="count">15 groups &nbsp;·&nbsp; 58 commands &nbsp;·&nbsp; 66 subcommands</p>
+    <p class="count">15 groups &nbsp;·&nbsp; 59 commands &nbsp;·&nbsp; 73 subcommands</p>
   </header>
 
   <div class="legend">
@@ -368,9 +368,13 @@ body.lang-en .en{display:inline}
           <div class="key"><kbd>drawmode</kbd></div>
           <div class="desc"><span class="ja">描き味を順番に送る（鉛筆→筆→クラシック）</span><span class="en">Cycle the drawing feel (pencil → brush → classic)</span><small class="subs"><span class="ja">drawmode enpitsu — 鉛筆（紙）で描く</span><span class="en">drawmode enpitsu — Draw with pencil on paper</span><br><span class="ja">drawmode fude — 筆で描く</span><span class="en">drawmode fude — Draw with a brush</span><br><span class="ja">drawmode classic — クラシックな線</span><span class="en">drawmode classic — Classic stroke</span></small></div>
         </div>
-        <div class="row" data-s="settle 定着（時間が経つと消せなくなる） settle — strokes stop being erasable after a while 定着 ていちゃく 消せない 不可逆 settle fix permanent irreversible harden on 定着を入れる turn settling on on 20s 20秒で定着させる settle after 20 seconds off 定着をやめる turn settling off">
+        <div class="row" data-s="settle 定着（時間が経つと消せなくなる） settle — strokes stop being erasable after a while 定着 ていちゃく 消せない 不可逆 settle fix permanent irreversible harden next 定着を入れる⇄やめる toggle settling on 定着を入れる turn settling on on 20s 20秒で定着させる settle after 20 seconds off 定着をやめる turn settling off">
           <div class="key"><kbd>settle</kbd></div>
-          <div class="desc"><span class="ja">定着（時間が経つと消せなくなる）</span><span class="en">Settle — strokes stop being erasable after a while</span><small class="subs"><span class="ja">settle on — 定着を入れる</span><span class="en">settle on — Turn settling on</span><br><span class="ja">settle on 20s — 20秒で定着させる</span><span class="en">settle on 20s — Settle after 20 seconds</span><br><span class="ja">settle off — 定着をやめる</span><span class="en">settle off — Turn settling off</span></small></div>
+          <div class="desc"><span class="ja">定着（時間が経つと消せなくなる）</span><span class="en">Settle — strokes stop being erasable after a while</span><small class="subs"><span class="ja">settle next — 定着を入れる⇄やめる</span><span class="en">settle next — Toggle settling</span><br><span class="ja">settle on — 定着を入れる</span><span class="en">settle on — Turn settling on</span><br><span class="ja">settle on 20s — 20秒で定着させる</span><span class="en">settle on 20s — Settle after 20 seconds</span><br><span class="ja">settle off — 定着をやめる</span><span class="en">settle off — Turn settling off</span></small></div>
+        </div>
+        <div class="row" data-s="eraser 消しゴムの当たりを順番に送る（8→14→20→32） cycle the eraser size (8→14→20→32) 消しゴム 消す 大きさ 半径 eraser size radius erase 8 小さく削る erase small 20 標準 default 32 大きく削る erase big">
+          <div class="key"><kbd>eraser</kbd></div>
+          <div class="desc"><span class="ja">消しゴムの当たりを順番に送る（8→14→20→32）</span><span class="en">Cycle the eraser size (8→14→20→32)</span><small class="subs"><span class="ja">eraser 8 — 小さく削る</span><span class="en">eraser 8 — Erase small</span><br><span class="ja">eraser 20 — 標準</span><span class="en">eraser 20 — Default</span><br><span class="ja">eraser 32 — 大きく削る</span><span class="en">eraser 32 — Erase big</span></small></div>
         </div>
       </div>
     </section>
@@ -412,9 +416,9 @@ body.lang-en .en{display:inline}
           <div class="key"><kbd>dock</kbd></div>
           <div class="desc"><span class="ja">ターミナルを右に戻す</span><span class="en">Dock the terminal to the right</span></div>
         </div>
-        <div class="row" data-s="panel 分割幅（panel 30 / float / dock / center） split width (panel 30 / float / dock / center) sidebar split pane terminal window dock パネルを右に戻す（マグネット） dock the panel back to the side float パネルを浮かせる（フロート） float the panel center パネルを画面の中央へ center the panel reset 分割幅を既定に戻す reset the split width">
+        <div class="row" data-s="panel 分割幅（panel 30 / float / dock / center） split width (panel 30 / float / dock / center) sidebar split pane terminal window next ドック⇄フロート toggle dock / float dock パネルを右に戻す（マグネット） dock the panel back to the side float パネルを浮かせる（フロート） float the panel center パネルを画面の中央へ center the panel reset 分割幅を既定に戻す reset the split width">
           <div class="key"><kbd>panel</kbd></div>
-          <div class="desc"><span class="ja">分割幅（panel 30 / float / dock / center）</span><span class="en">Split width (panel 30 / float / dock / center)</span><small class="subs"><span class="ja">panel dock — パネルを右に戻す（マグネット）</span><span class="en">panel dock — Dock the panel back to the side</span><br><span class="ja">panel float — パネルを浮かせる（フロート）</span><span class="en">panel float — Float the panel</span><br><span class="ja">panel center — パネルを画面の中央へ</span><span class="en">panel center — Center the panel</span><br><span class="ja">panel reset — 分割幅を既定に戻す</span><span class="en">panel reset — Reset the split width</span></small></div>
+          <div class="desc"><span class="ja">分割幅（panel 30 / float / dock / center）</span><span class="en">Split width (panel 30 / float / dock / center)</span><small class="subs"><span class="ja">panel next — ドック⇄フロート</span><span class="en">panel next — Toggle dock / float</span><br><span class="ja">panel dock — パネルを右に戻す（マグネット）</span><span class="en">panel dock — Dock the panel back to the side</span><br><span class="ja">panel float — パネルを浮かせる（フロート）</span><span class="en">panel float — Float the panel</span><br><span class="ja">panel center — パネルを画面の中央へ</span><span class="en">panel center — Center the panel</span><br><span class="ja">panel reset — 分割幅を既定に戻す</span><span class="en">panel reset — Reset the split width</span></small></div>
         </div>
         <div class="row" data-s="swap ボードを右/左に入替（利き手）· ↵でそのまま入替 swap board to the right/left (handedness) · ↵ to toggle 左右 入替 利き手 swap layout 右利き 左利き right left handedness left right side mirror layout ">
           <div class="key"><kbd>swap</kbd></div>
@@ -532,13 +536,13 @@ body.lang-en .en{display:inline}
     <section class="cat" id="c-media">
       <h2><span class="i">🎵</span><span class="ja">音</span><span class="en">Sound</span></h2>
       <div class="rows">
-        <div class="row" data-s="volume 音を止める / 戻す mute or unmute sound 音量 ミュート 消音 音 volume mute unmute sound audio off 音を止める mute on 音を戻す unmute">
+        <div class="row" data-s="volume 音を止める / 戻す mute or unmute sound 音量 ミュート 消音 音 volume mute unmute sound audio next 音を止める⇄戻す toggle mute off 音を止める mute on 音を戻す unmute">
           <div class="key"><kbd>volume</kbd></div>
-          <div class="desc"><span class="ja">音を止める / 戻す</span><span class="en">Mute or unmute sound</span><small class="subs"><span class="ja">volume off — 音を止める</span><span class="en">volume off — Mute</span><br><span class="ja">volume on — 音を戻す</span><span class="en">volume on — Unmute</span></small></div>
+          <div class="desc"><span class="ja">音を止める / 戻す</span><span class="en">Mute or unmute sound</span><small class="subs"><span class="ja">volume next — 音を止める⇄戻す</span><span class="en">volume next — Toggle mute</span><br><span class="ja">volume off — 音を止める</span><span class="en">volume off — Mute</span><br><span class="ja">volume on — 音を戻す</span><span class="en">volume on — Unmute</span></small></div>
         </div>
-        <div class="row" data-s="bgm bgm（bgm on / off） background music (bgm on / off) music sound audio ambient background on bgmを鳴らす start the music off bgmを止める stop the music">
+        <div class="row" data-s="bgm bgm（bgm on / off） background music (bgm on / off) music sound audio ambient background next bgmを順に送る（止→1→2→3） cycle bgm (off→1→2→3) on bgmを鳴らす start the music off bgmを止める stop the music">
           <div class="key"><kbd>bgm</kbd></div>
-          <div class="desc"><span class="ja">BGM（bgm on / off）</span><span class="en">Background music (bgm on / off)</span><small class="subs"><span class="ja">bgm on — BGMを鳴らす</span><span class="en">bgm on — Start the music</span><br><span class="ja">bgm off — BGMを止める</span><span class="en">bgm off — Stop the music</span></small></div>
+          <div class="desc"><span class="ja">BGM（bgm on / off）</span><span class="en">Background music (bgm on / off)</span><small class="subs"><span class="ja">bgm next — BGMを順に送る（止→1→2→3）</span><span class="en">bgm next — Cycle BGM (off→1→2→3)</span><br><span class="ja">bgm on — BGMを鳴らす</span><span class="en">bgm on — Start the music</span><br><span class="ja">bgm off — BGMを止める</span><span class="en">bgm off — Stop the music</span></small></div>
         </div>
       </div>
     </section>
