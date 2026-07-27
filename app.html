@@ -570,8 +570,10 @@
         .toolbar .tool-btn svg  { width: 19px; height: 19px; }
         /* 上バー端の3つ(FLUSH/USAGE/OVERVIEW)は非表示 → 設定(歯車)に集約 */
         .hbtn-flush, .hbtn-usage, .hlink-overview { display: none !important; }
-        /* ⭐⌘Kボタンは既定で出さない（デスクトップはキーで開ける）。モバイルの指定で出す */
+        /* ⭐⌘Kボタンは既定で出さない（デスクトップはキーで開ける）。モバイルの指定で出す。
+           ⚠️ただし別サイトをパネルに出している間は、キーが iframe に吸われて ⌘K が効かないので出す */
         .hbtn-cmdk { display: none; }
+        body.bm-iframe-view .hbtn-cmdk { display: inline-flex; }
         .cmdk-label { font-family: var(--ui-mono, ui-monospace, 'SF Mono', Menlo, monospace);
                       font-size: 12px; letter-spacing: .02em; line-height: 1; }
         .tool-btn:hover  { border-color: rgba(255,255,255,0.12); color: #fff; background: rgba(255,255,255,0.06); }
@@ -15043,6 +15045,11 @@ function setTermWidthPct(pct, persist) {
         cur = v;
         tabsWrap.querySelectorAll('.term-tab').forEach(b =>
             b.classList.toggle('active', b.dataset.view === v));
+        // ⭐別サイト(cross-origin iframe)を見ている間だけ、上部に ⌘K ボタンを出す。
+        //   ⚠️そこにフォーカスが入るとキーは全部 iframe 側へ行き、親の ⌘K は届かない（構造上拾えない）＝
+        //     「コマンドパレットが開けない」状態が作れてしまうので、押して開ける道を残す。
+        //   ⚠️切替の入口が setView と showView の2つあるので、両方から通るこちらに置く。
+        document.body.classList.toggle('bm-iframe-view', !!VIEWS[v]);
         if (v === 'log') {
             tb.hidden = false; view.hidden = true;
             return;
@@ -15182,6 +15189,7 @@ function setTermWidthPct(pct, persist) {
     function showView(v) {
         cur = v;
         tabsWrap.querySelectorAll('.term-tab').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+        if (!VIEWS[v]) document.body.classList.remove('bm-iframe-view');   // proto / log は別サイトではない
         if (v === 'log') { tb.hidden = false; view.hidden = true; return; }
         if (VIEWS[v]) { setView(v); return; }
         // proto など独立ペイン
