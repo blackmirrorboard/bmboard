@@ -226,6 +226,9 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
   -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 61%,transparent 80.3%);
   mask-image:linear-gradient(180deg,#000 0%,#000 61%,transparent 80.3%)}
 /* ⭐光の帯。面があること＝立体だという情報を動きで伝える */
+/* 🅿️一旦キープ（木下・2026-07-27）＝粒だけ残して光は止める。
+   消さずに display:none にしてあるので、この1行を外せば戻る。 */
+.kvsheen{display:none}
 .kvsheen{position:absolute;top:-30%;bottom:-30%;left:-40%;width:30%;z-index:1;
   background:linear-gradient(100deg,transparent,rgba(255,255,255,.20),transparent);
   filter:blur(60px);transform:rotate(8deg);pointer-events:none;
