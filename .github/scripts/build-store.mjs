@@ -14,7 +14,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { CSS, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
+import { CSS, HERO_CSS, heroTiles, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'store.html');
@@ -82,32 +82,8 @@ ${head({
     hasPart: spells.map(s => ({ '@type': 'CreativeWork', name: s.name, description: s.desc, author: { '@type': 'Organization', name: s.author || 'kinoshita studio' } })),
   },
 })}
-<style>${CSS}
+<style>${CSS}${HERO_CSS}
 /* この頁だけ：STOREの棚 */
-.hero{text-align:center;padding-top:44px}
-.hero h1{font-size:clamp(46px,8vw,104px);letter-spacing:-.035em;line-height:1}
-.hero .sub{margin-left:auto;margin-right:auto}
-.hero .count{text-align:center}
-.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(10px,1.6vw,20px);
-  max-width:640px;margin:0 auto 34px;pointer-events:none}
-.tile{aspect-ratio:1;display:grid;place-items:center;font-size:clamp(20px,3.2vw,30px);
-  border-radius:clamp(12px,2vw,20px);border:1px solid rgba(255,255,255,.09);
-  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
-  box-shadow:0 18px 40px rgba(0,0,0,.45)}
-/* ⭐端に行くほど遠くにある＝ぼけて暗い。中央3枚だけがくっきり見える */
-.tile.t0,.tile.t4,.tile.t5,.tile.t9{filter:blur(3px);opacity:.42}
-.tile.t1,.tile.t8{filter:blur(1px);opacity:.72}
-@media(max-width:560px){
-  .tiles{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;max-width:none}
-  .tile{border-radius:12px}
-}
-@media(prefers-reduced-motion:no-preference){
-  .tile{animation:tileIn .7s cubic-bezier(.2,.8,.2,1) backwards}
-  .tile.t1{animation-delay:.04s} .tile.t2{animation-delay:.08s} .tile.t3{animation-delay:.12s}
-  .tile.t4{animation-delay:.16s} .tile.t5{animation-delay:.2s}  .tile.t6{animation-delay:.24s}
-  .tile.t7{animation-delay:.28s} .tile.t8{animation-delay:.32s} .tile.t9{animation-delay:.36s}
-  @keyframes tileIn{from{opacity:0;transform:translateY(10px) scale(.96)}}
-}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-top:26px}
 .sp{display:flex;gap:16px;padding:20px;border:1px solid var(--line);border-radius:16px;
   background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
@@ -148,9 +124,7 @@ ${nav('store.html')}
   <header class="head hero">
     <!-- ⭐アイコンを面に浮かべて、中央だけくっきり・端はぼかす＝奥行きで「棚」に見せる。
          ⚠️並べる絵は catalog.json の先頭10件から拾う（手で並べない＝増えたら自動で変わる） -->
-    <div class="tiles" aria-hidden="true">
-${spells.slice(0, 10).map((s, i) => `      <span class="tile t${i}">${esc(s.icon || '✦')}</span>`).join('\n')}
-    </div>
+${heroTiles(spells.map(s => esc(s.icon || '✦')))}
     <h1>STORE</h1>
     <p class="sub">
       <span class="ja">板に<b>魔法</b>を入れる。図の型も、動くものも。<br>アカウントは要らない。入れたものは、あなたの端末の中に残る。</span>

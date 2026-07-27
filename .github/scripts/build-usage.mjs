@@ -18,7 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { extractArray } from './lib/extract.mjs';
-import { CSS, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
+import { CSS, HERO_CSS, heroTiles, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'usage.html');
@@ -67,7 +67,7 @@ ${head({
     author: { '@type': 'Person', name: '木下 貴博', url: 'https://kinoshita.studio/' },
   },
 })}
-<style>${CSS}</style>
+<style>${CSS}${HERO_CSS}</style>
 </head>
 <body>
 <div class="glow"><i></i><i></i></div>
@@ -75,7 +75,8 @@ ${head({
 ${nav('usage.html')}
 
 <main class="shell">
-  <header class="head">
+  <header class="head hero">
+${heroTiles(doc.map(c => c.icon))}
     <h1><span class="ja">使い方</span><span class="en">How to use</span></h1>
     <p class="sub">
       <span class="ja">覚えることはひとつだけ。<b>⌘K</b> を押して、やりたいことを打つ。<br>あとは全部、ここに書いてある通りに出てくる。</span>

@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { extractArray } from './lib/extract.mjs';
-import { CSS, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
+import { CSS, HERO_CSS, heroTiles, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
 
 const ROOT = process.cwd();
 const APP = path.join(ROOT, 'app.html');
@@ -88,7 +88,7 @@ ${head({
     author: { '@type': 'Person', name: '木下 貴博', url: 'https://kinoshita.studio/' },
   },
 })}
-<style>${CSS}
+<style>${CSS}${HERO_CSS}
 /* この頁だけ：サブコマンドと「打ち込みが要る」バッジ */
 .legend{margin-top:26px;padding:20px 22px;border:1px solid var(--line);border-radius:14px;
   background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
@@ -105,7 +105,8 @@ ${head({
 ${nav('commands.html')}
 
 <main class="shell">
-  <header class="head">
+  <header class="head hero">
+${heroTiles(order.map(cat => ICON[cat] || '·'))}
     <h1><span class="ja">コマンド</span><span class="en">Commands</span></h1>
     <p class="sub">
       <span class="ja"><b>⌘K</b> を押して、名前を打つ。<br>覚える必要はない——思いついた言葉で引くと候補が出る。</span>
