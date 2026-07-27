@@ -238,8 +238,17 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
 @keyframes kvsweep{0%,34%{left:-40%}84%,100%{left:112%}}
 @media(prefers-reduced-motion:reduce){.kvsheen{display:none}}
 /* ⭐グレインはKVの上・コピーの下。soft-light で絵の階調を壊さずざらつきだけ足す */
-.kvgrain{position:absolute;inset:0;z-index:1;width:100%;height:100%;display:block;
-  pointer-events:none;mix-blend-mode:soft-light;opacity:.42;image-rendering:pixelated}
+/* ⭐粒はグラフィック（立体）の上だけに乗せる（木下・2026-07-27）。
+   ⚠️KVは合成済みの1枚なので、立体だけを切り抜くマスクを絵そのものから作った
+     （kv/kv-mask.webp＝彩度と明るさで立体を拾ったアルファ画像）。
+   ⚠️マスクは背景と同じ寸法・同じ位置で敷かないと1pxもズレる＝
+     hero::before と同じ inset / cover / position を必ず揃えること。 */
+.kvgrain{position:absolute;inset:-32.5%;z-index:1;width:auto;height:auto;display:block;
+  pointer-events:none;mix-blend-mode:soft-light;opacity:.42;image-rendering:pixelated;
+  -webkit-mask-image:url('kv/kv-mask.webp');mask-image:url('kv/kv-mask.webp');
+  -webkit-mask-size:cover;mask-size:cover;
+  -webkit-mask-position:center center;mask-position:center center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 @media(prefers-reduced-motion:reduce){.kvgrain{display:none}}
 /* コピー＝いちばん上。背後にごく薄い暗がりを敷いて読めるようにする */
 /* ⭐コピー群は塊のまま少し下げる。transform なので hero の高さ・KVの位置には影響しない */
@@ -359,6 +368,8 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
   .hero{min-height:min(88vh,780px);padding:118px 22px 76px}
   /* ⭐% は「画像のその点を枠のその点に合わせる」＝数字を下げるほど絵は右へ寄る。
      ⚠️倍率はPCだけ上げたので、モバイルは1.5倍(inset:-25%)に据え置く＝マスクも箱基準で戻す */
+  /* ⚠️マスクは背景と同じ条件にする（モバイルは 1.5倍・51%） */
+  .kvgrain{inset:-25%;-webkit-mask-position:51% center;mask-position:51% center}
   .hero::before{background-position:51% center;inset:-25%;
     -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 62%,transparent 83.33%);
     mask-image:linear-gradient(180deg,#000 0%,#000 62%,transparent 83.33%)}
