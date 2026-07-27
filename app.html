@@ -11300,7 +11300,8 @@ tiEl.addEventListener('paste', e => {
                 } else if (hot) {
                     // 割当済み：kbdバッジ＋（ユーザー割当なら）クリア×／内蔵なら「既定」＋上書き記録
                     const clr = hot.user ? `<span class="set-cmdclear" data-clear="${esc(it.cmd)}" title="${esc(T('setcmd.clear'))}">✕</span>` : '';
-                    hotHtml = `<span class="k${hot.user ? '' : ' def'}">${esc(hot.disp)}</span>${clr}${!hot.user ? `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.record'))}</span>` : ''}`;
+                    const _KL = (window._bmKeyLabel || (x => x));
+                    hotHtml = `<span class="k${hot.user ? '' : ' def'}">${esc(_KL(hot.disp))}</span>${clr}${!hot.user ? `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.record'))}</span>` : ''}`;
                 } else {
                     hotHtml = `<span class="set-cmdrec-ph" data-rec="${esc(it.cmd)}">${esc(T('setcmd.recordHot'))}</span>`;
                 }
@@ -11329,10 +11330,7 @@ tiEl.addEventListener('paste', e => {
         if (!q && cmdFilter === 'all') {
             const _jp = !en;
             // ⭐Windowsでは⌘/⌥/⌃/⇧ が読めないので、その場で読み替える（表の中身は1つのまま）
-            const _mac = (window._bmIsMac !== false);
-            const K = k => _mac ? k : k
-                .replace(/⌘⇧/g, 'Ctrl+Shift+').replace(/⌘/g, 'Ctrl+')
-                .replace(/⌃/g, 'Ctrl+').replace(/⌥/g, 'Alt+').replace(/⇧/g, 'Shift+');
+            const K = (window._bmKeyLabel || (x => x));   // ⭐読み替えは1箇所（_bmKeyLabel）に集約
             const G = (title, rows, badge) =>
                 `<div class="set-cmdcat">${esc(title)}</div>` +
                 rows.map(([k, d]) => `<div class="set-cmdrow"><span class="set-cmdstar" style="visibility:hidden">☆</span>`
@@ -11856,7 +11854,7 @@ tiEl.addEventListener('paste', e => {
             const U = window._bmUsc;
             if (U && U.reservedCombo(e)) { recMsg = (window.t ? window.t('pal.warnUsed') : '使用中'); renderCmds(); return; }
             const c = U && U.comboOf(e);
-            if (!c) { recMsg = (window.t ? window.t('pal.warnMod') : '⌘/⌥/⌃と'); renderCmds(); return; }
+            if (!c) { recMsg = (window._bmModsWarn ? window._bmModsWarn() : '⌘/⌥/⌃と'); renderCmds(); return; }
             // ⭐盤面の道具キー（S=選択 / P=鉛筆 …）は割り当て不可＝既定の絶対ルール。
             //   ⚠️録音の口が⌘K側と設定側の2箇所にあり、片方だけ塞いでも素通りする（実測で S が保存された）。
             if (U && U.isBoardToolKey && U.isBoardToolKey(c)) {
@@ -12432,13 +12430,13 @@ function centerTermPanel() {
         }
         const hint = (LANG === 'en' && it.hintEn) ? it.hintEn : (it.hint || '');
         if (it._settings) {   // ⭐設定パネルを開く
-            return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: hint, sc: (getUsc()[it.cmd] || {}).disp || it.sc || '', favKey, fav,
+            return { kind:'settings', ico:'⚙', name: it.cmd, type: cat, desc: hint, sc: keyLabel((getUsc()[it.cmd] || {}).disp || it.sc || ''), favKey, fav,
                 cmdStr: it.cmd, assignable: true,
                 run() { close(); if (window._toggleSettings) window._toggleSettings(); } };
         }
         if (it._storeView) {   // ⭐STOREを開く（⌘K内の画面）
             return { kind:'storeview', ico:'🛍', name: it.cmd, type: cat, desc: hint, favKey, fav,
-                sc: (getUsc()[it.cmd] || {}).disp || '', cmdStr: it.cmd, assignable: true,
+                sc: keyLabel((getUsc()[it.cmd] || {}).disp || ''), cmdStr: it.cmd, assignable: true,
                 run() {
                     storeMode = true; storeMsg = ''; input.value = ''; refresh();
                     // ⭐リモートカタログ（静的JSON）を取りに行き、来たら再描画
@@ -12476,31 +12474,22 @@ function centerTermPanel() {
         }
         if (it._spell) {   // ⭐魔法 → 選ぶと保存した選択をビュー中心にスタンプ
             return { kind:'spell', ico: CAT_ICON.spell || '✦', name: it.cmd, type: cat, desc: hint, favKey, fav,
-                sc: (getUsc()[it.cmd] || {}).disp || '', cmdStr: it.cmd, assignable: true,
+                sc: keyLabel((getUsc()[it.cmd] || {}).disp || ''), cmdStr: it.cmd, assignable: true,
                 run() { recordRecent('spell:' + it.cmd); close(); if (window._runSpell) window._runSpell(it._spell); } };
         }
         const usc = getUsc()[it.cmd];
         return {
             kind:'cmd', ico: CAT_ICON[it.cat] || '›', name: it.cmd, type: cat, desc: hint || (it.cmd + (LANG === 'en' ? ' command' : ' コマンド')),
-            sc: (usc && usc.disp) || it.sc || '', favKey, fav,
+            sc: keyLabel((usc && usc.disp) || it.sc || ''), favKey, fav,
             cmdStr: it.cmd, args: !!it.args, assignable: true,   // 全コマンド割当可（引数ありはキーでパレットを開き引数待ち）
             run() {
                 const q = input.value.trim(); const fsp = q.indexOf(' ');
                 const typedArgs = fsp >= 0 ? q.slice(fsp + 1).trim() : '';
                 // ⚠️argsOpt＝引数が「任意」のコマンド（swap 等）は、引数なし↵でそのまま実行する。
                 //   これが無いと args:true が一律「必須」扱いになり、⌘Kから永久に実行できない。
-                // ⭐順送りできるコマンド（board / crumb など）は、引数なしの↵で「入力待ち」にせず
-                //   その場で次の状態へ送る（木下：いちいち入力しなくても↵で切り替えたい）。
-                //   ⚠️board は引数なしだと別の意味（紙→元の板に戻す）なので、必ず "board next" を送る。
-                if (it.cycle && !typedArgs) {
-                    const cyc = it.cmd + ' next';
-                    recordRecent(it.cmd);
-                    close(); try { pushHistory(cyc); } catch (_) {}
-                    if (typeof runCommand === 'function') runCommand(cyc);
-                    return;
-                }
-                if (it.args && !typedArgs && !it.argsOpt) { input.value = it.cmd + ' '; refresh(); return; }
-                const cmd = (it.args && typedArgs) ? (it.cmd + ' ' + typedArgs) : it.cmd;
+                const _d = decideRun(it, it.cmd, it.args ? typedArgs : '');
+                if (_d.needsInput) { input.value = it.cmd + ' '; refresh(); return; }
+                const cmd = _d.run;
                 recordRecent(it.cmd);   // ⭐使用履歴（最近使ったものを上部に）
                 close(); try { pushHistory(cmd); } catch (_) {}
                 if (typeof runCommand === 'function') runCommand(cmd);
@@ -12626,10 +12615,10 @@ function centerTermPanel() {
         let right;
         const r = rows[sel];
         if (capSc) {
-            right = `<span class="cmdk-foot-r"><span class="cmdk-foot-cap">「${esc(capSc)}」${esc(t('pal.capTo'))} <span class="cmdk-foot-dim">${esc(t('pal.capHint'))}</span>${capMsg ? ' <span class="cmdk-foot-warn">' + esc(capMsg) + '</span>' : ''}</span></span>`;
+            right = `<span class="cmdk-foot-r"><span class="cmdk-foot-cap">「${esc(capSc)}」${esc(t('pal.capTo'))} <span class="cmdk-foot-dim">${esc(modsHint())}</span>${capMsg ? ' <span class="cmdk-foot-warn">' + esc(capMsg) + '</span>' : ''}</span></span>`;
         } else if (r && r.assignable) {
             const usc = getUsc()[r.cmdStr];
-            const cur = usc ? `<span class="k">${esc(usc.disp)}</span> <span class="cmdk-foot-btn" data-act="clearsc">${esc(t('pal.clearSc'))}</span>` : '';
+            const cur = usc ? `<span class="k">${esc(keyLabel(usc.disp))}</span> <span class="cmdk-foot-btn" data-act="clearsc">${esc(t('pal.clearSc'))}</span>` : '';
             right = `<span class="cmdk-foot-r">${cur}<span class="cmdk-foot-btn" data-act="setsc">${esc(usc ? t('pal.change') : t('pal.assign'))}</span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">${esc(t('pal.run'))} <span class="k">↵</span></span></span>`;
         } else {
             right = `<span class="cmdk-foot-r"><span class="cmdk-foot-act">${esc(t('pal.run'))} <span class="k">↵</span></span><span class="cmdk-foot-div"></span><span class="cmdk-foot-act">${esc(t('pal.close'))} <span class="k">esc</span></span></span>`;
@@ -12797,6 +12786,17 @@ function centerTermPanel() {
     const _cardEl = overlay.querySelector('.cmdk-card');
     function _kbNav(on) { if (_cardEl) _cardEl.classList.toggle('kb-nav', !!on); }
     if (listEl) listEl.addEventListener('pointermove', () => _kbNav(false));
+    // ⭐⭐「そのコマンドを引数なしで呼んだら何をするか」を1箇所に決める。
+    //   ⚠️同じ判断が「⌘Kの↵」と「割り当てたキー」に別々に書かれていたため、
+    //     片方だけ直る事故が繰り返し起きた（順送りが↵では効くのにキーでは効かない 等）。
+    //     以後どちらもこの関数を通す＝ズレようがない状態にする。
+    function decideRun(def, name, typedArgs) {
+        if (typedArgs) return { run: name + ' ' + typedArgs };
+        if (def && def.cycle) return { run: name + ' next' };          // 順送り＝次の状態へ
+        if (def && def.args && !def.argsOpt) return { needsInput: true }; // 打ち込みが要る＝入力待ちにする
+        return { run: name };
+    }
+
     function runSel() { const r = rows[sel]; if (r && typeof r.run === 'function') r.run(); }
 
     // ⭐フッターの割当/解除ボタン（mousedownでフォーカスを保持）
@@ -12841,7 +12841,7 @@ function centerTermPanel() {
                     updateFoot(); return; }
             }
             const c = comboOf(e);
-            if (!c) { capMsg = t('pal.warnMod'); updateFoot(); return; }
+            if (!c) { capMsg = modsWarn(); updateFoot(); return; }
             setUsc(capSc, c); capSc = null; capMsg = ''; refresh();
             return;
         }
@@ -12920,23 +12920,14 @@ function centerTermPanel() {
         if (!hit) return;
         e.preventDefault(); e.stopPropagation();
         const def = (typeof OMNI_CMDS !== 'undefined') ? OMNI_CMDS.find(c => c.cmd === hit) : null;
-        // ⭐順送りできるコマンドは "next" を付けて送る＝⌘Kで↵を押した時と同じ動きにする。
-        //   ⚠️これが無いと、↵では切り替わるのに割り当てたキーでは何も起きない
-        //     （panel は引数なしだと状態表示だけ・board は別の意味になる）。木下報告。
-        if (def && def.cycle) {
-            try { pushHistory(hit + ' next'); } catch (_) {}
-            if (typeof runCommand === 'function') runCommand(hit + ' next');
-            return;
-        }
-        // ⭐引数が「必須」のものだけパレットを開いて「cmd 」まで入れ引数待ちにする。
-        //   argsOpt（引数は任意＝swap 等）は、割り当てたキーを押した瞬間に実行する
-        //   （⌘Sを押したのにパレットが開いて一手増える、を避ける）
-        if (def && def.args && !def.argsOpt) {
+        // ⭐判断は decideRun に一本化（↵と同じ結論になる）
+        const _d = decideRun(def, hit, '');
+        if (_d.needsInput) {   // 打ち込みが要るものだけ、パレットを開いて入力待ちにする
             open(); input.value = hit + ' '; refresh(); setTimeout(() => input.focus(), 0);
             return;
         }
-        try { pushHistory(hit); } catch (_) {}
-        if (typeof runCommand === 'function') runCommand(hit);
+        try { pushHistory(_d.run); } catch (_) {}
+        if (typeof runCommand === 'function') runCommand(_d.run);
     }, true);
 
     // ⭐設定パネル等から共有：お気に入り/ショートカット管理（追加のみ・既存挙動は不変）
@@ -12963,6 +12954,21 @@ function centerTermPanel() {
         if (out === mods) return m;
         return out.split('').sort().join('') + ':' + base;
     };
+    // ⭐Mac記号 → Windows表記への読み替え。⚠️辞書や保存データは触らず、出す直前だけ変換する。
+    //   （木下：Windowsのパネルにまだ⌘表記が残っている）
+    const keyLabel = t2 => (IS_MAC || typeof t2 !== 'string') ? t2 : t2
+        .replace(/⌘⇧/g, 'Ctrl+Shift+').replace(/⌘/g, 'Ctrl+')
+        .replace(/⌃/g, 'Ctrl+').replace(/⌥/g, 'Alt+').replace(/⇧/g, 'Shift+');
+    window._bmKeyLabel = keyLabel;
+    // ⚠️案内文は機械置換すると「Ctrl+/Alt+/Ctrl+と組み合わせ」のような壊れた文になる。
+    //   キーの名前を並べる文だけは、OSごとに用意する。
+    const modsHint = () => IS_MAC
+        ? (LANG === 'en' ? 'any key (⌘/⌥/⌃ combos too) · Esc to cancel' : '好きなキー（⌘/⌥/⌃と組み合わせも可） · Esc取消')
+        : (LANG === 'en' ? 'any key (Ctrl / Alt / Shift combos too) · Esc to cancel' : '好きなキー（Ctrl / Alt / Shift と組み合わせも可） · Esc取消');
+    const modsWarn = () => IS_MAC
+        ? (LANG === 'en' ? 'Combine with ⌘/⌥/⌃' : '⌘/⌥/⌃ と組合せて')
+        : (LANG === 'en' ? 'Combine with Ctrl / Alt / Shift' : 'Ctrl / Alt / Shift と組合せて');
+    window._bmModsHint = modsHint; window._bmModsWarn = modsWarn;
     const isBoardToolKey = c => !!(c && c.bare && BOARD_ONEKEY.indexOf(c.base) >= 0);
     // ⭐盤面の操作そのものに使うキーは、修飾なしでは登録させない（木下のスクショで board に ArrowDown が
     //   割り当たっていた＝矢印で図形を動かせなくなる）。⌘/⌥ を足せば使ってよい。
