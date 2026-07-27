@@ -121,7 +121,7 @@ ${head({
 ${nav('store.html')}
 
 <main class="shell">
-  <header class="head hero">
+  <header class="head hero tight">
     <!-- ⭐アイコンを面に浮かべて、中央だけくっきり・端はぼかす＝奥行きで「棚」に見せる。
          ⚠️並べる絵は catalog.json の先頭10件から拾う（手で並べない＝増えたら自動で変わる） -->
 ${heroTiles(spells.map(s => esc(s.icon || '✦')))}

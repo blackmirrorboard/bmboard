@@ -90,10 +90,10 @@ ${head({
 })}
 <style>${CSS}${HERO_CSS}${ANIM_CSS}
 /* この頁だけ：サブコマンドと「打ち込みが要る」バッジ */
-.legend{margin-top:26px;padding:20px 22px;border:1px solid var(--line);border-radius:14px;
+.legend{margin-top:14px;padding:12px 16px;border:1px solid var(--line);border-radius:14px;
   background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
   font-size:13.5px;line-height:1.95;color:var(--dim)}
-.legend p+p{margin-top:10px}
+.legend p+p{margin-top:6px}
 .legend b{color:var(--fg);font-weight:600}
 .subs{color:var(--dim2);line-height:1.9}
 .arg{font-size:11px;color:#ff9d7a;white-space:nowrap;cursor:help}
@@ -112,7 +112,7 @@ ${head({
 ${nav('commands.html')}
 
 <main class="shell">
-  <header class="head hero">
+  <header class="head hero tight">
 ${heroTiles(order.map(cat => ICON[cat] || '·'))}
     <h1><span class="ja">コマンド</span><span class="en">Commands</span></h1>
     <p class="sub">
@@ -124,16 +124,8 @@ ${heroTiles(order.map(cat => ICON[cat] || '·'))}
 
   <div class="legend">
     <p>
-      <span class="ja"><b>＋打ち込みが要る</b> ＝ コマンド名だけでは動かず、そのあとに言葉や数字を続けて打つもの。
-        たとえば <code>calc</code> は <code>calc 12*8</code>、<code>t</code> は <code>t アイデア</code> のように使う。
-        ⌘K でこのコマンドを選ぶと、打ち込みを待つ状態になる。</span>
-      <span class="en"><b>+ needs typing</b> means the name alone does nothing — you type a word or number after it.
-        <code>calc</code> becomes <code>calc 12*8</code>; <code>t</code> becomes <code>t idea</code>.
-        Picking it in ⌘K puts you in a "waiting for input" state.</span>
-    </p>
-    <p>
-      <span class="ja"><b>下の小さい行</b>（<code>board a4</code> など）はサブコマンド。打ち込みの代わりに、そのまま選んで実行できる。</span>
-      <span class="en">The <b>small lines underneath</b> (like <code>board a4</code>) are subcommands — pick one instead of typing.</span>
+      <span class="ja"><b>＋打ち込みが要る</b>＝名前のあとに言葉や数字を続けるもの（<code>calc 12*8</code> / <code>t アイデア</code>）。<b>下の小さい行</b>（<code>board a4</code>）はサブコマンドで、打ち込みの代わりに選べる。</span>
+      <span class="en"><b>+ needs typing</b> — type a word or number after the name (<code>calc 12*8</code> / <code>t idea</code>). The <b>small lines underneath</b> (<code>board a4</code>) are subcommands you can pick instead.</span>
     </p>
   </div>
 

@@ -237,6 +237,16 @@ export const HERO_CSS = `
 .tile.t0,.tile.t4,.tile.t5,.tile.t9{filter:blur(3px);opacity:.42}
 .tile.t1,.tile.t8{filter:blur(1px);opacity:.72}
 @media(max-width:560px){ .tiles{gap:8px;max-width:none} .tile{border-radius:12px} }
+
+/* ⭐探しに来た人の頁（使い方・コマンド・STORE）は、開いてすぐ中身が見えるように小さくする。
+   ⚠️読みに来た人の頁（つくった理由・開発ログ・魔法の書式）は大きいまま＝入口の性格が違う。 */
+.hero.tight{padding-top:14px;padding-bottom:14px}
+.hero.tight .tiles{grid-template-columns:repeat(5,minmax(0,1fr));max-width:270px;margin-bottom:16px;gap:8px}
+.hero.tight .tile{font-size:clamp(13px,1.4vw,16px);border-radius:10px;box-shadow:0 8px 18px rgba(0,0,0,.36)}
+.hero.tight h1{font-size:clamp(28px,3.6vw,44px)}
+.hero.tight .sub{margin-top:10px;font-size:13.5px;line-height:1.75}
+.hero.tight .count{margin-top:10px}
+@media(max-width:560px){ .hero.tight .tiles{max-width:none} }
 @media(prefers-reduced-motion:no-preference){
   .tile{animation:tileIn .7s cubic-bezier(.2,.8,.2,1) backwards}
   .tile.t1{animation-delay:.04s} .tile.t2{animation-delay:.08s} .tile.t3{animation-delay:.12s}

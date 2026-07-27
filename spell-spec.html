@@ -199,6 +199,16 @@ body.lang-en .en{display:inline}
 .tile.t0,.tile.t4,.tile.t5,.tile.t9{filter:blur(3px);opacity:.42}
 .tile.t1,.tile.t8{filter:blur(1px);opacity:.72}
 @media(max-width:560px){ .tiles{gap:8px;max-width:none} .tile{border-radius:12px} }
+
+/* ⭐探しに来た人の頁（使い方・コマンド・STORE）は、開いてすぐ中身が見えるように小さくする。
+   ⚠️読みに来た人の頁（つくった理由・開発ログ・魔法の書式）は大きいまま＝入口の性格が違う。 */
+.hero.tight{padding-top:22px}
+.hero.tight .tiles{grid-template-columns:repeat(5,minmax(0,1fr));max-width:330px;margin-bottom:20px;gap:9px}
+.hero.tight .tile{font-size:clamp(15px,1.7vw,19px);border-radius:11px;box-shadow:0 10px 24px rgba(0,0,0,.4)}
+.hero.tight h1{font-size:clamp(30px,4.4vw,52px)}
+.hero.tight .sub{margin-top:12px;font-size:14px}
+.hero.tight .count{margin-top:14px}
+@media(max-width:560px){ .hero.tight .tiles{max-width:none} }
 @media(prefers-reduced-motion:no-preference){
   .tile{animation:tileIn .7s cubic-bezier(.2,.8,.2,1) backwards}
   .tile.t1{animation-delay:.04s} .tile.t2{animation-delay:.08s} .tile.t3{animation-delay:.12s}

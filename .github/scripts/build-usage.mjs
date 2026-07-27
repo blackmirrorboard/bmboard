@@ -75,7 +75,7 @@ ${head({
 ${nav('usage.html')}
 
 <main class="shell">
-  <header class="head hero">
+  <header class="head hero tight">
 ${heroTiles(doc.map(c => c.icon))}
     <h1><span class="ja">使い方</span><span class="en">How to use</span></h1>
     <p class="sub">
