@@ -56,7 +56,7 @@ const rowOf = c => {
         `<span class="ja">${esc(c.cmd)} ${esc(a)} — ${esc(ja)}</span><span class="en">${esc(c.cmd)} ${esc(a)} — ${esc(en)}</span>`).join('<br>')}</small>`
     : '';
   return `        <div class="row" data-s="${searchKey}">
-          <div class="key"><kbd>${esc(c.cmd)}</kbd>${needArg ? '<span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span>' : ''}</div>
+          <div class="key"><kbd>${esc(c.cmd)}</kbd>${needArg ? '<span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span>' : ''}</div>
           <div class="desc"><span class="ja">${esc(c.hint || '')}</span><span class="en">${esc(c.hintEn || c.hint || '')}</span>${subs}</div>
         </div>`;
 };
@@ -89,9 +89,14 @@ ${head({
   },
 })}
 <style>${CSS}
-/* この頁だけ：サブコマンドと「引数が要る」バッジ */
+/* この頁だけ：サブコマンドと「打ち込みが要る」バッジ */
+.legend{margin-top:26px;padding:20px 22px;border:1px solid var(--line);border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
+  font-size:13.5px;line-height:1.95;color:var(--dim)}
+.legend p+p{margin-top:10px}
+.legend b{color:var(--fg);font-weight:600}
 .subs{color:var(--dim2);line-height:1.9}
-.arg{font-size:11px;color:#ff9d7a;white-space:nowrap}
+.arg{font-size:11px;color:#ff9d7a;white-space:nowrap;cursor:help}
 </style>
 </head>
 <body>
@@ -108,6 +113,21 @@ ${nav('commands.html')}
     </p>
     <p class="count">${order.length} groups &nbsp;·&nbsp; ${list.length} commands &nbsp;·&nbsp; ${subTotal} subcommands</p>
   </header>
+
+  <div class="legend">
+    <p>
+      <span class="ja"><b>＋打ち込みが要る</b> ＝ コマンド名だけでは動かず、そのあとに言葉や数字を続けて打つもの。
+        たとえば <code>calc</code> は <code>calc 12*8</code>、<code>t</code> は <code>t アイデア</code> のように使う。
+        ⌘K でこのコマンドを選ぶと、打ち込みを待つ状態になる。</span>
+      <span class="en"><b>+ needs typing</b> means the name alone does nothing — you type a word or number after it.
+        <code>calc</code> becomes <code>calc 12*8</code>; <code>t</code> becomes <code>t idea</code>.
+        Picking it in ⌘K puts you in a "waiting for input" state.</span>
+    </p>
+    <p>
+      <span class="ja"><b>下の小さい行</b>（<code>board a4</code> など）はサブコマンド。打ち込みの代わりに、そのまま選んで実行できる。</span>
+      <span class="en">The <b>small lines underneath</b> (like <code>board a4</code>) are subcommands — pick one instead of typing.</span>
+    </p>
+  </div>
 
   <div class="tools">
     <input id="q" type="search" autocomplete="off" placeholder="絞り込む — flip / spell / export …">
@@ -132,8 +152,8 @@ ${sections}
   <div class="card">
     <h3><span class="ja">自分のキーを決める・自分の呼び名を付ける</span><span class="en">Your keys, your names</span></h3>
     <p>
-      <span class="ja"><code>⌘,</code> → コマンド から、どのコマンドにも好きなキーを割り当てられる。「呼び名」を付ければ、自分の言葉（例：アトリエ）で引ける。<br>⚠️引数が必須のコマンドにキーを付けると、押しても<b>入力待ちになるだけ</b>。すぐ動かしたいならサブコマンドの側に付ける。</span>
-      <span class="en">Open <code>⌘,</code> → Commands to bind any key, or give a command your own name so you can find it your way.<br>⚠️Binding a key to a command that requires an argument only opens the palette and waits — bind the subcommand instead.</span>
+      <span class="ja"><code>⌘,</code> → コマンド から、どのコマンドにも好きなキーを割り当てられる。「呼び名」を付ければ、自分の言葉（例：アトリエ）で引ける。<br>⚠️<b>＋打ち込みが要る</b>コマンドにキーを付けても、押した時に<b>打ち込み待ちになるだけ</b>。すぐ動かしたいならサブコマンド（<code>board a4</code> など）の側に付ける。</span>
+      <span class="en">Open <code>⌘,</code> → Commands to bind any key, or give a command your own name so you can find it your way.<br>⚠️Binding a key to a <b>+ needs typing</b> command only opens the palette and waits — bind a subcommand (<code>board a4</code>) instead.</span>
     </p>
     <div class="more">
       <a href="usage.html"><span class="ja">使い方</span><span class="en">How to use</span></a>

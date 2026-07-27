@@ -172,9 +172,14 @@ body.lang-en .en{display:inline}
   .cat{padding-top:36px}
 }
 
-/* この頁だけ：サブコマンドと「引数が要る」バッジ */
+/* この頁だけ：サブコマンドと「打ち込みが要る」バッジ */
+.legend{margin-top:26px;padding:20px 22px;border:1px solid var(--line);border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
+  font-size:13.5px;line-height:1.95;color:var(--dim)}
+.legend p+p{margin-top:10px}
+.legend b{color:var(--fg);font-weight:600}
 .subs{color:var(--dim2);line-height:1.9}
-.arg{font-size:11px;color:#ff9d7a;white-space:nowrap}
+.arg{font-size:11px;color:#ff9d7a;white-space:nowrap;cursor:help}
 </style>
 </head>
 <body>
@@ -208,6 +213,21 @@ body.lang-en .en{display:inline}
     <p class="count">15 groups &nbsp;·&nbsp; 48 commands &nbsp;·&nbsp; 52 subcommands</p>
   </header>
 
+  <div class="legend">
+    <p>
+      <span class="ja"><b>＋打ち込みが要る</b> ＝ コマンド名だけでは動かず、そのあとに言葉や数字を続けて打つもの。
+        たとえば <code>calc</code> は <code>calc 12*8</code>、<code>t</code> は <code>t アイデア</code> のように使う。
+        ⌘K でこのコマンドを選ぶと、打ち込みを待つ状態になる。</span>
+      <span class="en"><b>+ needs typing</b> means the name alone does nothing — you type a word or number after it.
+        <code>calc</code> becomes <code>calc 12*8</code>; <code>t</code> becomes <code>t idea</code>.
+        Picking it in ⌘K puts you in a "waiting for input" state.</span>
+    </p>
+    <p>
+      <span class="ja"><b>下の小さい行</b>（<code>board a4</code> など）はサブコマンド。打ち込みの代わりに、そのまま選んで実行できる。</span>
+      <span class="en">The <b>small lines underneath</b> (like <code>board a4</code>) are subcommands — pick one instead of typing.</span>
+    </p>
+  </div>
+
   <div class="tools">
     <input id="q" type="search" autocomplete="off" placeholder="絞り込む — flip / spell / export …">
     <div class="chips">
@@ -235,7 +255,7 @@ body.lang-en .en{display:inline}
       <h2><span class="i">🔢</span><span class="ja">計算</span><span class="en">Calc</span></h2>
       <div class="rows">
         <div class="row" data-s="calc 計算（calc 12*8） calculate (calc 12*8) math compute calculator sum ">
-          <div class="key"><kbd>calc</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="key"><kbd>calc</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">計算（calc 12*8）</span><span class="en">Calculate (calc 12*8)</span></div>
         </div>
       </div>
@@ -245,11 +265,11 @@ body.lang-en .en{display:inline}
       <h2><span class="i">📝</span><span class="ja">メモ</span><span class="en">Note</span></h2>
       <div class="rows">
         <div class="row" data-s="t 中央にテキスト（t アイデア） drop text at center (t idea) note write text add jot ">
-          <div class="key"><kbd>t</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="key"><kbd>t</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">中央にテキスト（t アイデア）</span><span class="en">Drop text at center (t idea)</span></div>
         </div>
         <div class="row" data-s="todo todoを置く（todo 牛乳） place a to-do (todo milk) task checkbox check list ">
-          <div class="key"><kbd>todo</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="key"><kbd>todo</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">ToDoを置く（todo 牛乳）</span><span class="en">Place a to-do (todo milk)</span></div>
         </div>
       </div>
@@ -379,11 +399,11 @@ body.lang-en .en{display:inline}
           <div class="desc"><span class="ja">消しカスを払う</span><span class="en">Sweep eraser crumbs off the paper</span></div>
         </div>
         <div class="row" data-s="align 選択を揃える（align left/right/top/bottom/center/middle） align selection (left/right/top/bottom/center/middle) align 整列 揃える 配置 そろえる arrange tidy distribute layout left 選択を左に揃える align selection left right 選択を右に揃える align selection right top 選択を上に揃える align selection top bottom 選択を下に揃える align selection bottom center 選択を左右の中央に center selection horizontally middle 選択を上下の中央に center selection vertically">
-          <div class="key"><kbd>align</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="key"><kbd>align</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">選択を揃える（align left/right/top/bottom/center/middle）</span><span class="en">Align selection (left/right/top/bottom/center/middle)</span><small class="subs"><span class="ja">align left — 選択を左に揃える</span><span class="en">align left — Align selection left</span><br><span class="ja">align right — 選択を右に揃える</span><span class="en">align right — Align selection right</span><br><span class="ja">align top — 選択を上に揃える</span><span class="en">align top — Align selection top</span><br><span class="ja">align bottom — 選択を下に揃える</span><span class="en">align bottom — Align selection bottom</span><br><span class="ja">align center — 選択を左右の中央に</span><span class="en">align center — Center selection horizontally</span><br><span class="ja">align middle — 選択を上下の中央に</span><span class="en">align middle — Center selection vertically</span></small></div>
         </div>
         <div class="row" data-s="board ボードサイズ（board a4 / a3 / free） board size (board a4 / a3 / free) ボードサイズ 用紙 サイズ a4 a3 b5 letter square page size page size paper canvas format next サイズを順番に送る（1キーで回せる） cycle through the sizes (one key) free 枠なし（無限に広い板） no page frame (infinite board) a4 a4（縦） a4 portrait a4l a4（横） a4 landscape a3 a3 a3 b5 b5 b5 letter レター letter square 正方形 square">
-          <div class="key"><kbd>board</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="key"><kbd>board</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">ボードサイズ（board a4 / a3 / free）</span><span class="en">Board size (board a4 / a3 / free)</span><small class="subs"><span class="ja">board next — サイズを順番に送る（1キーで回せる）</span><span class="en">board next — Cycle through the sizes (one key)</span><br><span class="ja">board free — 枠なし（無限に広い板）</span><span class="en">board free — No page frame (infinite board)</span><br><span class="ja">board a4 — A4（縦）</span><span class="en">board a4 — A4 portrait</span><br><span class="ja">board a4l — A4（横）</span><span class="en">board a4l — A4 landscape</span><br><span class="ja">board a3 — A3</span><span class="en">board a3 — A3</span><br><span class="ja">board b5 — B5</span><span class="en">board b5 — B5</span><br><span class="ja">board letter — レター</span><span class="en">board letter — Letter</span><br><span class="ja">board square — 正方形</span><span class="en">board square — Square</span></small></div>
         </div>
         <div class="row" data-s="flush ターミナルのログを消す clear the terminal log reset clear storage ">
@@ -413,11 +433,11 @@ body.lang-en .en{display:inline}
           <div class="desc"><span class="ja">URLで画面を共有</span><span class="en">Share the canvas via URL</span></div>
         </div>
         <div class="row" data-s="save プロジェクト保存 save the project project file snapshot ">
-          <div class="key"><kbd>save</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="key"><kbd>save</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">プロジェクト保存</span><span class="en">Save the project</span></div>
         </div>
         <div class="row" data-s="load プロジェクト読込 load a project project file restore open ">
-          <div class="key"><kbd>load</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="key"><kbd>load</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">プロジェクト読込</span><span class="en">Load a project</span></div>
         </div>
       </div>
@@ -431,7 +451,7 @@ body.lang-en .en{display:inline}
           <div class="desc"><span class="ja">選択した2つ以上を矢印でつなぐ</span><span class="en">Connect 2+ selected objects with arrows</span></div>
         </div>
         <div class="row" data-s="tpl テンプレを置く insert a template テンプレ template 雛形 tpl template layout preset scaffold wireframe ワイヤーフレームを置く insert a wireframe kanban カンバンを置く insert a kanban board mindmap マインドマップを置く insert a mind map moodboard ムードボードを置く insert a moodboard">
-          <div class="key"><kbd>tpl</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="key"><kbd>tpl</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">テンプレを置く</span><span class="en">Insert a template</span><small class="subs"><span class="ja">tpl wireframe — ワイヤーフレームを置く</span><span class="en">tpl wireframe — Insert a wireframe</span><br><span class="ja">tpl kanban — カンバンを置く</span><span class="en">tpl kanban — Insert a kanban board</span><br><span class="ja">tpl mindmap — マインドマップを置く</span><span class="en">tpl mindmap — Insert a mind map</span><br><span class="ja">tpl moodboard — ムードボードを置く</span><span class="en">tpl moodboard — Insert a moodboard</span></small></div>
         </div>
         <div class="row" data-s="sticky 付箋を置く（文字を入れてもok） place a sticky note (text optional) 付箋 sticky ふせん メモ note note postit memo ">
@@ -503,7 +523,7 @@ body.lang-en .en{display:inline}
       <h2><span class="i">🔗</span><span class="ja">リンク</span><span class="en">Link</span></h2>
       <div class="rows">
         <div class="row" data-s="open urlをボードに開く（open example.com） open a url on the board (open example.com) url web リンク 開く browser サイト url web browse site link ">
-          <div class="key"><kbd>open</kbd><span class="arg"><span class="ja">引数が要る</span><span class="en">needs an argument</span></span></div>
+          <div class="key"><kbd>open</kbd><span class="arg" title="このコマンドは、名前のあとに言葉や数字を打つ必要があります"><span class="ja">＋打ち込みが要る</span><span class="en">+ needs typing</span></span></div>
           <div class="desc"><span class="ja">URLをボードに開く（open example.com）</span><span class="en">Open a URL on the board (open example.com)</span></div>
         </div>
         <div class="row" data-s="link お気に入りurl（link add 名前 url / link 名前） favorite urls (link add name url / link name) url web お気に入り リンク favorite ブックマーク bookmark favorite url shortcut list お気に入りurlの一覧 list your favorite urls">
@@ -526,8 +546,8 @@ body.lang-en .en{display:inline}
   <div class="card">
     <h3><span class="ja">自分のキーを決める・自分の呼び名を付ける</span><span class="en">Your keys, your names</span></h3>
     <p>
-      <span class="ja"><code>⌘,</code> → コマンド から、どのコマンドにも好きなキーを割り当てられる。「呼び名」を付ければ、自分の言葉（例：アトリエ）で引ける。<br>⚠️引数が必須のコマンドにキーを付けると、押しても<b>入力待ちになるだけ</b>。すぐ動かしたいならサブコマンドの側に付ける。</span>
-      <span class="en">Open <code>⌘,</code> → Commands to bind any key, or give a command your own name so you can find it your way.<br>⚠️Binding a key to a command that requires an argument only opens the palette and waits — bind the subcommand instead.</span>
+      <span class="ja"><code>⌘,</code> → コマンド から、どのコマンドにも好きなキーを割り当てられる。「呼び名」を付ければ、自分の言葉（例：アトリエ）で引ける。<br>⚠️<b>＋打ち込みが要る</b>コマンドにキーを付けても、押した時に<b>打ち込み待ちになるだけ</b>。すぐ動かしたいならサブコマンド（<code>board a4</code> など）の側に付ける。</span>
+      <span class="en">Open <code>⌘,</code> → Commands to bind any key, or give a command your own name so you can find it your way.<br>⚠️Binding a key to a <b>+ needs typing</b> command only opens the palette and waits — bind a subcommand (<code>board a4</code>) instead.</span>
     </p>
     <div class="more">
       <a href="usage.html"><span class="ja">使い方</span><span class="en">How to use</span></a>
