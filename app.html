@@ -9740,8 +9740,15 @@ function runCommand(val) {
     if (head==='panel'||head==='split') {
         const sub = rest.trim().toLowerCase();
         const floating = !!(window._termIsFloat && window._termIsFloat());
-        // ⭐順送り：ドック⇄フロート（⌘B と同じ切替を、キー割当できる形でも用意する）
-        if (sub === 'next' || sub === 'cycle' || sub === '次') return runCommand(floating ? 'panel dock' : 'panel float');
+        // ⭐順送り＝分割幅を送る（25→40→55→70→25）。このコマンドの名前が「分割幅」なので、
+        //   押すたびに幅が変わるのが期待どおり（木下）。ドック⇄フロートは ⌘B と panel float/dock にある。
+        //   ⚠️フロート中は幅の意味が変わる（窓の横幅）ので、同じ数字をそのまま渡す。
+        if (sub === 'next' || sub === 'cycle' || sub === '次') {
+            const order = [25, 40, 55, 70];
+            const cur = floating ? 40 : getTermWidthPct();
+            let i = order.findIndex(v => v > cur + 1); if (i < 0) i = 0;
+            return runCommand('panel ' + order[i]);
+        }
         if (sub===''||sub==='?'||sub==='status') {
             enqueue('$ panel', [`→ mode: ${floating ? 'floating window' : 'docked right'}`, floating ? _L('→ ヘッダーをドラッグで移動 · 右下で拡縮 · panel dock で戻す','→ drag the header to move · resize at bottom-right · panel dock to redock') : `→ terminal width: ${getTermWidthPct()}%`, '→ panel <15-75> · panel reset · panel float · panel dock']);
             return;
@@ -12101,7 +12108,7 @@ const OMNI_CMDS = [
     { cmd:'dock',    cat:'panel',   hint:'ターミナルを右に戻す', hintEn:'Dock the terminal to the right', sc:'⌘B', kw:'window dock attach snap side' },
     { cmd:'panel',   cat:'panel',   hint:'分割幅（panel 30 / float / dock / center）', hintEn:'Split width (panel 30 / float / dock / center)', args:true, argsOpt:true,
       cycle:true,
-      subs:[['next','ドック⇄フロート','Toggle dock / float'],['dock','パネルを右に戻す（マグネット）','Dock the panel back to the side'],
+      subs:[['next','分割幅を順番に送る（25→40→55→70）','Cycle the split width (25→40→55→70)'],['dock','パネルを右に戻す（マグネット）','Dock the panel back to the side'],
             ['float','パネルを浮かせる（フロート）','Float the panel'],
             ['center','パネルを画面の中央へ','Center the panel'],
             ['reset','分割幅を既定に戻す','Reset the split width']], kw:'sidebar split pane terminal window' },
