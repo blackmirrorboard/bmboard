@@ -14,7 +14,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { CSS, HERO_CSS, heroTiles, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
+import { CSS, HERO_CSS, ANIM_CSS, ANIM_JS, heroTiles, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'store.html');
@@ -82,7 +82,7 @@ ${head({
     hasPart: spells.map(s => ({ '@type': 'CreativeWork', name: s.name, description: s.desc, author: { '@type': 'Organization', name: s.author || 'kinoshita studio' } })),
   },
 })}
-<style>${CSS}${HERO_CSS}
+<style>${CSS}${HERO_CSS}${ANIM_CSS}
 /* この頁だけ：STOREの棚 */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-top:26px}
 .sp{display:flex;gap:16px;padding:20px;border:1px solid var(--line);border-radius:16px;
@@ -190,7 +190,8 @@ ${rest.map(card).join('\n')}
 
 ${footer()}
 
-<script>${LANG_JS}
+<script>${ANIM_JS}
+${LANG_JS}
 ${FILTER_JS}
 /* ⚠️この頁の行は .sp（カード）なので、共通の絞り込みが見る .row と別。ここで橋渡しする */
 document.querySelectorAll('.sp').forEach(el => el.classList.add('row'));

@@ -15,7 +15,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { CSS, head, nav, footer, LANG_JS } from './lib/page.mjs';
+import { CSS, ANIM_CSS, ANIM_JS, head, nav, footer, LANG_JS } from './lib/page.mjs';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'story.html');
@@ -113,7 +113,7 @@ ${head({
     publisher: { '@type': 'Organization', name: 'kinoshita studio', url: 'https://kinoshita.studio/' },
   },
 })}
-<style>${CSS}
+<style>${CSS}${ANIM_CSS}
 /* この頁だけ：読み物のための組み */
 .chap{padding:54px 0;border-top:1px solid var(--line);max-width:720px}
 .chap:first-of-type{border-top:0}
@@ -157,7 +157,8 @@ ${sections}
 
 ${footer()}
 
-<script>${LANG_JS}
+<script>${ANIM_JS}
+${LANG_JS}
 </script>
 </body>
 </html>

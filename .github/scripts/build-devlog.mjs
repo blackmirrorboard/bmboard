@@ -15,7 +15,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { CSS, head, nav, footer, LANG_JS } from './lib/page.mjs';
+import { CSS, ANIM_CSS, ANIM_JS, head, nav, footer, LANG_JS } from './lib/page.mjs';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'dev-log.html');
@@ -70,7 +70,7 @@ ${head({
     author: { '@type': 'Person', name: '木下 貴博', url: 'https://kinoshita.studio/' },
   },
 })}
-<style>${CSS}
+<style>${CSS}${ANIM_CSS}
 /* この頁だけ：時系列の記録 */
 .entry{padding:40px 0;border-top:1px solid var(--line);max-width:820px}
 .entry:first-of-type{border-top:0}
@@ -117,7 +117,8 @@ ${list}
 
 ${footer()}
 
-<script>${LANG_JS}
+<script>${ANIM_JS}
+${LANG_JS}
 </script>
 </body>
 </html>

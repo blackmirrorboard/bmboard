@@ -16,7 +16,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { CSS, HERO_CSS, heroTiles, head, nav, footer, LANG_JS, esc } from './lib/page.mjs';
+import { CSS, HERO_CSS, ANIM_CSS, ANIM_JS, heroTiles, head, nav, footer, LANG_JS, esc } from './lib/page.mjs';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'spell-spec.html');
@@ -53,7 +53,7 @@ ${head({
     author: { '@type': 'Person', name: '木下 貴博', url: 'https://kinoshita.studio/' },
   },
 })}
-<style>${CSS}${HERO_CSS}
+<style>${CSS}${HERO_CSS}${ANIM_CSS}
 /* この頁だけ：仕様の組み */
 .sec{padding:46px 0 8px;border-top:1px solid var(--line);margin-top:26px;max-width:860px}
 .sec:first-of-type{border-top:0}
@@ -197,7 +197,8 @@ ${heroTiles(['🪄', '📦', '⚡', '🧩', '🔮', '📤', '🛡', '🧪', '�
 
 ${footer()}
 
-<script>${LANG_JS}
+<script>${ANIM_JS}
+${LANG_JS}
 </script>
 </body>
 </html>

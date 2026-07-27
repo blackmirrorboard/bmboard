@@ -160,6 +160,65 @@ ${icons.slice(0, 10).map((ic, i) => `      <span class="tile t${i}">${ic}</span>
     </div>`;
 }
 
+/* ⭐ページに入った時の見え方（全ページ共通）。
+   ⚠️JSが動かない時に「消えたまま」にならないよう、隠す指定は html.anim だけに効かせる
+     （anim は最初のスクリプトが付ける＝JSが無ければ最初から全部見えている）。
+   ⚠️動くのは transform と opacity だけ＝レイアウトを触らないので軽い。
+   ⚠️長いと"待たされる"印象になる。1要素 .5s・全体で1秒以内に収める。 */
+export const ANIM_CSS = `
+html.anim .rise{opacity:0;transform:translateY(14px);
+  transition:opacity .52s cubic-bezier(.2,.7,.2,1),transform .52s cubic-bezier(.2,.7,.2,1);
+  transition-delay:calc(var(--i,0) * 55ms)}
+html.anim .rise.in{opacity:1;transform:none}
+/* 最初の画面は少しだけ大きく動かす（入った感じを出す）。下の方は控えめ＝読み進めを邪魔しない */
+html.anim .hero .rise{transform:translateY(20px)}
+@media(prefers-reduced-motion:reduce){
+  html.anim .rise{opacity:1;transform:none;transition:none}
+}
+`;
+
+export const ANIM_JS = `
+/* ⭐入りのアニメーション。⚠️見えている間だけ動かし、一度出したら二度と触らない。
+   ⚠️⚠️いちばん怖いのは「出ないまま残る要素」＝機能でなく本文が消えること。実際に .card が1つ
+     永久に透明のままになった（下端で監視が発火しなかった）。保険を二重に入れてある：
+     ①スクロールのたびに、画面の下端より上に来たものは無条件で出す
+     ②最後の砦：6秒たったら残り全部を出す（アニメより本文が見えることを優先） */
+(() => {
+  const root = document.documentElement;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  root.classList.add('anim');
+
+  const seed = [['.hero .tiles',0],['.hero h1',1],['.hero .sub',2],['.hero .count',3],['.tools',4],['.legend',4]];
+  seed.forEach(([sel,i]) => { const el = document.querySelector(sel); if (el) { el.classList.add('rise'); el.style.setProperty('--i', i); } });
+  document.querySelectorAll('.cat, .sec, .card, .entry, .sp, .chap, .keys').forEach(el => el.classList.add('rise'));
+
+  const show = el => { if (!el.classList.contains('in')) el.classList.add('in'); };
+  const all = () => document.querySelectorAll('.rise:not(.in)');
+
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { show(e.target); io.unobserve(e.target); }
+  }), { threshold: 0 });   // ⚠️負のマージンを付けない（下端で発火しない事故のもと）
+
+  const start = () => {
+    document.querySelectorAll('.rise').forEach((el, n) => {
+      if (el.getBoundingClientRect().top < innerHeight * 0.95) {
+        if (!el.style.getPropertyValue('--i')) el.style.setProperty('--i', Math.min(n, 6));
+        requestAnimationFrame(() => show(el));
+      } else io.observe(el);
+    });
+  };
+  // ①スクロールの保険
+  const sweep = () => all().forEach(el => { if (el.getBoundingClientRect().top < innerHeight) show(el); });
+  addEventListener('scroll', sweep, { passive: true });
+  addEventListener('resize', sweep);
+  // ②最後の砦
+  setTimeout(() => all().forEach(show), 6000);
+
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', start, { once: true });
+  else start();
+})();
+`;
+
 export const HERO_CSS = `
 .hero{text-align:center;padding-top:44px}
 .hero h1{font-size:clamp(44px,7.4vw,96px);letter-spacing:-.035em;line-height:1.02}

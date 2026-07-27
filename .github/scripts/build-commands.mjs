@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { extractArray } from './lib/extract.mjs';
-import { CSS, HERO_CSS, heroTiles, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
+import { CSS, HERO_CSS, ANIM_CSS, ANIM_JS, heroTiles, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
 
 const ROOT = process.cwd();
 const APP = path.join(ROOT, 'app.html');
@@ -88,7 +88,7 @@ ${head({
     author: { '@type': 'Person', name: '木下 貴博', url: 'https://kinoshita.studio/' },
   },
 })}
-<style>${CSS}${HERO_CSS}
+<style>${CSS}${HERO_CSS}${ANIM_CSS}
 /* この頁だけ：サブコマンドと「打ち込みが要る」バッジ */
 .legend{margin-top:26px;padding:20px 22px;border:1px solid var(--line);border-radius:14px;
   background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
@@ -215,7 +215,8 @@ ${sections}
 
 ${footer()}
 
-<script>${LANG_JS}
+<script>${ANIM_JS}
+${LANG_JS}
 ${FILTER_JS}
 </script>
 </body>

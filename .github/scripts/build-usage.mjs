@@ -18,7 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { extractArray } from './lib/extract.mjs';
-import { CSS, HERO_CSS, heroTiles, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
+import { CSS, HERO_CSS, ANIM_CSS, ANIM_JS, heroTiles, head, nav, footer, LANG_JS, FILTER_JS, esc } from './lib/page.mjs';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'usage.html');
@@ -67,7 +67,7 @@ ${head({
     author: { '@type': 'Person', name: '木下 貴博', url: 'https://kinoshita.studio/' },
   },
 })}
-<style>${CSS}${HERO_CSS}</style>
+<style>${CSS}${HERO_CSS}${ANIM_CSS}</style>
 </head>
 <body>
 <div class="glow"><i></i><i></i></div>
@@ -120,7 +120,8 @@ ${sections}
 
 ${footer()}
 
-<script>${LANG_JS}
+<script>${ANIM_JS}
+${LANG_JS}
 ${FILTER_JS}
 </script>
 </body>
