@@ -1465,7 +1465,7 @@
         .set-cmdname { font-size: 13px; color: #ebe9e3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .set-cmdhint { font-size: 11.5px; color: rgba(255,255,255,0.42); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         /* ⭐引数が要る親コマンドへの注意書き。行が伸びないよう同じ1行に収める */
-        .set-cmdargnote { color: #ff9d7a; margin-left: 8px; }
+        .set-cmdargnote { color: #ff9d7a; margin-left: 8px; cursor: help; }
         .set-cmdtype { font-size: 10px; color: rgba(255,255,255,0.34); white-space: nowrap; }
         .set-cmdhot { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
         .set-cmdhot .k { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px;
@@ -11232,7 +11232,9 @@ tiEl.addEventListener('paste', e => {
                 //   押しても何も起きないように見える。実際に2件やられた（panel / board）。
                 //   ⚠️直下にサブコマンドの行（board a4 / panel float …）が並んでいるので、そちらへ誘導する。
                 const _needArg = !!(it.args && !it.argsOpt);
-                const _argNote = _needArg ? `<span class="set-cmdargnote">${esc(T('setcmd.argNote'))}</span>` : '';
+                // ⭐長い注意書きを行に並べると幅が足りず途中で切れて読めない（木下指摘）。
+                //   ⚠マークだけ出して、説明はホバー（title）に逃がす。
+                const _argNote = _needArg ? `<span class="set-cmdargnote" title="${esc(T('setcmd.argNote'))}">⚠</span>` : '';
                 html += `<div class="set-cmdrow${isConf ? ' conflict' : ''}${isRec ? ' recording' : ''}">${star}<span class="set-cmdname">${esc(it.cmd)}</span><span class="set-cmdhint">${esc(hint)}${_argNote}</span>${aliasHtml}<span class="set-cmdhot">${hotHtml}</span></div>`;
             });
         });
@@ -11250,7 +11252,7 @@ tiEl.addEventListener('paste', e => {
                     + `<span class="set-cmdhot"><span class="k def">${esc(badge)}</span></span></div>`).join('');
             const B_FIX  = _jp ? '変更不可' : 'fixed';
             const B_NG   = _jp ? '効かない' : 'no effect';
-            const B_TOOL = _jp ? '道具用'   : 'tool key';
+            const B_TOOL = _jp ? '割当不可' : 'locked';   // ⭐盤面の道具キーは割り当てできない（既定の絶対ルール）
             html += G(_jp ? '⌨ アプリが使っている（変更できない）' : '⌨ Used by the app (fixed)', _jp ? [
                 ['⌘K', 'コマンドパレット'], ['⌘B', 'パネル ドック⇔フロート'], ['⌘⇧B', 'パネルを中央へ'], ['⌘,', '設定'],
                 ['⌘Z', '元に戻す'], ['⌘⇧Z / ⌘Y', 'やり直す'], ['⌘A', 'すべて選択'], ['⌘C', 'コピー'],
@@ -11267,7 +11269,7 @@ tiEl.addEventListener('paste', e => {
                 ['⌘W', 'Close tab'], ['⌘T', 'New tab'], ['⌘N', 'New window'],
                 ['⌘Q', 'Quit'], ['⌘M', 'Minimize'], ['⌘H', 'Hide'],
             ], B_NG);
-            html += G(_jp ? '⌨ 盤面の道具（単キー・割り当てると道具が反応しなくなる）' : '⌨ Board tools (single keys — assigning one disables the tool)', _jp ? [
+            html += G(_jp ? '⌨ 盤面の道具（単キー・割り当てできない）' : '⌨ Board tools (single keys — cannot be assigned)', _jp ? [
                 ['S', '選択'], ['P', '鉛筆'], ['N', 'パス'], ['E', '消しゴム'], ['T', 'テキスト'],
                 ['C / G / Q / A', '円 / 三角 / 四角 / 矢印'], ['X', 'PNG書き出し'], ['I', '画像を置く'],
                 ['F', '塗り'], ['1 / 2 / 3', '線の太さ'],
@@ -11763,6 +11765,13 @@ tiEl.addEventListener('paste', e => {
             if (U && U.reservedCombo(e)) { recMsg = (window.t ? window.t('pal.warnUsed') : '使用中'); renderCmds(); return; }
             const c = U && U.comboOf(e);
             if (!c) { recMsg = (window.t ? window.t('pal.warnMod') : '⌘/⌥/⌃と'); renderCmds(); return; }
+            // ⭐盤面の道具キー（S=選択 / P=鉛筆 …）は割り当て不可＝既定の絶対ルール。
+            //   ⚠️録音の口が⌘K側と設定側の2箇所にあり、片方だけ塞いでも素通りする（実測で S が保存された）。
+            if (U && U.isBoardToolKey && U.isBoardToolKey(c)) {
+                recMsg = U.boardToolMsg(c);
+                renderCmds();
+                return;
+            }
             if (U) U.set(recCmd, c);
             recCmd = null; recMsg = '';
             renderCmds();
@@ -12630,19 +12639,12 @@ function centerTermPanel() {
             if (e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift') return;
             if (osTakenCombo(e)) { capMsg = t('pal.warnBrowser'); updateFoot(); return; }   // ブラウザが奪うキー
             if (reservedCombo(e)) { capMsg = t('pal.warnUsed'); updateFoot(); return; }
-            // ⭐単キーも割り当てられる。ただし盤面の道具(P=鉛筆 等)と重なるものは、
-            //   割り当てると道具側が押せなくなるので、登録した上で理由を伝える。
+            // ⭐盤面の道具のキー（S=選択 / P=鉛筆 …）には割り当てさせない＝既定の絶対ルール（木下・2026-07-27）。
+            //   ⚠️以前は「登録した上で、道具が反応しなくなると伝える」だったが、
+            //     道具が黙って死ぬ状態を作れてしまうこと自体が事故のもと。断る側に倒した。
             {
                 const _c = comboOf(e);
-                if (_c && _c.bare && BOARD_ONEKEY.indexOf(_c.base) >= 0) {
-                    setUsc(capSc, _c); capSc = null; capMsg = ''; refresh();
-                    if (typeof printRaw === 'function') printRaw(
-                        (LANG === 'en')
-                            ? `Assigned ${_c.disp}. Note: the board also uses this key for a tool — the tool will no longer respond.`
-                            : `${_c.disp} を割り当てました。⚠️このキーは盤面の道具にも使われているので、道具側は反応しなくなります`,
-                        't-err');
-                    return;
-                }
+                if (isBoardToolKey(_c)) { capMsg = boardToolMsg(_c); updateFoot(); return; }
             }
             const c = comboOf(e);
             if (!c) { capMsg = t('pal.warnMod'); updateFoot(); return; }
@@ -12736,7 +12738,16 @@ function centerTermPanel() {
 
     // ⭐設定パネル等から共有：お気に入り/ショートカット管理（追加のみ・既存挙動は不変）
     window._bmFavs   = { get: getFavs, toggle: toggleFav, isFav };
-    window._bmUsc    = { get: getUsc, set: setUsc, comboOf, reservedCombo };
+    // ⭐盤面の道具キーの判定と文言は1箇所に置いて、⌘K側・設定側の両方から使う
+    const TOOL_JA = { s:'選択', p:'鉛筆', n:'パス', e:'消しゴム', t:'テキスト', c:'円', g:'三角', q:'四角', a:'矢印',
+                      x:'PNG書き出し', i:'画像を置く', f:'塗り', '1':'線の太さ（細）', '2':'線の太さ（中）', '3':'線の太さ（太）' };
+    const TOOL_EN = { s:'Select', p:'Pen', n:'Path', e:'Eraser', t:'Text', c:'Circle', g:'Triangle', q:'Square', a:'Arrow',
+                      x:'Export PNG', i:'Place image', f:'Fill', '1':'Line width (thin)', '2':'Line width (medium)', '3':'Line width (thick)' };
+    const isBoardToolKey = c => !!(c && c.bare && BOARD_ONEKEY.indexOf(c.base) >= 0);
+    const boardToolMsg = c => (LANG === 'en')
+        ? `${c.disp} is the board shortcut for "${TOOL_EN[c.base] || 'a tool'}" — not assignable. Try ⌘${c.disp} or ⌥${c.disp}.`
+        : `${c.disp} は盤面の「${TOOL_JA[c.base] || '道具'}」の近道なので割り当てできません。⌘${c.disp} や ⌥${c.disp} なら使えます`;
+    window._bmUsc    = { get: getUsc, set: setUsc, comboOf, reservedCombo, isBoardToolKey, boardToolMsg };
     window._bmRecent = getRecent;
 })();
 
