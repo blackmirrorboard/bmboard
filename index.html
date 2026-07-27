@@ -222,9 +222,26 @@ nav.stuck{background:rgba(8,8,10,.66);backdrop-filter:blur(22px) saturate(1.3);
    ⚠️マスクの止め位置も箱基準に読み替える必要がある（hero下端＝箱の83.33%）。
    でないと下端が溶けきる前に切られて硬い線が出る。 */
 .hero::before{content:'';position:absolute;inset:-32.5%;z-index:0;pointer-events:none;
-  background:url('kv/kv-hero.webp') center center / cover no-repeat;
+  background:url('kv/kv-bg.webp') center center / cover no-repeat;
   -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 61%,transparent 80.3%);
   mask-image:linear-gradient(180deg,#000 0%,#000 61%,transparent 80.3%)}
+/* ⭐立体だけを別レイヤーにして、ゆっくり漂わせる（木下：グラフィックが動いてほしい）。
+   ⚠️KVは合成済みの1枚だが、背景 kv-bg.webp には立体が入っていない（実測：彩度の高い画素 0.0%）。
+     なので「合成画像を立体の形に切り抜いたもの」を上に重ねれば、立体だけ動かせる。
+   ⚠️動きを大きくすると、背景側に残る落ち影とズレて気づかれる。±1%台に抑える。
+   ⚠️粒(kvgrain)も同じマスク・同じ動きにすること。ズレると輪郭から粒がはみ出す。 */
+.kvsolid{position:absolute;inset:-32.5%;z-index:0;pointer-events:none;
+  background:url('kv/kv-hero.webp') center center / cover no-repeat;
+  -webkit-mask-image:url('kv/kv-mask.webp');mask-image:url('kv/kv-mask.webp');
+  -webkit-mask-size:cover;mask-size:cover;
+  -webkit-mask-position:center center;mask-position:center center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  animation:kvdrift 19s ease-in-out infinite alternate}
+.kvgrain{animation:kvdrift 19s ease-in-out infinite alternate}
+@keyframes kvdrift{
+  from{transform:translate3d(0,0,0) rotate(-.35deg) scale(1)}
+  to{transform:translate3d(1.1%,-1.3%,0) rotate(.45deg) scale(1.035)}}
+@media(prefers-reduced-motion:reduce){.kvsolid,.kvgrain{animation:none}}
 /* ⭐光の帯。面があること＝立体だという情報を動きで伝える */
 /* 🅿️一旦キープ（木下・2026-07-27）＝粒だけ残して光は止める。
    消さずに display:none にしてあるので、この1行を外せば戻る。 */
@@ -369,7 +386,8 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
   /* ⭐% は「画像のその点を枠のその点に合わせる」＝数字を下げるほど絵は右へ寄る。
      ⚠️倍率はPCだけ上げたので、モバイルは1.5倍(inset:-25%)に据え置く＝マスクも箱基準で戻す */
   /* ⚠️マスクは背景と同じ条件にする（モバイルは 1.5倍・51%） */
-  .kvgrain{inset:-25%;-webkit-mask-position:51% center;mask-position:51% center}
+  .kvgrain,.kvsolid{inset:-25%;-webkit-mask-position:51% center;mask-position:51% center}
+  .kvsolid{background-position:51% center}
   .hero::before{background-position:51% center;inset:-25%;
     -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 62%,transparent 83.33%);
     mask-image:linear-gradient(180deg,#000 0%,#000 62%,transparent 83.33%)}
@@ -437,6 +455,7 @@ body.lang-en .h1en,body.lang-en .h2en{display:none}
     <!-- ⭐フィルムグレイン＝毎フレーム粒を描き直す（KVラボ 03 を採用・木下確定 2026-07-27）。
          ⚠️1枚のノイズ画像をズラす方式は柄が変わらず「動いて見えない」。canvasで描き変える。
          ⚠️前回モバイルを重くした犯人が全面 grain だったので、ヒーローの中だけ・低fps・粗めにしてある。 -->
+    <div class="kvsolid" aria-hidden="true"></div>
     <canvas class="kvgrain" id="kvgrain" aria-hidden="true"></canvas>
     <!-- ⭐KVラボ 02＝数秒に一度、光の帯が面を横切る（木下OK）。
          ⚠️01（呼吸）は「分かりづらい」ので入れない -->
