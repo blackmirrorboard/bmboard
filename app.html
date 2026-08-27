@@ -550,6 +550,14 @@
         body.bm-panel-off #termToggleBtn .tt-hide { display: none; }
         body.bm-panel-off #termToggleBtn .tt-show { display: block; }
 
+        /* 🔴🔴 畳むときは【壁紙も一緒に】消す（2026-08-28 木下「パネエルが閉じれてないね」）
+           パネル(.terminal-panel)と壁紙(#termWall)は **別の要素** で、同じ矩形を共有している。
+           パネルだけ display:none にすると、壁紙（黒＋リング）が右半分に残って
+           「閉じていない」ようにしか見えない。⚠️ 対で消すこと。
+           ⭐ 紙(.canvas-panel)は元から main いっぱいに広がっていて、その上に
+              この2枚が重なっているだけ＝2枚どければ紙が全面に出る。 */
+        body.bm-panel-off #termWall { display: none !important; }
+
         .tool-btn {
             width: 40px;
             height: 40px;
