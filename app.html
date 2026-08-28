@@ -4944,6 +4944,9 @@ function onDown(cx, cy, isTouch = false) {
     if (S.tool === 'pen') {
         S.penPts = [p];
     } else if (S.tool === 'eraser') {
+        /* ⚠️ 「動いた距離」で削る作りなので、前に消した位置が残っていると
+              押した瞬間が空振りする。押し始めは必ず一口ぶん効かせる。 */
+        _lastErasePt = null;
         eraseAt(p, touchPad);
     } else if (S.tool === 'text') {
         // First click → open the input. A click while an input is open → commit it and
@@ -6719,6 +6722,18 @@ function moveObj(obj, dx, dy) {
 
 function eraseAt(p, extraPad = 0) {
     if (_settleMode) return _eraseSoft(p, extraPad);   // settle: 黒板消しの手触り
+    /* ⭐⭐ 鉛筆の線は【こすった所だけ】消す（2026-08-28）
+       木下「鉛筆の太さや濃さのバーを大きくすると、消しゴムで消えないじゃなくて、
+             ワンクリックで消えてしまうのはなんとかしたい」
+       🔴 「こすった所だけ薄くする」処理は最初から入っていたのに、
+          settle モードのときしか通らなかった。ふだんは【当たった物を丸ごと捨てる】。
+          太い線ほど当たりやすいので、太く濃くするほど一撃で全部消える＝消しゴムに見えない。
+       ⭐ 鉛筆の線に当たったときだけ、こすって消す道へ回す。
+          ⚠️ 図形や classic/fude の線は今までどおり（丸ごと消える）。混ぜない。 */
+    const hitsPencil = S.objects.some(o =>
+        o.type === 'stroke' && o.data && o.data.mode === 'pencil' && Array.isArray(o.data.pts)
+        && hitTest(o, p.x, p.y, extraPad, true));
+    if (hitsPencil) return _eraseSoft(p, extraPad, true);
     const before = S.objects.length;
     S.objects = S.objects.filter(o => !hitTest(o, p.x, p.y, extraPad, true));
     if (S.objects.length !== before) { saveHistory(); redrawAll(); }
@@ -6742,7 +6757,9 @@ function _fadeStroke(col, step) {
     return { css: `rgba(${r},${g},${b},${na})`, alpha: na, r, g, b };
 }
 
-function _eraseSoft(p, extraPad = 0) {
+/* pencilOnly=true ＝ settle ではない普段の消しゴム。
+   鉛筆の線だけ こすって消し、それ以外は今までどおり丸ごと消す。 */
+function _eraseSoft(p, extraPad = 0, pencilOnly = false) {
     const now = Date.now();
     if (now - _lastFadeT < ERASE_COOLDOWN) return;   // 同一フレームの多重発火だけ防ぐ
     // ⭐なぞった距離で削る ─ 止めたままでは消えない／動かした分だけ連続で薄くなる
@@ -6799,14 +6816,22 @@ function _eraseSoft(p, extraPad = 0) {
                 const fall = 1 - (dd / R);                       // 中心ほど強く削れる
                 const cur  = (o.data.ptA[i] != null) ? o.data.ptA[i] : 1;
                 // ⭐芯ごとの下限 eFloor まで消える（濃い5B/6Bは薄く跡が残って消し切れない）
-                const eF   = (Ge.eFloor != null) ? Ge.eFloor : 0;
+                /* ⚠️ 芯ごとの「消し切れずに跡が残る」は settle の手触り。
+                      普段の消しゴムでそれをやると【消せない線】ができてしまうので、
+                      pencilOnly のときは 0 まで落とせるようにする（ただし一撫でずつ）。 */
+                const eF   = pencilOnly ? 0 : ((Ge.eFloor != null) ? Ge.eFloor : 0);
                 const nv   = Math.max(eF, cur - pStep * fall);
                 removedTotal += (cur - nv);                      // 実際に剥がした黒鉛量
                 o.data.ptA[i] = nv;
             }
+            /* ⭐ 全部の点が消えきったストロークは残さない
+                  （見えないのに当たり判定だけ残る＝掴めない幽霊を作らない） */
+            if (o.data.ptA.every(v => v <= 0.02)) { removedTotal += 0; continue; }
             survivors.push(o);
             continue;
         }
+        /* pencilOnly＝普段の消しゴム。鉛筆以外は今までどおり丸ごと消す（薄くしない） */
+        if (pencilOnly) continue;
         const f = _fadeStroke(base, step);
         if (!f) continue;                      // 色が読めない形式なら従来どおり消す
         // ⭐完全には消えない ─ 下限で止めて「黒板消しの跡」として残す
