@@ -3502,12 +3502,17 @@
         </button>
     </div>
     <!-- ⭐鉛筆モードのときだけ出る：太さ・濃さスライダー＋芯グレード -->
-    <div id="pencilExtra" style="display:none;">
+    <!-- ⭐太さ・濃さは【どの描き味でも】使う（2026-08-28 木下「クラシックモードもこれで調整できるように」）
+         ⚠️ 芯（2H〜6B）だけは鉛筆の話なので下の pencilExtra に残す -->
+    <div id="strokeExtra">
         <div class="pop-sep-line"></div>
         <span class="pop-label">太さ</span>
         <div class="pop-row"><input id="pencilWidth" class="pcl-range" type="range" min="1" max="9" step="0.5" value="2.5"></div>
         <span class="pop-label">濃さ</span>
         <div class="pop-row"><input id="pencilDark" class="pcl-range" type="range" min="10" max="200" step="5" value="90"></div>
+    </div>
+    <div id="pencilExtra" style="display:none;">
+        <div class="pop-sep-line"></div>
         <span class="pop-label">しん（芯）</span>
         <div class="pop-row" id="pencilGrades">
             <button class="g-btn" data-g="2h">2H</button>
@@ -5202,8 +5207,11 @@ function onUp() {
             const eps = isPencil ? (0.35 / VIEW.scale) : (1.4 / VIEW.scale);
             let pts = rdpSimplify(raw, eps);
             if (closed && pts.length > 1) pts[pts.length - 1] = { ...pts[0] };
+            /* ⭐ クラシック／筆は、そのとき選んでいた濃さを線に焼き込む（太さと同じ扱い） */
+            const _ink = isPencil ? null : _inkWithDark(getStrokeColor(), INK_DARK);
             const obj = { id, type: 'stroke', data: { pts, lw: S.lineWidth, rotation: 0, fill: null, closed, mode: S.drawMode,
-                ...(isPencil ? { grade: PENCIL_GRADE, dark: PENCIL_DARK } : {}) }, selected: false };
+                ...(isPencil ? { grade: PENCIL_GRADE, dark: PENCIL_DARK } : {}),
+                ...(_ink ? { stroke: _ink } : {}) }, selected: false };
             S.objects.push(obj);
             // ⭐鉛筆は図形の自動検出（○△□に補正）をしない＝書いたまま残す
             if (!closed && !isPencil) {
@@ -5753,6 +5761,29 @@ let PENCIL_DARK = (() => {
     try { const v = parseFloat(localStorage.getItem('bm_dark'));
           return (v >= 0.1 && v <= 2) ? v : 0.9; } catch { return 0.9; }
 })();
+
+/* ⭐ クラシック／筆の濃さ（2026-08-28）。0.1〜1.0。
+   ⚠️ 鉛筆の PENCIL_DARK（0.1〜2.0・粒の乗り方に効く）とは別物なので変数を分ける。
+      こちらは【インクの透け具合】＝線1本ごとに data.stroke へ焼き込む。
+      焼き込むので、あとから濃さを変えても【描いてある線は変わらない】＝太さと同じ振る舞い。 */
+let INK_DARK = (() => {
+    try { const v = parseFloat(localStorage.getItem('bm_inkDark'));
+          return (v >= 0.1 && v <= 1) ? v : 1; } catch { return 1; }
+})();
+/* インクの色に濃さを掛けて rgba にする。読めない色ならそのまま返す（壊さない） */
+function _inkWithDark(col, d) {
+    if (d >= 0.999) return null;                 // 既定＝今までどおり（stroke を持たせない）
+    let r, g, b, a = 1;
+    const m = String(col).match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);
+    if (m) { r = +m[1]; g = +m[2]; b = +m[3]; a = (m[4] != null) ? +m[4] : 1; }
+    else {
+        let h = String(col).trim().replace('#', '');
+        if (h.length === 3) h = h.split('').map(c => c + c).join('');
+        if (h.length !== 6 || /[^0-9a-f]/i.test(h)) return null;
+        r = parseInt(h.slice(0,2),16); g = parseInt(h.slice(2,4),16); b = parseInt(h.slice(4,6),16);
+    }
+    return `rgba(${r},${g},${b},${(a*d).toFixed(3)})`;
+}
 
 // ⭐鉛筆ストローク ── 研究 finding[4][5]：Shape(連続した外形) の内側に Grain(紙目) を入れる。
 //   ①ここでは「連続した滑らかな線(shape)」を dab の密連打で作る（穴を開けない）
@@ -6347,7 +6378,9 @@ function commitPath(closed) {
         const obj = {
             id, type: 'stroke',
             data: { pts: flat, lw: S.lineWidth, rotation: 0, fill: null, closed: !!closed, mode: S.drawMode,
-                ...(S.drawMode === 'pencil' ? { grade: PENCIL_GRADE, dark: PENCIL_DARK } : {}) },
+                ...(S.drawMode === 'pencil' ? { grade: PENCIL_GRADE, dark: PENCIL_DARK } : {}),
+                ...((S.drawMode !== 'pencil' && _inkWithDark(getStrokeColor(), INK_DARK))
+                    ? { stroke: _inkWithDark(getStrokeColor(), INK_DARK) } : {}) },
             selected: false,
         };
         S.objects.push(obj);
@@ -14595,14 +14628,19 @@ const _pencilDark  = document.getElementById('pencilDark');
 function _syncPencilUI() {
     const on = (S.drawMode === 'pencil');
     if (_pencilExtra) _pencilExtra.style.display = on ? 'block' : 'none';
+    /* ⭐太さ・濃さはどの描き味でも出す（芯だけ鉛筆専用）。
+       ⚠️ 濃さの幅は持ち場で違う：鉛筆 10〜200（粒の乗り方）／クラシック・筆 10〜100（インクの透け） */
+    if (_pencilDark) {
+        _pencilDark.max = on ? 200 : 100;
+        _pencilDark.value = on ? Math.round(PENCIL_DARK * 100) : Math.round(INK_DARK * 100);
+    }
+    if (_pencilWidth) _pencilWidth.value = S.lineWidth;
     // ⭐描き味セレクタの選択状態
     /* 🔴 '#penPopover .mode-btn' で拾うと【紙の行】まで巻き込んで印を消していた
           （紙のボタンには data-mode が無いので必ず false になる）。描き味の行だけに絞る。 */
     document.querySelectorAll('#drawModeRow .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === S.drawMode));
     _syncPaperFeatureUI();
     if (!on) return;
-    if (_pencilWidth) _pencilWidth.value = S.lineWidth;
-    if (_pencilDark)  _pencilDark.value  = Math.round(PENCIL_DARK * 100);
     document.querySelectorAll('#pencilGrades .g-btn').forEach(b =>
         b.classList.toggle('active', b.dataset.g === PENCIL_GRADE));
 }
@@ -14673,8 +14711,15 @@ if (_pencilDark) {
     _pencilDark.addEventListener('input', e => {
         e.stopPropagation();
         // ⭐次に描く線の濃さだけ変える（過去の線は焼き込み済みなので変わらない）
-        PENCIL_DARK = Math.max(0.1, parseFloat(_pencilDark.value) / 100);
-        try{localStorage.setItem('bm_dark', String(PENCIL_DARK));}catch{}
+        // ⚠️ 鉛筆と クラシック/筆 で持ち場が違う。同じスライダーで別の値を動かす
+        const v = parseFloat(_pencilDark.value);
+        if (S.drawMode === 'pencil') {
+            PENCIL_DARK = Math.max(0.1, v / 100);
+            try{localStorage.setItem('bm_dark', String(PENCIL_DARK));}catch{}
+        } else {
+            INK_DARK = Math.max(0.1, Math.min(1, v / 100));
+            try{localStorage.setItem('bm_inkDark', String(INK_DARK));}catch{}
+        }
     });
     _pencilDark.addEventListener('change', () => _pencilDark.blur());
 }
