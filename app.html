@@ -3665,7 +3665,22 @@ if (!(BOARD_SIZE in BOARD_SIZES)) BOARD_SIZE = 'free';
 // ⭐紙をひっくり返す（canvas描画側でX反転＝入力/pan/zoom一致）。各オブジェクトは描いた側(side)を持ち、
 //   "見ていない側"だけ薄く裏写り＝表↔裏で対称。裏で描いた線は裏を見てる間は濃いまま。
 let BOARD_FLIPPED = false;
-const FLIP_BLEED_ALPHA = 0.09;     // 見えない側の透け具合（小さいほど薄い）
+/* ⭐ 見えない側の透け具合（小さいほど薄い）。
+   2026-08-28：0.09 → 0.20。木下「裏返すをしても裏面に表面の後がないなあ」。
+   ⚠️ 0.09 は「紙色で全面を覆う」古い作りの数字で、地ごと明るく飛んでいたぶん
+      跡がさらに沈んで見えていた。地に触らない作りに直したうえで濃さを上げている。 */
+const FLIP_BLEED_ALPHA = 0.20;
+/* ⭐ 裏写りは【ぼける】── 光は紙の繊維を通ってくるので、裏から見た跡に輪郭は残らない。
+   薄くするだけだと「ただの薄い線」で、紙の裏には見えない（材質は原因から作る）。
+   ⚠️ 画面の画素そのものに掛かるので dpr を掛ける。0 にすれば今までどおり薄いだけ。 */
+const FLIP_BLEED_BLUR = 1.8;
+/* 裏写りを作るための控えの板（毎回作らずに使い回す）。⚠️ 大きさが変わった時だけ取り直す */
+let _bleedCv = null, _bleedG = null;
+function _bleedLayer(W, H) {
+    if (!_bleedCv) { _bleedCv = document.createElement('canvas'); _bleedG = _bleedCv.getContext('2d'); }
+    if (_bleedCv.width !== W || _bleedCv.height !== H) { _bleedCv.width = W; _bleedCv.height = H; }
+    return _bleedG;
+}
 // 裏返す前に、内容（ボードサイズ指定時はページ）を画面にフィット＝"どこ行った"を防ぐ
 function fitContentView() {
     if (BOARD_SIZE !== 'free') { fitBoardView(); if (typeof redrawAll === 'function') redrawAll(); return; }
@@ -3711,8 +3726,13 @@ function drawBoardFrame() {   // redrawAll から呼ぶ（オブジェクトの�
     ctx.save();
     ctx.fillStyle = dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.018)';
     ctx.fillRect(x, y, pg.w, pg.h);
-    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.32)' : 'rgba(0,0,0,0.30)';
-    ctx.lineWidth = 1.4 / VIEW.scale;
+    /* ⭐ 枠線は【どのサイズでも・どの倍率でも はっきり】（2026-08-28 木下の指示）
+       ⚠️ 太さは 2/VIEW.scale ＝ 画面の上では常に 2px。引いても寄っても同じ太さで出る
+          （ワールドの太さで持つと、33% まで引いたとき髪の毛になって消える）。
+       ⚠️ 濃さは 0.30 → 0.62。紙の地（生成り）に対して 0.30 は薄すぎて、
+          引くと地のムラに紛れていた。サイズごとの分岐は無い＝A4もB5も正方形も同じ強さ。 */
+    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.62)' : 'rgba(0,0,0,0.62)';
+    ctx.lineWidth = 2 / VIEW.scale;
     ctx.strokeRect(x, y, pg.w, pg.h);
     ctx.restore();
 }
@@ -5141,22 +5161,40 @@ function redrawAll() {
         ctx.setTransform(-VIEW.scale*dpr, 0, 0, VIEW.scale*dpr, (CW - VIEW.tx)*dpr, VIEW.ty*dpr);   // ⭐裏返し＝X反転（CW中心）
     else
         ctx.setTransform(VIEW.scale*dpr, 0, 0, VIEW.scale*dpr, VIEW.tx*dpr, VIEW.ty*dpr);
-    drawBoardFrame();   // ⭐紙の枠（ボードサイズ指定時のみ・オブジェクトの背後）
-    // ⭐表裏：見えない側の線だけ薄く。鉛筆は内部で自前αを使うので globalAlpha は効かない→
-    //   「他側を描く→紙色ウォッシュで覆う→今側を上に描く」の2パスで薄くする。
+    /* ══⭐ 表裏 ── 見えない側は【薄く透ける】（2026-08-28 作り直し）
+       🔴 前の作り：「他側を描く → 画面全面を紙色で塗る → 今側を上に描く」。
+          鉛筆が自前のαを使うので globalAlpha が効かない、という理由でこうしていた。
+          しかしこれは【地を塗り替える】作りなので、3つ同時に壊れていた：
+            ① 塗る色が決め打ち（rgba(245,243,237)）で実際の紙の地と違う
+               → 裏返すと紙全体が白く飛ぶ（木下 2026-08-28 のスクショ）
+            ② 盤の外の余白まで塗る
+            ③ 紙の枠まで塗り潰す → 裏面で枠が消える（木下「枠も見えない」）
+       ⭐ 正しいのは【地に一切触らない】こと。
+          他側だけを描いた絵をいったん控えて、板を消して、**薄さを掛けて置き直す**。
+          鉛筆が自前αでも関係ない ── 掛けるのは「描き終わった1枚の絵」に対してなので。
+       ⚠️ 紙の枠は【この後】に描く。先に描くと薄める対象に入ってしまう（それが③の正体）。 */
     const _viewSide = BOARD_FLIPPED ? 'back' : 'front';
     for (const obj of S.objects) { if (!obj.side) obj.side = _viewSide; }   // 初回描画時の側で確定
     const _others = S.objects.filter(o => o.side !== _viewSide);
     if (_others.length) {
-        for (const obj of _others) renderObject(obj);                       // ① 他側（薄くしたい）
-        const washA = 1 - FLIP_BLEED_ALPHA;
-        const wash = (MODE === 'dark') ? `rgba(19,19,21,${washA})` : (MODE === 'gray') ? `rgba(220,219,213,${washA})` : `rgba(245,243,237,${washA})`;
-        ctx.save();
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);                             // ② 画面全面を紙色で覆う
-        ctx.fillStyle = wash; ctx.fillRect(0, 0, CW, CH);
+        for (const obj of _others) renderObject(obj);                       // ① 他側だけを普通に描く
+        const bc = _bleedLayer(canvas.width, canvas.height);                // ② 控える
+        bc.setTransform(1, 0, 0, 1, 0, 0);
+        bc.clearRect(0, 0, canvas.width, canvas.height);
+        bc.drawImage(canvas, 0, 0);
+        ctx.save();                                                         // ③ 消して、薄さを掛けて置き直す
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = FLIP_BLEED_ALPHA;
+        /* ⚠️ filter に対応していないブラウザでは代入が黙って無視されるだけ＝薄いまま出る */
+        if (FLIP_BLEED_BLUR > 0) ctx.filter = 'blur(' + (FLIP_BLEED_BLUR * dpr).toFixed(1) + 'px)';
+        ctx.drawImage(_bleedCv, 0, 0);
+        ctx.filter = 'none';
         ctx.restore();
-        for (const obj of S.objects) { if (obj.side === _viewSide) renderObject(obj); }   // ③ 今側を上に
+        drawBoardFrame();                                                   // ④ 紙の枠は薄めない
+        for (const obj of S.objects) { if (obj.side === _viewSide) renderObject(obj); }   // ⑤ 今側を上に
     } else {
+        drawBoardFrame();   // ⭐紙の枠（ボードサイズ指定時のみ・オブジェクトの背後）
         for (const obj of S.objects) renderObject(obj);
     }
     if (S.isDown && isShapeTool(S.tool) && S.startPt && S.curPt) renderPreview();
