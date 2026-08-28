@@ -3260,6 +3260,17 @@
                     <button type="button" data-v="classic" data-i18n="set.classic">クラシック</button>
                 </div>
             </div>
+            <!-- ⭐紙の面（2026-08-28）。ポップオーバーと同じものをここからも選べる
+                 ＝入っているのに見つからない、を作らない -->
+            <div class="set-row">
+                <div class="set-label">紙</div>
+                <div class="set-seg" data-set="paper">
+                    <button type="button" data-v="white">白</button>
+                    <button type="button" data-v="kinari">生成り</button>
+                    <button type="button" data-v="fu">斑</button>
+                    <button type="button" data-v="zara">ざら</button>
+                </div>
+            </div>
             <div class="set-row">
                 <div class="set-label" data-i18n="set.grade">芯</div>
                 <div class="set-seg" data-set="grade">
@@ -3461,7 +3472,7 @@
 <div id="penPopover" class="tool-popover">
     <!-- ⭐描き味の切替（クラシック / 鉛筆 / 筆） -->
     <span class="pop-label" data-i18n="set.draw">描き味</span>
-    <div class="pop-row mode-row">
+    <div class="pop-row mode-row" id="drawModeRow">
         <button class="mode-btn" data-mode="classic" data-i18n="set.classic">クラシック</button>
         <button class="mode-btn" data-mode="pencil" data-i18n="set.pencil">鉛筆</button>
         <button class="mode-btn" data-mode="fude" data-i18n="set.brush">筆</button>
@@ -11297,6 +11308,7 @@ tiEl.addEventListener('paste', e => {
         setActive('mode',  (typeof MODE !== 'undefined') ? MODE : 'light');
         setActive('draw',  (typeof S !== 'undefined' && S.drawMode) ? S.drawMode : 'pencil');
         setActive('grade', (typeof PENCIL_GRADE !== 'undefined') ? PENCIL_GRADE : 'hb');
+        setActive('paper', (typeof PAPER !== 'undefined') ? PAPER : 'kinari');
         setActive('term',  (window._termIsFloat && window._termIsFloat()) ? 'float' : 'dock');
         let w = 'white'; try { w = localStorage.getItem('bm_wall') || 'white'; } catch (_) {}
         setActive('wall', w);
@@ -11310,6 +11322,7 @@ tiEl.addEventListener('paste', e => {
             else if (group === 'lang')  { if (window.setLang) window.setLang(v); }
             else if (group === 'swap')  { if (window.setPanelSwap) window.setPanelSwap(v === 'right'); }
             else if (group === 'draw')  { if (typeof runCommand === 'function') runCommand(v === 'pencil' ? 'enpitsu' : v); }
+            else if (group === 'paper') { if (typeof setPaper === 'function') setPaper(v); }
             else if (group === 'grade') { if (typeof PENCIL_GRADE !== 'undefined') { PENCIL_GRADE = v; try { localStorage.setItem('bm_grade', v); } catch (_) {} } }
             else if (group === 'term')  { if (v === 'float') { window._termFloat && window._termFloat(); } else { window._termDock && window._termDock(); } }
             else if (group === 'wall')  {
@@ -14558,7 +14571,9 @@ function _syncPencilUI() {
     const on = (S.drawMode === 'pencil');
     if (_pencilExtra) _pencilExtra.style.display = on ? 'block' : 'none';
     // ⭐描き味セレクタの選択状態
-    document.querySelectorAll('#penPopover .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === S.drawMode));
+    /* 🔴 '#penPopover .mode-btn' で拾うと【紙の行】まで巻き込んで印を消していた
+          （紙のボタンには data-mode が無いので必ず false になる）。描き味の行だけに絞る。 */
+    document.querySelectorAll('#drawModeRow .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === S.drawMode));
     _syncPaperFeatureUI();
     if (!on) return;
     if (_pencilWidth) _pencilWidth.value = S.lineWidth;
@@ -14582,6 +14597,9 @@ function setPaper(k, remember) {
     PAPERS.forEach(p => document.body.classList.toggle('bm-pap-' + p, p === k));
     document.querySelectorAll('#paperRow .mode-btn')
         .forEach(b => b.classList.toggle('active', b.dataset.pap === k));
+    /* 設定パネル（歯車）側の印も一緒に付け替える＝どちらから選んでも両方が合う */
+    document.querySelectorAll('.set-seg[data-set="paper"] button')
+        .forEach(b => b.classList.toggle('active', b.dataset.v === k));
     if (remember !== false) { try { localStorage.setItem('bm_paper', k); } catch (_) {} }
     if (typeof redrawAll === 'function') redrawAll();
 }
@@ -14607,7 +14625,9 @@ function _syncPaperFeatureUI() {
 }
 window._syncPaperFeatureUI = _syncPaperFeatureUI;
 // 描き味の切替（ペンポップオーバーの クラシック/鉛筆/筆）
-document.querySelectorAll('#penPopover .mode-btn').forEach(btn => {
+// 🔴 ここも '#penPopover .mode-btn' だと【紙のボタン】まで拾い、押すたびに
+//    runCommand(undefined) が走っていた（data-mode が無いため）。描き味の行だけにする。
+document.querySelectorAll('#drawModeRow .mode-btn').forEach(btn => {
     btn.addEventListener('click', e => {
         e.stopPropagation(); if (typeof playClick === 'function') playClick(false);
         const m = btn.dataset.mode;
